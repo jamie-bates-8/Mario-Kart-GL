@@ -1,0 +1,32 @@
+# Blender MTL File: 'Track3.blend'
+# Material Count: 3
+newmtl _cobbles.jpg
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd Track3.blend\cobbles.jpg
+
+
+newmtl _granite.jpg
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd Track3.blend\granite.jpg
+
+
+newmtl _sign.jpg
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd Track3.blend\sign.jpg
+
+

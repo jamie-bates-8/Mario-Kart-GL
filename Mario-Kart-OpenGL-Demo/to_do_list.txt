@@ -1,0 +1,21 @@
+-Improve vehicle collision response with spheres
+-Driving onto a slope from the side is jittery
+-Fix Bird's Eye View camera mode 
+
+-Zoom camera in when obscured by an obstacle
+
+-Fake Item Boxes should float slightly above the ground
+
+-Possibly refactor item press/release code
+-Possibly refactor getHeights() methods
+
+-Add item-vehicle collision effects
+	-Green Shells
+	-Red Shells
+	-Blue Shells
+
+-Lightning Bolts should cause players to drop items
+
+-Orbiting shells are not elevated on a slope
+	
+-Add exhaust particles
