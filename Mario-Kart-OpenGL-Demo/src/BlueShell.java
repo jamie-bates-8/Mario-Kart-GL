@@ -98,7 +98,7 @@ public class BlueShell extends Shell
 	public void update(List<Bound> bounds)
 	{	
 		setPosition(getPositionVector());
-		fall();
+		if(falling) fall();
 		
 		detected.clear();
 

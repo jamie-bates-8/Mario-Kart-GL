@@ -59,9 +59,9 @@ public class Banana extends Item
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			if(thrown || held) gl.glRotatef(trajectory, 0, 1, 0);
+			if(thrown) gl.glRotatef(trajectory, 0, 1, 0);
 			else gl.glMultMatrixf(getRotationMatrix44(u), 0);
-			gl.glScalef(1.4f, 1.4f, 1.4f);
+			gl.glScalef(1.3f, 1.3f, 1.3f);
 			
 			gl.glCallList(bananaList);
 		}
@@ -137,7 +137,7 @@ public class Banana extends Item
 	{
 		if(thrown && falling) setPosition(getPositionVector());
 		
-		fall();
+		if(falling) fall();
 		
 		detected.clear();
 		

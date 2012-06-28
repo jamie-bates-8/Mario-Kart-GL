@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
@@ -42,7 +43,6 @@ import javax.imageio.ImageIO;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
-import javax.media.opengl.GLException;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
 
@@ -80,7 +80,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	
 	private Texture speedometer;
 	
-	private Texture walls;
+	private Texture brickWall;
+	private Texture brickWallTop;
 	
 	private Texture greenGranite;
 	private Texture greenMetal;
@@ -159,6 +160,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	private boolean enableSphereSolids     = false;
 	private boolean enableClosestPoints    = false;
 	
+	private boolean enableObstacles = true;
+	
 	private OBB[] wallBounds;
 	
 	/** Music Fields **/
@@ -219,7 +222,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		{
 			speedometer   = TextureIO.newTexture(new File("tex/speedometer.png"), true);
 			
-			walls         = TextureIO.newTexture(new File("tex/longBrick.jpg"), false);
+			brickWall     = TextureIO.newTexture(new File("tex/longBrick.jpg"), false);
+			brickWallTop  = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
 			
 			greenGranite  = TextureIO.newTexture(new File("tex/greenGranite.jpg"), true);
 			greenMetal    = TextureIO.newTexture(new File("tex/greenMetal.jpg"), true);
@@ -247,14 +251,10 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		/** Texture Options **/
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		try
-		{
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
-		}
-		catch (GLException e) { e.printStackTrace(); }
+		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
 		
 
 		/** Fog Setup **/
@@ -397,6 +397,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			 new OBB(  97.5f, -0.81f,  -73.2f, -33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, true, false}),
 			 new OBB(  37.5f,     18,       0,       0, 0,       0,   7.5f,  2,     15),
 			 new OBB(  67.5f,     38,       0,       0, 0,       0,   7.5f,  2,     30)};
+			 
 	    
 	    for(OBB obb : wallBounds)
 	    {
@@ -468,6 +469,11 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		
 		renderParticles(gl);
 		
+		gl.glAccum(GL_MULT, 0.5f);
+		gl.glAccum(GL_ACCUM, 0.5f);
+		
+		if(car.isBoosting()) gl.glAccum(GL_RETURN, 1f);
+		
 		if(camera != CameraMode.MODEL_VIEW)
 		{
 			renderBounds(gl);
@@ -475,7 +481,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		}
 		
 		long end = System.currentTimeMillis();
-//		System.out.println(end - start);
+		System.out.println(end - start);
 		
 		calculateFPS();
 	}
@@ -494,9 +500,12 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		gl.glViewport(0, 0, width, height);
 		gl.glMatrixMode(GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(100.0f, ratio, 2.0, 500.0);
+		glu.gluPerspective(100.0f, ratio, 2.0, 600.0);
 		gl.glMatrixMode(GL_MODELVIEW);
 		gl.glLoadIdentity();
+		
+		gl.glClearAccum(0, 0, 0, 1);
+		gl.glClear(GL_ACCUM_BUFFER_BIT);
 	}
 
 	public void dispose(GLAutoDrawable drawable) {}
@@ -526,8 +535,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 
 	private void updateItems()
 	{
-		List<Bound> bounds = new ArrayList<Bound>();
-		Collections.addAll(bounds, wallBounds);
+		List<Bound> bounds = getObstacleBounds();
 		
 		for(Item item : items)
 		{
@@ -616,8 +624,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	
 	private void detectCollisions()
 	{	
-		List<Bound> bounds = new ArrayList<Bound>();
-		Collections.addAll(bounds, wallBounds);
+		List<Bound> bounds = getObstacleBounds();
 		
 		if(enableCollisions) car.update(bounds);
 	}
@@ -727,71 +734,84 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				gl.glCallList(environmentList);
 		}	
 		gl.glPopMatrix();
-
-		gl.glPushMatrix();
+		
+		if(enableObstacles)
 		{
-			//Fort Transformations
-			gl.glTranslatef(75, 25, 75);
-			gl.glScalef(25.0f, 25.0f, 25.0f);
-
-			gl.glCallList(fortList);
-		}	
-		gl.glPopMatrix();
-
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(-75, 25, 75);
-			gl.glRotatef(-90, 0, 1, 0);
-			gl.glScalef(25.0f, 25.0f, 25.0f);
-
-			gl.glCallList(fortList + 1);
-		}	
-		gl.glPopMatrix();
-
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(-75, 25, -75);
-			gl.glRotatef(-180, 0, 1, 0);
-			gl.glScalef(25.0f, 25.0f, 25.0f);
-
-			gl.glCallList(fortList + 2);
-		}	
-		gl.glPopMatrix();
-					
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(75, 25, -75);
-			gl.glRotatef(-270, 0, 1, 0);
-			gl.glScalef(25.0f, 25.0f, 25.0f);
-
-			gl.glCallList(fortList + 3);
-		}	
-		gl.glPopMatrix();
+			gl.glPushMatrix();
+			{
+				//Fort Transformations
+				gl.glTranslatef(75, 25, 75);
+				gl.glScalef(25.0f, 25.0f, 25.0f);
+	
+				gl.glCallList(fortList);
+			}	
+			gl.glPopMatrix();
+	
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(-75, 25, 75);
+				gl.glRotatef(-90, 0, 1, 0);
+				gl.glScalef(25.0f, 25.0f, 25.0f);
+	
+				gl.glCallList(fortList + 1);
+			}	
+			gl.glPopMatrix();
+	
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(-75, 25, -75);
+				gl.glRotatef(-180, 0, 1, 0);
+				gl.glScalef(25.0f, 25.0f, 25.0f);
+	
+				gl.glCallList(fortList + 2);
+			}	
+			gl.glPopMatrix();
+						
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(75, 25, -75);
+				gl.glRotatef(-270, 0, 1, 0);
+				gl.glScalef(25.0f, 25.0f, 25.0f);
+	
+				gl.glCallList(fortList + 3);
+			}	
+			gl.glPopMatrix();
+		}
+			
+		Texture[] textures = {brickWall, brickWallTop, brickWall};
 	    	 
 		gl.glPushMatrix();
 		{
-			displayTexturedCuboid(gl,       0, 37.5,  171.88, 168.75, 37.5,  3.125, ORIGIN, walls);
-			displayTexturedCuboid(gl,       0, 37.5, -171.88, 168.75, 37.5,  3.125, ORIGIN, walls);
-	    	displayTexturedCuboid(gl,  171.88, 37.5,       0,   3.125,37.5, 168.75, ORIGIN, walls);
-	    	displayTexturedCuboid(gl, -171.88, 37.5,       0,   3.125,37.5, 168.75, ORIGIN, walls);
+			displayTexturedCuboid(gl,       0, 37.5,  171.88, 168.75, 37.5,  3.125,  0, textures);
+			displayTexturedCuboid(gl,       0, 37.5, -171.88, 168.75, 37.5,  3.125,  0, textures);
+	    	displayTexturedCuboid(gl,  171.88, 37.5,       0, 168.75 ,37.5,  3.125, 90, textures);
+	    	displayTexturedCuboid(gl, -171.88, 37.5,       0, 168.75 ,37.5,  3.125, 90, textures);
 		}
 		gl.glPopMatrix();
 
 		car.render(gl);
 
 		for(ItemBox box : itemBoxes)
-			if(!box.isDead()) box.render(gl);
+			if(!box.isDead()) box.render(gl, car.trajectory);
 
 		for(Item item : items)
 			if(!item.isDead()) item.render(gl);
+	}
+	
+	private List<Bound> getObstacleBounds()
+	{
+		List<Bound> bounds = new ArrayList<Bound>();
+		if(enableObstacles) Collections.addAll(bounds, wallBounds);
+		else Collections.addAll(bounds, Arrays.copyOfRange(wallBounds, 0, 5));
+		
+		return bounds;
 	}
 
 	private void renderBounds(GL2 gl)
 	{
 		gl.glDisable(GL_TEXTURE_2D);
 		
-		List<Bound> bounds = new ArrayList<Bound>();
-		Collections.addAll(bounds, wallBounds);
+		List<Bound> bounds = getObstacleBounds();
 		
 		if(enableClosestPoints)
 			for(Bound bound : bounds)
@@ -883,8 +903,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			{
 				gl.glMatrixMode(GL_PROJECTION);
 				gl.glLoadIdentity();
-				gl.glOrtho(-50, 50, -50, 50, 1, 50);
-				glu.gluLookAt(0, 80, 0,
+				gl.glOrtho(-200, 200, -200, 200, 1, 200);
+				glu.gluLookAt(0, 150, 0,
 					          0, 0, 0,
 					          0, 0, 1);
 				gl.glMatrixMode(GL_MODELVIEW);
@@ -899,7 +919,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				
 				float[] p = car.getPosition();
 				
-				gl.glTranslatef(0, -1.5f, 0);
+				gl.glTranslatef(0, -3.0f, 0);
 				
 				gl.glRotated(car.trajectory, 0.0f, -1.0f, 0.0f);
 				
@@ -961,7 +981,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		
 		gl.glMatrixMode(GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(100.0f, ratio, 2.0, 500.0);
+		glu.gluPerspective(100.0f, ratio, 2.0, 600.0);
 		gl.glMatrixMode(GL_MODELVIEW);
 		gl.glLoadIdentity();
 		gl.glEnable(GL_DEPTH_TEST);
@@ -1028,6 +1048,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				case KeyEvent.VK_F1:     enableAnimation = !enableAnimation; break;
 				case KeyEvent.VK_F2:     Item.toggleBoundSolids(); break;
 				case KeyEvent.VK_F3:     Item.toggleBoundWireframes(); break;
+				case KeyEvent.VK_F4:     enableObstacles = !enableObstacles; break;
 				
 				case KeyEvent.VK_R:      if(!car.isCursed() && !car.isSlipping()) {car.aimForwards();  pressItem();} break;
 				case KeyEvent.VK_F:      if(!car.isCursed() && !car.isSlipping()) {car.resetAim();     pressItem();} break;
@@ -1036,13 +1057,54 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				case KeyEvent.VK_N:      roulette.next(); break;
 				case KeyEvent.VK_B:      roulette.repeat(); break;
 				case KeyEvent.VK_V:      roulette.previous(); break;
+				
+				case KeyEvent.VK_Q:      if(car.turning && !car.falling) car.drift(); break;
 					
 				default: break;
 			}	
 			
 		}
 	}
+	
+	public void keyReleased(KeyEvent e)
+	{
+		switch (e.getKeyCode())
+		{
+			case KeyEvent.VK_UP:
+			case KeyEvent.VK_W:
+			case KeyEvent.VK_DOWN:
+			case KeyEvent.VK_S:
+				car.accelerating = false; car.reversing = false; break; //Cause the car to decelerate
+			case KeyEvent.VK_A:
+			case KeyEvent.VK_LEFT:
+			case KeyEvent.VK_D:
+			case KeyEvent.VK_RIGHT:
+				car.turning = false; car.straighten(); break; //Cause the car to stop turning
+			
+			case KeyEvent.VK_R:
+			case KeyEvent.VK_C:
+			case KeyEvent.VK_F: if(car.hasItem()) car.releaseItem(); break;
+			
+			case KeyEvent.VK_Q: car.miniTurbo(); break;
+			
+			default: break;
+		}
+	}
 
+	public void keyTyped(KeyEvent e)
+	{
+		switch (e.getKeyChar())
+		{
+			default: break;
+		}
+	}
+
+	public void mouseWheelMoved(MouseWheelEvent e)
+	{
+		if (e.getWheelRotation() < 0) { if(zoom < -10) zoom++; } //Zoom in the camera
+		else if(zoom > -30) zoom--; //Zoom out the camera
+	}
+	
 	private void pressItem()
 	{
 		if(car.hasItem())
@@ -1066,43 +1128,6 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			if(ItemState.isInstantUse(state)) car.pressItem();
 			roulette.update();
 		}
-	}
-	
-	public void keyReleased(KeyEvent e)
-	{
-		switch (e.getKeyCode())
-		{
-			case KeyEvent.VK_UP:
-			case KeyEvent.VK_W:
-			case KeyEvent.VK_DOWN:
-			case KeyEvent.VK_S:
-				car.accelerating = false; car.reversing = false; break; //Cause the car to decelerate
-			case KeyEvent.VK_A:
-			case KeyEvent.VK_LEFT:
-			case KeyEvent.VK_D:
-			case KeyEvent.VK_RIGHT:
-				car.turning = false; break; //Cause the car to stop turning
-			
-			case KeyEvent.VK_R:
-			case KeyEvent.VK_C:
-			case KeyEvent.VK_F: if(car.hasItem()) car.releaseItem(); break;
-			
-			default: break;
-		}
-	}
-
-	public void keyTyped(KeyEvent e)
-	{
-		switch (e.getKeyChar())
-		{
-			default: break;
-		}
-	}
-
-	public void mouseWheelMoved(MouseWheelEvent e)
-	{
-		if (e.getWheelRotation() < 0) { if(zoom < -10) zoom++; } //Zoom in the camera
-		else if(zoom > -30) zoom--; //Zoom out the camera
 	}
 
 	public void playMusic()

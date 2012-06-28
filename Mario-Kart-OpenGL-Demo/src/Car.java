@@ -64,13 +64,18 @@ public class Car
 	private static final double TOP_FALL_RATE = 5.0;
 	
 	private double turnRate;
-	private static final double TOP_TURN_RATE = 3.0;
+	private static final double TOP_TURN_RATE = 2.0;
 	
 	private double turnIncrement = 0.1;
 	public boolean turning;
 	
 	private enum Direction {STRAIGHT, LEFT, RIGHT};
 	private Direction direction = Direction.STRAIGHT;
+	
+	private Direction drift = Direction.STRAIGHT;
+	private boolean driftCounter = false;
+	private enum DriftState {YELLOW, RED, BLUE};
+	private DriftState driftState = DriftState.YELLOW;
 	
 	public double distance;
 	
@@ -186,12 +191,7 @@ public class Car
 	{
 		switch(itemID)
 		{
-			case  0:
-			{
-				items.add(new GreenShell(gl, this, getPosition(), trajectory, false));
-
-				break;
-			}
+			case  0: items.add(new GreenShell(gl, this, getPosition(), trajectory, false)); break;
 			case  1:
 			{
 				items.add(new GreenShell(gl, this, getPosition(), trajectory, true));
@@ -200,11 +200,7 @@ public class Car
 
 				break;
 			}
-			case  2:
-			{
-				items.add(new RedShell(gl, this, getPosition(), trajectory, false, this));
-				break;
-			}
+			case  2: items.add(new RedShell(gl, this, getPosition(), trajectory, false, this)); break;
 			case  3:
 			{
 				items.add(new RedShell(gl, this, getPosition(), trajectory, true, this));
@@ -213,21 +209,9 @@ public class Car
 
 				break;
 			}
-			case  6:
-			{
-				itemDuration = 400;
-				break;
-			}
-			case  7:
-			{
-				items.add(new FakeItemBox(gl, this, getPosition(), 0, particles));
-				break;
-			}
-			case  8:
-			{
-				items.add(new Banana(gl, this, getPosition(), trajectory, 1));
-				break;
-			}
+			case  6: itemDuration = 400; break;
+			case  7: items.add(new FakeItemBox(gl, this, getPosition(), 0, particles)); break;
+			case  8: items.add(new Banana(gl, this, getPosition(), trajectory, 1)); break;
 			case  9:
 			{
 				items.add(new Banana(gl, this, getPosition(), trajectory, 3));
@@ -238,12 +222,8 @@ public class Car
 			case 13:
 			{
 				BlueShell shell =
-					new BlueShell(gl, this, ORIGIN, 0, this, particles);
+					new BlueShell(gl, this, ORIGIN, trajectory, this, particles);
 					
-				shell.held = false;
-				shell.thrown = shell.falling = true;
-					
-				shell.trajectory = trajectory;
 				shell.setPosition(getUpItemVector(shell));
 				shell.setRotation(0, trajectory, -45);
 				
@@ -280,7 +260,6 @@ public class Car
 						case DEFAULT:
 						{	
 							shell.trajectory = trajectory;
-							shell.falling = shell.thrown = true;
 							shell.setPosition(getForwardItemVector(shell));
 							shell.setRotation(0, trajectory, 0);
 							break;
@@ -288,7 +267,6 @@ public class Car
 						case BACKWARDS:
 						{
 							shell.trajectory = trajectory - 180;
-							shell.falling = shell.thrown = true;
 							shell.setPosition(getBackwardItemVector(shell));
 							shell.setRotation(0, trajectory - 180, 0);
 							break;
@@ -297,7 +275,6 @@ public class Car
 					
 					worldItems.add(shell);
 				}
-				
 				break;
 			}
 			case ONE_MUSHROOM:
@@ -326,8 +303,6 @@ public class Car
 					{
 						case FORWARDS:
 						{
-							banana.thrown = true;
-							banana.falling = true;
 							banana.setRotation(0, trajectory, -45);
 							banana.setPosition(getUpItemVector(banana));
 							banana.velocity = TOP_SPEED * 1.5f + abs(velocity);
@@ -375,18 +350,14 @@ public class Car
 						case FORWARDS:
 						case DEFAULT:
 						{	
-							shell.held = false;
 							shell.trajectory = trajectory;
-							shell.falling = shell.thrown = true;
 							shell.setPosition(getForwardItemVector(shell));
 							shell.setRotation(0, trajectory, 0);
 							break;
 						}
 						case BACKWARDS:
 						{
-							shell.held = false;
 							shell.trajectory = trajectory - 180;
-							shell.falling = shell.thrown = true;
 							shell.setPosition(getBackwardItemVector(shell));
 							shell.setRotation(0, trajectory - 180, 0);
 							break;
@@ -408,15 +379,11 @@ public class Car
 					{
 						case FORWARDS:
 						{
-							box.thrown = true;
-							box.falling = true;
 							box.setRotation(0, trajectory, -45);
 							box.setPosition(getUpItemVector(box));
 							box.velocity = TOP_SPEED * 1.5f + abs(velocity);
 						}
 					}
-					
-					box.held = false;
 					
 					worldItems.add(box);
 				}
@@ -432,15 +399,11 @@ public class Car
 					{
 						case FORWARDS:
 						{
-							banana.thrown = true;
-							banana.falling = true;
 							banana.setRotation(0, trajectory, -45);
 							banana.setPosition(getUpItemVector(banana));
 							banana.velocity = TOP_SPEED * 1.5f + abs(velocity);
 						}
 					}
-					
-					banana.held = false;
 					
 					worldItems.add(banana);
 				}
@@ -456,25 +419,13 @@ public class Car
 		itemState = ItemState.release(itemState);
 	}
 
-	public void setRotation(float x, float y, float z)
-	{	
-		bound.u = getRotationMatrix33(x, y, z);
-	}
+	public void setRotation(float x, float y, float z) { bound.u = getRotationMatrix33(x, y, z); }
 	
-	public float[] getForwardVector()
-	{
-		return multiply(bound.u[0], velocity);
-	}
+	public float[] getForwardVector() { return multiply(bound.u[0], velocity); }
 	
-	public float[] getSlipVector()
-	{
-		return subtract(bound.c, multiply(slipVector, velocity));
-	}
+	public float[] getSlipVector() { return subtract(bound.c, multiply(slipVector, velocity)); }
 	
-	public void setRotation(float[] angles)
-	{
-		bound.u = getRotationMatrix33(angles[0], angles[1], angles[2]);
-	}
+	public void setRotation(float[] angles) { bound.u = getRotationMatrix33(angles[0], angles[1], angles[2]); }
 	
 	public void setPosition(float[] c) { bound.setPosition(c); }
 	
@@ -779,20 +730,27 @@ public class Car
 		if(accelerating && !slipping) accelerate();
 		else decelerate();
 		
-		if(turning && accelerating && !slipping)
+		if(velocity <= 0)
+		{
+			drift = Direction.STRAIGHT;
+			driftState = DriftState.YELLOW;
+			driftCounter = false;
+		}
+		
+		if     (drift == Direction.LEFT ) turnLeft();
+		else if(drift == Direction.RIGHT) turnRight();
+		
+		else if(turning && accelerating && !slipping)
 		{
 			if(direction == Direction.LEFT) turnLeft();
 			else turnRight();
 		}
+		
 		else stabilize();
 		
 		double currentDistance = distance;
 		
-		if(falling)
-		{
-			if(fallRate < TOP_FALL_RATE) fallRate += gravity;
-			bound.c[1] -= fallRate;
-		}
+		if(falling) fall();
 	
 		velocity = (velocity > 2 * TOP_SPEED) ? (2 * TOP_SPEED) : velocity;
 	
@@ -803,8 +761,19 @@ public class Car
 		turnWheels();
 		
 		//The wheels are rotated in relation to the distance travelled
-		zRotation_Wheel += 360 * (distance - currentDistance) / (2 * PI * 0.5);
+		zRotation_Wheel += 360 * (distance - currentDistance) / (2 * PI * 0.5); //0.5 is the wheel radius
 		
+		if(drift != Direction.STRAIGHT && !falling)
+		{
+			for(float[] source : getDriftVectors())
+				particles.addAll(generator.generateDriftParticles(source, 10, driftState.ordinal()));
+		}
+		
+		updateStatus();
+	}
+
+	private void updateStatus()
+	{
 		if(miniatureDuration > 0) miniatureDuration--;
 		else if(miniature)
 		{
@@ -855,21 +824,35 @@ public class Car
 		}
 	}
 
+	private void fall()
+	{
+		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
+		bound.c[1] -= fallRate;
+	}
+	
+	public void drift() { drift = direction; }
+	
+	public void miniTurbo()
+	{
+		drift = Direction.STRAIGHT;
+		
+		if(driftState == DriftState.BLUE)
+		{
+			boosting = true;
+			boostDuration = 20;
+			velocity += 0.6;
+		}
+		
+		driftState = DriftState.YELLOW;
+	}
+
 	/**
 	 * Increase the speed of the car unless it is at its top speed
 	 */
 	public void accelerate()
 	{
-		if(reversing)
-		{
-			if(velocity > -TOP_SPEED) velocity -= acceleration;
-			else if(velocity < -TOP_SPEED) velocity += acceleration;
-		}
-		else
-		{
-			if(velocity < TOP_SPEED) velocity += acceleration;
-			else if(velocity > TOP_SPEED) velocity -= acceleration;
-		}
+		if(reversing) velocity += (velocity < -TOP_SPEED) ? acceleration : -acceleration;
+		else velocity += (velocity < TOP_SPEED) ? acceleration : -acceleration;
 	}
 
 	/**
@@ -889,6 +872,15 @@ public class Car
 			turning = true;
 			direction = Direction.LEFT;
 		}
+		if(!falling)
+		{
+			if(drift == Direction.RIGHT) driftCounter = true;
+			else if(drift == Direction.LEFT && driftCounter && driftState != DriftState.BLUE)
+			{
+				driftState = DriftState.values()[driftState.ordinal() + 1];
+				driftCounter = false;
+			}
+		}
 	}
 
 	public void steerRight()
@@ -897,6 +889,15 @@ public class Car
 		{
 			turning = true;
 			direction = Direction.RIGHT;
+		}
+		if(!falling)
+		{
+			if(drift == Direction.LEFT) driftCounter = true;
+			else if(drift == Direction.RIGHT && driftCounter && driftState != DriftState.BLUE)
+			{
+				driftState = DriftState.values()[driftState.ordinal() + 1];
+				driftCounter = false;
+			}
 		}
 	}
 
@@ -907,7 +908,16 @@ public class Car
 	private void turnLeft()
 	{
 		if(turnRate < TOP_TURN_RATE) turnRate += turnIncrement;
-		trajectory += turnRate;
+		
+		double k = 1;
+		
+		if(drift == Direction.LEFT)
+		{
+			if(direction == Direction.LEFT) k = 1.25;
+			else if(direction == Direction.RIGHT) k = 0.5;
+		}
+		
+		trajectory += turnRate * k;
 	}
 
 	/**
@@ -917,8 +927,19 @@ public class Car
 	private void turnRight()
 	{
 		if(turnRate > -TOP_TURN_RATE) turnRate -= turnIncrement;
-		trajectory += turnRate;
+		
+		double k = 1;
+		
+		if(drift == Direction.RIGHT)
+		{
+			if(direction == Direction.LEFT) k = 0.5;
+			else if(direction == Direction.RIGHT) k = 1.25;
+		}
+		
+		trajectory += turnRate * k;
 	}
+	
+	public void straighten() { direction = Direction.STRAIGHT; }
 
 	public void stabilize()
 	{
@@ -957,6 +978,19 @@ public class Car
 		{
 			subtract(add(getPosition(), eu0), eu2), //right exhaust
 			     add(add(getPosition(), eu0), eu2)  //left exhaust
+		};
+	}
+	
+	public float[][] getDriftVectors()
+	{
+		float[] eu0 = multiply(bound.u[0], bound.e[0] * 0.75f);
+		float[] eu1 = multiply(bound.u[1], bound.e[1] * 0.75f);
+		float[] eu2 = multiply(bound.u[2], bound.e[2] * 1.25f);
+		
+		return new float[][]
+		{
+			subtract(subtract(add(getPosition(), eu0), eu1), eu2),
+			     add(subtract(add(getPosition(), eu0), eu1), eu2)
 		};
 	}
 	
@@ -1077,6 +1111,8 @@ public class Car
 	public boolean hasStarPower() { return starPower; }
 	
 	public boolean isInvisible() { return invisible; }
+	
+	public boolean isBoosting() { return boosting; }
 }
 
 

@@ -36,8 +36,7 @@ public class FakeItemBox extends Item
 		bound = new OBB(
 				c[0], c[1], c[2],
 	    		0, 0, 0,
-	    		SCALE, SCALE, SCALE,
-	    		new boolean[] {true, true, true, true, true, true});
+	    		SCALE, SCALE, SCALE);
 		
 		generator = new ParticleGenerator();
 		
@@ -70,7 +69,7 @@ public class FakeItemBox extends Item
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			
-			if(thrown || held) displayTexturedObject(gl, BOX_FACES);
+			if(thrown) displayTexturedObject(gl, BOX_FACES);
 			else
 			{
 				displayColoredObject(gl, BOX_FACES, fade);
@@ -139,7 +138,7 @@ public class FakeItemBox extends Item
 	{
 		if(thrown && falling) setPosition(getPositionVector());
 
-		fall();
+		if(falling) fall();
 		
 		detected.clear();
 

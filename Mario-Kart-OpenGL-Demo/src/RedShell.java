@@ -82,7 +82,7 @@ public class RedShell extends Shell
 		if(velocity < TOP_SPEED) velocity += acceleration;
 		
 		setPosition(getPositionVector());
-		fall();
+		if(falling) fall();
 		
 		detected.clear();
 

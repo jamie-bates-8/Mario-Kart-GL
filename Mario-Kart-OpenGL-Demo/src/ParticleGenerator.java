@@ -42,6 +42,20 @@ public class ParticleGenerator
 		return particles;
 	}
 	
+	public List<Particle> generateDriftParticles(float[] source, int n, int color)
+	{
+		List<Particle> particles = new ArrayList<Particle>();
+		
+		for(int i = 0; i < n; i++)
+		{	
+			float rotation = -45 + generator.nextInt(90);
+			
+			particles.add(new DriftParticle(source, new float[] {0, 0, 0}, rotation, 0, color, generator.nextBoolean()));
+		}
+		
+		return particles;
+	}
+	
 	public List<Particle> generateSmokeParticles(float[] source, int n)
 	{
 		List<Particle> particles = new ArrayList<Particle>();

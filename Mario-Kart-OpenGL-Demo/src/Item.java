@@ -24,7 +24,7 @@ public abstract class Item
 	public Car car;
 	
 	public double gravity = 0.05;
-	public boolean falling = false;
+	public boolean falling = true;
 	public float fallRate = 0.0f;
 	private static final double TOP_FALL_RATE = 5.0;
 	
@@ -36,8 +36,8 @@ public abstract class Item
 	public boolean colliding = false;
 	public List<Bound> detected = new ArrayList<Bound>();
 	
-	public boolean thrown = false;
-	public boolean held = true;
+	public boolean thrown = true;
+	
 	public boolean dead = false;
 	
 	public static void toggleBoundWireframes() { enableBoundWireframes = !enableBoundWireframes; }
@@ -75,11 +75,8 @@ public abstract class Item
 	
 	public void fall()
 	{
-		if(falling)
-		{
-			if(fallRate < TOP_FALL_RATE) fallRate += gravity;
-			bound.c[1] -= fallRate;
-		}
+		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
+		bound.c[1] -= fallRate;
 	}
 	
 	public boolean outOfBounds()
@@ -111,7 +108,8 @@ public abstract class Item
 						}
 						else if(Arrays.equals(face, b.getDownVector(1)))
 						{
-							velocity = 0;
+							if(this instanceof Shell) destroy();
+							else velocity = 0;
 							_colliding = true;
 						}
 					}

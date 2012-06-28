@@ -49,8 +49,6 @@ public class BoostParticle extends Particle
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 
-			gl.glColor4f(1, 1, 1, 1);
-			
 			int offset   = (special) ? 4 : 0;
 			int spectrum = (special) ? 3 : 3;
 			
@@ -68,6 +66,8 @@ public class BoostParticle extends Particle
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 			gl.glDepthMask(true);
+			
+			gl.glColor3f(1, 1, 1);
 		}
 		gl.glPopMatrix();
 	}

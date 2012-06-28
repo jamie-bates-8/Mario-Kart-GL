@@ -18,6 +18,11 @@ public abstract class Particle
 	protected static Texture violetFlare;
 	protected static Texture whiteFlare;
 	
+	protected static Texture yellowSpark;
+	protected static Texture redSpark;
+	protected static Texture blueSpark;
+	protected static Texture whiteSpark;
+	
 	protected static Texture whiteStar;
 	
 	protected static Texture cloud1;
@@ -34,6 +39,11 @@ public abstract class Particle
 			indigoFlare = TextureIO.newTexture(new File("tex/indigoFlare.png"), true);
 			violetFlare = TextureIO.newTexture(new File("tex/violetFlare.png"), true);
 			whiteFlare  = TextureIO.newTexture(new File("tex/whiteFlare.png"), true);
+			
+			yellowSpark = TextureIO.newTexture(new File("tex/yellowSpark.png"), true);
+			redSpark    = TextureIO.newTexture(new File("tex/redSpark.png"), true);
+			blueSpark   = TextureIO.newTexture(new File("tex/blueSpark.png"), true);
+			whiteSpark  = TextureIO.newTexture(new File("tex/whiteSpark.png"), true);
 			
 			whiteStar   = TextureIO.newTexture(new File("tex/whiteStar.png"), true);
 			
