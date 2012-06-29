@@ -19,7 +19,6 @@
 	-Add spiralling smoke when a boo is used
 	-Add exhaust particles
 	-Add shell fragments when a shell is destroyed
-	-Add sparks when drifting
 
 -Lightning Bolts should cause players to drop items
 

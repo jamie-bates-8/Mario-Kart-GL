@@ -69,7 +69,7 @@ public abstract class Particle
 	
 	public float[] getPosition() { return c; }
 	
-	public boolean isDead() { return (duration == 0); }
+	public boolean isDead() { return (duration < 1); }
 	
 	public abstract void render(GL2 gl, float trajectory);
 	

@@ -15,6 +15,7 @@ public class ParticleGenerator
 	public static final float[] BLUE   = {  0.0f, 173.0f, 239.0f};
 	public static final float[] INDIGO = {  0.0f, 114.0f, 188.0f};
 	public static final float[] VIOLET = {102.0f,  45.0f, 145.0f};
+	public static final float[] WHITE  = {255.0f, 255.0f, 255.0f}; 
 	
 	private Random generator;
 	
@@ -37,6 +38,28 @@ public class ParticleGenerator
 			float[] t = getRandomVector();
 			
 			particles.add(new ItemBoxParticle(source, t, 0, 20, _color, generator.nextBoolean()));
+		}
+		
+		return particles;
+	}
+	
+	public List<Particle> generateSparkParticles(float[] source, int n)
+	{
+		List<Particle> particles = new ArrayList<Particle>();
+		
+		float[][] colors = {WHITE, YELLOW, ORANGE};
+		
+		for(int i = 0; i < n; i++)
+		{
+			float[]  color = colors[generator.nextInt(colors.length)];
+			float[] _color = {color[0]/255, color[1]/255, color[2]/255};
+			
+			float[] t = getRandomVector();
+			t[1] = Math.abs(t[1]);
+			
+			t = multiply(t, 0.5f);
+			
+			particles.add(new SparkParticle(source, t, 0, 8, _color));
 		}
 		
 		return particles;
@@ -81,7 +104,7 @@ public class ParticleGenerator
 		{
 			float[] t = getRandomVector();
 			
-			float scale = generator.nextFloat() * 3.5f;
+			float scale = generator.nextFloat() * 2.5f;
 			
 			source = add(source, multiply(t, 2));
 			
@@ -123,7 +146,7 @@ public class ParticleGenerator
 			float k = (special) ? 0.55f : 0.5f;
 			t = multiply(t, k);
 			
-			int duration = (special) ? 2 : 2;
+			int duration = (special) ? 1 : 1;
 			
 			particles.add(new BoostParticle(source, t, 0, duration, generator.nextFloat() * 2.5f, special));
 		}

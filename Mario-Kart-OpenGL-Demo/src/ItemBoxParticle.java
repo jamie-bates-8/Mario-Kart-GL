@@ -2,7 +2,6 @@ import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.GL2.GL_LINE_LOOP;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
-import static graphics.util.Vector.add;
 
 import javax.media.opengl.GL2;
 
@@ -25,17 +24,16 @@ public class ItemBoxParticle extends Particle
 	{
 		gl.glPushMatrix();
 		{
-			float[] c = add(getPosition(), t);
-
 			gl.glTranslatef(c[0], c[1], c[2]);
 			gl.glRotatef(trajectory - 90, 0, 1, 0);
 			gl.glRotatef(rotation, 0, 0, 1);
 			gl.glScalef(0.75f, 0.75f, 0.75f);
 			
+			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 
-			gl.glColor4f(color[0], color[1], color[2], 1);
+			gl.glColor3f(color[0], color[1], color[2]);
 
 			if(fill)
 			{
@@ -59,10 +57,10 @@ public class ItemBoxParticle extends Particle
 				}
 				gl.glEnd();
 			}
-			
 
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
+			gl.glDepthMask(true);
 		}
 		gl.glPopMatrix();
 	}

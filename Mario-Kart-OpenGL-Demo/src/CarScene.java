@@ -117,7 +117,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	private float yRotation_Camera = 0.0f;
 	private float zRotation_Camera = 0.0f;
 	
-	private float zoom = -20.0f;
+	private float zoom = 1;
 	
 	
 	/** Fog Fields **/
@@ -481,6 +481,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		}
 		
 		long end = System.currentTimeMillis();
+		
 		System.out.println(end - start);
 		
 		calculateFPS();
@@ -885,7 +886,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			{
 				float[] p = car.getPosition();
 
-				gl.glTranslatef(0, -15.0f, -30.0f);
+				gl.glTranslatef(0, -15.0f * zoom, -30.0f * zoom);
 				if(car.isSlipping()) gl.glRotated(car.slipTrajectory, 0.0f, -1.0f, 0.0f);
 				else gl.glRotated(car.trajectory, 0.0f, -1.0f, 0.0f);
 				gl.glRotatef(xRotation_Camera, 1.0f, 0.0f, 0.0f);
@@ -1030,6 +1031,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				
 				case KeyEvent.VK_H:		 enableCollisions = !enableCollisions; car.colliding = false; break;  //Toggle collision detection on/off				
 				case KeyEvent.VK_M:	     switchCamera(); break; //Cycle the camera mode
+				case KeyEvent.VK_EQUALS: if(zoom < 1.0) zoom += 0.05; break; //Zoom in the camera
+				case KeyEvent.VK_MINUS:  if(zoom > 0.5) zoom -= 0.05; break; //Zoom out the camera
 				case KeyEvent.VK_L:		 displayMotionLog(); break;
 				case KeyEvent.VK_P:		 playMusic(); break;
 				case KeyEvent.VK_9:		 if(camera != CameraMode.DRIVERS_VIEW) car.displayModel = !car.displayModel; break;

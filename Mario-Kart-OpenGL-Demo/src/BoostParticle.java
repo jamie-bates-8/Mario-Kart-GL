@@ -45,6 +45,8 @@ public class BoostParticle extends Particle
 			gl.glRotatef(trajectory - 90, 0, 1, 0);
 			gl.glScalef(scale, scale, scale);
 			
+			scale /= 2;
+			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);

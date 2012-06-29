@@ -60,6 +60,16 @@ public class Vector
 		return w;
 	}
 	
+	public static float[] divide(float[] u, float k)
+	{
+		int n = u.length;
+		float[] w = new float[n];
+		
+		for(int i = 0; i < n; i++) w[i] = u[i] / k;
+		
+		return w;
+	}
+	
 	public static double getAngle(float[] u, float[] v)
 	{
 		return acos(dot(u, v) / (sqrt(dot(u, u)) * sqrt(dot(v, v))));

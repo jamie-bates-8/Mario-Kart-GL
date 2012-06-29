@@ -730,7 +730,7 @@ public class Car
 		if(accelerating && !slipping) accelerate();
 		else decelerate();
 		
-		if(velocity <= 0)
+		if(velocity <= 0 || slipping)
 		{
 			drift = Direction.STRAIGHT;
 			driftState = DriftState.YELLOW;
@@ -766,7 +766,10 @@ public class Car
 		if(drift != Direction.STRAIGHT && !falling)
 		{
 			for(float[] source : getDriftVectors())
+			{
 				particles.addAll(generator.generateDriftParticles(source, 10, driftState.ordinal()));
+				particles.addAll(generator.generateSparkParticles(source,  2));
+			}
 		}
 		
 		updateStatus();
