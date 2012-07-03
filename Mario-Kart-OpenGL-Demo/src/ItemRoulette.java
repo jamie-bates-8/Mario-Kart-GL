@@ -132,7 +132,7 @@ public class ItemRoulette
 	{	
 		Random generator = new Random();
 		
-		double[] weights = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+		double[] weights = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 	
 		double totalWeight = 0.0;
 		

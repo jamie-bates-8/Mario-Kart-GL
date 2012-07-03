@@ -1,5 +1,4 @@
 import static graphics.util.Renderer.displayTexturedObject;
-import static graphics.util.Renderer.displayColoredObject;
 
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
@@ -16,14 +15,10 @@ public class FakeItemBox extends Item
 	private static final List<Face> BOX_FACES = OBJParser.parseTriangles("obj/fakeItemBox.obj");
 	private static float rotation = 45.0f; 
 	public static final float SCALE = 1.75f;
-
-	private float _height = 0;
 	
 	public ParticleGenerator generator;
 
 	private List<Particle> particles;
-	
-	private float fade = 0.5f;
 	
 	private int bounces = 3;
 	
@@ -40,12 +35,9 @@ public class FakeItemBox extends Item
 		
 		generator = new ParticleGenerator();
 		
+//		gravity = 0.025;
+		
 		setRotation(0, trajectory, 0);
-	}
-	
-	public List<Particle> generateParticles()
-	{
-		return generator.generateFakeItemBoxParticles(getPosition(), 64);
 	}
 	
 	public static void increaseRotation() { rotation -= 4; }
@@ -69,12 +61,7 @@ public class FakeItemBox extends Item
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			
-			if(thrown) displayTexturedObject(gl, BOX_FACES);
-			else
-			{
-				displayColoredObject(gl, BOX_FACES, fade);
-				if(fade > 0) fade -= 0.0125f;
-			}
+			displayTexturedObject(gl, BOX_FACES);
 			
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
@@ -88,65 +75,70 @@ public class FakeItemBox extends Item
 	public void destroy()
 	{
 		super.destroy();
-		particles.addAll(generateParticles());
+		particles.addAll(generator.generateFakeItemBoxParticles(getPosition(), 64));
 	}
 	
-	public float getHeights()
+	@Override
+	public float[] getHeights()
 	{
-		float height = 0;
-		
 		falling = true;
 		
-		if(!detected.isEmpty())
+		for(Bound collision : collisions)
 		{
-			for(Bound _bound : detected)
-			{
-				if(_bound instanceof OBB)
-				{		
-					OBB b = (OBB) _bound;
+			if(collision instanceof OBB)
+			{		
+				OBB b = (OBB) collision;
 
-					float[] face = b.getFaceVector(getPosition());
-	
-					if(Arrays.equals(face, b.getUpVector(1)))
+				float[] face = b.getFaceVector(getPosition());
+
+				if(Arrays.equals(face, b.getUpVector(1)))
+				{
+					float h = b.closestPointOnPerimeter(getPosition())[1]
+							+ bound.getHeight() * 0.45f;
+					
+					if(h > bound.c[1]) bound.c[1] = h;
+
+					if(bounces == 0)
 					{
-						float h = b.perimeterPointToPoint(getPosition())[1] + (bound.getHeight() * 0.45f);
-						if(h > bound.c[1]) bound.c[1] = h;
-						
-						if(bounces == 0)
-						{
-							falling = thrown = false;
-							fallRate = 0;
-						}
-						else
-						{
-							bounces--;
-							fallRate /= 2;
-						}
+						falling = thrown = false;
+						fallRate = 0;
+					}
+					else
+					{
+						bounces--;
+						fallRate /= 2;
 					}
 				}
 			}
 		}
-		else return _height;
-		
-		_height = height;
-		
-		return height;
+		return _heights;
+	}
+	
+	@Override
+	public void throwUpwards()
+	{
+		super.throwUpwards();
+//		velocity /= 2;
+	}
+	
+	@Override
+	public void detectCollisions(List<Bound> bounds)
+	{
+		collisions.clear();
+
+		for(Bound bound : bounds)
+			if(this.bound.testBound(bound))
+				collisions.add(bound);
 	}
 	
 	@Override
 	public void update(List<Bound> bounds)
 	{
 		if(thrown && falling) setPosition(getPositionVector());
-
 		if(falling) fall();
 		
-		detected.clear();
-
-		for(Bound bound : bounds)
-			if(this.bound.testBound(bound))
-				detected.add(bound);
-
-		super.update(bounds);
+		detectCollisions(bounds);
+		resolveCollisions();
 
 		getHeights();
 		if(thrown) setRotation(0, trajectory, -45);

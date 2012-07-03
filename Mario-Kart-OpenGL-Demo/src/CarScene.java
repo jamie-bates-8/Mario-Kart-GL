@@ -1,6 +1,5 @@
 /** Utility imports **/
 import static graphics.util.Renderer.*;
-import static graphics.util.Vector.*;
 
 /** Native Java imports **/
 import graphics.util.Face;
@@ -25,8 +24,6 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -93,8 +90,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	private Texture yellowMetal;
 	
 	private TextRenderer renderer;
-	
-	private ItemRoulette roulette;
+
 	
 	/** Model Fields **/
 	private boolean displayModels = true;
@@ -106,6 +102,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	private int fortList;
 	
 	private Car car;
+	
+	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 
 	private ItemBox[] itemBoxes;
 	
@@ -117,7 +115,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	private float yRotation_Camera = 0.0f;
 	private float zRotation_Camera = 0.0f;
 	
-	private float zoom = 1;
+	private float zoom = 0.75f;
 	
 	
 	/** Fog Fields **/
@@ -162,7 +160,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	
 	private boolean enableObstacles = true;
 	
-	private OBB[] wallBounds;
+	private List<OBB> wallBounds;
+	
 	
 	/** Music Fields **/
 	private boolean musicPlaying = false;
@@ -170,13 +169,14 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			"file:///C://Users//Jamie//Documents//Java_Workspace" +
 			"//Computer Graphics//Mute City.mp3";
 	
-	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 	
 	private List<Particle> particles = new ArrayList<Particle>();
 
-	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
 	
+	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
+	private ItemRoulette roulette;
 	private List<Item> items = new ArrayList<Item>();
+	
 	
 	public CarScene()
 	{
@@ -309,101 +309,38 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	    new Banana(gl, null, ORIGIN, 0, 0);
 	    
 	    new BoostParticle(ORIGIN, null, 0, 0, 0, false);
-	    new LightningParticle(ORIGIN, null, 0, 0);
+	    new LightningParticle(ORIGIN);
 	    new StarParticle(ORIGIN, null, 0, 0);
 	    
-	    car = new Car(gl, new float[] {0, 2.0f, 0}, 0, 0, 0, items, particles);
+	    car = new Car(gl, new float[] {0, 1.8f, 0}, 0, 0, 0, items, particles);
 	    
 		roulette = new ItemRoulette();
 	    
 	    itemBoxes = new ItemBox[]
-	    	{new ItemBox(gl, new float[] {       0, 25,  46.875f}),
-	    	 new ItemBox(gl, new float[] {       0, 25, -46.875f}),
-	    	 new ItemBox(gl, new float[] { 46.875f, 25,        0}),
-	    	 new ItemBox(gl, new float[] {-46.875f, 25,        0}),
+	    	{new ItemBox(gl, new float[] {      0, 30,  56.25f}),
+	    	 new ItemBox(gl, new float[] {      0, 30, -56.25f}),
+	    	 new ItemBox(gl, new float[] { 56.25f, 30,       0}),
+	    	 new ItemBox(gl, new float[] {-56.25f, 30,       0}),
 	    	 
-	    	 new ItemBox(gl, new float[] { 84.375f, 50,  84.375f}),
-	    	 new ItemBox(gl, new float[] { 84.375f, 50, -84.375f}),
-	    	 new ItemBox(gl, new float[] {-84.375f, 50, -84.375f}),
-	    	 new ItemBox(gl, new float[] {-84.375f, 50,  84.375f}),
+	    	 new ItemBox(gl, new float[] { 101.25f, 60,  101.25f}),
+	    	 new ItemBox(gl, new float[] { 101.25f, 60, -101.25f}),
+	    	 new ItemBox(gl, new float[] {-101.25f, 60, -101.25f}),
+	    	 new ItemBox(gl, new float[] {-101.25f, 60,  101.25f}),
 	    	 
-	    	 new ItemBox(gl, new float[] { 103.125f, 25,  103.125f}),
-	    	 new ItemBox(gl, new float[] { 103.125f, 25, -103.125f}),
-	    	 new ItemBox(gl, new float[] {-103.125f, 25, -103.125f}),
-	    	 new ItemBox(gl, new float[] {-103.125f, 25,  103.125f}),
+	    	 new ItemBox(gl, new float[] { 123.75f, 30,  123.75f}),
+	    	 new ItemBox(gl, new float[] { 123.75f, 30, -123.75f}),
+	    	 new ItemBox(gl, new float[] {-123.75f, 30, -123.75f}),
+	    	 new ItemBox(gl, new float[] {-123.75f, 30,  123.75f}),
 	    	 
-	    	 new ItemBox(gl, new float[] {   0, 0, -150}),
-	    	 new ItemBox(gl, new float[] {   0, 0,  150}),
-	    	 new ItemBox(gl, new float[] {-150, 0,    0}),
-	    	 new ItemBox(gl, new float[] { 150, 0,    0})};
+	    	 new ItemBox(gl, new float[] {   0, 0, -180}),
+	    	 new ItemBox(gl, new float[] {   0, 0,  180}),
+	    	 new ItemBox(gl, new float[] {-180, 0,    0}),
+	    	 new ItemBox(gl, new float[] { 180, 0,    0})};
 	    
+	    wallBounds = BoundParser.parseOBBs("bound/blockFort.bound");
+	   
 	    long endTime = System.currentTimeMillis();
-	    
 	    System.out.println(endTime - startTime);
-	    
-	    wallBounds = new OBB[]
-			{new OBB(      0,    -10,       0,      0, 0,       0,    150, 10,    150),
-	    		
-	    	 //Main walls	
-	    	 new OBB(      0,     30,  137.5f,      0, 0,       0, 135.0f, 30,   2.5f),
-	    	 new OBB(      0,     30, -137.5f,      0, 0,       0, 135.0f, 30,   2.5f),
-	    	 new OBB( 137.5f,     30,       0,      0, 0,       0,   2.5f, 30, 135.0f),
-	    	 new OBB(-137.5f,     30,       0,      0, 0,       0,   2.5f, 30, 135.0f),
-	    	 
-	    	 //Green Fort
-			 new OBB(  52.5f,     30,      60,      0, 0,       0,  22.5f, 10,     15),
-			 new OBB(  67.5f,     30,   37.5f,      0, 0,       0,   7.5f, 10,   7.5f, new boolean[] {false, true, true, true, true, true}),
-			 new OBB(  46.8f,  19.2f,   37.5f,      0, 0,  33.69f,  22.5f, 10,   7.5f, new boolean[] {true, false, true, true, true, true}),
-			 new OBB(  52.5f,     10,   52.5f,      0, 0,       0,  37.5f, 10,  37.5f),
-			 new OBB(  37.5f,     10,   97.5f,      0, 0,       0,  22.5f, 10,   7.5f, new boolean[] {true, false, true, true, true, true}),
-			 new OBB(  97.5f,     10,   37.5f,      0, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, true, false}),
-			 new OBB(  73.2f, -0.81f,   97.5f,      0, 0, -33.69f,  22.5f, 10,   7.5f, new boolean[] {false, true, true, true, true, true}),
-			 new OBB(  97.5f, -0.81f,   73.2f, 33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, false, true}),
-			 new OBB(      0,     18,   37.5f,      0, 0,       0,     15,  2,   7.5f),
-			 new OBB(      0,     38,   67.5f,      0, 0,       0,     30,  2,   7.5f),
-			 
-			 //Blue Fort
-			 new OBB(    -60,     30,   52.5f,       0, 0,       0,     15, 10,  22.5f),
-			 new OBB( -37.5f,     30,   67.5f,       0, 0,       0,   7.5f, 10,   7.5f, new boolean[] {true, true, true, true, false, true}), //top
-			 new OBB( -37.5f,  19.2f,   46.8f, -33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, true, false}), //top slope
-			 new OBB( -52.5f,     10,   52.5f,       0, 0,       0,  37.5f, 10,  37.5f),
-			 new OBB( -37.5f,     10,   97.5f,       0, 0,       0,  22.5f, 10,   7.5f, new boolean[] {false, true, true, true, true, true}), //side
-			 new OBB( -97.5f,     10,   37.5f,       0, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, true, false}), //back
-			 new OBB( -73.2f, -0.81f,   97.5f,       0, 0,  33.69f,  22.5f, 10,   7.5f, new boolean[] {true, false, true, true, true, true}), //side slope
-			 new OBB( -97.5f, -0.81f,   73.2f,  33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, false, true}), //back slope
-			 new OBB( -37.5f,     18,       0,       0, 0,       0,   7.5f,  2,     15),
-			 new OBB( -67.5f,     38,       0,       0, 0,       0,   7.5f,  2,     30),
-			 
-			 //Red Fort
-			 new OBB( -52.5f,     30,     -60,      0, 0,       0,  22.5f, 10,     15),
-			 new OBB( -67.5f,     30,  -37.5f,      0, 0,       0,   7.5f, 10,   7.5f, new boolean[] {true, false, true, true, true, true}),
-			 new OBB( -46.8f,  19.2f,  -37.5f,      0, 0, -33.69f,  22.5f, 10,   7.5f, new boolean[] {false, true, true, true, true, true}),
-			 new OBB( -52.5f,     10,  -52.5f,      0, 0,       0,  37.5f, 10,  37.5f),
-			 new OBB( -37.5f,     10,  -97.5f,      0, 0,       0,  22.5f, 10,   7.5f, new boolean[] {false, true, true, true, true, true}),
-			 new OBB( -97.5f,     10,  -37.5f,      0, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, false, true}),
-			 new OBB( -73.2f, -0.81f,  -97.5f,      0, 0,  33.69f,  22.5f, 10,   7.5f, new boolean[] {true, false, true, true, true, true}),
-			 new OBB( -97.5f, -0.81f,  -73.2f,-33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, true, false}),
-			 new OBB(      0,     18,  -37.5f,      0, 0,       0,     15,  2,   7.5f),
-			 new OBB(      0,     38,  -67.5f,      0, 0,       0,     30,  2,   7.5f),
-			 
-			 //Yellow Fort
-			 new OBB(     60,     30,  -52.5f,       0, 0,       0,     15, 10,  22.5f),
-			 new OBB(  37.5f,     30,  -67.5f,       0, 0,       0,   7.5f, 10,   7.5f, new boolean[] {true, true, true, true, true, false}),
-			 new OBB(  37.5f,  19.2f,  -46.8f,  33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, false, true}),
-			 new OBB(  52.5f,     10,  -52.5f,       0, 0,       0,  37.5f, 10,  37.5f),
-			 new OBB(  37.5f,     10,  -97.5f,       0, 0,       0,  22.5f, 10,   7.5f, new boolean[] {true, false, true, true, true, true}),
-			 new OBB(  97.5f,     10,  -37.5f,       0, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, false, true}),
-			 new OBB(  73.2f, -0.81f,  -97.5f,       0, 0, -33.69f,  22.5f, 10,   7.5f, new boolean[] {false, true, true, true, true, true}),
-			 new OBB(  97.5f, -0.81f,  -73.2f, -33.69f, 0,       0,   7.5f, 10,  22.5f, new boolean[] {true, true, true, true, true, false}),
-			 new OBB(  37.5f,     18,       0,       0, 0,       0,   7.5f,  2,     15),
-			 new OBB(  67.5f,     38,       0,       0, 0,       0,   7.5f,  2,     30)};
-			 
-	    
-	    for(OBB obb : wallBounds)
-	    {
-	    	obb.c = multiply(obb.c, 1.25f);
-	    	obb.e = multiply(obb.e, 1.25f);
-	    }
 	    
 	    try { heightMap = ImageIO.read(new File("tex/blockFortMap.png")); }
 	    catch (IOException e) { e.printStackTrace(); }
@@ -436,29 +373,19 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			
 			if(itemID == 10) cloud_density = 0.5f;
 			else car.registerItem(gl, itemID);
-		}
-			
+		}	
 		
 		if(enableAnimation)
 		{	
 			removeItems();
-			
 			removeParticles();
 			
 			updateItemBoxes();
-			detectCollisions();
 			updateItems();
 			
-			for(Particle p : particles)
-				p.update();
+			for(Particle p : particles) p.update();
 			
-			
-			// Update the vehicle's position
-			if(camera != CameraMode.MODEL_VIEW)
-			{
-				car.setRotation(car.getRotationAngles(car.getHeights()));	
-				car.drive(); 
-			}
+			if(camera != CameraMode.MODEL_VIEW) car.update(getObstacleBounds()); 
 		}
 		
 		recordTracks();
@@ -481,8 +408,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		}
 		
 		long end = System.currentTimeMillis();
-		
-		System.out.println(end - start);
+//		System.out.println(end - start);
 		
 		calculateFPS();
 	}
@@ -501,7 +427,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		gl.glViewport(0, 0, width, height);
 		gl.glMatrixMode(GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(100.0f, ratio, 2.0, 600.0);
+		glu.gluPerspective(100.0f, ratio, 2.0, 700.0);
 		gl.glMatrixMode(GL_MODELVIEW);
 		gl.glLoadIdentity();
 		
@@ -623,13 +549,6 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		car.removeItems();
 	}
 	
-	private void detectCollisions()
-	{	
-		List<Bound> bounds = getObstacleBounds();
-		
-		if(enableCollisions) car.update(bounds);
-	}
-	
 	public void renderParticles(GL2 gl)
 	{
 		for(Particle particle : particles)
@@ -720,6 +639,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		
 		renderer.draw("Colliding: " + car.colliding, 40, 240);
 		renderer.draw("Falling: " + car.falling, 40, 280);
+		renderer.draw("Zoom: " + String.format("%.2f", zoom), 40, 320);
 		
 		renderer.endRendering();
 	}
@@ -729,7 +649,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(0, 0, 0);
-			gl.glScalef(35.0f, 35.0f, 35.0f);
+			gl.glScalef(40.0f, 40.0f, 40.0f);
 
 			if(enableSkybox)
 				gl.glCallList(environmentList);
@@ -741,8 +661,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			gl.glPushMatrix();
 			{
 				//Fort Transformations
-				gl.glTranslatef(75, 25, 75);
-				gl.glScalef(25.0f, 25.0f, 25.0f);
+				gl.glTranslatef(90, 30, 90);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
 	
 				gl.glCallList(fortList);
 			}	
@@ -750,9 +670,9 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	
 			gl.glPushMatrix();
 			{
-				gl.glTranslatef(-75, 25, 75);
+				gl.glTranslatef(-90, 30, 90);
 				gl.glRotatef(-90, 0, 1, 0);
-				gl.glScalef(25.0f, 25.0f, 25.0f);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
 	
 				gl.glCallList(fortList + 1);
 			}	
@@ -760,19 +680,20 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	
 			gl.glPushMatrix();
 			{
-				gl.glTranslatef(-75, 25, -75);
+				gl.glTranslatef(-90, 30, -90);
 				gl.glRotatef(-180, 0, 1, 0);
-				gl.glScalef(25.0f, 25.0f, 25.0f);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
 	
 				gl.glCallList(fortList + 2);
 			}	
 			gl.glPopMatrix();
-						
+			
+
 			gl.glPushMatrix();
 			{
-				gl.glTranslatef(75, 25, -75);
+				gl.glTranslatef(90, 30, -90);
 				gl.glRotatef(-270, 0, 1, 0);
-				gl.glScalef(25.0f, 25.0f, 25.0f);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
 	
 				gl.glCallList(fortList + 3);
 			}	
@@ -783,10 +704,10 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	    	 
 		gl.glPushMatrix();
 		{
-			displayTexturedCuboid(gl,       0, 37.5,  171.88, 168.75, 37.5,  3.125,  0, textures);
-			displayTexturedCuboid(gl,       0, 37.5, -171.88, 168.75, 37.5,  3.125,  0, textures);
-	    	displayTexturedCuboid(gl,  171.88, 37.5,       0, 168.75 ,37.5,  3.125, 90, textures);
-	    	displayTexturedCuboid(gl, -171.88, 37.5,       0, 168.75 ,37.5,  3.125, 90, textures);
+			displayTexturedCuboid(gl,       0, 45,  206.25, 202.5, 45,  3.75,  0, textures);
+			displayTexturedCuboid(gl,       0, 45, -206.25, 202.5, 45,  3.75,  0, textures);
+	    	displayTexturedCuboid(gl,  206.25, 45,       0, 202.5, 45,  3.75, 90, textures);
+	    	displayTexturedCuboid(gl, -206.25, 45,       0, 202.5, 45,  3.75, 90, textures);
 		}
 		gl.glPopMatrix();
 
@@ -802,8 +723,11 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	private List<Bound> getObstacleBounds()
 	{
 		List<Bound> bounds = new ArrayList<Bound>();
-		if(enableObstacles) Collections.addAll(bounds, wallBounds);
-		else Collections.addAll(bounds, Arrays.copyOfRange(wallBounds, 0, 5));
+//		if(enableObstacles) Collections.addAll(bounds, wallBounds);
+//		else Collections.addAll(bounds, Arrays.copyOfRange(wallBounds, 0, 5));
+		
+		if(enableObstacles) bounds.addAll(wallBounds);
+		else bounds.addAll(wallBounds.subList(0, 5));
 		
 		return bounds;
 	}
@@ -885,7 +809,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			case DYNAMIC_VIEW:
 			{
 				float[] p = car.getPosition();
-
+				
 				gl.glTranslatef(0, -15.0f * zoom, -30.0f * zoom);
 				if(car.isSlipping()) gl.glRotated(car.slipTrajectory, 0.0f, -1.0f, 0.0f);
 				else gl.glRotated(car.trajectory, 0.0f, -1.0f, 0.0f);
@@ -982,7 +906,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		
 		gl.glMatrixMode(GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(100.0f, ratio, 2.0, 600.0);
+		glu.gluPerspective(100.0f, ratio, 2.0, 700.0);
 		gl.glMatrixMode(GL_MODELVIEW);
 		gl.glLoadIdentity();
 		gl.glEnable(GL_DEPTH_TEST);

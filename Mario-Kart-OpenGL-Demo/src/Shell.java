@@ -1,13 +1,8 @@
 import static graphics.util.Renderer.displayColoredObject;
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.multiply;
-import static graphics.util.Vector.subtract;
-import static java.lang.Math.atan;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-import static java.lang.Math.toDegrees;
-import static java.lang.Math.toRadians;
 import graphics.util.Face;
+import static graphics.util.Matrix.*;
 
 import java.util.List;
 
@@ -46,10 +41,7 @@ public abstract class Shell extends Item
 	}
 
 	@Override
-	public void render(GL2 gl)
-	{
-		
-	}
+	public void render(GL2 gl) {}
 
 	@Override
 	public void hold()
@@ -59,14 +51,11 @@ public abstract class Shell extends Item
 			rotation -= 10;
 			float radius = car.bound.e[0] * 1.1f + Shell.RADIUS;
 			
-			float c = (float) cos(toRadians(rotation));
-			float s = (float) sin(toRadians(rotation));
-					
-			float x = car.getPosition()[0] + radius * c;
-			float y = car.getPosition()[1];
-			float z = car.getPosition()[2] + radius * s;
-
-			setPosition(x, y, z);
+			float[] p = multiply(car.bound.u[0], radius);
+			
+			p = multiply(p, getRotationMatrix(car.bound.u[1], rotation));
+			
+			setPosition(add(car.getPosition(), p));
 		}
 		else
 		{	
@@ -84,27 +73,5 @@ public abstract class Shell extends Item
 			this.destroy();
 			item.destroy();
 		}
-	}
-	
-	public float[][] getAxisVectors()
-	{
-		return new float[][]
-		{
-			subtract(bound.c, multiply(u[0],  RADIUS)), //front
-				 add(bound.c, multiply(u[0],  RADIUS)), //back
-				 add(bound.c, multiply(u[2],  RADIUS)), //left
-			subtract(bound.c, multiply(u[2],  RADIUS)), //right
-		};
-	}
-	
-	public float[] getRotationAngles(float[] heights)
-	{
-		float diameter = Shell.RADIUS * 2;
-
-		float xrot = (float) -toDegrees(atan((heights[2] - heights[3]) / diameter));
-		float yrot = trajectory;
-		float zrot = (float) -toDegrees(atan((heights[0] - heights[1]) / diameter));
-		
-		return new float[] {xrot, yrot, zrot};
 	}
 }

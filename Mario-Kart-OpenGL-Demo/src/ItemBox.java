@@ -1,4 +1,4 @@
-import static graphics.util.Matrix.getRotationMatrix33;
+import static graphics.util.Matrix.getRotationMatrix;
 import static graphics.util.Renderer.*;
 import graphics.util.Face;
 
@@ -46,7 +46,7 @@ public class ItemBox
 	
 	public void setRotation(float x, float y, float z)
 	{	
-		bound.u = getRotationMatrix33(x, y, z);
+		bound.u = getRotationMatrix(x, y, z);
 	}
 	
 	public List<Particle> generateParticles()

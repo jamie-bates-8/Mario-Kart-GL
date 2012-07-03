@@ -21,9 +21,9 @@ public class LightningParticle extends Particle
 		catch (Exception e) { e.printStackTrace(); }
 	}
 
-	public LightningParticle(float[] c, float[] t, float rotation, int duration)
+	public LightningParticle(float[] c)
 	{
-		super(c, t, rotation, duration);
+		super(c, new float[] {0, 0, 0}, 0, 20);
 	}
 
 	@Override

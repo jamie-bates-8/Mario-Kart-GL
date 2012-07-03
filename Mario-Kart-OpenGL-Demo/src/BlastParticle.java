@@ -7,9 +7,9 @@ import javax.media.opengl.GL2;
 import static graphics.util.Vector.multiply;
 
 
-public class SmokeParticle extends Particle
+public class BlastParticle extends Particle
 {
-	public SmokeParticle(float[] c, float[] t, float rotation, int duration)
+	public BlastParticle(float[] c, float[] t, float rotation, int duration)
 	{
 		super(c, t, rotation, duration);
 	}

@@ -15,9 +15,9 @@ public class DriftParticle extends Particle
 	private int color;
 	private boolean flat;
 	
-	public DriftParticle(float[] c, float[] t, float rotation, int duration, int color, boolean flat)
+	public DriftParticle(float[] c, float rotation, int color, boolean flat)
 	{
-		super(c, t, rotation, duration);
+		super(c, new float[] {0, 0, 0}, rotation, 0);
 		
 		this.color = color;
 		this.flat = flat;

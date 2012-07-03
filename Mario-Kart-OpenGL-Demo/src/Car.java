@@ -8,6 +8,7 @@ import static graphics.util.Renderer.*;
 import graphics.util.Face;
 import graphics.util.Vector;
 
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -18,6 +19,7 @@ import javax.media.opengl.GL2;
 
 public class Car
 {
+	/** Model Fields **/
 	private static final List<Face> CAR_FACES         = OBJParser.parseTriangles("obj/car.obj");
 	private static final List<Face> WHEEL_FACES       = OBJParser.parseTriangles("obj/wheel.obj");
 	private static final List<Face> WINDOW_FACES      = OBJParser.parseTriangles("obj/windows.obj");
@@ -28,13 +30,17 @@ public class Car
 	
 	private static int carList;
 	
+	private float[] color = {1.0f, 0.4f, 0.4f};
+	private float[] windowColor = {0.4f, 0.8f, 1.0f};
+	
+	public boolean displayModel = true;
+	
+	
 	/** Vehicle Fields **/
 	public float trajectory; 
 	
 	private float scale = 1.5f;
 	
-	
-	/** Wheel Fields **/
 	private float yRotation_Wheel = 0.0f;
 	private float zRotation_Wheel = 0.0f;
 	
@@ -44,30 +50,26 @@ public class Car
 		 { 2.4f, -0.75f, -1.75f},  //back-right
 		 {-2.4f, -0.75f, -1.75f}}; //front-right
 	
-	
-	/** Door Fields **/
 	private float[] offsets_LeftDoor =  {-1.43f, 0.21f,  1.74f};
 	private float[] offsets_RightDoor = {-1.43f, 0.21f, -1.74f};
 	
 	
 	/** Fields that define the vehicle's motion **/
-	public float velocity;
+	public float velocity = 0;
 	public static final float TOP_SPEED = 1.2f;
-	
 	private double acceleration = 0.012;
-	public boolean accelerating;
-	public boolean reversing;
+	public boolean accelerating = false;
+	public boolean reversing = false;
 	
 	private double gravity = 0.05;
 	public boolean falling = false;
 	private float fallRate = 0.0f;
 	private static final double TOP_FALL_RATE = 5.0;
 	
-	private double turnRate;
+	private double turnRate = 0;
 	private static final double TOP_TURN_RATE = 2.0;
-	
 	private double turnIncrement = 0.1;
-	public boolean turning;
+	public boolean turning = false;
 	
 	private enum Direction {STRAIGHT, LEFT, RIGHT};
 	private Direction direction = Direction.STRAIGHT;
@@ -77,23 +79,25 @@ public class Car
 	private enum DriftState {YELLOW, RED, BLUE};
 	private DriftState driftState = DriftState.YELLOW;
 	
-	public double distance;
+	public double distance = 0;
 	
-	public boolean displayModel;
 	
+	/** Collision Detection Fields **/
 	public OBB bound;
-	public boolean colliding;
-	
+	public boolean colliding = false;
 	public List<Bound> detected = new ArrayList<Bound>();
 	public float[] _heights = {0, 0, 0, 0};
 	
-	private ItemState itemState;
 	
+	/** Particle Fields **/
+	private List<Particle> particles;
+	private ParticleGenerator generator = new ParticleGenerator();
+	
+	
+	/** Item Fields **/
+	private ItemState itemState = ItemState.NO_ITEM;
 	public Queue<Item> items = new LinkedList<Item>();
 	public List<Item> worldItems;
-	
-	private List<Particle> particles;
-	private ParticleGenerator generator;
 	
 	private boolean slipping = false;
 	private float[] slipVector = ORIGIN;
@@ -127,8 +131,6 @@ public class Car
 	private enum Aim {FORWARDS, DEFAULT, BACKWARDS};
 	private Aim aiming = Aim.DEFAULT;
 	
-	private float[] color = {1.0f, 0.4f, 0.4f};
-	private float[] windowColor = {0.4f, 0.8f, 1.0f};
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, List<Item> worldItems, List<Particle> particles)
 	{
@@ -138,31 +140,23 @@ public class Car
 	    displayPartiallyTexturedObject(gl, CAR_FACES, color);
 	    gl.glEndList();
 	    
-	    this.particles = particles;
-	    generator = new ParticleGenerator();
-		
-	    turnRate = 0.0;
-	    trajectory = yrot;
-		velocity = 0.0f;
-		turning = false;
-		reversing = false;
-		accelerating = false;
-		colliding = false;
-		displayModel = true;
-		itemState = ItemState.NO_ITEM;
-		distance = 0.0;
-		this.worldItems = worldItems;
-		
-		bound = new OBB(
+	    bound = new OBB(
 				c[0], c[1], c[2],
 	    		xrot, yrot, zrot,
 	    		5.5f, 2.0f, 2.7f);
+	    
+	    this.worldItems = worldItems;
+	    this.particles = particles;
+		
+	    trajectory = yrot;	
 	}
 	
 	public float[][] getRotation() { return bound.u; }
 	
 	public void aimForwards()  { aiming = Aim.FORWARDS;  }
+	
 	public void aimBackwards() { aiming = Aim.BACKWARDS; }
+	
 	public void resetAim()     { aiming = Aim.DEFAULT;   }
 	
 	public void removeItems()
@@ -224,13 +218,9 @@ public class Car
 				BlueShell shell =
 					new BlueShell(gl, this, ORIGIN, trajectory, this, particles);
 					
-				shell.setPosition(getUpItemVector(shell));
-				shell.setRotation(0, trajectory, -45);
-				
-				shell.velocity = TOP_SPEED * 1.5f + abs(velocity);
+				shell.throwUpwards();
 					
 				worldItems.add(shell);
-
 				break;
 			}
 			default: break;
@@ -248,92 +238,48 @@ public class Car
 			case TWO_ORBITING_RED_SHELLS:
 			case ONE_ORBITING_RED_SHELL:
 			{			
-				if(items.peek() instanceof Shell)
+				Shell shell = (Shell) items.remove();
+					
+				switch(aiming)
 				{
-					Shell shell = (Shell) items.remove();
-					
-					shell.orbiting = false;
-					
-					switch(aiming)
-					{
-						case FORWARDS:
-						case DEFAULT:
-						{	
-							shell.trajectory = trajectory;
-							shell.setPosition(getForwardItemVector(shell));
-							shell.setRotation(0, trajectory, 0);
-							break;
-						}
-						case BACKWARDS:
-						{
-							shell.trajectory = trajectory - 180;
-							shell.setPosition(getBackwardItemVector(shell));
-							shell.setRotation(0, trajectory - 180, 0);
-							break;
-						}
-					}
-					
-					worldItems.add(shell);
+					case FORWARDS:
+					case DEFAULT:   shell.throwForwards();  break;
+					case BACKWARDS: shell.throwBackwards(); break;
 				}
+					
+				worldItems.add(shell);
 				break;
 			}
+			
 			case ONE_MUSHROOM:
 			case TWO_MUSHROOMS:
-			case THREE_MUSHROOMS:
-			{	
-				boost();
-				break;
-			}	
-			case GOLDEN_MUSHROOM:
-			{
-				superBoosting = true;
-				boost();
-				break;
-			}
+			case THREE_MUSHROOMS: boost(); break;
+
+			case GOLDEN_MUSHROOM: superBoosting = true; break;
 			
 			case ONE_BANANA:
 			case TWO_BANANAS:
 			case THREE_BANANAS:
 			{
-				if(items.peek() instanceof Banana)
+				Banana banana = (Banana) items.remove();
+					
+				switch(aiming)
 				{
-					Banana banana = (Banana) items.remove();
-					
-					switch(aiming)
-					{
-						case FORWARDS:
-						{
-							banana.setRotation(0, trajectory, -45);
-							banana.setPosition(getUpItemVector(banana));
-							banana.velocity = TOP_SPEED * 1.5f + abs(velocity);
-						}
-					}
-					
-					worldItems.add(banana);
+					case FORWARDS: banana.throwUpwards(); break;
 				}
+					
+				worldItems.add(banana);
 				break;
 			}
-			case LIGHTNING_BOLT:
-			{
-				struckByLightning();
-				break;
-			}
-			case POWER_STAR:
-			{
-				useStar();
-				break;
-			}
-			case BOO:
-			{
-				invisible = true;
-				booDuration = 400;
-				break;
-			}
+			
+			case LIGHTNING_BOLT: useLightningBolt(); break;
+			case POWER_STAR: usePowerStar(); break;
+			case BOO: useBoo(); break;
 		}
 		
 		itemState = ItemState.press(itemState);
 	}
-	
+
 	public void releaseItem()
 	{
 		switch(itemState)
@@ -341,91 +287,48 @@ public class Car
 			case HOLDING_GREEN_SHELL:
 			case HOLDING_RED_SHELL:
 			{			
-				if(items.peek() instanceof Shell)
-				{
-					Shell shell = (Shell) items.remove();
-					
-					switch(aiming)
-					{
-						case FORWARDS:
-						case DEFAULT:
-						{	
-							shell.trajectory = trajectory;
-							shell.setPosition(getForwardItemVector(shell));
-							shell.setRotation(0, trajectory, 0);
-							break;
-						}
-						case BACKWARDS:
-						{
-							shell.trajectory = trajectory - 180;
-							shell.setPosition(getBackwardItemVector(shell));
-							shell.setRotation(0, trajectory - 180, 0);
-							break;
-						}
-					}
-					
-					worldItems.add(shell);
-				}
+				Shell shell = (Shell) items.remove();
 				
-				break;
-			}
-			case FAKE_ITEM_BOX:
-			{
-				if(items.peek() instanceof FakeItemBox)
+				switch(aiming)
 				{
-					FakeItemBox box = (FakeItemBox) items.remove();
-	
-					switch(aiming)
-					{
-						case FORWARDS:
-						{
-							box.setRotation(0, trajectory, -45);
-							box.setPosition(getUpItemVector(box));
-							box.velocity = TOP_SPEED * 1.5f + abs(velocity);
-						}
-					}
-					
-					worldItems.add(box);
+					case FORWARDS:
+					case DEFAULT:   shell.throwForwards();  break;
+					case BACKWARDS: shell.throwBackwards(); break;
 				}
+					
+				worldItems.add(shell);
 				break;
 			}
+			
+			case FAKE_ITEM_BOX:
 			case HOLDING_BANANA:
 			{
-				if(items.peek() instanceof Banana)
+				Item item = items.remove();
+					
+				switch(aiming)
 				{
-					Banana banana = (Banana) items.remove();
-					
-					switch(aiming)
-					{
-						case FORWARDS:
-						{
-							banana.setRotation(0, trajectory, -45);
-							banana.setPosition(getUpItemVector(banana));
-							banana.velocity = TOP_SPEED * 1.5f + abs(velocity);
-						}
-					}
-					
-					worldItems.add(banana);
+					case FORWARDS: item.throwUpwards(); break;
 				}
+						
+				worldItems.add(item);
 				break;
 			}
-			case GOLDEN_MUSHROOM:
-			{
-				superBoosting = false;
-				break;
-			}
+
+			case GOLDEN_MUSHROOM: superBoosting = false; break;
 		}
 		
 		itemState = ItemState.release(itemState);
 	}
+	
+	public float getThrowVelocity() { return TOP_SPEED * 1.5f + abs(velocity); }
 
-	public void setRotation(float x, float y, float z) { bound.u = getRotationMatrix33(x, y, z); }
+	public void setRotation(float x, float y, float z) { bound.u = getRotationMatrix(x, y, z); }
 	
 	public float[] getForwardVector() { return multiply(bound.u[0], velocity); }
 	
 	public float[] getSlipVector() { return subtract(bound.c, multiply(slipVector, velocity)); }
 	
-	public void setRotation(float[] angles) { bound.u = getRotationMatrix33(angles[0], angles[1], angles[2]); }
+	public void setRotation(float[] angles) { bound.u = getRotationMatrix(angles[0], angles[1], angles[2]); }
 	
 	public void setPosition(float[] c) { bound.setPosition(c); }
 	
@@ -453,11 +356,11 @@ public class Car
 						
 						for(int i = 0; i < 4; i++)
 						{
-							float h = b.perimeterPointToPoint(vertices[i])[1];
+							float h = b.closestPointOnPerimeter(vertices[i])[1];
 							if(h > heights[i]) heights[i] = h;
 						}
 			
-						float h = b.perimeterPointToPoint(getPosition())[1] + (bound.e[1] * 0.9f);
+						float h = b.closestPointOnPerimeter(getPosition())[1] + (bound.e[1] * 0.9f);
 						if(h > bound.c[1]) bound.c[1] = h;
 						
 						falling = false;
@@ -495,7 +398,7 @@ public class Car
 			 ***************************/
 
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glMultMatrixf(getRotationMatrix44(bound.u), 0);
+			gl.glMultMatrixf(getRotationMatrix(bound.u), 0);
 			gl.glScalef(scale, scale, scale);
 			//Display the car model by calling a display list
 			if(displayModel)
@@ -670,7 +573,7 @@ public class Car
 		spectrum = spectrum % 6;
 	}
 
-	public void update(List<Bound> bounds)
+	public void detectCollisions(List<Bound> bounds)
 	{
 		colliding = false;
 		
@@ -684,7 +587,10 @@ public class Car
 				detected.add(bound);
 			}
 		}
-		
+	}
+
+	private void resolveCollisions()
+	{
 		List<float[]> vectors = new ArrayList<float[]>();
 		
 		for(Bound bound : detected)
@@ -723,8 +629,13 @@ public class Car
 		}
 	}
 
-	public void drive()
+	public void update(List<Bound> bounds)
 	{
+		setRotation(getRotationAngles(getHeights()));
+		
+		detectCollisions(bounds);
+		resolveCollisions();
+		
 		if(superBoosting && !slipping) boost();
 		
 		if(accelerating && !slipping) accelerate();
@@ -740,7 +651,7 @@ public class Car
 		if     (drift == Direction.LEFT ) turnLeft();
 		else if(drift == Direction.RIGHT) turnRight();
 		
-		else if(turning && accelerating && !slipping)
+		else if(turning && velocity != 0 && !slipping)
 		{
 			if(direction == Direction.LEFT) turnLeft();
 			else turnRight();
@@ -756,6 +667,7 @@ public class Car
 	
 		if(!slipping) setPosition(getPositionVector());
 		else setPosition(getSlipVector());
+		
 		distance += velocity;
 		
 		turnWheels();
@@ -791,7 +703,7 @@ public class Car
 		if(boosting)
 		{
 			for(float[] source : getBoostVectors())
-				particles.addAll(generator.generateBoostParticles(source, boostDuration / 4, superBoosting));	
+				particles.addAll(generator.generateBoostParticles(source, boostDuration / 4, superBoosting));
 		}
 		
 		if(curseDuration > 0) curseDuration--;
@@ -966,8 +878,8 @@ public class Car
 
 	public float[] getPositionVector()
 	{
-		float _velocity = (miniature) ? velocity * 0.75f : velocity;
-		_velocity = (starPower) ? _velocity * 1.25f : _velocity;
+		float _velocity = (miniature) ?  velocity * 0.75f :  velocity;
+		      _velocity = (starPower) ? _velocity * 1.25f : _velocity;
 		
 		return subtract(bound.c, multiply(bound.u[0], _velocity));
 	}
@@ -1032,23 +944,18 @@ public class Car
 	
 	public void reset()
 	{
-		bound.setRotation(0, 0, 0);
 		trajectory = 0;
-
-		bound.setPosition(new float[] {0, 2, 0});
 		
-		yRotation_Wheel = 0.0f;
-		zRotation_Wheel = 0.0f;
+		bound.setRotation(0, 0, 0);
+		bound.setPosition(ORIGIN);
+		
+		yRotation_Wheel = zRotation_Wheel = 0.0f;
 
-		velocity = 0.0f;
-		turnRate = 0.0;
-		accelerating = false;
-		reversing = false;
-		turning = false;
+		turnRate = velocity = 0.0f;
+		
+		accelerating = reversing = turning = false;
+		
 		direction = Direction.STRAIGHT;
-		distance = 0;
-		
-		displayModel = true;
 	}
 	
 	public void boost()
@@ -1070,7 +977,7 @@ public class Car
 		}
 	}
 	
-	public void struckByLightning()
+	public void useLightningBolt()
 	{
 		if(!starPower && !invisible)
 		{
@@ -1087,7 +994,7 @@ public class Car
 		}
 		
 		float[] source = getLightningVector(); 
-		particles.addAll(generator.generateLightningParticles(source, 1));
+		particles.add(new LightningParticle(source));
 	}
 	
 	public void curse()
@@ -1097,7 +1004,13 @@ public class Car
 		itemDuration = 0; 
 	}
 	
-	public void useStar()
+	private void useBoo()
+	{
+		invisible = true;
+		booDuration = 400;
+	}
+
+	public void usePowerStar()
 	{
 		starPower = true;
 		cursed = false;
@@ -1105,17 +1018,34 @@ public class Car
 		turnIncrement = 0.15;
 	}
 	
-	public boolean isSlipping() { return slipping; }
+	public boolean isSlipping()   { return slipping; }
 
-	public boolean isCursed() { return cursed; }
+	public boolean isCursed()     { return cursed; }
 	
-	public boolean isMiniature() { return miniature; }
+	public boolean isMiniature()  { return miniature; }
 	
 	public boolean hasStarPower() { return starPower; }
 	
-	public boolean isInvisible() { return invisible; }
+	public boolean isInvisible()  { return invisible; }
 	
-	public boolean isBoosting() { return boosting; }
+	public boolean isBoosting()   { return boosting; }
+
+	
+	public void keyPressed(KeyEvent e)
+	{
+		switch(e.getKeyCode())
+		{
+			case KeyEvent.VK_Q: if(turning && !falling) drift(); break;
+		}
+	}
+
+	public void keyReleased(KeyEvent e)
+	{
+		switch(e.getKeyCode())
+		{
+			case KeyEvent.VK_Q: miniTurbo(); break;
+		}
+	}
 }
 
 

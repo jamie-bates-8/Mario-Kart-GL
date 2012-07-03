@@ -1,9 +1,11 @@
-import static graphics.util.Matrix.getRotationMatrix33;
+import static graphics.util.Matrix.getRotationMatrix;
+import static graphics.util.Vector.add;
 import static graphics.util.Vector.getAngle;
 import static graphics.util.Vector.multiply;
 import static graphics.util.Vector.orient2D;
 import static graphics.util.Vector.subtract;
 import static graphics.util.Vector.dot;
+import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
 
 import java.util.ArrayList;
@@ -34,7 +36,8 @@ public abstract class Item
 	
 	public Bound bound;
 	public boolean colliding = false;
-	public List<Bound> detected = new ArrayList<Bound>();
+	public List<Bound> collisions = new ArrayList<Bound>();
+	protected float[] _heights = {0, 0, 0, 0};
 	
 	public boolean thrown = true;
 	
@@ -57,6 +60,29 @@ public abstract class Item
 	
 	public abstract void hold();
 	
+	public void throwForwards()
+	{
+		trajectory = car.trajectory;
+		setPosition(car.getForwardItemVector(this));
+		setRotation(0, trajectory, 0);
+	}
+	
+	public void throwBackwards()
+	{
+		trajectory = car.trajectory - 180;
+		setPosition(car.getBackwardItemVector(this));
+		setRotation(0, trajectory - 180, 0);
+	}
+	
+	public void throwUpwards()
+	{
+		trajectory = car.trajectory;
+		setPosition(car.getUpItemVector(this));
+		setRotation(0, trajectory, -45);
+		
+		velocity = car.getThrowVelocity();
+	}
+	
 	public void destroy() { dead = true; }
 	
 	public Bound getBound() { return bound; };
@@ -67,9 +93,9 @@ public abstract class Item
 	
 	public void setPosition(float[] p) { bound.setPosition(p); }
 	
-	public void setRotation(float x, float y, float z) { u = getRotationMatrix33(x, y, z); }
+	public void setRotation(float x, float y, float z) { u = getRotationMatrix(x, y, z); }
 	
-	public void setRotation(float[] angles) { u = getRotationMatrix33(angles[0], angles[1], angles[2]); }
+	public void setRotation(float[] angles) { u = getRotationMatrix(angles[0], angles[1], angles[2]); }
 	
 	public abstract void collide(Item item);
 	
@@ -85,39 +111,61 @@ public abstract class Item
 		return dot(p, p) > GLOBAL_RADIUS * GLOBAL_RADIUS;
 	} 
 	
-	public void update(List<Bound> bounds)
+	public abstract void update(List<Bound> bounds);
+	
+	public void resolveCollisions()
 	{
 		boolean _colliding = false;
 
-		if(!detected.isEmpty())
+		for(Bound bound : collisions)
 		{
-			for(Bound bound : detected)
+			if(bound instanceof OBB)
 			{
-				if(bound instanceof OBB)
+				OBB b = (OBB) bound;
+
+				float[] face = b.getFaceVector(getPosition());
+
+				if(b.isValidCollision(face))
 				{
-					OBB b = (OBB) bound;
-
-					float[] face = b.getFaceVector(getPosition());
-
-					if(b.isValidCollision(face))
+					if(Arrays.equals(face, b.getDownVector(1)))
 					{
-						if(!Arrays.equals(face, b.getUpVector(1)) && !Arrays.equals(face, b.getDownVector(1)))
-						{
-							if(!colliding) rebound(bound);
-							_colliding = true;
-						}
-						else if(Arrays.equals(face, b.getDownVector(1)))
-						{
-							if(this instanceof Shell) destroy();
-							else velocity = 0;
-							_colliding = true;
-						}
+						if(this instanceof Shell) destroy();
+						else velocity = 0;
+						_colliding = true;
 					}
+					else if(!Arrays.equals(face, b.getUpVector(1)))
+					{
+						if(!colliding) rebound(bound);
+						_colliding = true;
+					}	
 				}
 			}
-			if(_colliding) colliding = true;
 		}
-		if(!_colliding) colliding = false;
+		colliding = _colliding;
+	}
+	
+	public float[] getRotationAngles(float[] heights)
+	{
+		float diameter = getMaximumExtent() * 2;
+
+		float xrot = (float) -toDegrees(atan((heights[2] - heights[3]) / diameter));
+		float yrot = trajectory;
+		float zrot = (float) -toDegrees(atan((heights[0] - heights[1]) / diameter));
+		
+		return new float[] {xrot, yrot, zrot};
+	}
+	
+	public float[][] getAxisVectors()
+	{
+		float radius = getMaximumExtent();
+		
+		return new float[][]
+		{
+			subtract(bound.c, multiply(u[0],  radius)), //front
+				 add(bound.c, multiply(u[0],  radius)), //back
+				 add(bound.c, multiply(u[2],  radius)), //left
+			subtract(bound.c, multiply(u[2],  radius)), //right
+		};
 	}
 	 
 	public void rebound(Bound b)
@@ -131,7 +179,6 @@ public abstract class Item
 		float[] _t = subtract(t, getPosition()); //item translation vector
 		
 		float[] _i = subtract(ORIGIN, multiply(_t, 15)); //incident translation vector
-		
 		_i[1] = 0;
 		
 		double theta = toDegrees(getAngle(_n, _i));
@@ -142,6 +189,56 @@ public abstract class Item
 		double angle = (90 - theta) * 2;
 		
 		trajectory += (orient > 0) ? angle : -angle;
+		trajectory %= 360;
+	}
+	
+	public float[] getHeights()
+	{
+		float[] heights = {0, 0, 0, 0};
+		
+		falling = true;
+		
+		for(Bound _bound : collisions)
+		{
+			if(_bound instanceof OBB)
+			{		
+				OBB b = (OBB) _bound;
+					
+				float[] face = b.getFaceVector(getPosition());
+	
+				if(Arrays.equals(face, b.getUpVector(1)))
+				{
+					float[][] vertices = getAxisVectors();
+
+					for(int i = 0; i < 4; i++)
+					{
+						float h = b.closestPointOnPerimeter(vertices[i])[1];
+						if(h > heights[i]) heights[i] = h;
+					}
+
+					float h = b.closestPointOnPerimeter(getPosition())[1]
+							+ getMaximumExtent();
+					
+					if(h > bound.c[1]) bound.c[1] = h;
+
+					falling = thrown = false;
+					fallRate = 0;
+				}
+			}
+		}
+		
+		if(!collisions.isEmpty()) _heights = heights;
+		
+		return _heights;
+	}
+	
+	public void detectCollisions(List<Bound> bounds)
+	{
+		collisions.clear();
+
+		for(Bound bound : bounds)
+			if(bound.testBound(this.bound))
+				collisions.add(bound);
 	}
 	
 	public float[] getPositionVector() { return subtract(bound.c, multiply(u[0], velocity)); }

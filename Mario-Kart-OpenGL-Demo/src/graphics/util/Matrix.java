@@ -2,7 +2,6 @@ package graphics.util;
 
 import static java.lang.Math.*;
 
-
 public class Matrix
 {
 	public static final float EPSILON = 0.0001f;
@@ -22,10 +21,26 @@ public class Matrix
 				c[i][j] = 0;
 				
 				for(int k = 0; k < n; k++)
-				{
 					c[i][j] += (a[i][k] * b[k][j]);
-				}
 			}
+		}
+		
+		return c;
+	}
+	
+	public static float[] multiply(float[] a, float[][] b)
+	{
+		int rows = a.length;
+		int columns = b[0].length;
+		
+		float[] c = new float[rows];
+		
+		for(int i = 0; i < rows; i++)
+		{
+			c[i] = 0;
+			
+			for(int j = 0; j < columns; j++)
+				c[i] += (a[j] * b[i][j]);
 		}
 		
 		return c;
@@ -50,7 +65,7 @@ public class Matrix
 		return AT;
 	}
 
-	public static float[][] getRotationMatrix33(float x, float y, float z)
+	public static float[][] getRotationMatrix(float x, float y, float z)
 	{
 		x = (float) toRadians(x);
 		y = (float) toRadians(y);
@@ -74,6 +89,22 @@ public class Matrix
 		float[][] R = multiply(multiply(Ry, Rx), Rz);
 		
 		return transpose(R);
+	}
+	
+	public static float[][] getRotationMatrix(float[] u, float theta)
+	{
+		float c = cosf(toRadians(theta));
+		float _c = 1 - c;
+		float s = sinf(toRadians(theta));
+		
+		float u0 = u[0] * u[0];
+		float u1 = u[1] * u[1];
+		float u2 = u[2] * u[2];
+		
+		return new float[][]
+			{{                u0 * _c + c, u[0] * u[1] * _c + u[2] * s, u[0] * u[2] * _c - u[1] * s},
+			 {u[0] * u[1] * _c - u[2] * s,                 u1 * _c + c, u[1] * u[2] * _c + u[0] * s},
+			 {u[0] * u[2] * _c + u[1] * s, u[1] * u[2] * _c - u[0] * s,                 u2 * _c + c}};
 	}
 	
 	public static float getDeterminant(float[][] A)
@@ -115,7 +146,7 @@ public class Matrix
 		return a;
 	}
 	
-	public static float[] getRotationMatrix44(float[][] M)
+	public static float[] getRotationMatrix(float[][] M)
 	{		
 		float[][] _M =
 			{{M[0][0], M[0][1], M[0][2],   0   },

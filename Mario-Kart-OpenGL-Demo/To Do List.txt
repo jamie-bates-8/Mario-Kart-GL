@@ -6,7 +6,6 @@
 -(Fake) Item Boxes should have question marks on them
 -Fake Item Boxes should float slightly above the ground
 
--Possibly refactor item press/release code
 -Possibly refactor getHeights() methods
 
 -Add item-vehicle collision effects:
@@ -15,12 +14,11 @@
 	-Blue Shells
 	
 -Possible particle effects to add/improve:
-	-Add speed lines when a mushroom is used
 	-Add spiralling smoke when a boo is used
 	-Add exhaust particles
 	-Add shell fragments when a shell is destroyed
 
 -Lightning Bolts should cause players to drop items
 
--Orbiting shells are not elevated on a slope
+-Implement model and/or item box parser?
 	

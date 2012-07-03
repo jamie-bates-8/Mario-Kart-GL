@@ -1,9 +1,7 @@
-import static graphics.util.Matrix.getEulerAngles;
 import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Vector.*;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -37,8 +35,6 @@ public class RedShell extends Shell
 	
 	private Car target;
 	
-	private float[] _heights = {0, 0, 0, 0};
-	
 	public RedShell(GL2 gl, Car car, float[] c, float trajectory, boolean orbiting, Car target)
 	{
 		super(gl, car, c, trajectory);
@@ -62,16 +58,12 @@ public class RedShell extends Shell
 	{
 		gl.glPushMatrix();
 		{
-			float[] angles = getEulerAngles(u);
-			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			gl.glRotatef(rotation, 0, 1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);
 			
-			{
-				gl.glCallList(shellList);
-				gl.glCallList(rimList);
-			}
+			gl.glCallList(shellList);
+			gl.glCallList(rimList);
 		}
 		gl.glPopMatrix();
 	}
@@ -84,18 +76,12 @@ public class RedShell extends Shell
 		setPosition(getPositionVector());
 		if(falling) fall();
 		
-		detected.clear();
-
-		for(Bound bound : bounds)
-			if(bound.testBound(this.bound))
-				detected.add(bound);
-		
-		super.update(bounds);
+		detectCollisions(bounds);
+		resolveCollisions();
 		
 		if(!thrown) trajectory = target.trajectory;
 		setRotation(getRotationAngles(getHeights()));
-		rotation += 10 * velocity;
-		
+		rotation += 10 * velocity;	
 	}
 	
 	@Override
@@ -115,46 +101,4 @@ public class RedShell extends Shell
 	
 	@Override
 	public void rebound(Bound b) { destroy(); }
-	
-	public float[] getHeights()
-	{
-		float[] heights = {0, 0, 0, 0};
-		
-		falling = true;
-		
-		if(!detected.isEmpty())
-		{
-			for(Bound _bound : detected)
-			{
-				if(_bound instanceof OBB)
-				{		
-					OBB b = (OBB) _bound;
-					
-					float[] face = b.getFaceVector(getPosition());
-	
-					if(Arrays.equals(face, b.getUpVector(1)))
-					{
-						float[][] vertices = getAxisVectors();
-						
-						for(int i = 0; i < 4; i++)
-						{
-							float h = b.perimeterPointToPoint(vertices[i])[1];
-							if(h > heights[i]) heights[i] = h;
-						}
-			
-						float h = b.perimeterPointToPoint(getPosition())[1] + (getMaximumExtent() * 0.9f);
-						if(h > bound.c[1]) bound.c[1] = h;
-						
-						falling = thrown = false;
-						fallRate = 0;
-					}
-				}
-			}
-		}
-		else return _heights;
-		
-		_heights = heights;
-		
-		return heights;
-	}
 }

@@ -85,11 +85,9 @@ public class BlueShell extends Shell
 			gl.glRotatef(rotation, 0, 1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);
 			
-			{
-				gl.glCallList(shellList);
-				gl.glCallList(rimList);
-				gl.glCallList(spikeList);
-			}
+			gl.glCallList(shellList);
+			gl.glCallList(rimList);
+			gl.glCallList(spikeList);
 		}
 		gl.glPopMatrix();
 	}
@@ -99,15 +97,10 @@ public class BlueShell extends Shell
 	{	
 		setPosition(getPositionVector());
 		if(falling) fall();
-		
-		detected.clear();
 
 		for(Bound bound : bounds)
 			if(bound.testBound(this.bound))
-			{
-				destroy();
-				break;
-			}
+				{ destroy(); break; }
 
 		rotation += 10 * velocity;
 	}
@@ -115,11 +108,6 @@ public class BlueShell extends Shell
 	public void destroy()
 	{
 		dead = true;
-		particles.addAll(generateParticles());
-	}
-	
-	public List<Particle> generateParticles()
-	{
-		return generator.generateSmokeParticles(getPosition(), 600);
+		particles.addAll(generator.generateBlastParticles(getPosition(), 600));
 	}
 }

@@ -23,11 +23,13 @@ public class OBB extends Bound
 	
 	boolean[] validFaces = new boolean[6];
 	
-	public OBB(float x, float y, float z, float xrot, float yrot, float zrot, float halfWidth, float halfHeight, float halfDepth)
+	public OBB(float c0, float c1, float c2,
+			   float u0, float u1, float u2,
+			   float e0, float e1, float e2)
 	{
-		setPosition(x, y, z);
-		setRotation(xrot, yrot, zrot);
-		e = new float[] {halfWidth, halfHeight, halfDepth};	
+		setPosition(c0, c1, c2);
+		setRotation(u0, u1, u2);
+		e = new float[] {e0, e1, e2};	
 		Arrays.fill(validFaces, true);
 	}
 	
@@ -37,6 +39,14 @@ public class OBB extends Bound
 		setRotation(xrot, yrot, zrot);
 		e = new float[] {halfWidth, halfHeight, halfDepth};	
 		this.validFaces = validFaces;
+	}
+	
+	public OBB(float[] c, float[] u, float[] e, boolean[] v)
+	{
+		setPosition(c);
+		setRotation(u[0], u[1], u[2]);
+		this.e = e;
+		validFaces = v;
 	}
 	
 	public boolean isValidCollision(float[] face)
@@ -49,10 +59,7 @@ public class OBB extends Bound
 		return false;
 	}
 	
-	public void setRotation(float x, float y, float z)
-	{	
-		u = getRotationMatrix33(x, y, z);
-	}
+	public void setRotation(float x, float y, float z) { u = getRotationMatrix(x, y, z); }
 	
 	public float getHeight() { return e[1] * 2; }
 	
@@ -155,7 +162,7 @@ public class OBB extends Bound
 	
 	public float getPenetration(Sphere s)
 	{
-		float[]  q = perimeterPointToPoint(s.c);
+		float[]  q = closestPointOnPerimeter(s.c);
 		float[] _q = subtract(q, s.c);
 		
 		double ra = sqrt(_q[0] * _q[0] + _q[2] * _q[2]);
@@ -291,24 +298,63 @@ public class OBB extends Bound
 	}
 	
 	@Override
+	public boolean testSphere(Sphere s)
+	{
+		float[] p = closestPointToPoint(s.c);
+		
+		float[] v = subtract(p, s.c);
+		
+		return dot(v, v) <= s.r * s.r;
+	}
+
+	public boolean testRay(float[] p0, float[] p1)
+	{
+		float[] v = subtract(p0, c);
+		
+		p0 = new float[] {dot(v, u[0]), dot(v, u[1]), dot(v, u[2])};
+		
+		float[] min = subtract(c, e);
+		float[] max = add(c, e);
+		
+		float[] d = subtract(p1, p0);
+		float[] m = subtract(subtract(add(p0, p1), min), max);
+		
+		float adx = abs(d[0]);
+		if(abs(m[0]) > e[0] + adx) return false;
+		float ady = abs(d[1]);
+		if(abs(m[1]) > e[1] + ady) return false;
+		float adz = abs(d[2]);
+		if(abs(m[2]) > e[2] + adz) return false;
+		
+		adx += EPSILON; ady += EPSILON; adz += EPSILON;
+		
+		if(abs(m[1] * d[2] - m[2] * d[1]) > e[1] * adz + e[2] * ady) return false;
+		if(abs(m[2] * d[0] - m[0] * d[2]) > e[0] * adz + e[2] * adx) return false;
+		if(abs(m[0] * d[1] - m[1] * d[0]) > e[0] * ady + e[1] * adx) return false;
+		
+		return true;	
+	}
+
+	@Override
 	public float[] closestPointToPoint(float[] p)
 	{	
 		float[] d = subtract(p, c);
-		
 		float[] q = c;
 		
 		for(int i = 0; i < 3; i++)
 		{
 			float dist = dot(d, u[i]);
-			if(dist > e[i]) dist = e[i];
+			
+			if(dist >  e[i]) dist =  e[i];
 			if(dist < -e[i]) dist = -e[i];
+			
 			q = add(q, multiply(u[i], dist));
 		}
 		
 		return q;
 	}
 	
-	public float[] perimeterPointToPoint(float[] p)
+	public float[] closestPointOnPerimeter(float[] p)
 	{
 		float[] d = subtract(p, c);
 		
@@ -321,8 +367,10 @@ public class OBB extends Bound
 		for(int i = 0; i < 3; i++)
 		{
 			float dist = dot(d, u[i]);
-			if(dist > e[i] || (i * 2) + 1 == n) dist = e[i];
-			if(dist < -e[i] || (i * 2) == n) dist = -e[i];
+			
+			if(dist >  e[i] || (i * 2) + 1 == n) dist =  e[i];
+			if(dist < -e[i] || (i * 2)     == n) dist = -e[i];
+			
 			q = add(q, multiply(u[i], dist));
 		}
 		
@@ -339,16 +387,6 @@ public class OBB extends Bound
 		return -1;
 	}
 	
-	@Override
-	public boolean testSphere(Sphere s)
-	{
-		float[] p = closestPointToPoint(s.c);
-		
-		float[] v = subtract(p, s.c);
-		
-		return dot(v, v) <= s.r * s.r;
-	}
-
 	public float[][] getAxisVectors(float scale)
 	{
 		return new float[][]
@@ -389,7 +427,7 @@ public class OBB extends Bound
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glMultMatrixf(getRotationMatrix44(u), 0);
+			gl.glMultMatrixf(getRotationMatrix(u), 0);
 			gl.glScalef(e[0] * 2, e[1] * 2, e[2] * 2);
 			
 			glut.glutSolidCube(1);
@@ -407,7 +445,7 @@ public class OBB extends Bound
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glMultMatrixf(getRotationMatrix44(u), 0);
+			gl.glMultMatrixf(getRotationMatrix(u), 0);
 			gl.glScalef(e[0] * 2, e[1] * 2, e[2] * 2);
 			
 			glut.glutWireCube(1);
@@ -462,36 +500,11 @@ public class OBB extends Bound
 		
 		gl.glPushMatrix();
 		{
-			float[] vertex = perimeterPointToPoint(p);
+			float[] vertex = closestPointOnPerimeter(p);
 
 			gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
 			glut.glutSolidSphere(0.2, 12, 12);
 		}
 		gl.glPopMatrix();
-	}
-	
-	public boolean testRay(float[] p, float[] d)
-	{
-		float[] v = subtract(p, c);
-		
-		p = new float[] {dot(v, u[0]), dot(v, u[1]), dot(v, u[2])};
-		
-		float[] min = subtract(c, e);
-		float[] max = add(c, e);
-		
-		float adx = abs(d[0]);
-		if(abs(p[0]) > e[0] + adx) return false;
-		float ady = abs(d[1]);
-		if(abs(p[1]) > e[1] + ady) return false;
-		float adz = abs(d[2]);
-		if(abs(p[2]) > e[2] + adz) return false;
-		
-		adx += EPSILON; ady += EPSILON; adz += EPSILON;
-		
-		if(abs(p[1] * d[2] - p[2] * d[1]) > e[1] * adz + e[2] * ady) return false;
-		if(abs(p[2] * d[0] - p[0] * d[2]) > e[0] * adz + e[2] * adx) return false;
-		if(abs(p[0] * d[1] - p[1] * d[0]) > e[0] * ady + e[1] * adx) return false;
-		
-		return true;	
 	}
 }

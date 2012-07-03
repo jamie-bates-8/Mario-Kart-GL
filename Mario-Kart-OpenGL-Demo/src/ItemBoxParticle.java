@@ -11,9 +11,9 @@ public class ItemBoxParticle extends Particle
 	public float[] color;
 	public boolean fill;
 	
-	public ItemBoxParticle(float[] c, float[] t, float rotation, int duration, float[] color, boolean fill)
+	public ItemBoxParticle(float[] c, float[] t, float rotation, float[] color, boolean fill)
 	{
-		super(c, t, rotation, duration);
+		super(c, t, rotation, 20);
 		
 		this.color = color;
 		this.fill = fill;
