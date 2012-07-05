@@ -1,3 +1,4 @@
+
 import static graphics.util.Renderer.displayWildcardObject;
 
 import java.io.File;
@@ -52,7 +53,7 @@ public class GreenShell extends Shell
 		this.orbiting = orbiting;
 	}
 	
-	public void render(GL2 gl)
+	public void render(GL2 gl, float trajectory)
 	{
 		gl.glPushMatrix();
 		{

@@ -1,8 +1,9 @@
-import static graphics.util.Matrix.getRotationMatrix;
+
 import static graphics.util.Renderer.*;
 import graphics.util.Face;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -28,30 +29,26 @@ public class ItemBox
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
-	public int respawnTimer;
-	public OBB bound;
-	public ParticleGenerator generator;
+	private int respawnTimer = 0;
+	private Sphere bound;
 	
-	public ItemBox(GL2 gl, float[] c)
+	private ParticleGenerator generator = new ParticleGenerator();
+	private List<Particle> particles;
+	
+	public ItemBox(float[] c, List<Particle> particles)
 	{
-		respawnTimer = 0;
+		c[1] += 3;
 		
-		bound = new OBB(
-				c[0], c[1] + 3, c[2],
-	    		0, 0, 0,
-	    		SCALE, SCALE, SCALE);
+		bound = new Sphere(c, 2.5f);
 		
-		generator = new ParticleGenerator();
+		this.particles = particles;
 	}
 	
-	public void setRotation(float x, float y, float z)
-	{	
-		bound.u = getRotationMatrix(x, y, z);
-	}
-	
-	public List<Particle> generateParticles()
+	public ItemBox(float x, float y, float z, List<Particle> particles)
 	{
-		return generator.generateItemBoxParticles(getPosition(), 64);
+		bound = new Sphere(x, y + 3, z, 2.5f);
+		
+		this.particles = particles;
 	}
 	
 	public float[] getPosition() { return bound.c; }
@@ -64,48 +61,96 @@ public class ItemBox
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
+			gl.glBlendFunc(GL2.GL_DST_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glDepthMask(false);
+			
+			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glRotatef(180, 0, 0, 1);
+			gl.glScalef(3.0f, 3.0f, 3.0f);
+			
+			questionMark.bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
+				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
+				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
+				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
+			}
+			gl.glEnd();
+			
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+			gl.glDisable(GL_BLEND);
+			gl.glEnable(GL_LIGHTING);
+			gl.glDepthMask(true);
+		}
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		{
+			gl.glDisable(GL_LIGHTING);
+			gl.glEnable(GL_BLEND);
 			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			gl.glRotatef(rotation, 1, 1, 1);
 			gl.glScalef(SCALE, SCALE, SCALE);
 			
-			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1, 1, 1});
+			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {0.5f, 0.5f, 0.5f});
 			
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 		}
 		gl.glPopMatrix();
-		
-//		gl.glPushMatrix();
-//		{
-//			gl.glBlendFunc(GL2.GL_DST_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-//			gl.glDepthMask(false);
-//			
-//			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-//			gl.glRotatef(trajectory - 90, 0, 1, 0);
-//			gl.glRotatef(180, 0, 0, 1);
-//			gl.glScalef(5, 5, 5);
-//			
-//			questionMark.bind(gl);
-//
-//			gl.glBegin(GL_QUADS);
-//			{
-//				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
-//				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
-//				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
-//				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
-//			}
-//			gl.glEnd();
-//			
-//			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
-//			gl.glDisable(GL_BLEND);
-//			gl.glEnable(GL_LIGHTING);
-//			gl.glDepthMask(true);
-//		}
-//		gl.glPopMatrix();
 	}
 	
 	public void destroy() { respawnTimer = RESPAWN_TIME; }
 	
 	public boolean isDead() { return respawnTimer > 0; }
+	
+	public static List<ItemBox> generateSquare(float x, float y, List<Particle> particles)
+	{
+		List<ItemBox> boxes = new ArrayList<ItemBox>();
+		
+		boxes.add(new ItemBox( x,  y,  x, particles));
+		boxes.add(new ItemBox(-x,  y,  x, particles));
+		boxes.add(new ItemBox(-x,  y, -x, particles));
+		boxes.add(new ItemBox( x,  y, -x, particles));
+		
+		return boxes;
+	}
+	
+	public static List<ItemBox> generateDiamond(float x, float y, List<Particle> particles)
+	{
+		List<ItemBox> boxes = new ArrayList<ItemBox>();
+		
+		boxes.add(new ItemBox( x,  y,  0, particles));
+		boxes.add(new ItemBox(-x,  y,  0, particles));
+		boxes.add(new ItemBox( 0,  y,  x, particles));
+		boxes.add(new ItemBox( 0,  y, -x, particles));
+		
+		return boxes;
+	}
+	
+	public void update(Car car)
+	{
+		if(!isDead())
+		{
+			if(car.bound.testSphere(bound))
+			{
+				destroy();
+				
+				ItemRoulette roulette = car.getRoulette();
+				
+				if(!roulette.isAlive() && !car.isCursed())
+				{
+					roulette.spin();
+					roulette.secondary = car.hasItem();
+				}
+				
+				particles.addAll(generator.generateItemBoxParticles(getPosition(), 64));
+			}
+		}
+		else respawnTimer--;
+	}
 }

@@ -1,3 +1,4 @@
+
 import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Vector.*;
 
@@ -54,7 +55,7 @@ public class RedShell extends Shell
 	}
 	
 	@Override
-	public void render(GL2 gl)
+	public void render(GL2 gl, float trajectory)
 	{
 		gl.glPushMatrix();
 		{

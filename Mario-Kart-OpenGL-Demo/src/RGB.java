@@ -1,3 +1,4 @@
+
 import java.awt.color.ColorSpace;
 
 public class RGB

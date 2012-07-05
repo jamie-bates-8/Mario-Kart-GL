@@ -1,13 +1,19 @@
-import static graphics.util.Renderer.displayTexturedObject;
+
+import static graphics.util.Renderer.displayPartiallyTexturedObject;
 
 import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 import graphics.util.Face;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
+
+import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.TextureIO;
 
 
 public class FakeItemBox extends Item
@@ -15,6 +21,14 @@ public class FakeItemBox extends Item
 	private static final List<Face> BOX_FACES = OBJParser.parseTriangles("obj/fakeItemBox.obj");
 	private static float rotation = 45.0f; 
 	public static final float SCALE = 1.75f;
+	
+	private static Texture questionMark;
+	
+	static
+	{
+		try { questionMark = TextureIO.newTexture(new File("tex/fakeQuestionMark.png"), true); }
+		catch (Exception e) { e.printStackTrace(); }
+	}
 	
 	public ParticleGenerator generator;
 
@@ -28,14 +42,11 @@ public class FakeItemBox extends Item
 		this.particles = particles;
 		this.car = car;
 		
-		bound = new OBB(
-				c[0], c[1], c[2],
-	    		0, 0, 0,
-	    		SCALE, SCALE, SCALE);
+		bound = new Sphere(c, 2.5f);
 		
 		generator = new ParticleGenerator();
 		
-//		gravity = 0.025;
+		gravity = 0.025;
 		
 		setRotation(0, trajectory, 0);
 	}
@@ -46,12 +57,41 @@ public class FakeItemBox extends Item
 	public void rebound(Bound b)
 	{
 		super.rebound(b);
-		velocity /= 2;
+		velocity *= 0.75f;
 	}
 	
 	@Override
-	public void render(GL2 gl)
+	public void render(GL2 gl, float trajectory)
 	{
+		gl.glPushMatrix();
+		{
+			gl.glDisable(GL_LIGHTING);
+			gl.glEnable(GL_BLEND);
+			gl.glBlendFunc(GL2.GL_DST_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glDepthMask(false);
+			
+			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glScalef(3.0f, 3.0f, 3.0f);
+			
+			questionMark.bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
+				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
+				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
+				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
+			}
+			gl.glEnd();
+			
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+			gl.glDisable(GL_BLEND);
+			gl.glEnable(GL_LIGHTING);
+			gl.glDepthMask(true);
+		}
+		gl.glPopMatrix();
+		
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
@@ -61,7 +101,7 @@ public class FakeItemBox extends Item
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			
-			displayTexturedObject(gl, BOX_FACES);
+			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1.0f, 0.5f, 0.5f});
 			
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
@@ -87,48 +127,41 @@ public class FakeItemBox extends Item
 		{
 			if(collision instanceof OBB)
 			{		
-				OBB b = (OBB) collision;
-
-				float[] face = b.getFaceVector(getPosition());
-
-				if(Arrays.equals(face, b.getUpVector(1)))
-				{
-					float h = b.closestPointOnPerimeter(getPosition())[1]
-							+ bound.getHeight() * 0.45f;
-					
-					if(h > bound.c[1]) bound.c[1] = h;
-
-					if(bounces == 0)
-					{
-						falling = thrown = false;
-						fallRate = 0;
-					}
-					else
-					{
-						bounces--;
-						fallRate /= 2;
-					}
-				}
+				setHeights((OBB) collision);
 			}
 		}
-		return _heights;
+		return heights;
+	}
+
+	private void setHeights(OBB obb)
+	{
+		float[] face = obb.getFaceVector(getPosition());
+
+		if(Arrays.equals(face, obb.getUpVector(1)))
+		{
+			float h = obb.closestPointOnPerimeter(getPosition())[1]
+					+ bound.getMaximumExtent();
+			
+			if(h > bound.c[1]) bound.c[1] = h;
+
+			if(bounces == 0)
+			{
+				falling = thrown = false;
+				fallRate = 0;
+			}
+			else
+			{
+				bounces--;
+				fallRate /= 2;
+			}
+		}
 	}
 	
 	@Override
 	public void throwUpwards()
 	{
 		super.throwUpwards();
-//		velocity /= 2;
-	}
-	
-	@Override
-	public void detectCollisions(List<Bound> bounds)
-	{
-		collisions.clear();
-
-		for(Bound bound : bounds)
-			if(this.bound.testBound(bound))
-				collisions.add(bound);
+		velocity *= 0.75f;
 	}
 	
 	@Override
@@ -140,7 +173,7 @@ public class FakeItemBox extends Item
 		detectCollisions(bounds);
 		resolveCollisions();
 
-		getHeights();
+		if(falling) getHeights();
 		if(thrown) setRotation(0, trajectory, -45);
 	}
 	
@@ -153,5 +186,8 @@ public class FakeItemBox extends Item
 	
 	@Override
 	public void collide(Item item) {}
+	
+	@Override
+	public float getMaximumExtent() { return bound.getMaximumExtent() * 0.85f; }
 }
 

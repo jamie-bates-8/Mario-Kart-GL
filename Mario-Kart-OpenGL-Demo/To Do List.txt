@@ -3,15 +3,12 @@
 
 -Zoom camera in when obscured by an obstacle
 
--(Fake) Item Boxes should have question marks on them
--Fake Item Boxes should float slightly above the ground
-
--Possibly refactor getHeights() methods
+-Fake Item Boxes should rebound off slopes
 
 -Add item-vehicle collision effects:
 	-Green Shells
 	-Red Shells
-	-Blue Shells
+	-Blue Shells (explosion)
 	
 -Possible particle effects to add/improve:
 	-Add spiralling smoke when a boo is used

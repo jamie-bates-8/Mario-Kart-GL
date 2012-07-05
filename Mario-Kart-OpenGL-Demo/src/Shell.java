@@ -1,3 +1,4 @@
+
 import static graphics.util.Renderer.displayColoredObject;
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.multiply;
@@ -41,7 +42,7 @@ public abstract class Shell extends Item
 	}
 
 	@Override
-	public void render(GL2 gl) {}
+	public void render(GL2 gl, float trajectory) {}
 
 	@Override
 	public void hold()

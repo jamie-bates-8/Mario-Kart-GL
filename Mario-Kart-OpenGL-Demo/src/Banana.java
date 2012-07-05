@@ -1,3 +1,4 @@
+
 import static graphics.util.Matrix.getRotationMatrix;
 import static graphics.util.Renderer.*;
 
@@ -45,7 +46,7 @@ public class Banana extends Item
 	}
 	
 	@Override
-	public void render(GL2 gl)
+	public void render(GL2 gl, float trajectory)
 	{
 		gl.glPushMatrix();
 		{

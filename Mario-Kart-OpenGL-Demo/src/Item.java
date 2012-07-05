@@ -1,3 +1,4 @@
+
 import static graphics.util.Matrix.getRotationMatrix;
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.getAngle;
@@ -28,7 +29,7 @@ public abstract class Item
 	public double gravity = 0.05;
 	public boolean falling = true;
 	public float fallRate = 0.0f;
-	private static final double TOP_FALL_RATE = 5.0;
+	private static final double TOP_FALL_RATE = 2.5;
 	
 	public float velocity = 0;
 	public float[][] u;
@@ -37,7 +38,7 @@ public abstract class Item
 	public Bound bound;
 	public boolean colliding = false;
 	public List<Bound> collisions = new ArrayList<Bound>();
-	protected float[] _heights = {0, 0, 0, 0};
+	protected float[] heights = {0, 0, 0, 0};
 	
 	public boolean thrown = true;
 	
@@ -46,7 +47,7 @@ public abstract class Item
 	public static void toggleBoundWireframes() { enableBoundWireframes = !enableBoundWireframes; }
 	public static void toggleBoundSolids() { enableBoundSolids = !enableBoundSolids; }
 	
-	public abstract void render(GL2 gl);
+	public abstract void render(GL2 gl, float trajectory);
 	
 	public void displayBoundVisuals(GL2 gl, GLUT glut, float[] color)
 	{
@@ -113,35 +114,54 @@ public abstract class Item
 	
 	public abstract void update(List<Bound> bounds);
 	
+	public void update(Car car)
+	{
+		if(car.bound.testBound(bound))
+		{
+			if(!car.hasStarPower() && !car.isInvisible())
+			{
+				if(this instanceof Banana) car.slipOnBanana();
+				else if(this instanceof FakeItemBox) car.curse();
+				
+				destroy();
+			}
+			else if(car.hasStarPower()) destroy();
+		}
+		else if(outOfBounds()) destroy();
+	}
+	
 	public void resolveCollisions()
 	{
 		boolean _colliding = false;
 
 		for(Bound bound : collisions)
 		{
-			if(bound instanceof OBB)
-			{
-				OBB b = (OBB) bound;
-
-				float[] face = b.getFaceVector(getPosition());
-
-				if(b.isValidCollision(face))
-				{
-					if(Arrays.equals(face, b.getDownVector(1)))
-					{
-						if(this instanceof Shell) destroy();
-						else velocity = 0;
-						_colliding = true;
-					}
-					else if(!Arrays.equals(face, b.getUpVector(1)))
-					{
-						if(!colliding) rebound(bound);
-						_colliding = true;
-					}	
-				}
-			}
+			if(bound instanceof OBB) _colliding = resolveOBB((OBB) bound);
 		}
 		colliding = _colliding;
+	}
+	
+	private boolean resolveOBB(OBB bound)
+	{
+		float[] face = bound.getFaceVector(getPosition());
+
+		if(bound.isValidCollision(face))
+		{
+			if(Arrays.equals(face, bound.getDownVector(1)))
+			{
+				if(this instanceof Shell) destroy();
+				else velocity = 0;
+				
+				return true;
+			}
+			else if(!Arrays.equals(face, bound.getUpVector(1)))
+			{
+				if(!colliding) rebound(bound);
+				
+				return true;
+			}	
+		}
+		return false;
 	}
 	
 	public float[] getRotationAngles(float[] heights)
@@ -194,42 +214,43 @@ public abstract class Item
 	
 	public float[] getHeights()
 	{
-		float[] heights = {0, 0, 0, 0};
+		float[] _heights = heights;
+		heights = new float[] {0, 0, 0, 0};
 		
 		falling = true;
 		
-		for(Bound _bound : collisions)
+		for(Bound collision : collisions)
 		{
-			if(_bound instanceof OBB)
-			{		
-				OBB b = (OBB) _bound;
-					
-				float[] face = b.getFaceVector(getPosition());
-	
-				if(Arrays.equals(face, b.getUpVector(1)))
-				{
-					float[][] vertices = getAxisVectors();
-
-					for(int i = 0; i < 4; i++)
-					{
-						float h = b.closestPointOnPerimeter(vertices[i])[1];
-						if(h > heights[i]) heights[i] = h;
-					}
-
-					float h = b.closestPointOnPerimeter(getPosition())[1]
-							+ getMaximumExtent();
-					
-					if(h > bound.c[1]) bound.c[1] = h;
-
-					falling = thrown = false;
-					fallRate = 0;
-				}
-			}
+			if(collision instanceof OBB) setHeights((OBB) collision);
 		}
 		
-		if(!collisions.isEmpty()) _heights = heights;
+		if(collisions.isEmpty()) heights = _heights;
 		
-		return _heights;
+		return heights;
+	}
+	
+	private void setHeights(OBB obb)
+	{
+		float[] face = obb.getFaceVector(getPosition());
+		
+		if(Arrays.equals(face, obb.getUpVector(1)))
+		{
+			float[][] vertices = getAxisVectors();
+
+			for(int i = 0; i < 4; i++)
+			{
+				float h = obb.closestPointOnPerimeter(vertices[i])[1];
+				if(h > heights[i]) heights[i] = h;
+			}
+
+			float h = obb.closestPointOnPerimeter(getPosition())[1]
+					+ getMaximumExtent();
+			
+			if(h > bound.c[1]) bound.c[1] = h;
+
+			falling = thrown = false;
+			fallRate = 0;
+		}
 	}
 	
 	public void detectCollisions(List<Bound> bounds)

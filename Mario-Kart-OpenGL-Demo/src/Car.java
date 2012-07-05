@@ -6,7 +6,6 @@ import static graphics.util.Matrix.*;
 import static graphics.util.Renderer.*;
 
 import graphics.util.Face;
-import graphics.util.Vector;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -64,7 +63,7 @@ public class Car
 	private double gravity = 0.05;
 	public boolean falling = false;
 	private float fallRate = 0.0f;
-	private static final double TOP_FALL_RATE = 5.0;
+	private static final double TOP_FALL_RATE = 2.5;
 	
 	private double turnRate = 0;
 	private static final double TOP_TURN_RATE = 2.0;
@@ -85,8 +84,8 @@ public class Car
 	/** Collision Detection Fields **/
 	public OBB bound;
 	public boolean colliding = false;
-	public List<Bound> detected = new ArrayList<Bound>();
-	public float[] _heights = {0, 0, 0, 0};
+	public List<Bound> collisions = new ArrayList<Bound>();
+	public float[] heights = {0, 0, 0, 0};
 	
 	
 	/** Particle Fields **/
@@ -95,9 +94,11 @@ public class Car
 	
 	
 	/** Item Fields **/
+	private ItemRoulette roulette = new ItemRoulette();
 	private ItemState itemState = ItemState.NO_ITEM;
-	public Queue<Item> items = new LinkedList<Item>();
-	public List<Item> worldItems;
+	private Queue<Item> items = new LinkedList<Item>();
+	private Queue<Integer> worldItemQueue;
+	public List<Item> worldItemList;
 	
 	private boolean slipping = false;
 	private float[] slipVector = ORIGIN;
@@ -132,7 +133,8 @@ public class Car
 	private Aim aiming = Aim.DEFAULT;
 	
 	
-	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, List<Item> worldItems, List<Particle> particles)
+	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot,
+			List<Item> worldItemList, Queue<Integer> worldItemQueue, List<Particle> particles)
 	{
 		//Using a display list ensures that the complex car model is displayed quickly
 		carList = gl.glGenLists(1);
@@ -145,11 +147,40 @@ public class Car
 	    		xrot, yrot, zrot,
 	    		5.5f, 2.0f, 2.7f);
 	    
-	    this.worldItems = worldItems;
+	    this.worldItemList = worldItemList;
+	    this.worldItemQueue = worldItemQueue;
 	    this.particles = particles;
 		
 	    trajectory = yrot;	
 	}
+	
+	public Queue<Item> getItems() { return items; }
+	
+	private void useItem()
+	{
+		if(hasItem())
+		{
+			pressItem();
+			if(!roulette.secondary) roulette.update();
+		}
+		
+		else if(roulette.hasItem())
+		{
+			int itemID = roulette.getItem();
+			roulette.secondary = false;
+			ItemState state = ItemState.get(itemID);
+			setItemState(state);
+			
+			worldItemQueue.add(itemID);
+			
+			if(ItemState.isTimed(state)) roulette.setTimer();
+			
+			if(ItemState.isInstantUse(state)) pressItem();
+			roulette.update();
+		}
+	}
+	
+	public ItemRoulette getRoulette() { return roulette; }
 	
 	public float[][] getRotation() { return bound.u; }
 	
@@ -220,7 +251,7 @@ public class Car
 					
 				shell.throwUpwards();
 					
-				worldItems.add(shell);
+				worldItemList.add(shell);
 				break;
 			}
 			default: break;
@@ -247,7 +278,7 @@ public class Car
 					case BACKWARDS: shell.throwBackwards(); break;
 				}
 					
-				worldItems.add(shell);
+				worldItemList.add(shell);
 				break;
 			}
 			
@@ -268,7 +299,7 @@ public class Car
 					case FORWARDS: banana.throwUpwards(); break;
 				}
 					
-				worldItems.add(banana);
+				worldItemList.add(banana);
 				break;
 			}
 			
@@ -296,7 +327,7 @@ public class Car
 					case BACKWARDS: shell.throwBackwards(); break;
 				}
 					
-				worldItems.add(shell);
+				worldItemList.add(shell);
 				break;
 			}
 			
@@ -310,7 +341,7 @@ public class Car
 					case FORWARDS: item.throwUpwards(); break;
 				}
 						
-				worldItems.add(item);
+				worldItemList.add(item);
 				break;
 			}
 
@@ -336,44 +367,43 @@ public class Car
 	
 	public float[] getHeights()
 	{
-		float[] heights = {0, 0, 0, 0};
+		float[] _heights = heights;
+		heights = new float[] {0, 0, 0, 0};
 		
 		falling = true;
 		
-		if(!detected.isEmpty())
+		for(Bound collision : collisions)
 		{
-			for(Bound _bound : detected)
-			{
-				if(_bound instanceof OBB)
-				{		
-					OBB b = (OBB) _bound;
-					
-					float[] face = b.getFaceVector(getPosition());
-	
-					if(Arrays.equals(face, b.getUpVector(1)))
-					{
-						float[][] vertices = bound.getVertices();
-						
-						for(int i = 0; i < 4; i++)
-						{
-							float h = b.closestPointOnPerimeter(vertices[i])[1];
-							if(h > heights[i]) heights[i] = h;
-						}
-			
-						float h = b.closestPointOnPerimeter(getPosition())[1] + (bound.e[1] * 0.9f);
-						if(h > bound.c[1]) bound.c[1] = h;
-						
-						falling = false;
-						fallRate = 0;
-					}
-				}
-			}
+			if(collision instanceof OBB) setHeights((OBB) collision);
 		}
-		else return _heights;
 		
-		_heights = heights;
+		if(collisions.isEmpty()) heights = _heights;
 		
 		return heights;
+	}
+
+	private void setHeights(OBB obb)
+	{
+		float[] face = obb.getFaceVector(getPosition());
+
+		if(Arrays.equals(face, obb.getUpVector(1)))
+		{
+			float[][] vertices = bound.getVertices();
+
+			for(int i = 0; i < 4; i++)
+			{
+				float h = obb.closestPointOnPerimeter(vertices[i])[1];
+				if(h > heights[i]) heights[i] = h;
+			}
+
+			float h = obb.closestPointOnPerimeter(getPosition())[1]
+					+ (bound.e[1] * 0.9f);
+			
+			if(h > bound.c[1]) bound.c[1] = h;
+
+			falling = false;
+			fallRate = 0;
+		}
 	}
 	
 	public float[] getRotationAngles(float[] h)
@@ -533,7 +563,7 @@ public class Car
 
 		gl.glColor3f(1, 1, 1);
 
-		for(Item item : items) item.render(gl);
+		for(Item item : items) item.render(gl, trajectory);
 	}
 	
 	private void cycleColor()
@@ -577,14 +607,14 @@ public class Car
 	{
 		colliding = false;
 		
-		detected.clear();
+		collisions.clear();
 		
-		for(Bound bound : bounds)
+		for(Bound collision : bounds)
 		{
-			if(this.bound.testBound(bound))
+			if(bound.testBound(collision))
 			{
 				colliding = true;
-				detected.add(bound);
+				collisions.add(collision);
 			}
 		}
 	}
@@ -593,40 +623,46 @@ public class Car
 	{
 		List<float[]> vectors = new ArrayList<float[]>();
 		
-		for(Bound bound : detected)
+		for(Bound collision : collisions)
 		{
-			if(bound instanceof OBB)
-			{
-				OBB b = (OBB) bound;
-				float[] face = b.getFaceVector(getPosition());
-	
-				if(colliding && !Arrays.equals(face, b.getUpVector(1)) && b.isValidCollision(face) && (getPosition()[1] - this.bound.e[1]) < (b.c[1] + b.e[1]))
-				{
-					float s = this.bound.getPenetration(b);
-					
-					vectors.add(Vector.multiply((Vector.subtract(face, b.getPosition())), s));
-					if(slipping) velocity = 0;
-					else velocity *= 0.9;
-				}
-			}
-			else if(colliding && bound instanceof Sphere)
-			{
-				Sphere b = (Sphere) bound;
-				
-				float[] face = b.getFaceVector(getPosition());
-				float s = this.bound.getPenetration(b);
-	
-				vectors.add(Vector.multiply((Vector.normalize(Vector.subtract(new float[] {face[0], 0, face[2]}, b.getPosition()))), s));
-				if(slipping) velocity = 0;
-				else velocity *= 0.9;
-			}
-			else if(colliding) velocity = -velocity;
+			if     (collision instanceof OBB   ) vectors.add(resolveOBB   ((OBB)    collision));
+			else if(collision instanceof Sphere) vectors.add(resolveSphere((Sphere) collision));
 		}
 		
-		for(float[] vector : vectors)
+		for(float[] vector : vectors) setPosition(add(getPosition(), vector));
+	}
+
+	private float[] resolveSphere(Sphere sphere)
+	{
+		if(colliding)
 		{
-			setPosition(Vector.add(getPosition(), vector));
+			float[] face = sphere.getFaceVector(getPosition());
+			face[1] = 0;
+			
+			float s = this.bound.getPenetration(sphere);
+			
+			velocity *= (slipping) ? 0 : 0.9;
+			
+			return multiply((normalize(subtract(face, sphere.getPosition()))), s);
 		}
+		else return new float[] {0, 0, 0};
+	}
+
+	private float[] resolveOBB(OBB obb)
+	{
+		float[] face = obb.getFaceVector(getPosition());
+
+		if(colliding && !Arrays.equals(face, obb.getUpVector(1)) && obb.isValidCollision(face)
+				&& (getPosition()[1] - bound.e[1]) < (obb.c[1] + obb.e[1]))
+		{
+			float p = bound.getPenetration(obb);
+			
+			if(slipping) velocity = 0;
+			else velocity *= 0.9;
+			
+			return multiply(subtract(face, obb.getPosition()), p);
+		}
+		else return new float[] {0, 0, 0};
 	}
 
 	public void update(List<Bound> bounds)
@@ -816,10 +852,6 @@ public class Car
 		}
 	}
 
-	/**
-	 * This method is called to create a realistic motion path around the right turn
-	 * of the track.
-	 */
 	private void turnLeft()
 	{
 		if(turnRate < TOP_TURN_RATE) turnRate += turnIncrement;
@@ -835,10 +867,6 @@ public class Car
 		trajectory += turnRate * k;
 	}
 
-	/**
-	 * This method is called to create a realistic motion path around the left turn
-	 * of the track.
-	 */
 	private void turnRight()
 	{
 		if(turnRate > -TOP_TURN_RATE) turnRate -= turnIncrement;
@@ -990,7 +1018,9 @@ public class Car
 			miniature = true;
 			miniatureDuration = 400;
 			velocity = 0;
-			slipOnBanana();
+			
+			if(slipping) slipDuration += 24;
+			else slipOnBanana();
 		}
 		
 		float[] source = getLightningVector(); 
@@ -1030,11 +1060,34 @@ public class Car
 	
 	public boolean isBoosting()   { return boosting; }
 
-	
 	public void keyPressed(KeyEvent e)
 	{
 		switch(e.getKeyCode())
 		{
+			case KeyEvent.VK_W:
+			case KeyEvent.VK_UP:
+				accelerating = true; break;
+				
+			case KeyEvent.VK_S:
+			case KeyEvent.VK_DOWN:
+				reversing = true; accelerating = true; break;
+				
+			case KeyEvent.VK_A:
+			case KeyEvent.VK_LEFT:
+				steerLeft(); break;
+			
+			case KeyEvent.VK_D:
+			case KeyEvent.VK_RIGHT:
+				steerRight(); break;
+			
+			case KeyEvent.VK_R: if(!cursed && !slipping) {aimForwards();  useItem();} break;
+			case KeyEvent.VK_F: if(!cursed && !slipping) {resetAim();     useItem();} break;
+			case KeyEvent.VK_C: if(!cursed && !slipping) {aimBackwards(); useItem();} break;
+			
+			case KeyEvent.VK_N: roulette.next(); break;
+			case KeyEvent.VK_B: roulette.repeat(); break;
+			case KeyEvent.VK_V: roulette.previous(); break;
+			
 			case KeyEvent.VK_Q: if(turning && !falling) drift(); break;
 		}
 	}
@@ -1042,7 +1095,22 @@ public class Car
 	public void keyReleased(KeyEvent e)
 	{
 		switch(e.getKeyCode())
-		{
+		{		
+			case KeyEvent.VK_UP:
+			case KeyEvent.VK_W:
+			case KeyEvent.VK_DOWN:
+			case KeyEvent.VK_S:
+				accelerating = false; reversing = false; break;
+			case KeyEvent.VK_A:
+			case KeyEvent.VK_LEFT:
+			case KeyEvent.VK_D:
+			case KeyEvent.VK_RIGHT:
+				turning = false; straighten(); break;
+			
+			case KeyEvent.VK_R:
+			case KeyEvent.VK_C:
+			case KeyEvent.VK_F: if(hasItem()) releaseItem(); break;
+		
 			case KeyEvent.VK_Q: miniTurbo(); break;
 		}
 	}

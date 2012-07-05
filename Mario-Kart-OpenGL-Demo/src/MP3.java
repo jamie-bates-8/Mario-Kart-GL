@@ -5,12 +5,12 @@ import java.net.URL;
 
 public class MP3 extends Thread
 {
-	private CarScene c;
+	private Scene c;
 	private URL url;
 	private MediaLocator mediaLocator;
 	private Player playMP3;
 	
-	public MP3(CarScene c, String file)
+	public MP3(Scene c, String file)
 	{
 		this.c = c;
 		

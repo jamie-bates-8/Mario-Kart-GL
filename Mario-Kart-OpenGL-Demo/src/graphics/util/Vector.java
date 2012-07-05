@@ -1,5 +1,6 @@
 package graphics.util;
 
+
 import static java.lang.Math.*;
 
 public class Vector

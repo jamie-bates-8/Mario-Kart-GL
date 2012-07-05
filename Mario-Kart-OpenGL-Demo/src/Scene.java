@@ -4,7 +4,6 @@ import static graphics.util.Renderer.*;
 /** Native Java imports **/
 import graphics.util.Face;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
@@ -14,15 +13,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import java.io.File;
-import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -36,7 +27,6 @@ import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL2.*;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
-import javax.imageio.ImageIO;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
@@ -58,7 +48,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
  * track by the use of hotkeys. Users can also interact with the car model and
  * manipulation the scene in a number of ways.
  */
-public class CarScene extends Frame implements GLEventListener, KeyListener, MouseWheelListener
+public class Scene extends Frame implements GLEventListener, KeyListener, MouseWheelListener
 {
 	private static final long serialVersionUID = 1L;
 	private int canvasWidth = 840;
@@ -105,7 +95,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 
-	private ItemBox[] itemBoxes;
+	private List<ItemBox> itemBoxes = new ArrayList<ItemBox>();
 	
 	
 	/** Camera Fields **/
@@ -137,18 +127,9 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
     
     /** Environment Fields **/
     private boolean enableSkybox = true;
-    
-    
-	/** Height Map Fields **/
-	private BufferedImage heightMap;
-	
-	private BufferedImage motionLog;
-	private static final int LOG_SCALE = 1;
 	
 	
-	/** Collision Detection Fields **/
-	private boolean enableCollisions = true;
-	
+	/** Collision Detection Fields **/	
 	private boolean enableBoundVisuals     = true;
 	private boolean enableOBBAxes          = false;
 	private boolean enableOBBVertices      = false;
@@ -166,19 +147,17 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	/** Music Fields **/
 	private boolean musicPlaying = false;
 	private static final String MUTE_CITY =
-			"file:///C://Users//Jamie//Documents//Java_Workspace" +
-			"//Computer Graphics//Mute City.mp3";
+			"file:///" + System.getProperty("user.dir") + "//music//Mute City.mp3";
 	
 	
 	private List<Particle> particles = new ArrayList<Particle>();
 
 	
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
-	private ItemRoulette roulette;
-	private List<Item> items = new ArrayList<Item>();
+	private List<Item> itemList = new ArrayList<Item>();
 	
 	
-	public CarScene()
+	public Scene()
 	{
 		GLCanvas canvas = new GLCanvas();
 		canvas.setPreferredSize(new Dimension(canvasWidth, canvasHeight));
@@ -211,7 +190,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		animator.start();
 	}
 	
-	public static void main(String[] args) { new CarScene(); }
+	public static void main(String[] args) { new Scene(); }
 	
 	public void init(GLAutoDrawable drawable)
 	{	
@@ -284,7 +263,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	    displayTexturedObject(gl, environmentFaces);
 	    gl.glEndList();
 	    
-	    fortList = gl.glGenLists(2);
+	    fortList = gl.glGenLists(4);
 	    
 	    gl.glNewList(fortList, GL2.GL_COMPILE_AND_EXECUTE);
 	    displayWildcardObject(gl, fortFaces, new Texture[] {greenMetal, greenGranite});
@@ -312,40 +291,17 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	    new LightningParticle(ORIGIN);
 	    new StarParticle(ORIGIN, null, 0, 0);
 	    
-	    car = new Car(gl, new float[] {0, 1.8f, 0}, 0, 0, 0, items, particles);
+	    car = new Car(gl, new float[] {0, 1.8f, 0}, 0, 0, 0, itemList, itemQueue, particles);
 	    
-		roulette = new ItemRoulette();
-	    
-	    itemBoxes = new ItemBox[]
-	    	{new ItemBox(gl, new float[] {      0, 30,  56.25f}),
-	    	 new ItemBox(gl, new float[] {      0, 30, -56.25f}),
-	    	 new ItemBox(gl, new float[] { 56.25f, 30,       0}),
-	    	 new ItemBox(gl, new float[] {-56.25f, 30,       0}),
-	    	 
-	    	 new ItemBox(gl, new float[] { 101.25f, 60,  101.25f}),
-	    	 new ItemBox(gl, new float[] { 101.25f, 60, -101.25f}),
-	    	 new ItemBox(gl, new float[] {-101.25f, 60, -101.25f}),
-	    	 new ItemBox(gl, new float[] {-101.25f, 60,  101.25f}),
-	    	 
-	    	 new ItemBox(gl, new float[] { 123.75f, 30,  123.75f}),
-	    	 new ItemBox(gl, new float[] { 123.75f, 30, -123.75f}),
-	    	 new ItemBox(gl, new float[] {-123.75f, 30, -123.75f}),
-	    	 new ItemBox(gl, new float[] {-123.75f, 30,  123.75f}),
-	    	 
-	    	 new ItemBox(gl, new float[] {   0, 0, -180}),
-	    	 new ItemBox(gl, new float[] {   0, 0,  180}),
-	    	 new ItemBox(gl, new float[] {-180, 0,    0}),
-	    	 new ItemBox(gl, new float[] { 180, 0,    0})};
+	    itemBoxes.addAll(ItemBox.generateDiamond( 56.25f, 30f, particles));
+	    itemBoxes.addAll(ItemBox.generateSquare (101.25f, 60f, particles));
+	    itemBoxes.addAll(ItemBox.generateSquare (123.75f, 30f, particles));
+	    itemBoxes.addAll(ItemBox.generateDiamond(   180f,  0f, particles));
 	    
 	    wallBounds = BoundParser.parseOBBs("bound/blockFort.bound");
 	   
 	    long endTime = System.currentTimeMillis();
 	    System.out.println(endTime - startTime);
-	    
-	    try { heightMap = ImageIO.read(new File("tex/blockFortMap.png")); }
-	    catch (IOException e) { e.printStackTrace(); }
-	    
-	    motionLog = heightMap;
 	}
 	
 	public void display(GLAutoDrawable drawable)
@@ -378,17 +334,20 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		if(enableAnimation)
 		{	
 			removeItems();
+			
 			removeParticles();
 			
-			updateItemBoxes();
+			for(ItemBox box : itemBoxes) box.update(car); 
+			
 			updateItems();
+			
+			ItemBox.increaseRotation();
+			FakeItemBox.increaseRotation();
 			
 			for(Particle p : particles) p.update();
 			
 			if(camera != CameraMode.MODEL_VIEW) car.update(getObstacleBounds()); 
 		}
-		
-		recordTracks();
 		
 		long start = System.currentTimeMillis();
 		
@@ -436,59 +395,27 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	}
 
 	public void dispose(GLAutoDrawable drawable) {}
-	
-	public void updateItemBoxes()
-	{
-		for(ItemBox box : itemBoxes)
-		{
-			if(!box.isDead())
-			{
-				if(car.bound.testOBB(box.bound))
-				{
-					box.destroy();
-					if(!roulette.isAlive() && !car.isCursed())
-					{
-						roulette.spin();
-						roulette.secondary = car.hasItem();
-					}
-					
-					particles.addAll(box.generateParticles());
-				}
-			}
-			else box.respawnTimer--;
-		}		
-		ItemBox.increaseRotation();
-	}
 
 	private void updateItems()
 	{
 		List<Bound> bounds = getObstacleBounds();
 		
-		for(Item item : items)
+		for(Item item : itemList)
 		{
 			item.update(bounds);
-			
-			if(car.bound.testBound(item.getBound()))
-			{
-				if(!car.hasStarPower() && !car.isInvisible())
-				{
-					if(item instanceof Banana) car.slipOnBanana();
-					else if(item instanceof FakeItemBox) car.curse();
-					
-					item.destroy();
-				}
-				else if(car.hasStarPower()) item.destroy(); 
-			}
-			else if(item.outOfBounds()) item.destroy();
+			item.update(car);
 		}
 		
-		for(Item item : car.items) item.hold();
+		for(Item item : car.getItems()) item.hold();
 		
-		FakeItemBox.increaseRotation();
-		
+		detectItemCollisions();
+	}
+
+	private void detectItemCollisions()
+	{
 		List<Item> allItems = new ArrayList<Item>();
-		allItems.addAll(items);
-		allItems.addAll(car.items);
+		allItems.addAll(itemList);
+		allItems.addAll(car.getItems());
 		
 		for(int i = 0; i < allItems.size() - 1; i++)
 		{
@@ -499,31 +426,6 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				
 				if(a.getBound().testBound(b.getBound())) a.collide(b);
 			}
-		}
-	}
-	
-	private void recordTracks()
-	{
-			int xCentre = (heightMap.getWidth()  / 2);
-			int zCentre = (heightMap.getHeight() / 2);
-			
-			float[][] vertices = car.bound.getVertices();
-			
-			for(int w = 0; w < 4; w++)
-			{
-				int x = (int) (xCentre - ((vertices[w][0] / 120) * xCentre));
-				int z = (int) (zCentre - ((vertices[w][2] / 120) * zCentre));
-
-			try
-			{
-				if(motionLog.getRGB(x / LOG_SCALE, z / LOG_SCALE) != Color.RED.getRGB())
-				{
-					if(car.colliding)
-						 motionLog.setRGB(x / LOG_SCALE, z / LOG_SCALE, Color.RED.getRGB());
-					else motionLog.setRGB(x / LOG_SCALE, z / LOG_SCALE, Color.BLUE.getRGB());
-				}
-			}
-			catch(Exception e) {}
 		}
 	}
 	
@@ -541,10 +443,10 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	{
 		List<Item> toRemove = new ArrayList<Item>();
 		
-		for(Item item : items)
+		for(Item item : itemList)
 			if(item.isDead()) toRemove.add((Item) item);
 		
-		items.removeAll(toRemove);
+		itemList.removeAll(toRemove);
 		
 		car.removeItems();
 	}
@@ -566,8 +468,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		
 		gl.glColor3f(1.0f, 1.0f, 1.0f);
 		
+		ItemRoulette roulette = car.getRoulette();
 		roulette.cursed = car.isCursed();
-		
 		if(roulette.isAlive()) roulette.render(gl);
 		
 		gl.glEnable(GL_LIGHTING);
@@ -716,15 +618,13 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		for(ItemBox box : itemBoxes)
 			if(!box.isDead()) box.render(gl, car.trajectory);
 
-		for(Item item : items)
-			if(!item.isDead()) item.render(gl);
+		for(Item item : itemList)
+			if(!item.isDead()) item.render(gl, car.trajectory);
 	}
 	
 	private List<Bound> getObstacleBounds()
 	{
 		List<Bound> bounds = new ArrayList<Bound>();
-//		if(enableObstacles) Collections.addAll(bounds, wallBounds);
-//		else Collections.addAll(bounds, Arrays.copyOfRange(wallBounds, 0, 5));
 		
 		if(enableObstacles) bounds.addAll(wallBounds);
 		else bounds.addAll(wallBounds.subList(0, 5));
@@ -764,7 +664,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			else car.bound.displayWireframe(gl, glut, new float[] {0, 0, 0, 1});
 			
 			for(OBB wall : wallBounds)
-				if(car.detected != null && car.detected.contains(wall))
+				if(car.collisions != null && car.collisions.contains(wall))
 					 wall.displayWireframe(gl, glut, new float[] {1, 0, 0, 1});
 				else wall.displayWireframe(gl, glut, new float[] {0, 0, 0, 1});
 		}
@@ -777,8 +677,8 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 				wall.displayAxes(gl, 20);
 		}
 		
-		for(Item item : car.items) item.displayBoundVisuals(gl, glut, new float[] {0, 1, 0, 1});
-		for(Item item : items) item.displayBoundVisuals(gl, glut, new float[] {0, 1, 0, 1});
+		for(Item item : car.getItems()) item.displayBoundVisuals(gl, glut, new float[] {0, 1, 0, 1});
+		for(Item item : itemList) item.displayBoundVisuals(gl, glut, new float[] {0, 1, 0, 1});
 		
 		gl.glEnable(GL_TEXTURE_2D);
 	}
@@ -919,15 +819,17 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			switch (e.getKeyCode())
 			{
 				case KeyEvent.VK_ESCAPE: System.exit(0); break; //Close the application
+				
+				case KeyEvent.VK_M:	     switchCamera(); break; //Cycle the camera mode
 				case KeyEvent.VK_EQUALS: if(zoom < -10) zoom++; break; //Zoom in the camera
 				case KeyEvent.VK_MINUS:  if(zoom > -30) zoom--; break; //Zoom out the camera
 				case KeyEvent.VK_DOWN:   xRotation_Camera++; break; //Rotate camera downwards
 				case KeyEvent.VK_UP:     xRotation_Camera--; break; //Rotate camera upwards
 				case KeyEvent.VK_RIGHT:  yRotation_Camera--; break; //Rotate camera rightwards
 				case KeyEvent.VK_LEFT:   yRotation_Camera++; break; //Rotate camera leftwards
+
 				case KeyEvent.VK_E:      enableSkybox = !enableSkybox; break; //Toggle skybox on/off
-				case KeyEvent.VK_M:	     switchCamera(); break; //Cycle the camera mode
-					
+				
 				default: break;
 			}
 		}
@@ -937,59 +839,37 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 			{
 				case KeyEvent.VK_ESCAPE: System.exit(0); break; //Close the application
 				
-				case KeyEvent.VK_W:
-				case KeyEvent.VK_UP:
-					car.accelerating = true; break; //Cause the car to accelerate
-					
-				case KeyEvent.VK_S:
-				case KeyEvent.VK_DOWN:
-					car.reversing = true; car.accelerating = true; break; //Cause the car to reverse
-					
-				case KeyEvent.VK_A:
-				case KeyEvent.VK_LEFT:
-					car.steerLeft(); break; //Cause the car to turn to the left
+				case KeyEvent.VK_H:     enableObstacles = !enableObstacles; break;
 				
-				case KeyEvent.VK_D:
-				case KeyEvent.VK_RIGHT:
-					car.steerRight(); break; //Cause the car to turn to the right
+				case KeyEvent.VK_P:		 playMusic(); break;
 				
-				case KeyEvent.VK_H:		 enableCollisions = !enableCollisions; car.colliding = false; break;  //Toggle collision detection on/off				
+				case KeyEvent.VK_9:		 if(camera != CameraMode.DRIVERS_VIEW) car.displayModel = !car.displayModel; break;
+				case KeyEvent.VK_F1:     enableAnimation = !enableAnimation; break;
+				
+				case KeyEvent.VK_F2:     Item.toggleBoundSolids();     break;
+				case KeyEvent.VK_F3:     Item.toggleBoundWireframes(); break;
+				
+				case KeyEvent.VK_8:		 displayModels          = !displayModels;          break;
+				case KeyEvent.VK_1:		 enableOBBAxes          = !enableOBBAxes;          break;
+				case KeyEvent.VK_2:		 enableOBBVertices      = !enableOBBVertices;      break;
+				case KeyEvent.VK_3:      enableOBBWireframes    = !enableOBBWireframes;    break;
+				case KeyEvent.VK_4:		 enableOBBSolids        = !enableOBBSolids;        break;
+				case KeyEvent.VK_5:		 enableSphereSolids     = !enableSphereSolids;     break;
+				case KeyEvent.VK_6:      enableSphereWireframes = !enableSphereWireframes; break;
+				case KeyEvent.VK_7:		 enableClosestPoints    = !enableClosestPoints;    break;
+				
+				case KeyEvent.VK_0:		 enableBoundVisuals     = !enableBoundVisuals; toggleBoundVisuals(); break;
+				
 				case KeyEvent.VK_M:	     switchCamera(); break; //Cycle the camera mode
 				case KeyEvent.VK_EQUALS: if(zoom < 1.0) zoom += 0.05; break; //Zoom in the camera
 				case KeyEvent.VK_MINUS:  if(zoom > 0.5) zoom -= 0.05; break; //Zoom out the camera
-				case KeyEvent.VK_L:		 displayMotionLog(); break;
-				case KeyEvent.VK_P:		 playMusic(); break;
-				case KeyEvent.VK_9:		 if(camera != CameraMode.DRIVERS_VIEW) car.displayModel = !car.displayModel; break;
-				case KeyEvent.VK_8:		 displayModels = !displayModels; break;
-				case KeyEvent.VK_1:		 enableOBBAxes = !enableOBBAxes; break;
-				case KeyEvent.VK_2:		 enableOBBVertices = !enableOBBVertices; break;
-				case KeyEvent.VK_3:      enableOBBWireframes = !enableOBBWireframes; break;
-				case KeyEvent.VK_4:		 enableOBBSolids = !enableOBBSolids; break;
-				case KeyEvent.VK_5:		 enableSphereSolids = !enableSphereSolids; break;
-				case KeyEvent.VK_6:      enableSphereWireframes = !enableSphereWireframes; break;
-				case KeyEvent.VK_7:		 enableClosestPoints = !enableClosestPoints; break;
-				case KeyEvent.VK_0:		 enableBoundVisuals = !enableBoundVisuals; toggleBoundVisuals(); break;
 				case KeyEvent.VK_X:      xRotation_Camera += 5; break; //Rotate camera downwards
 				case KeyEvent.VK_Y:      yRotation_Camera -= 5; break; //Rotate camera rightwards
+				
 				case KeyEvent.VK_G:		 car.bound.c[1] += 10; break;
-				case KeyEvent.VK_F1:     enableAnimation = !enableAnimation; break;
-				case KeyEvent.VK_F2:     Item.toggleBoundSolids(); break;
-				case KeyEvent.VK_F3:     Item.toggleBoundWireframes(); break;
-				case KeyEvent.VK_F4:     enableObstacles = !enableObstacles; break;
-				
-				case KeyEvent.VK_R:      if(!car.isCursed() && !car.isSlipping()) {car.aimForwards();  pressItem();} break;
-				case KeyEvent.VK_F:      if(!car.isCursed() && !car.isSlipping()) {car.resetAim();     pressItem();} break;
-				case KeyEvent.VK_C:      if(!car.isCursed() && !car.isSlipping()) {car.aimBackwards(); pressItem();} break;
-				
-				case KeyEvent.VK_N:      roulette.next(); break;
-				case KeyEvent.VK_B:      roulette.repeat(); break;
-				case KeyEvent.VK_V:      roulette.previous(); break;
-				
-				case KeyEvent.VK_Q:      if(car.turning && !car.falling) car.drift(); break;
-					
-				default: break;
-			}	
-			
+	
+				default: car.keyPressed(e); break;
+			}
 		}
 	}
 	
@@ -997,24 +877,7 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	{
 		switch (e.getKeyCode())
 		{
-			case KeyEvent.VK_UP:
-			case KeyEvent.VK_W:
-			case KeyEvent.VK_DOWN:
-			case KeyEvent.VK_S:
-				car.accelerating = false; car.reversing = false; break; //Cause the car to decelerate
-			case KeyEvent.VK_A:
-			case KeyEvent.VK_LEFT:
-			case KeyEvent.VK_D:
-			case KeyEvent.VK_RIGHT:
-				car.turning = false; car.straighten(); break; //Cause the car to stop turning
-			
-			case KeyEvent.VK_R:
-			case KeyEvent.VK_C:
-			case KeyEvent.VK_F: if(car.hasItem()) car.releaseItem(); break;
-			
-			case KeyEvent.VK_Q: car.miniTurbo(); break;
-			
-			default: break;
+			default: car.keyReleased(e); break;
 		}
 	}
 
@@ -1030,31 +893,6 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 	{
 		if (e.getWheelRotation() < 0) { if(zoom < -10) zoom++; } //Zoom in the camera
 		else if(zoom > -30) zoom--; //Zoom out the camera
-	}
-	
-	private void pressItem()
-	{
-		if(car.hasItem())
-		{
-			ItemState state = car.getItemState();
-			car.pressItem();
-			if(!roulette.secondary) roulette.update();
-		}
-		
-		else if(roulette.hasItem())
-		{
-			int itemID = roulette.getItem();
-			roulette.secondary = false;
-			ItemState state = ItemState.get(itemID);
-			car.setItemState(state);
-			
-			itemQueue.add(itemID);
-			
-			if(ItemState.isTimed(state)) roulette.setTimer();
-			
-			if(ItemState.isInstantUse(state)) car.pressItem();
-			roulette.update();
-		}
 	}
 
 	public void playMusic()
@@ -1077,22 +915,6 @@ public class CarScene extends Frame implements GLEventListener, KeyListener, Mou
 		enableSphereSolids 	   = enableBoundVisuals;
 		enableSphereWireframes = enableBoundVisuals;
 		enableClosestPoints    = enableBoundVisuals;
-	}
-	
-	private void displayMotionLog()
-	{
-		JFrame record = new JFrame();
-		
-		int height = heightMap.getHeight() / LOG_SCALE;
-		int width = heightMap.getWidth() / LOG_SCALE;
-		
-		ImageIcon image = new ImageIcon(motionLog);
-		JLabel label = new JLabel(image);
-		
-		record.setPreferredSize(new Dimension(width, height));
-		record.add(label);
-		record.pack();
-		record.setVisible(true);
 	}
 	
 	/**
