@@ -29,7 +29,7 @@ public abstract class Item
 	public double gravity = 0.05;
 	public boolean falling = true;
 	public float fallRate = 0.0f;
-	private static final double TOP_FALL_RATE = 2.5;
+	private static final double TOP_FALL_RATE = 5.0;
 	
 	public float velocity = 0;
 	public float[][] u;

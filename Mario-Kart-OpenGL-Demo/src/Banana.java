@@ -19,7 +19,7 @@ public class Banana extends Item
 	
 	private int bananaID = 0;
 	
-	public Banana(GL2 gl, Car car, float[] c, float trajectory, int id)
+	public Banana(GL2 gl, Car car, int id)
 	{
 		if(bananaList == -1)
 		{
@@ -33,9 +33,7 @@ public class Banana extends Item
 	    
 	    bananaID = id;
 		
-		bound = new Sphere(c, RADIUS);
-		setRotation(0, trajectory, 0);
-		this.trajectory = trajectory;
+		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
 	}
 	
 	@Override

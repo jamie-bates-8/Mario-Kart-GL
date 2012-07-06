@@ -11,9 +11,14 @@
 	-Blue Shells (explosion)
 	
 -Possible particle effects to add/improve:
-	-Add spiralling smoke when a boo is used
+	-Add spiralling smoke when a Boo is used
 	-Add exhaust particles
-	-Add shell fragments when a shell is destroyed
+	-Add Shell fragments when a Shell is destroyed
+	-Add slip stream behind Green Shells
+	
+-Optimise Banana rendering:
+	-use a green-yellow gradient?
+	-replace face texture with billboard
 
 -Lightning Bolts should cause players to drop items
 

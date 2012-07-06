@@ -2,7 +2,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.swing.ImageIcon;
@@ -13,7 +12,6 @@ import javax.swing.JLabel;
 public class Test
 {
 	private BufferedImage heightMap;
-	private static final float MAX_HEIGHT = 0.0f;
 	
 	private BufferedImage motionLog;
 	private static final int LOG_SCALE = 1;
@@ -91,7 +89,7 @@ public class Test
 		catch(Exception e) {}
 	}
 	
-	private void displayMotionLog()
+	public void displayMotionLog()
 	{
 		JFrame record = new JFrame();
 		
@@ -105,15 +103,5 @@ public class Test
 		record.add(label);
 		record.pack();
 		record.setVisible(true);
-	}
-	
-	private void cycleColor()
-	{
-		     if(color[0] == 255 && color[1] != 255 && color[2] ==   0) color[1] += COLOR_INCREMENT; //255,   0,   0
-		else if(color[0] !=   0 && color[1] == 255 && color[2] ==   0) color[0] -= COLOR_INCREMENT; //255, 255,   0
-		else if(color[0] ==   0 && color[1] == 255 && color[2] != 255) color[2] += COLOR_INCREMENT; //  0, 255,   0
-		else if(color[0] ==   0 && color[1] !=   0 && color[2] == 255) color[1] -= COLOR_INCREMENT; //  0, 255, 255
-		else if(color[0] != 255 && color[1] ==   0 && color[2] == 255) color[0] += COLOR_INCREMENT; //  0,   0, 255
-		else if(color[0] == 255 && color[1] ==   0 && color[2] !=   0) color[2] -= COLOR_INCREMENT; //255,   0, 255
 	}
 }

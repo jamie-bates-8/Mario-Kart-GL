@@ -1,7 +1,8 @@
 package graphics.util;
 
-
 import static java.lang.Math.*;
+
+import java.util.Calendar;
 
 public class Matrix
 {
@@ -175,4 +176,24 @@ public class Matrix
 	public static float cosf(double a) { return (float) cos(a); }
 	
 	public static float tanf(double a) { return (float) tan(a); }
+	
+	public static void main(String[] args)
+	{
+
+			Calendar calendar = Calendar.getInstance();
+			
+			int month = calendar.get(Calendar.MONTH);
+			
+			calendar.set(Calendar.MONTH, month);
+			calendar.set(Calendar.DAY_OF_MONTH, 1);
+			
+			int lowerBound = (calendar.get(Calendar.DAY_OF_WEEK) + 5) % 7;
+			int upperBound = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+			
+			calendar.set(Calendar.MONTH, month - 1);
+			
+			int lastBound = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+			
+			System.out.println(month + ", " + lowerBound + ", " + upperBound + ", " + lastBound);
+	}
 }

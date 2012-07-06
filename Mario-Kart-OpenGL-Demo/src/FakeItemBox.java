@@ -36,19 +36,16 @@ public class FakeItemBox extends Item
 	
 	private int bounces = 3;
 	
-	public FakeItemBox(GL2 gl, Car car, float[] c, float velocity, List<Particle> particles)
+	public FakeItemBox(GL2 gl, Car car, List<Particle> particles)
 	{
-		this.velocity = velocity;
-		this.particles = particles;
 		this.car = car;
+		this.particles = particles;
 		
-		bound = new Sphere(c, 2.5f);
+		bound = new Sphere(new float[] {0, 0, 0}, 2.5f);
 		
 		generator = new ParticleGenerator();
 		
 		gravity = 0.025;
-		
-		setRotation(0, trajectory, 0);
 	}
 	
 	public static void increaseRotation() { rotation -= 4; }
@@ -58,6 +55,7 @@ public class FakeItemBox extends Item
 	{
 		super.rebound(b);
 		velocity *= 0.75f;
+		if(bounces > 0) bounces--;
 	}
 	
 	@Override

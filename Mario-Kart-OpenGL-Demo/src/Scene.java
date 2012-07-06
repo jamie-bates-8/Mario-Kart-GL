@@ -281,11 +281,11 @@ public class Scene extends Frame implements GLEventListener, KeyListener, MouseW
 	    displayWildcardObject(gl, fortFaces, new Texture[] {yellowMetal, yellowGranite});
 	    gl.glEndList();
 	    
-	    new GreenShell(gl, null, ORIGIN, 0, false);
-	    new RedShell(gl, null, ORIGIN, 0, false, null);
-	    new BlueShell(gl, null, ORIGIN, 0, null, particles);
-	    new FakeItemBox(gl, null, ORIGIN, 0, particles);
-	    new Banana(gl, null, ORIGIN, 0, 0);
+	    new GreenShell (gl, null, 0, false);
+	    new RedShell   (gl, null, 0, false, null);
+	    new BlueShell  (gl, null, 0, particles);
+	    new FakeItemBox(gl, null, particles);
+	    new Banana     (gl, null, 0);
 	    
 	    new BoostParticle(ORIGIN, null, 0, 0, 0, false);
 	    new LightningParticle(ORIGIN);

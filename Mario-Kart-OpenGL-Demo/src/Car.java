@@ -216,38 +216,38 @@ public class Car
 	{
 		switch(itemID)
 		{
-			case  0: items.add(new GreenShell(gl, this, getPosition(), trajectory, false)); break;
+			case  0: items.add(new GreenShell(gl, this, trajectory, false)); break;
 			case  1:
 			{
-				items.add(new GreenShell(gl, this, getPosition(), trajectory, true));
-				items.add(new GreenShell(gl, this, getPosition(), trajectory + 120, true));
-				items.add(new GreenShell(gl, this, getPosition(), trajectory - 120, true));
+				items.add(new GreenShell(gl, this, trajectory,       true));
+				items.add(new GreenShell(gl, this, trajectory + 120, true));
+				items.add(new GreenShell(gl, this, trajectory - 120, true));
 
 				break;
 			}
-			case  2: items.add(new RedShell(gl, this, getPosition(), trajectory, false, this)); break;
+			case  2: items.add(new RedShell(gl, this, trajectory, false, this)); break;
 			case  3:
 			{
-				items.add(new RedShell(gl, this, getPosition(), trajectory, true, this));
-				items.add(new RedShell(gl, this, getPosition(), trajectory + 120, true, this));
-				items.add(new RedShell(gl, this, getPosition(), trajectory - 120, true, this));
+				items.add(new RedShell(gl, this, trajectory,       true, this));
+				items.add(new RedShell(gl, this, trajectory + 120, true, this));
+				items.add(new RedShell(gl, this, trajectory - 120, true, this));
 
 				break;
 			}
 			case  6: itemDuration = 400; break;
-			case  7: items.add(new FakeItemBox(gl, this, getPosition(), 0, particles)); break;
-			case  8: items.add(new Banana(gl, this, getPosition(), trajectory, 1)); break;
+			case  7: items.add(new FakeItemBox(gl, this, particles)); break;
+			case  8: items.add(new Banana(gl, this, 1)); break;
 			case  9:
 			{
-				items.add(new Banana(gl, this, getPosition(), trajectory, 3));
-				items.add(new Banana(gl, this, getPosition(), trajectory, 2));
-				items.add(new Banana(gl, this, getPosition(), trajectory, 1));
+				items.add(new Banana(gl, this, 3));
+				items.add(new Banana(gl, this, 2));
+				items.add(new Banana(gl, this, 1));
 				break;
 			}
 			case 13:
 			{
 				BlueShell shell =
-					new BlueShell(gl, this, ORIGIN, trajectory, this, particles);
+					new BlueShell(gl, this, trajectory, particles);
 					
 				shell.throwUpwards();
 					

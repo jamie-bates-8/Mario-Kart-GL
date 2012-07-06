@@ -21,7 +21,7 @@ public abstract class Shell extends Item
 	public boolean orbiting;
 	public float rotation;
 	
-	public Shell(GL2 gl, Car car, float[] c, float trajectory)
+	public Shell(GL2 gl, Car car, float trajectory)
 	{ 
 		if(rimList == -1)
 		{
@@ -33,10 +33,7 @@ public abstract class Shell extends Item
 		
 	    this.car = car;
 	    
-		bound = new Sphere(c, RADIUS);
-		
-		setRotation(0, trajectory, 0);
-		this.trajectory = trajectory;
+		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
 		
 		rotation = trajectory;
 	}

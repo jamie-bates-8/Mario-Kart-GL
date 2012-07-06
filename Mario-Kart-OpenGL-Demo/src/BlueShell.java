@@ -1,5 +1,3 @@
-
-import static graphics.util.Matrix.getEulerAngles;
 import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Renderer.displayColoredObject;
 
@@ -12,7 +10,6 @@ import javax.media.opengl.GL2;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
-
 
 public class BlueShell extends Shell
 {
@@ -34,22 +31,13 @@ public class BlueShell extends Shell
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
-	private static final float INITIAL_VELOCITY = 1.5f;
-	private static final float TOP_SPEED = 3.0f;
-	
-	private float acceleration = 0.0125f;
-	
-	private Car target;
-	
 	public ParticleGenerator generator;
 
 	private List<Particle> particles;
 	
-	private float[] _heights = {0, 0, 0, 0};
-	
-	public BlueShell(GL2 gl, Car car, float[] c, float trajectory, Car target, List<Particle> particles)
+	public BlueShell(GL2 gl, Car car, float trajectory, List<Particle> particles)
 	{
-		super(gl, car, c, trajectory);
+		super(gl, car, trajectory);
 		
 		if(shellList == -1)
 		{
@@ -66,10 +54,7 @@ public class BlueShell extends Shell
 			displayColoredObject(gl, SPIKE_FACES, 1);
 			gl.glEndList();
 		}
-	    
-		velocity = INITIAL_VELOCITY;
-			
-		this.target = target;
+
 		this.particles = particles;
 		
 		generator = new ParticleGenerator();
@@ -80,8 +65,6 @@ public class BlueShell extends Shell
 	{
 		gl.glPushMatrix();
 		{
-			float[] angles = getEulerAngles(u);
-			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			gl.glRotatef(rotation, 0, 1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);

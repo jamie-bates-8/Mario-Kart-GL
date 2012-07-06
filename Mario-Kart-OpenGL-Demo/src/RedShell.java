@@ -36,9 +36,9 @@ public class RedShell extends Shell
 	
 	private Car target;
 	
-	public RedShell(GL2 gl, Car car, float[] c, float trajectory, boolean orbiting, Car target)
+	public RedShell(GL2 gl, Car car, float trajectory, boolean orbiting, Car target)
 	{
-		super(gl, car, c, trajectory);
+		super(gl, car, trajectory);
 		
 		if(shellList == -1)
 		{

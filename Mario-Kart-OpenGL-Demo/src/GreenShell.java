@@ -35,9 +35,9 @@ public class GreenShell extends Shell
 	
 	public int durability;
 	
-	public GreenShell(GL2 gl, Car car, float[] c, float trajectory, boolean orbiting)
+	public GreenShell(GL2 gl, Car car, float trajectory, boolean orbiting)
 	{
-		super(gl, car, c, trajectory);
+		super(gl, car, trajectory);
 		
 		if(shellList == -1)
 		{
