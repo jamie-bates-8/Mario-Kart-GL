@@ -18,13 +18,16 @@ public class BoostParticle extends Particle
 	
 	private float scale;
 	private boolean special;
+	private boolean miniature;
 
-	public BoostParticle(float[] c, float[] t, float rotation, int duration, float scale, boolean special)
+	public BoostParticle(float[] c, float[] t, float rotation, int duration,
+			float scale, boolean special, boolean miniature)
 	{
 		super(c, t, rotation, duration);
 		
 		this.scale = scale;
 		this.special = special;
+		this.miniature = miniature;
 	}
 
 	@Override
@@ -38,6 +41,7 @@ public class BoostParticle extends Particle
 			
 			float r = generator.nextInt(2) + generator.nextFloat();
 			if(special) r *= 1.5;
+			if(miniature) r *= 0.5;
 			
 			float[] _t = {(float) (-r * Math.cos(rotation)), 0, (float) (r * Math.sin(rotation))};
 			float[] _c = subtract(c, _t);

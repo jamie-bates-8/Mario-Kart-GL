@@ -9,15 +9,17 @@ import javax.media.opengl.GL2;
 
 public class ItemBoxParticle extends Particle
 {
-	public float[] color;
-	public boolean fill;
+	private float[] color;
+	private boolean fill;
+	private boolean miniature;
 	
-	public ItemBoxParticle(float[] c, float[] t, float rotation, float[] color, boolean fill)
+	public ItemBoxParticle(float[] c, float[] t, float rotation, float[] color, boolean fill, boolean miniature)
 	{
 		super(c, t, rotation, 20);
 		
 		this.color = color;
 		this.fill = fill;
+		this.miniature = miniature;
 	}
 
 	@Override
@@ -28,7 +30,9 @@ public class ItemBoxParticle extends Particle
 			gl.glTranslatef(c[0], c[1], c[2]);
 			gl.glRotatef(trajectory - 90, 0, 1, 0);
 			gl.glRotatef(rotation, 0, 0, 1);
-			gl.glScalef(0.75f, 0.75f, 0.75f);
+			
+			if(miniature) gl.glScalef(0.375f, 0.375f, 0.375f);
+			else gl.glScalef(0.75f, 0.75f, 0.75f);
 			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);

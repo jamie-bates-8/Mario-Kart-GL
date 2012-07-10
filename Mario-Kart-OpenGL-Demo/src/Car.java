@@ -89,7 +89,6 @@ public class Car
 	
 	
 	/** Particle Fields **/
-	private List<Particle> particles;
 	private ParticleGenerator generator = new ParticleGenerator();
 	
 	
@@ -97,8 +96,6 @@ public class Car
 	private ItemRoulette roulette = new ItemRoulette();
 	private ItemState itemState = ItemState.NO_ITEM;
 	private Queue<Item> items = new LinkedList<Item>();
-	private Queue<Integer> worldItemQueue;
-	public List<Item> worldItemList;
 	
 	private boolean slipping = false;
 	private float[] slipVector = ORIGIN;
@@ -132,9 +129,10 @@ public class Car
 	private enum Aim {FORWARDS, DEFAULT, BACKWARDS};
 	private Aim aiming = Aim.DEFAULT;
 	
+	private Scene scene;
 	
-	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot,
-			List<Item> worldItemList, Queue<Integer> worldItemQueue, List<Particle> particles)
+	
+	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
 		//Using a display list ensures that the complex car model is displayed quickly
 		carList = gl.glGenLists(1);
@@ -147,11 +145,9 @@ public class Car
 	    		xrot, yrot, zrot,
 	    		5.5f, 2.0f, 2.7f);
 	    
-	    this.worldItemList = worldItemList;
-	    this.worldItemQueue = worldItemQueue;
-	    this.particles = particles;
-		
-	    trajectory = yrot;	
+	     trajectory = yrot;
+	    
+	    this.scene = scene; 	
 	}
 	
 	public Queue<Item> getItems() { return items; }
@@ -171,7 +167,7 @@ public class Car
 			ItemState state = ItemState.get(itemID);
 			setItemState(state);
 			
-			worldItemQueue.add(itemID);
+			scene.sendItemCommand(itemID);
 			
 			if(ItemState.isTimed(state)) roulette.setTimer();
 			
@@ -216,42 +212,41 @@ public class Car
 	{
 		switch(itemID)
 		{
-			case  0: items.add(new GreenShell(gl, this, trajectory, false)); break;
+			case  0: items.add(new GreenShell(gl, scene, this, trajectory, false)); break;
 			case  1:
 			{
-				items.add(new GreenShell(gl, this, trajectory,       true));
-				items.add(new GreenShell(gl, this, trajectory + 120, true));
-				items.add(new GreenShell(gl, this, trajectory - 120, true));
+				items.add(new GreenShell(gl, scene, this, trajectory,       true));
+				items.add(new GreenShell(gl, scene, this, trajectory + 120, true));
+				items.add(new GreenShell(gl, scene, this, trajectory - 120, true));
 
 				break;
 			}
-			case  2: items.add(new RedShell(gl, this, trajectory, false, this)); break;
+			case  2: items.add(new RedShell(gl, scene, this, trajectory, false, this)); break;
 			case  3:
 			{
-				items.add(new RedShell(gl, this, trajectory,       true, this));
-				items.add(new RedShell(gl, this, trajectory + 120, true, this));
-				items.add(new RedShell(gl, this, trajectory - 120, true, this));
+				items.add(new RedShell(gl, scene, this, trajectory,       true, this));
+				items.add(new RedShell(gl, scene, this, trajectory + 120, true, this));
+				items.add(new RedShell(gl, scene, this, trajectory - 120, true, this));
 
 				break;
 			}
 			case  6: itemDuration = 400; break;
-			case  7: items.add(new FakeItemBox(gl, this, particles)); break;
-			case  8: items.add(new Banana(gl, this, 1)); break;
+			case  7: items.add(new FakeItemBox(gl, scene, this)); break;
+			case  8: items.add(new Banana(gl, scene, this, 1)); break;
 			case  9:
 			{
-				items.add(new Banana(gl, this, 3));
-				items.add(new Banana(gl, this, 2));
-				items.add(new Banana(gl, this, 1));
+				items.add(new Banana(gl, scene, this, 3));
+				items.add(new Banana(gl, scene, this, 2));
+				items.add(new Banana(gl, scene, this, 1));
 				break;
 			}
 			case 13:
 			{
-				BlueShell shell =
-					new BlueShell(gl, this, trajectory, particles);
+				BlueShell shell = new BlueShell(gl, scene, this, trajectory);
 					
 				shell.throwUpwards();
 					
-				worldItemList.add(shell);
+				scene.addItem(shell);
 				break;
 			}
 			default: break;
@@ -278,7 +273,7 @@ public class Car
 					case BACKWARDS: shell.throwBackwards(); break;
 				}
 					
-				worldItemList.add(shell);
+				scene.addItem(shell);
 				break;
 			}
 			
@@ -299,7 +294,7 @@ public class Car
 					case FORWARDS: banana.throwUpwards(); break;
 				}
 					
-				worldItemList.add(banana);
+				scene.addItem(banana);
 				break;
 			}
 			
@@ -327,7 +322,7 @@ public class Car
 					case BACKWARDS: shell.throwBackwards(); break;
 				}
 					
-				worldItemList.add(shell);
+				scene.addItem(shell);
 				break;
 			}
 			
@@ -341,7 +336,7 @@ public class Car
 					case FORWARDS: item.throwUpwards(); break;
 				}
 						
-				worldItemList.add(item);
+				scene.addItem(item);
 				break;
 			}
 
@@ -603,13 +598,13 @@ public class Car
 		spectrum = spectrum % 6;
 	}
 
-	public void detectCollisions(List<Bound> bounds)
+	public void detectCollisions()
 	{
 		colliding = false;
 		
 		collisions.clear();
 		
-		for(Bound collision : bounds)
+		for(Bound collision : scene.getBounds())
 		{
 			if(bound.testBound(collision))
 			{
@@ -665,11 +660,11 @@ public class Car
 		else return new float[] {0, 0, 0};
 	}
 
-	public void update(List<Bound> bounds)
+	public void update()
 	{
 		setRotation(getRotationAngles(getHeights()));
 		
-		detectCollisions(bounds);
+		detectCollisions();
 		resolveCollisions();
 		
 		if(superBoosting && !slipping) boost();
@@ -715,8 +710,8 @@ public class Car
 		{
 			for(float[] source : getDriftVectors())
 			{
-				particles.addAll(generator.generateDriftParticles(source, 10, driftState.ordinal()));
-				particles.addAll(generator.generateSparkParticles(source,  2));
+				scene.addParticles(generator.generateDriftParticles(source, 10, driftState.ordinal(), miniature));
+				scene.addParticles(generator.generateSparkParticles(source,  2, miniature));
 			}
 		}
 		
@@ -739,14 +734,14 @@ public class Car
 		if(boosting)
 		{
 			for(float[] source : getBoostVectors())
-				particles.addAll(generator.generateBoostParticles(source, boostDuration / 4, superBoosting));
+				scene.addParticles(generator.generateBoostParticles(source, boostDuration / 4, superBoosting, miniature));
 		}
 		
 		if(curseDuration > 0) curseDuration--;
 		else cursed = false;
 		
 		if(cursed)
-			particles.addAll(generator.generateFakeItemBoxParticles(getPosition(), 2));
+			scene.addParticles(generator.generateFakeItemBoxParticles(getPosition(), 2, miniature));
 		
 		if(slipDuration > 0) slipDuration--;
 		else slipping = false;
@@ -761,7 +756,7 @@ public class Car
 		}
 		
 		if(starPower)
-			particles.addAll(generator.generateStarParticles(getPosition(), 2));
+			scene.addParticles(generator.generateStarParticles(getPosition(), 2, miniature));
 		
 		if(booDuration > 0) booDuration--;
 		else if(booColor < 0.5f) booColor += 0.0125f;
@@ -993,7 +988,7 @@ public class Car
 		velocity = 2 * TOP_SPEED;
 	}
 
-	public void slipOnBanana()
+	public void spin()
 	{
 		if(!slipping)
 		{
@@ -1020,11 +1015,11 @@ public class Car
 			velocity = 0;
 			
 			if(slipping) slipDuration += 24;
-			else slipOnBanana();
+			else spin();
 		}
 		
 		float[] source = getLightningVector(); 
-		particles.add(new LightningParticle(source));
+		scene.addParticle(new LightningParticle(source));
 	}
 	
 	public void curse()

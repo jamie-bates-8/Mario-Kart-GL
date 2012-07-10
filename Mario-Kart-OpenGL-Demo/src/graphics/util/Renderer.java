@@ -1,12 +1,13 @@
 package graphics.util;
 
-
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL.GL_TRIANGLES;
 import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_COLOR_MATERIAL;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
+
+import static java.lang.Math.abs;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class Renderer
 	public Renderer() {}
 	
 	/**
-     * Converts a list of faces representing a 3D model into OpenGL commands to
+     * Converts a list of faces representing a textured 3D model into OpenGL commands to
      * display the model in a scene
      * @param gl - the OpenGL context
      * @param objectFaces - the faces of the model to be displayed
@@ -49,6 +50,36 @@ public class Renderer
 
 			gl.glEnd();
 		}
+	}
+	
+	public static void displayGradientObject(GL2 gl, List<Face> objectFaces, Gradient gradient, float lower, float upper)
+	{
+		gl.glDisable(GL_TEXTURE_2D);
+		
+		gl.glEnable(GL_COLOR_MATERIAL);
+		
+		for(Face face : objectFaces)
+		{
+			gl.glBegin(GL_TRIANGLES);
+
+			for(int i = 0; i < face.getVertices().length; i++)
+			{
+				float ratio = (abs(lower) + face.getVy(i)) / (abs(lower) + abs(upper));
+				
+				float[] color = gradient.getColor(ratio);
+				
+				gl.glColor3f(color[0], color[1], color[2]);
+				
+				gl.glNormal3f(face.getNx(i), face.getNy(i), face.getNz(i));
+				gl.glVertex3f(face.getVx(i), face.getVy(i), face.getVz(i));
+			}
+
+			gl.glEnd();
+		}
+
+		gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);
 	}
 	
 	public static void displayWildcardObject(GL2 gl, List<Face> objectFaces, Texture[] textures)

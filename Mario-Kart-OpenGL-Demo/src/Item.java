@@ -1,4 +1,3 @@
-
 import static graphics.util.Matrix.getRotationMatrix;
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.getAngle;
@@ -24,15 +23,16 @@ public abstract class Item
 	public static boolean enableBoundWireframes = false;
 	public static boolean enableBoundSolids = false;
 	
-	public Car car;
+	protected Scene scene;
+	protected Car car;
 	
-	public double gravity = 0.05;
-	public boolean falling = true;
-	public float fallRate = 0.0f;
-	private static final double TOP_FALL_RATE = 5.0;
+	protected double gravity = 0.05;
+	protected boolean falling = true;
+	protected float fallRate = 0.0f;
+	protected static final double TOP_FALL_RATE = 5.0;
 	
 	public float velocity = 0;
-	public float[][] u;
+	public float[][] u = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	public float trajectory = 0;
 	
 	public Bound bound;
@@ -100,6 +100,8 @@ public abstract class Item
 	
 	public abstract void collide(Item item);
 	
+	public abstract void collide(Car car);
+	
 	public void fall()
 	{
 		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
@@ -112,19 +114,13 @@ public abstract class Item
 		return dot(p, p) > GLOBAL_RADIUS * GLOBAL_RADIUS;
 	} 
 	
-	public abstract void update(List<Bound> bounds);
+	public abstract void update();
 	
 	public void update(Car car)
 	{
 		if(car.bound.testBound(bound))
 		{
-			if(!car.hasStarPower() && !car.isInvisible())
-			{
-				if(this instanceof Banana) car.slipOnBanana();
-				else if(this instanceof FakeItemBox) car.curse();
-				
-				destroy();
-			}
+			if(!car.hasStarPower() && !car.isInvisible()) collide(car);
 			else if(car.hasStarPower()) destroy();
 		}
 		else if(outOfBounds()) destroy();
@@ -253,11 +249,11 @@ public abstract class Item
 		}
 	}
 	
-	public void detectCollisions(List<Bound> bounds)
+	public void detectCollisions()
 	{
 		collisions.clear();
 
-		for(Bound bound : bounds)
+		for(Bound bound : scene.getBounds())
 			if(bound.testBound(this.bound))
 				collisions.add(bound);
 	}

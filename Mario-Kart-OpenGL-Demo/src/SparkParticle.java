@@ -1,10 +1,8 @@
-
 import static javax.media.opengl.GL.GL_BLEND;
-import static javax.media.opengl.GL2.GL_POINTS;
+import static javax.media.opengl.GL2.GL_LINES;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import javax.media.opengl.GL2;
-
 
 public class SparkParticle extends Particle
 {
@@ -13,12 +11,15 @@ public class SparkParticle extends Particle
 	private static final double TOP_FALL_RATE = 5.0;
 	
 	private float[] color;
+	private boolean miniature;
 	
-	public SparkParticle(float[] c, float[] t, float rotation, int duration, float[] color)
+	public SparkParticle(float[] c, float[] t, float rotation, int duration,
+			float[] color, boolean miniature)
 	{
 		super(c, t, rotation, duration);
 		
 		this.color = color;
+		this.miniature = miniature;
 	}
 
 	@Override
@@ -27,8 +28,8 @@ public class SparkParticle extends Particle
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
-			gl.glScalef(0.5f, 0.5f, 0.5f);
+			if(miniature) gl.glScalef(0.25f, 0.25f, 0.25f);
+			else gl.glScalef(0.5f, 0.5f, 0.5f);
 			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
@@ -36,11 +37,10 @@ public class SparkParticle extends Particle
 
 			gl.glColor3f(color[0], color[1], color[2]);
 			
-			gl.glPointSize(1.3f);
-			
-			gl.glBegin(GL_POINTS);
+			gl.glBegin(GL_LINES);
 			{
 				gl.glVertex3f(0, 0, 0);
+				gl.glVertex3f(t[0], t[1] - fallRate, t[2]);
 			}
 			gl.glEnd();
 

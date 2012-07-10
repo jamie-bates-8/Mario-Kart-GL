@@ -31,15 +31,13 @@ public class FakeItemBox extends Item
 	}
 	
 	public ParticleGenerator generator;
-
-	private List<Particle> particles;
 	
 	private int bounces = 3;
 	
-	public FakeItemBox(GL2 gl, Car car, List<Particle> particles)
+	public FakeItemBox(GL2 gl, Scene scene, Car car)
 	{
+		this.scene = scene;
 		this.car = car;
-		this.particles = particles;
 		
 		bound = new Sphere(new float[] {0, 0, 0}, 2.5f);
 		
@@ -113,7 +111,7 @@ public class FakeItemBox extends Item
 	public void destroy()
 	{
 		super.destroy();
-		particles.addAll(generator.generateFakeItemBoxParticles(getPosition(), 64));
+		scene.addParticles(generator.generateFakeItemBoxParticles(getPosition(), 64, false));
 	}
 	
 	@Override
@@ -163,12 +161,12 @@ public class FakeItemBox extends Item
 	}
 	
 	@Override
-	public void update(List<Bound> bounds)
+	public void update()
 	{
 		if(thrown && falling) setPosition(getPositionVector());
 		if(falling) fall();
 		
-		detectCollisions(bounds);
+		detectCollisions();
 		resolveCollisions();
 
 		if(falling) getHeights();
@@ -187,5 +185,12 @@ public class FakeItemBox extends Item
 	
 	@Override
 	public float getMaximumExtent() { return bound.getMaximumExtent() * 0.85f; }
+	
+	@Override
+	public void collide(Car car)
+	{
+		car.curse();
+		destroy();
+	}
 }
 

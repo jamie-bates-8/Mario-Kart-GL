@@ -1,14 +1,11 @@
-
 import static graphics.util.Renderer.displayWildcardObject;
 
 import java.io.File;
-import java.util.List;
 
 import javax.media.opengl.GL2;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
-
 
 public class GreenShell extends Shell
 {	
@@ -35,9 +32,9 @@ public class GreenShell extends Shell
 	
 	public int durability;
 	
-	public GreenShell(GL2 gl, Car car, float trajectory, boolean orbiting)
+	public GreenShell(GL2 gl, Scene scene, Car car, float trajectory, boolean orbiting)
 	{
-		super(gl, car, trajectory);
+		super(gl, scene, car, trajectory);
 		
 		if(shellList == -1)
 		{
@@ -77,12 +74,12 @@ public class GreenShell extends Shell
 	public void decelerate() { if(velocity > MIN_VELOCITY) velocity -= ACCELERATION; }
 	
 	@Override
-	public void update(List<Bound> bounds)
+	public void update()
 	{
 		setPosition(getPositionVector());
 		if(falling) fall();
 		
-		detectCollisions(bounds);
+		detectCollisions();
 		resolveCollisions();
 
 		decelerate();
@@ -91,4 +88,7 @@ public class GreenShell extends Shell
 		
 		if(durability < 1) destroy();
 	}
+	
+	@Override
+	public void collide(Car car) { car.spin(); destroy(); }
 }

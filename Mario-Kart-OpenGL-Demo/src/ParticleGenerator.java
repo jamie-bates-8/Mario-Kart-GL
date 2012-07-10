@@ -34,13 +34,13 @@ public class ParticleGenerator
 			
 			float[] t = getRandomVector();
 			
-			particles.add(new ItemBoxParticle(source, t, 0, _color, generator.nextBoolean()));
+			particles.add(new ItemBoxParticle(source, t, 0, _color, generator.nextBoolean(), false));
 		}
 		
 		return particles;
 	}
 	
-	public List<Particle> generateSparkParticles(float[] source, int n)
+	public List<Particle> generateSparkParticles(float[] source, int n, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -51,16 +51,16 @@ public class ParticleGenerator
 			float[]  color = colors[generator.nextInt(colors.length)];
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255};
 			
-			float[] t = multiply(getRandomVector(), 0.5f);
+			float[] t = getRandomVector();
 			t[1] = Math.abs(t[1]);
 			
-			particles.add(new SparkParticle(source, t, 0, 8, _color));
+			particles.add(new SparkParticle(source, t, 0, 4, _color, miniature));
 		}
 		
 		return particles;
 	}
 	
-	public List<Particle> generateDriftParticles(float[] source, int n, int color)
+	public List<Particle> generateDriftParticles(float[] source, int n, int color, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -68,7 +68,7 @@ public class ParticleGenerator
 		{	
 			float rotation = -45 + generator.nextInt(90);
 			
-			particles.add(new DriftParticle(source, rotation, color, generator.nextBoolean()));
+			particles.add(new DriftParticle(source, rotation, color, generator.nextBoolean(), miniature));
 		}
 		
 		return particles;
@@ -91,15 +91,16 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateStarParticles(float[] source, int n)
+	public List<Particle> generateStarParticles(float[] source, int n, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
 		for(int i = 0; i < n; i++)
 		{
 			float[] t = getRandomVector();
+			if(miniature) t = multiply(t, 0.5f);
 			
-			float scale = generator.nextFloat() * 2.5f;
+			float scale = generator.nextFloat() * ((miniature) ? 1.25f : 2.5f);
 			
 			particles.add(new StarParticle(source, t, 5, scale));
 		}
@@ -107,7 +108,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateFakeItemBoxParticles(float[] source, int n)
+	public List<Particle> generateFakeItemBoxParticles(float[] source, int n, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -119,14 +120,15 @@ public class ParticleGenerator
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
 			
 			float[] t = getRandomVector();
+			if(miniature) t = multiply(t, 0.5f);
 			
-			particles.add(new ItemBoxParticle(source, t, 45, _color, generator.nextBoolean()));
+			particles.add(new ItemBoxParticle(source, t, 45, _color, generator.nextBoolean(), miniature));
 		}
 		
 		return particles;
 	}
 	
-	public List<Particle> generateBoostParticles(float[] source, int n, boolean special)
+	public List<Particle> generateBoostParticles(float[] source, int n, boolean special, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -138,10 +140,11 @@ public class ParticleGenerator
 			
 			float k = (special) ? 0.55f : 0.5f;
 			t = multiply(t, k);
+			if(miniature) t = multiply(t, 0.5f);
 			
-			int duration = (special) ? 1 : 1;
+			float scale = generator.nextFloat() * ((miniature) ? 1.25f : 2.5f);
 			
-			particles.add(new BoostParticle(source, t, 0, duration, generator.nextFloat() * 2.5f, special));
+			particles.add(new BoostParticle(source, t, 0, 1, scale, special, miniature));
 		}
 		
 		return particles;

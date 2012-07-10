@@ -4,23 +4,9 @@
 -Zoom camera in when obscured by an obstacle
 
 -Fake Item Boxes should rebound off slopes
-
--Add item-vehicle collision effects:
-	-Green Shells
-	-Red Shells
-	-Blue Shells (explosion)
 	
 -Possible particle effects to add/improve:
-	-Add spiralling smoke when a Boo is used
 	-Add exhaust particles
 	-Add Shell fragments when a Shell is destroyed
-	-Add slip stream behind Green Shells
-	
--Optimise Banana rendering:
-	-use a green-yellow gradient?
-	-replace face texture with billboard
 
 -Lightning Bolts should cause players to drop items
-
--Implement model and/or item box parser?
-	

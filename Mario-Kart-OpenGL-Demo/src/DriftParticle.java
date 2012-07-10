@@ -15,13 +15,15 @@ public class DriftParticle extends Particle
 	
 	private int color;
 	private boolean flat;
+	private boolean miniature;
 	
-	public DriftParticle(float[] c, float rotation, int color, boolean flat)
+	public DriftParticle(float[] c, float rotation, int color, boolean flat, boolean miniature)
 	{
 		super(c, new float[] {0, 0, 0}, rotation, 0);
 		
 		this.color = color;
 		this.flat = flat;
+		this.miniature = miniature;
 	}
 
 	@Override
@@ -34,7 +36,8 @@ public class DriftParticle extends Particle
 			gl.glRotatef((flat) ? -90 : 0, 1, 0, 0);
 			gl.glRotatef(rotation, 0, 0, 1);
 			
-			gl.glScalef(1.5f, 5.0f, 1.5f);
+			if(miniature) gl.glScalef(0.75f, 2.5f, 0.75f);
+			else gl.glScalef(1.5f, 5.0f, 1.5f);
 			gl.glTranslatef(0, 0.2f, 0);
 			
 			gl.glDepthMask(false);

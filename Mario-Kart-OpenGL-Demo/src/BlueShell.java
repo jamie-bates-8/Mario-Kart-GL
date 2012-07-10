@@ -32,12 +32,14 @@ public class BlueShell extends Shell
 	}
 	
 	public ParticleGenerator generator;
-
-	private List<Particle> particles;
 	
-	public BlueShell(GL2 gl, Car car, float trajectory, List<Particle> particles)
+	private int blastDuration = 0;
+	private float blastRadius = 0;
+	private float blastSpeed = 2.5f;
+	
+	public BlueShell(GL2 gl, Scene scene, Car car, float trajectory)
 	{
-		super(gl, car, trajectory);
+		super(gl, scene, car, trajectory);
 		
 		if(shellList == -1)
 		{
@@ -54,8 +56,6 @@ public class BlueShell extends Shell
 			displayColoredObject(gl, SPIKE_FACES, 1);
 			gl.glEndList();
 		}
-
-		this.particles = particles;
 		
 		generator = new ParticleGenerator();
 	}
@@ -63,35 +63,69 @@ public class BlueShell extends Shell
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
-		gl.glPushMatrix();
+		if(!dead)
 		{
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glRotatef(rotation, 0, 1, 0);
-			gl.glScalef(1.5f, 1.5f, 1.5f);
-			
-			gl.glCallList(shellList);
-			gl.glCallList(rimList);
-			gl.glCallList(spikeList);
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+				gl.glRotatef(rotation, 0, 1, 0);
+				gl.glScalef(1.5f, 1.5f, 1.5f);
+				
+				gl.glCallList(shellList);
+				gl.glCallList(rimList);
+				gl.glCallList(spikeList);
+			}
+			gl.glPopMatrix();
 		}
-		gl.glPopMatrix();
 	}
 	
 	@Override
-	public void update(List<Bound> bounds)
-	{	
-		setPosition(getPositionVector());
-		if(falling) fall();
-
-		for(Bound bound : bounds)
-			if(bound.testBound(this.bound))
-				{ destroy(); break; }
-
-		rotation += 10 * velocity;
+	public void update()
+	{
+		if(!dead)
+		{
+			setPosition(getPositionVector());
+			if(falling) fall();
+	
+			for(Bound bound : scene.getBounds())
+				if(bound.testBound(this.bound))
+					{ destroy(); break; }
+	
+			rotation += 10 * velocity;
+		}
+		else if(blastDuration > 0)
+		{
+			bound = new Sphere(getPosition(), blastRadius);
+			blastRadius += blastSpeed;
+			blastSpeed *= 0.9f;
+			blastDuration--;
+		}
 	}
 	
+	@Override
 	public void destroy()
 	{
+		if(!dead)
+		{
+			blastDuration = 60;
+			scene.addParticles(generator.generateBlastParticles(getPosition(), 600));
+		}
+		
 		dead = true;
-		particles.addAll(generator.generateBlastParticles(getPosition(), 600));
+	}
+	
+	@Override
+	public boolean isDead() { return dead && blastDuration < 1; }
+	
+	@Override
+	public void collide(Car car)
+	{
+		if(!dead) destroy();
+		else if(blastDuration > 50)
+		{
+			car.velocity = 0;
+			car.spin();
+		}
+		else if(blastDuration >  0) car.spin();
 	}
 }

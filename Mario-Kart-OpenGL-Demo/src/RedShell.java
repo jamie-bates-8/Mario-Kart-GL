@@ -1,15 +1,12 @@
-
 import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Vector.*;
 
 import java.io.File;
-import java.util.List;
 
 import javax.media.opengl.GL2;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
-
 
 public class RedShell extends Shell
 {
@@ -35,10 +32,11 @@ public class RedShell extends Shell
 	private float acceleration = 0.0125f;
 	
 	private Car target;
+	private boolean locked = true;
 	
-	public RedShell(GL2 gl, Car car, float trajectory, boolean orbiting, Car target)
+	public RedShell(GL2 gl, Scene scene, Car car, float trajectory, boolean orbiting, Car target)
 	{
-		super(gl, car, trajectory);
+		super(gl, scene, car, trajectory);
 		
 		if(shellList == -1)
 		{
@@ -70,17 +68,19 @@ public class RedShell extends Shell
 	}
 	
 	@Override
-	public void update(List<Bound> bounds)
+	public void update()
 	{	
-		if(velocity < TOP_SPEED) velocity += acceleration;
+		if(target.isInvisible()) locked = false; 
+		
+		if(velocity < TOP_SPEED && !locked) velocity += acceleration;
 		
 		setPosition(getPositionVector());
 		if(falling) fall();
 		
-		detectCollisions(bounds);
+		detectCollisions();
 		resolveCollisions();
 		
-		if(!thrown) trajectory = target.trajectory;
+		if(!thrown && locked) trajectory = target.trajectory;
 		setRotation(getRotationAngles(getHeights()));
 		rotation += 10 * velocity;	
 	}
@@ -88,7 +88,7 @@ public class RedShell extends Shell
 	@Override
 	public float[] getPositionVector()
 	{
-		if(thrown)
+		if(thrown || !locked)
 			return subtract(getPosition(), multiply(u[0], velocity));
 		else
 		{
@@ -102,4 +102,7 @@ public class RedShell extends Shell
 	
 	@Override
 	public void rebound(Bound b) { destroy(); }
+	
+	@Override
+	public void collide(Car car) { car.spin(); destroy(); }
 }
