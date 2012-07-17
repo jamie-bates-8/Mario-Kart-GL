@@ -810,38 +810,38 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener
 	{
 		switch (e.getKeyCode())
 		{
-		case KeyEvent.VK_ESCAPE: System.exit(0); break; //Close the application
-
-		case KeyEvent.VK_H:     enableObstacles = !enableObstacles; break;
-
-		case KeyEvent.VK_P:		 playMusic(); break;
-
-		case KeyEvent.VK_9:		 if(camera != CameraMode.DRIVERS_VIEW) car.displayModel = !car.displayModel; break;
-		case KeyEvent.VK_F1:     enableAnimation = !enableAnimation; break;
-
-		case KeyEvent.VK_F2:     Item.toggleBoundSolids();     break;
-		case KeyEvent.VK_F3:     Item.toggleBoundWireframes(); break;
-
-		case KeyEvent.VK_8:		 displayModels          = !displayModels;          break;
-		case KeyEvent.VK_1:		 enableOBBAxes          = !enableOBBAxes;          break;
-		case KeyEvent.VK_2:		 enableOBBVertices      = !enableOBBVertices;      break;
-		case KeyEvent.VK_3:      enableOBBWireframes    = !enableOBBWireframes;    break;
-		case KeyEvent.VK_4:		 enableOBBSolids        = !enableOBBSolids;        break;
-		case KeyEvent.VK_5:		 enableSphereSolids     = !enableSphereSolids;     break;
-		case KeyEvent.VK_6:      enableSphereWireframes = !enableSphereWireframes; break;
-		case KeyEvent.VK_7:		 enableClosestPoints    = !enableClosestPoints;    break;
-
-		case KeyEvent.VK_0:		 enableBoundVisuals     = !enableBoundVisuals; toggleBoundVisuals(); break;
-
-		case KeyEvent.VK_M:	     switchCamera(); break; //Cycle the camera mode
-		case KeyEvent.VK_EQUALS: if(zoom < 1.0) zoom += 0.05; break; //Zoom in the camera
-		case KeyEvent.VK_MINUS:  if(zoom > 0.5) zoom -= 0.05; break; //Zoom out the camera
-		case KeyEvent.VK_X:      xRotation_Camera += 5; break; //Rotate camera downwards
-		case KeyEvent.VK_Y:      yRotation_Camera -= 5; break; //Rotate camera rightwards
-
-		case KeyEvent.VK_G:		 car.bound.c[1] += 10; break;
-
-		default: car.keyPressed(e); break;
+			case KeyEvent.VK_ESCAPE: System.exit(0); break; //Close the application
+	
+			case KeyEvent.VK_H:     enableObstacles = !enableObstacles; break;
+	
+			case KeyEvent.VK_P:		 playMusic(); break;
+	
+			case KeyEvent.VK_9:		 if(camera != CameraMode.DRIVERS_VIEW) car.displayModel = !car.displayModel; break;
+			case KeyEvent.VK_F1:     enableAnimation = !enableAnimation; break;
+	
+			case KeyEvent.VK_F2:     Item.toggleBoundSolids();     break;
+			case KeyEvent.VK_F3:     Item.toggleBoundWireframes(); break;
+	
+			case KeyEvent.VK_8:		 displayModels          = !displayModels;          break;
+			case KeyEvent.VK_1:		 enableOBBAxes          = !enableOBBAxes;          break;
+			case KeyEvent.VK_2:		 enableOBBVertices      = !enableOBBVertices;      break;
+			case KeyEvent.VK_3:      enableOBBWireframes    = !enableOBBWireframes;    break;
+			case KeyEvent.VK_4:		 enableOBBSolids        = !enableOBBSolids;        break;
+			case KeyEvent.VK_5:		 enableSphereSolids     = !enableSphereSolids;     break;
+			case KeyEvent.VK_6:      enableSphereWireframes = !enableSphereWireframes; break;
+			case KeyEvent.VK_7:		 enableClosestPoints    = !enableClosestPoints;    break;
+	
+			case KeyEvent.VK_0:		 enableBoundVisuals     = !enableBoundVisuals; toggleBoundVisuals(); break;
+	
+			case KeyEvent.VK_M:	     switchCamera(); break; //Cycle the camera mode
+			case KeyEvent.VK_EQUALS: if(zoom < 1.0) zoom += 0.05; break; //Zoom in the camera
+			case KeyEvent.VK_MINUS:  if(zoom > 0.5) zoom -= 0.05; break; //Zoom out the camera
+			case KeyEvent.VK_X:      xRotation_Camera += 5; break; //Rotate camera downwards
+			case KeyEvent.VK_Y:      yRotation_Camera -= 5; break; //Rotate camera rightwards
+	
+			case KeyEvent.VK_G:		 car.bound.c[1] += 10; break;
+	
+			default: car.keyPressed(e); break;
 		}
 	}
 	

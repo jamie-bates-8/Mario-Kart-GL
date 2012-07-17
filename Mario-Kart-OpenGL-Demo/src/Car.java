@@ -130,7 +130,7 @@ public class Car
 	private Aim aiming = Aim.DEFAULT;
 	
 	private Scene scene;
-	
+	private GamePad controller;
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
@@ -147,7 +147,8 @@ public class Car
 	    
 	     trajectory = yrot;
 	    
-	    this.scene = scene; 	
+	    this.scene = scene; 
+	    controller = new GamePad();
 	}
 	
 	public Queue<Item> getItems() { return items; }
@@ -716,6 +717,22 @@ public class Car
 		}
 		
 		updateStatus();
+		
+		if(controller.isEnabled())
+		{
+			if     (controller.getXAxis() > (isDrifting() ?  0.9f : 0)) steerLeft();
+			else if(controller.getXAxis() < (isDrifting() ? -0.9f : 0)) steerRight();
+			else 
+			{
+				turning = false;
+				straighten();
+			}
+		}
+		
+		controller.update();
+		
+		while(!controller.getPressEvents().isEmpty()) buttonPressed(controller.getPressEvents().poll());
+		while(!controller.getReleaseEvents().isEmpty()) buttonReleased(controller.getReleaseEvents().poll());
 	}
 
 	private void updateStatus()
@@ -849,7 +866,14 @@ public class Car
 
 	private void turnLeft()
 	{
-		if(turnRate < TOP_TURN_RATE) turnRate += turnIncrement;
+		if(!controller.isEnabled() || controller.getXAxis() <= 0)
+		{
+			if(turnRate < TOP_TURN_RATE) turnRate += turnIncrement;
+		}
+		else
+		{
+			if(turnRate < TOP_TURN_RATE * controller.getXAxis()) turnRate += turnIncrement;
+		}
 		
 		double k = 1;
 		
@@ -864,7 +888,14 @@ public class Car
 
 	private void turnRight()
 	{
-		if(turnRate > -TOP_TURN_RATE) turnRate -= turnIncrement;
+		if(!controller.isEnabled() || controller.getXAxis() >= 0)
+		{
+			if(turnRate > -TOP_TURN_RATE) turnRate -= turnIncrement;
+		}
+		else
+		{
+			if(turnRate > TOP_TURN_RATE * controller.getXAxis()) turnRate -= turnIncrement;
+		}
 		
 		double k = 1;
 		
@@ -1054,9 +1085,13 @@ public class Car
 	public boolean isInvisible()  { return invisible; }
 	
 	public boolean isBoosting()   { return boosting; }
+	
+	public boolean isDrifting()   { return drift != Direction.STRAIGHT; }
 
 	public void keyPressed(KeyEvent e)
 	{
+		controller.disable();
+		
 		switch(e.getKeyCode())
 		{
 			case KeyEvent.VK_W:
@@ -1075,9 +1110,9 @@ public class Car
 			case KeyEvent.VK_RIGHT:
 				steerRight(); break;
 			
-			case KeyEvent.VK_R: if(!cursed && !slipping) {aimForwards();  useItem();} break;
-			case KeyEvent.VK_F: if(!cursed && !slipping) {resetAim();     useItem();} break;
-			case KeyEvent.VK_C: if(!cursed && !slipping) {aimBackwards(); useItem();} break;
+			case KeyEvent.VK_R: if(!cursed && !slipping) { aimForwards();  useItem(); } break;
+			case KeyEvent.VK_F: if(!cursed && !slipping) { resetAim();     useItem(); } break;
+			case KeyEvent.VK_C: if(!cursed && !slipping) { aimBackwards(); useItem(); } break;
 			
 			case KeyEvent.VK_N: roulette.next(); break;
 			case KeyEvent.VK_B: roulette.repeat(); break;
@@ -1107,6 +1142,34 @@ public class Car
 			case KeyEvent.VK_F: if(hasItem()) releaseItem(); break;
 		
 			case KeyEvent.VK_Q: miniTurbo(); break;
+		}
+	}
+	
+	public void buttonPressed(int e)
+	{
+		switch(e)
+		{
+			case  3: roulette.next(); break;
+			case -3: roulette.previous(); break;
+			case  4: if(!cursed && !slipping) { aimForwards();  useItem(); } break;
+			case -4: if(!cursed && !slipping) { aimBackwards(); useItem(); } break; 
+			case  5: accelerating = true; break;
+			case  7: reversing = true; accelerating = true; break;
+			case  9: 
+			case 10: if(turning && !falling) drift(); break;
+			case 14: roulette.repeat(); break;
+		}
+	}
+	
+	public void buttonReleased(int e)
+	{
+		switch(e)
+		{
+			case  4: if(hasItem()) releaseItem(); break; 
+			case  5:
+			case  7: accelerating = false; reversing = false; break;
+			case  9:
+			case 10: miniTurbo(); break;
 		}
 	}
 }

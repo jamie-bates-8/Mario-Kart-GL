@@ -3,19 +3,20 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="obj"/>
 	<classpathentry kind="lib" path="tex"/>
+	<classpathentry kind="lib" path="JInput_lib/jinput.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="CarScene_lib/gluegen-gl.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/gluegen-rt-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/gluegen-rt.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/jogl-all-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/jogl-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/jogl.all.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/nativewindow-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="CarScene_lib/nativewindow.awt.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/customizer.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/jmf.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/mediaplayer.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/multiplayer.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/sound.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-gl.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-rt-natives-windows-i586.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-rt.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/jogl-all-natives-windows-i586.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/jogl-natives-windows-i586.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/jogl.all.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/nativewindow-natives-windows-i586.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/nativewindow.awt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
