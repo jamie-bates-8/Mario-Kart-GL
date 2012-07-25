@@ -116,14 +116,17 @@ public abstract class Item
 	
 	public abstract void update();
 	
-	public void update(Car car)
+	public void update(List<Car> cars)
 	{
-		if(car.bound.testBound(bound))
+		for(Car car : cars)
 		{
-			if(!car.hasStarPower() && !car.isInvisible()) collide(car);
-			else if(car.hasStarPower()) destroy();
+			if(car.bound.testBound(bound))
+			{
+				if(!car.hasStarPower() && !car.isInvisible()) collide(car);
+				else if(car.hasStarPower()) destroy();
+			}
 		}
-		else if(outOfBounds()) destroy();
+		if(outOfBounds()) destroy();
 	}
 	
 	public void resolveCollisions()

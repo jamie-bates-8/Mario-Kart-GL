@@ -1,5 +1,8 @@
 
-import static graphics.util.Renderer.*;
+import static graphics.util.Renderer.displayPartiallyTexturedObject;
+import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.GL2.GL_QUADS;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 import graphics.util.Face;
 
 import java.io.File;
@@ -10,8 +13,6 @@ import javax.media.opengl.GL2;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
-
-import static javax.media.opengl.GL2.*;
 
 
 public class ItemBox
@@ -61,7 +62,7 @@ public class ItemBox
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_DST_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDepthMask(false);
 			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
@@ -95,7 +96,7 @@ public class ItemBox
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			gl.glRotatef(rotation, 1, 1, 1);
 			gl.glScalef(SCALE, SCALE, SCALE);
-			
+
 			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {0.5f, 0.5f, 0.5f});
 			
 			gl.glDisable(GL_BLEND);
@@ -132,23 +133,26 @@ public class ItemBox
 		return boxes;
 	}
 	
-	public void update(Car car)
+	public void update(List<Car> cars)
 	{
 		if(!isDead())
 		{
-			if(car.bound.testSphere(bound))
+			for(Car car : cars)
 			{
-				destroy();
-				
-				ItemRoulette roulette = car.getRoulette();
-				
-				if(!roulette.isAlive() && !car.isCursed())
+				if(car.bound.testSphere(bound))
 				{
-					roulette.spin();
-					roulette.secondary = car.hasItem();
+					destroy();
+					
+					ItemRoulette roulette = car.getRoulette();
+					
+					if(!roulette.isAlive() && !car.isCursed())
+					{
+						roulette.spin();
+						roulette.secondary = car.hasItem();
+					}
+					
+					particles.addAll(generator.generateItemBoxParticles(getPosition(), 64));
 				}
-				
-				particles.addAll(generator.generateItemBoxParticles(getPosition(), 64));
 			}
 		}
 		else respawnTimer--;

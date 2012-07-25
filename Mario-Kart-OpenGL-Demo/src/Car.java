@@ -1,4 +1,6 @@
 import static java.lang.Math.*;
+import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
+import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
 import static graphics.util.Vector.*;
 import static graphics.util.Matrix.*;
@@ -13,8 +15,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.media.opengl.GL2;
+import javax.media.opengl.glu.GLU;
 
 public class Car
 {
@@ -27,7 +31,7 @@ public class Car
 	
 	private static final float[] ORIGIN = {0, 1.8f, 0};
 	
-	private static int carList;
+	private static int carList = -1;
 	
 	private float[] color = {1.0f, 0.4f, 0.4f};
 	private float[] windowColor = {0.4f, 0.8f, 1.0f};
@@ -96,6 +100,7 @@ public class Car
 	private ItemRoulette roulette = new ItemRoulette();
 	private ItemState itemState = ItemState.NO_ITEM;
 	private Queue<Item> items = new LinkedList<Item>();
+	private Queue<Integer> itemCommands = new ArrayBlockingQueue<Integer>(100);
 	
 	private boolean slipping = false;
 	private float[] slipVector = ORIGIN;
@@ -130,15 +135,27 @@ public class Car
 	private Aim aiming = Aim.DEFAULT;
 	
 	private Scene scene;
+	private CameraMode camera = CameraMode.DYNAMIC_VIEW;
+	private float zoom = 0.75f;
 	private GamePad controller;
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
 		//Using a display list ensures that the complex car model is displayed quickly
-		carList = gl.glGenLists(1);
-		gl.glNewList(carList, GL2.GL_COMPILE_AND_EXECUTE);
-	    displayPartiallyTexturedObject(gl, CAR_FACES, color);
-	    gl.glEndList();
+		if(carList == -1)
+		{
+			carList = gl.glGenLists(1);
+			gl.glNewList(carList, GL2.GL_COMPILE);
+			displayPartiallyTexturedObject(gl, CAR_FACES, color);
+			gl.glEndList();
+			
+			System.out.println("Car: " + "\n" +
+			"\t" + "Body: "        + CAR_FACES.size()         + " faces" + "\n" +
+			"\t" + "Wheel: "       + WHEEL_FACES.size()       + " faces" + "\n" +
+			"\t" + "Window: "      + WINDOW_FACES.size()      + " faces" + "\n" +
+			"\t" + "Door Window: " + DOOR_WINDOW_FACES.size() + " faces" + "\n" +
+			"\t" + "Door: "        + DOOR_FACES.size()        + " faces");
+		}
 	    
 	    bound = new OBB(
 				c[0], c[1], c[2],
@@ -152,6 +169,8 @@ public class Car
 	}
 	
 	public Queue<Item> getItems() { return items; }
+	
+	public Queue<Integer> getItemCommands() { return itemCommands; }
 	
 	private void useItem()
 	{
@@ -168,7 +187,7 @@ public class Car
 			ItemState state = ItemState.get(itemID);
 			setItemState(state);
 			
-			scene.sendItemCommand(itemID);
+			itemCommands.add(itemID);
 			
 			if(ItemState.isTimed(state)) roulette.setTimer();
 			
@@ -222,12 +241,12 @@ public class Car
 
 				break;
 			}
-			case  2: items.add(new RedShell(gl, scene, this, trajectory, false, this)); break;
+			case  2: items.add(new RedShell(gl, scene, this, trajectory, false)); break;
 			case  3:
 			{
-				items.add(new RedShell(gl, scene, this, trajectory,       true, this));
-				items.add(new RedShell(gl, scene, this, trajectory + 120, true, this));
-				items.add(new RedShell(gl, scene, this, trajectory - 120, true, this));
+				items.add(new RedShell(gl, scene, this, trajectory,       true));
+				items.add(new RedShell(gl, scene, this, trajectory + 120, true));
+				items.add(new RedShell(gl, scene, this, trajectory - 120, true));
 
 				break;
 			}
@@ -804,6 +823,8 @@ public class Car
 			boosting = true;
 			boostDuration = 20;
 			velocity += 0.6;
+			
+			velocity = (velocity > 2 * TOP_SPEED) ? (2 * TOP_SPEED) : velocity; 
 		}
 		
 		driftState = DriftState.YELLOW;
@@ -1033,6 +1054,12 @@ public class Car
 	
 	public void useLightningBolt()
 	{
+		for(Car car : scene.getCars())
+			if(!car.equals(this)) car.struckByLightning();
+	}
+	
+	public void struckByLightning()
+	{
 		if(!starPower && !invisible)
 		{
 			if(!miniature)
@@ -1119,6 +1146,8 @@ public class Car
 			case KeyEvent.VK_V: roulette.previous(); break;
 			
 			case KeyEvent.VK_Q: if(turning && !falling) drift(); break;
+			
+			case KeyEvent.VK_9: if(camera != CameraMode.DRIVERS_VIEW) displayModel = !displayModel; break;
 		}
 	}
 
@@ -1155,6 +1184,7 @@ public class Car
 			case -4: if(!cursed && !slipping) { aimBackwards(); useItem(); } break; 
 			case  5: accelerating = true; break;
 			case  7: reversing = true; accelerating = true; break;
+			case  8: camera = CameraMode.cycle(camera); break;
 			case  9: 
 			case 10: if(turning && !falling) drift(); break;
 			case 14: roulette.repeat(); break;
@@ -1170,6 +1200,74 @@ public class Car
 			case  7: accelerating = false; reversing = false; break;
 			case  9:
 			case 10: miniTurbo(); break;
+		}
+	}
+	
+	public void setupCamera(GL2 gl, GLU glu)
+	{
+		switch(camera)
+		{	
+			//Cause the camera to follow the car dynamically as it moves along the track 
+			case DYNAMIC_VIEW:
+			{
+				displayModel = true;
+				
+				float[] p = getPosition();
+				
+				gl.glTranslatef(0, -15.0f * zoom, -30.0f * zoom);
+				if(slipping) gl.glRotated(slipTrajectory, 0.0f, -1.0f, 0.0f);
+				else gl.glRotated(trajectory, 0.0f, -1.0f, 0.0f);
+
+				glu.gluLookAt(p[0], p[1], p[2],
+						p[0] - 10, p[1], p[2],
+						0, 1, 0);
+
+				break;
+			}
+			//Focus the camera on the centre of the track from a bird’s eye view
+			case BIRDS_EYE_VIEW:
+			{
+				gl.glMatrixMode(GL_PROJECTION);
+				gl.glLoadIdentity();
+				gl.glOrtho(-200, 200, -200, 200, 1, 200);
+				glu.gluLookAt(0, 150, 0,
+					          0, 0, 0,
+					          0, 0, 1);
+				gl.glMatrixMode(GL_MODELVIEW);
+				gl.glLoadIdentity();
+
+				break;
+			}
+			//Setup the camera to view the scene from the driver's perspective
+			case DRIVERS_VIEW:
+			{
+				displayModel = false;
+				
+				float[] p = getPosition();
+				
+				gl.glTranslatef(0, -3.0f, 0);
+				gl.glRotated(trajectory, 0.0f, -1.0f, 0.0f);
+				
+				glu.gluLookAt(p[0], p[1], p[2],
+							  p[0] - 10, p[1], p[2],
+					          0, 1, 0);
+				
+				break;
+			}
+			
+			default: break;
+		}
+	}
+	
+	private enum CameraMode
+	{
+		DYNAMIC_VIEW,
+		BIRDS_EYE_VIEW,
+		DRIVERS_VIEW;
+		
+		public static CameraMode cycle(CameraMode camera)
+		{
+			return values()[(camera.ordinal() + 1) % values().length];
 		}
 	}
 }

@@ -55,6 +55,8 @@ public class BlueShell extends Shell
 			gl.glNewList(spikeList, GL2.GL_COMPILE);
 			displayColoredObject(gl, SPIKE_FACES, 1);
 			gl.glEndList();
+			
+			System.out.println("Blue Shell: " + (SHELL_FACES.size() + RIM_FACES.size() + SPIKE_FACES.size()) + " faces");
 		}
 		
 		generator = new ParticleGenerator();

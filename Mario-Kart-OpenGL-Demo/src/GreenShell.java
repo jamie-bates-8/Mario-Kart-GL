@@ -42,6 +42,8 @@ public class GreenShell extends Shell
 			gl.glNewList(shellList, GL2.GL_COMPILE);
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
+			
+			System.out.println("Green Shell: " + (SHELL_FACES.size() + RIM_FACES.size()) + " faces");
 		}
 	    
 		velocity = MAX_VELOCITY;

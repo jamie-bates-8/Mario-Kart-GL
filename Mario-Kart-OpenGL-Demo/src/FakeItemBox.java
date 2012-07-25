@@ -1,6 +1,5 @@
 
 import static graphics.util.Renderer.displayPartiallyTexturedObject;
-
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
@@ -24,6 +23,8 @@ public class FakeItemBox extends Item
 	
 	private static Texture questionMark;
 	
+	private static int boxList = -1;
+	
 	static
 	{
 		try { questionMark = TextureIO.newTexture(new File("tex/fakeQuestionMark.png"), true); }
@@ -44,6 +45,16 @@ public class FakeItemBox extends Item
 		generator = new ParticleGenerator();
 		
 		gravity = 0.025;
+		
+		if(boxList == -1)
+		{
+			boxList = gl.glGenLists(1);
+			gl.glNewList(boxList, GL2.GL_COMPILE);
+			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1.0f, 0.5f, 0.5f});
+		    gl.glEndList();
+		    
+		    System.out.println("Fake Item Box: " + BOX_FACES.size() + " faces");
+		}
 	}
 	
 	public static void increaseRotation() { rotation -= 4; }

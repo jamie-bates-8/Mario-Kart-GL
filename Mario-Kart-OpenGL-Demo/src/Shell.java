@@ -48,7 +48,7 @@ public abstract class Shell extends Item
 		if(orbiting)
 		{
 			rotation -= 10;
-			float radius = car.bound.e[0] * 1.1f + Shell.RADIUS;
+			float radius = car.bound.e[0] * 1.2f + Shell.RADIUS;
 			
 			float[] p = multiply(car.bound.u[0], radius);
 			

@@ -10,3 +10,7 @@
 	-Add Shell fragments when a Shell is destroyed
 
 -Lightning Bolts should cause players to drop items
+
+-Alter implementation to support multiplayer
+	-vehicles should be able to collide
+	-motion blur causes darkness when a boost is used by player 2

@@ -14,6 +14,8 @@ public class GamePad
 	private static final int DELAY = 40; //milliseconds
 	private static final float EPSILON = 0.25f;
 	
+	private static int controllerID = 0;
+	
 	private Controller controller;
 	private Component[] components;
 	private int xAxis, zAxis, xRotation;
@@ -37,6 +39,8 @@ public class GamePad
 				ControllerEnvironment.getDefaultEnvironment();
 
 		Controller[] cs = ce.getControllers();
+		
+		listControllers();
 		
 		printDetails(cs[4]);
 		
@@ -127,7 +131,7 @@ public class GamePad
 		if(!controller.poll())
 		{
 			System.out.println("Controller invalid");
-			System.exit(0);
+			disable();
 		}
 	}
 	
@@ -233,18 +237,24 @@ public class GamePad
 	{
 		Controller.Type type;
 		int index = 0;
+		int counter = controllerID;
 		
 		while(index < controllers.length)
 		{
 			type = controllers[index].getType();
 			
 			if(type == Controller.Type.GAMEPAD ||
-			   type == Controller.Type.STICK     ) break;
+			   type == Controller.Type.STICK     )
+			{
+				if(counter == 0) break;
+				else counter--;
+			}
 			
 			index++;
 		}
 		
 		if(index == controllers.length) System.out.println("No Game Pad Found");
+		else controllerID++;
 		
 		return controllers[index];
 	}

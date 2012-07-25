@@ -34,7 +34,7 @@ public class RedShell extends Shell
 	private Car target;
 	private boolean locked = true;
 	
-	public RedShell(GL2 gl, Scene scene, Car car, float trajectory, boolean orbiting, Car target)
+	public RedShell(GL2 gl, Scene scene, Car car, float trajectory, boolean orbiting)
 	{
 		super(gl, scene, car, trajectory);
 		
@@ -44,11 +44,31 @@ public class RedShell extends Shell
 			gl.glNewList(shellList, GL2.GL_COMPILE);
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
+			
+			System.out.println("Red Shell: " + (SHELL_FACES.size() + RIM_FACES.size()) + " faces");
 		}
 	    
 		velocity = INITIAL_VELOCITY;
 		
-		this.orbiting = orbiting;	
+		this.orbiting = orbiting;
+		
+		Car target = null;
+		float min_distance = Float.MAX_VALUE;
+		
+		for(Car c : scene.getCars())
+		{
+			if(!c.equals(car))
+			{
+				float distance = dot(c.getPosition(), car.getPosition());
+				if(distance < min_distance)
+				{
+					min_distance = distance;
+					target = c;
+				}
+			}
+		}
+		
+		if(target == null) locked = false;
 		this.target = target;
 	}
 	
@@ -70,7 +90,8 @@ public class RedShell extends Shell
 	@Override
 	public void update()
 	{	
-		if(target.isInvisible()) locked = false; 
+		if(target != null)
+			if(target.isInvisible()) locked = false; 
 		
 		if(velocity < TOP_SPEED && !locked) velocity += acceleration;
 		
@@ -80,7 +101,7 @@ public class RedShell extends Shell
 		detectCollisions();
 		resolveCollisions();
 		
-		if(!thrown && locked) trajectory = target.trajectory;
+		if(!thrown && locked && target != null) trajectory = target.trajectory;
 		setRotation(getRotationAngles(getHeights()));
 		rotation += 10 * velocity;	
 	}

@@ -33,7 +33,11 @@ public class BlastParticle extends Particle
 
 			gl.glColor4f(c, c, c, c);
 			
-			indigoFlare.bind(gl);
+			if(!current.equals(indigoFlare))
+			{
+				indigoFlare.bind(gl);
+				current = indigoFlare;
+			}
 
 			gl.glBegin(GL_QUADS);
 			{

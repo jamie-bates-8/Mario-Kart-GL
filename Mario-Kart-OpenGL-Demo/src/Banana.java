@@ -1,9 +1,8 @@
 import static graphics.util.Matrix.getRotationMatrix;
-import static graphics.util.Renderer.*;
+import static graphics.util.Renderer.displayGradientObject;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
-
 import graphics.util.Face;
 import graphics.util.Gradient;
 
@@ -51,6 +50,8 @@ public class Banana extends Item
 			gl.glNewList(bananaList, GL2.GL_COMPILE);
 			displayGradientObject(gl, BANANA_FACES, gradient, -1.35f, 1.41f);
 		    gl.glEndList();
+		    
+		    System.out.println("Banana: " + BANANA_FACES.size() + " faces");
 		}
 		
 		this.scene = scene;
@@ -84,8 +85,7 @@ public class Banana extends Item
 			{
 				gl.glDisable(GL_LIGHTING);
 				gl.glEnable(GL_BLEND);
-				gl.glBlendFunc(GL2.GL_DST_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-				gl.glDepthMask(false);
+				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 				
 				gl.glTranslatef(0.325f, 0, 0);
 				gl.glRotatef(90, 0, 1, 0);
@@ -104,7 +104,6 @@ public class Banana extends Item
 				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 				gl.glDisable(GL_BLEND);
 				gl.glEnable(GL_LIGHTING);
-				gl.glDepthMask(true);
 			}
 			gl.glPopMatrix();
 		}

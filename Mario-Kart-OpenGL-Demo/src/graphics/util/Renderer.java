@@ -4,7 +4,6 @@ import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL.GL_TRIANGLES;
 import static javax.media.opengl.GL2.GL_QUADS;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_COLOR_MATERIAL;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import static java.lang.Math.abs;
@@ -56,8 +55,6 @@ public class Renderer
 	{
 		gl.glDisable(GL_TEXTURE_2D);
 		
-		gl.glEnable(GL_COLOR_MATERIAL);
-		
 		for(Face face : objectFaces)
 		{
 			gl.glBegin(GL_TRIANGLES);
@@ -76,30 +73,33 @@ public class Renderer
 
 			gl.glEnd();
 		}
-
-		gl.glEnable(GL_TEXTURE_2D);
 		
 		gl.glColor3f(1, 1, 1);
+		gl.glEnable(GL_TEXTURE_2D);
 	}
 	
 	public static void displayWildcardObject(GL2 gl, List<Face> objectFaces, Texture[] textures)
 	{
 		
 		Face f = objectFaces.get(0);
-		Texture current = f.getTexture();
-		
-		if(f.hasWildcard()) current = textures[f.getWildcard()];
-		else current = f.getTexture();
+		Texture current = f.hasWildcard() ?
+				textures[f.getWildcard()] : f.getTexture();
 		
 		current.bind(gl);
 		
 		for(Face face : objectFaces)
 		{	
-			if(!current.equals(face.getTexture()))
+			if(face.hasWildcard())
 			{
-				if(face.hasWildcard()) current = textures[face.getWildcard()];
-				else current = face.getTexture();
-				
+				if(!current.equals(textures[face.getWildcard()]))
+				{
+					current = textures[face.getWildcard()];
+					current.bind(gl);
+				}
+			}
+			else if(!current.equals(face.getTexture()))
+			{
+				current = face.getTexture();
 				current.bind(gl);
 			}
 
@@ -120,7 +120,6 @@ public class Renderer
 	{
 		gl.glDisable(GL_TEXTURE_2D);
 		gl.glColor3f(color[0], color[1], color[2]);
-		gl.glEnable(GL_COLOR_MATERIAL);
 		
 		for(Face face : objectFaces)
 		{
@@ -134,8 +133,9 @@ public class Renderer
 
 			gl.glEnd();
 		}
-
-		gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);
+		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	
 	public static void displayColoredObject(GL2 gl, List<Face> objectFaces, float intensity)
@@ -164,21 +164,27 @@ public class Renderer
 	public static void displayPartiallyTexturedObject(GL2 gl, List<Face> objectFaces, float[] color)
 	{
 		Texture current = objectFaces.get(0).getTexture();
-		current.bind(gl);	
+		current.bind(gl);
+		
+		boolean colorMode = false;
 		
 		for(Face face : objectFaces)
 		{
 			if(!face.hasTexture())
 			{
-				if(gl.glIsEnabled(GL_TEXTURE_2D)) gl.glDisable(GL_TEXTURE_2D);
+				gl.glDisable(GL_TEXTURE_2D);
 				gl.glColor3f(color[0], color[1], color[2]);
-				if(!gl.glIsEnabled(GL_COLOR_MATERIAL)) gl.glEnable(GL_COLOR_MATERIAL);
+				
+				colorMode = true;
 
 			}
 			else if(!current.equals(face.getTexture()))
 			{
+				gl.glEnable(GL_TEXTURE_2D);
 				current = face.getTexture();
 				current.bind(gl);
+				
+				colorMode = false;
 			}
 
 			gl.glBegin(GL_TRIANGLES);
@@ -186,17 +192,14 @@ public class Renderer
 			for(int i = 0; i < face.getVertices().length; i++)
 			{
 				gl.glNormal3f  (face.getNx(i), face.getNy(i), face.getNz(i));
-				gl.glTexCoord2f(face.getTu(i), face.getTv(i));
+				if(!colorMode) gl.glTexCoord2f(face.getTu(i), face.getTv(i));
 				gl.glVertex3f  (face.getVx(i), face.getVy(i), face.getVz(i));
 			}
 
 			gl.glEnd();
-
-			if(!face.hasTexture())
-			{
-				gl.glEnable(GL_TEXTURE_2D);
-			}
 		}
+		
+		gl.glEnable(GL_TEXTURE_2D);
 		gl.glColor3f(1, 1, 1);
 	}
 	

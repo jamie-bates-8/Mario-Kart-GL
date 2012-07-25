@@ -10,6 +10,9 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public abstract class Particle
 {
+	protected static Texture reset;
+	protected static Texture current;
+	
 	protected static Texture redFlare;
 	protected static Texture orangeFlare;
 	protected static Texture yellowFlare;
@@ -49,6 +52,10 @@ public abstract class Particle
 			whiteStar   = TextureIO.newTexture(new File("tex/whiteStar.png"), true);
 			
 			cloud1      = TextureIO.newTexture(new File("tex/cloud1.png"), true);
+			
+			reset       = TextureIO.newTexture(new File("tex/default.jpg"), true);
+			
+			current = reset;
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -79,4 +86,6 @@ public abstract class Particle
 		c = add(c, t);
 		duration--;
 	}
+	
+	public static void resetTexture() { current = reset; }
 }

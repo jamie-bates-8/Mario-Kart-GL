@@ -1,4 +1,5 @@
 import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL2.GL_LINES;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
@@ -34,6 +35,7 @@ public class SparkParticle extends Particle
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
+			gl.glDisable(GL_TEXTURE_2D);
 
 			gl.glColor3f(color[0], color[1], color[2]);
 			
@@ -44,6 +46,7 @@ public class SparkParticle extends Particle
 			}
 			gl.glEnd();
 
+			gl.glEnable(GL_TEXTURE_2D);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 			gl.glDepthMask(true);
