@@ -19,6 +19,9 @@ public class Scalextric
 	
 	private static int carList;
 	
+	private float[] color = {1.0f, 0.4f, 0.4f};
+	private float[] windowColor = {0.4f, 0.8f, 1.0f};
+	
 	/** Vehicle Fields **/
 	public float trajectory;
 	
@@ -58,13 +61,14 @@ public class Scalextric
 	private double roundaboutRadius = 16.0;
 	
 	public boolean displayModel;
+	public boolean enableAnimation = true;
 	
 	public Scalextric(GL2 gl, float[] c, float xr, float yr, float zr)
 	{
 		//Using a display list ensures that the complex car model is displayed quickly
 		carList = gl.glGenLists(1);
-		gl.glNewList(carList, GL2.GL_COMPILE_AND_EXECUTE);
-	    displayTexturedObject(gl, CAR_FACES);
+		gl.glNewList(carList, GL2.GL_COMPILE);
+		displayPartiallyTexturedObject(gl, CAR_FACES, color);
 	    gl.glEndList();
 		
 	    setPosition(c);
@@ -109,11 +113,13 @@ public class Scalextric
 			/***************************
 			 * Vehicle Transformations *
 			 ***************************/
-
-			gl.glTranslatef(x, y, z);
-			gl.glRotatef(xr, 1, 0, 0);
-			gl.glRotatef(yr, 0, 1, 0);
-			gl.glRotatef(zr, 0, 0, 1);
+			if(enableAnimation)
+			{
+				gl.glTranslatef(x, y, z);
+				gl.glRotatef(xr, 1, 0, 0);
+				gl.glRotatef(yr, 0, 1, 0);
+				gl.glRotatef(zr, 0, 0, 1);
+			}
 			gl.glScalef(scale, scale, scale);
 			//Display the car model by calling a display list
 			if(displayModel)
@@ -156,21 +162,14 @@ public class Scalextric
 					
 					gl.glTranslatef(x, y, z);
 					
-					displayTexturedObject(gl, DOOR_FACES);
+					displayColoredObject(gl, DOOR_FACES, color);
 					
 					/************************************
 					 * Left Door Window Transformations *
 					 ************************************/
 					gl.glPushMatrix();
 					{
-						//Enable window transparency
-						gl.glDisable(GL_LIGHTING);
-						gl.glEnable(GL_BLEND);
-	
-						displayTexturedObject(gl, DOOR_WINDOW_FACES);
-						
-						gl.glDisable(GL_BLEND);
-						gl.glEnable(GL_LIGHTING);
+						displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
 					}
 					gl.glPopMatrix();
 					
@@ -192,22 +191,14 @@ public class Scalextric
 					gl.glScalef(1, 1, -1);
 					
 					//Display the door model reflected in the z-axis
-					displayTexturedObject(gl, DOOR_FACES);
+					displayColoredObject(gl, DOOR_FACES, color);
 					
 					/*************************************
 					 * Right Door Window Transformations *
 					 *************************************/
 					gl.glPushMatrix();
 					{	
-						//Enable window transparency
-						gl.glDisable(GL_LIGHTING);
-						gl.glEnable(GL_BLEND);
-	
-						//Display the door window model reflected in the z-axis
-						displayTexturedObject(gl, DOOR_WINDOW_FACES);
-						
-						gl.glDisable(GL_BLEND);
-						gl.glEnable(GL_LIGHTING);
+						displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
 					}
 					gl.glPopMatrix();
 				}
@@ -224,7 +215,7 @@ public class Scalextric
 					gl.glDisable(GL_LIGHTING);
 					gl.glEnable(GL_BLEND);
 	
-					displayTexturedObject(gl, WINDOW_FACES);
+					displayTransparentObject(gl, WINDOW_FACES, windowColor);
 					
 					gl.glDisable(GL_BLEND);
 					gl.glEnable(GL_LIGHTING);
@@ -306,7 +297,7 @@ public class Scalextric
 		z -= velocity;
 		distance += velocity;
 		theta = 360.0;
-		trajectory = 270.0f;
+		trajectory = yr = 270.0f;
 	}
 
 	/**

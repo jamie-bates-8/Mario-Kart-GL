@@ -11,6 +11,6 @@
 
 -Lightning Bolts should cause players to drop items
 
--Alter implementation to support multiplayer
-	-vehicles should be able to collide
-	-motion blur causes darkness when a boost is used by player 2
+-Possible multiplayer improvements
+	-vehicle collisions could be more realistic (focus on top + bottom collisions)
+	-star collisions should be different to normal collisions

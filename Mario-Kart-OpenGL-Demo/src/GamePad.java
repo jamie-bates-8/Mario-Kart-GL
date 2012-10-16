@@ -62,9 +62,31 @@ public class GamePad
 		else
 		{
 			controller = findGamePad(controllers);
-			findComponentIndices(controller);
+			if(controller != null) findComponentIndices(controller);
 		}
 	}
+	
+	public static int numberOfGamepads()
+	{
+		ControllerEnvironment ce =
+				ControllerEnvironment.getDefaultEnvironment();
+
+		Controller[] controllers = ce.getControllers();
+		
+		int gamepads = 0;
+		
+		for(Controller controller : controllers)
+		{
+			Controller.Type type = controller.getType();
+		
+			if(type == Controller.Type.GAMEPAD ||
+		       type == Controller.Type.STICK     ) gamepads++;
+		}
+		
+		return gamepads;
+	}
+	
+	public boolean isNull() { return controller == null; }
 	
 	public void update()
 	{
@@ -253,7 +275,11 @@ public class GamePad
 			index++;
 		}
 		
-		if(index == controllers.length) System.out.println("No Game Pad Found");
+		if(index == controllers.length)
+		{
+			System.out.println("No Game Pad Found");
+			return null;
+		}
 		else controllerID++;
 		
 		return controllers[index];

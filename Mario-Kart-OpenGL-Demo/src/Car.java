@@ -69,7 +69,7 @@ public class Car
 	private float fallRate = 0.0f;
 	private static final double TOP_FALL_RATE = 2.5;
 	
-	private double turnRate = 0;
+	public double turnRate = 0;
 	private static final double TOP_TURN_RATE = 2.0;
 	private double turnIncrement = 0.1;
 	public boolean turning = false;
@@ -167,6 +167,10 @@ public class Car
 	    this.scene = scene; 
 	    controller = new GamePad();
 	}
+	
+	public Bound getBound() { return bound; }
+	
+	public void collide(Car car) { collisions.add(car.getBound()); }
 	
 	public Queue<Item> getItems() { return items; }
 	
@@ -312,6 +316,7 @@ public class Car
 				switch(aiming)
 				{
 					case FORWARDS: banana.throwUpwards(); break;
+					default: break;
 				}
 					
 				scene.addItem(banana);
@@ -321,6 +326,8 @@ public class Car
 			case LIGHTNING_BOLT: useLightningBolt(); break;
 			case POWER_STAR: usePowerStar(); break;
 			case BOO: useBoo(); break;
+			
+			default: break;
 		}
 		
 		itemState = ItemState.press(itemState);
@@ -354,6 +361,7 @@ public class Car
 				switch(aiming)
 				{
 					case FORWARDS: item.throwUpwards(); break;
+					default: break;
 				}
 						
 				scene.addItem(item);
@@ -361,6 +369,8 @@ public class Car
 			}
 
 			case GOLDEN_MUSHROOM: superBoosting = false; break;
+			
+			default: break;
 		}
 		
 		itemState = ItemState.release(itemState);
@@ -632,6 +642,16 @@ public class Car
 				collisions.add(collision);
 			}
 		}
+		
+		for(Car car : scene.getCars())
+		{
+			if(!car.equals(this) && !invisible && !car.isInvisible() &&
+					bound.testBound(car.getBound()))
+			{
+				colliding = true;
+				collisions.add(car.getBound());
+			}
+		}
 	}
 
 	private void resolveCollisions()
@@ -702,7 +722,7 @@ public class Car
 		if     (drift == Direction.LEFT ) turnLeft();
 		else if(drift == Direction.RIGHT) turnRight();
 		
-		else if(turning && velocity != 0 && !slipping)
+		else if(turning && /*velocity != 0 &&*/ !slipping)
 		{
 			if(direction == Direction.LEFT) turnLeft();
 			else turnRight();
@@ -748,10 +768,13 @@ public class Car
 			}
 		}
 		
-		controller.update();
-		
-		while(!controller.getPressEvents().isEmpty()) buttonPressed(controller.getPressEvents().poll());
-		while(!controller.getReleaseEvents().isEmpty()) buttonReleased(controller.getReleaseEvents().poll());
+		if(!controller.isNull())
+		{
+			controller.update();
+			
+			while(!controller.getPressEvents().isEmpty()) buttonPressed(controller.getPressEvents().poll());
+			while(!controller.getReleaseEvents().isEmpty()) buttonReleased(controller.getReleaseEvents().poll());
+		}
 	}
 
 	private void updateStatus()
@@ -851,11 +874,9 @@ public class Car
 
 	public void steerLeft()
 	{
-		if(velocity != 0)
-		{
-			turning = true;
-			direction = Direction.LEFT;
-		}
+		turning = true;
+		direction = Direction.LEFT;
+		
 		if(!falling)
 		{
 			if(drift == Direction.RIGHT) driftCounter = true;
@@ -869,11 +890,9 @@ public class Car
 
 	public void steerRight()
 	{
-		if(velocity != 0)
-		{
-			turning = true;
-			direction = Direction.RIGHT;
-		}
+		turning = true;
+		direction = Direction.RIGHT;
+		
 		if(!falling)
 		{
 			if(drift == Direction.LEFT) driftCounter = true;
@@ -896,7 +915,7 @@ public class Car
 			if(turnRate < TOP_TURN_RATE * controller.getXAxis()) turnRate += turnIncrement;
 		}
 		
-		double k = 1;
+		double k = 1; 
 		
 		if(drift == Direction.LEFT)
 		{
@@ -904,7 +923,7 @@ public class Car
 			else if(direction == Direction.RIGHT) k = 0.5;
 		}
 		
-		trajectory += turnRate * k;
+		if(velocity != 0) trajectory += turnRate * k;
 	}
 
 	private void turnRight()
@@ -926,7 +945,7 @@ public class Car
 			else if(direction == Direction.RIGHT) k = 1.25;
 		}
 		
-		trajectory += turnRate * k;
+		if(velocity != 0) trajectory += turnRate * k;
 	}
 	
 	public void straighten() { direction = Direction.STRAIGHT; }
@@ -937,7 +956,7 @@ public class Car
 		else if(turnRate < 0) turnRate += turnIncrement;
 		else turnRate = 0;
 		
-		trajectory += turnRate;
+		trajectory += turnRate * (velocity != 0 ? 1 : 0);
 	}
 
 	public void turnWheels()
@@ -1146,6 +1165,8 @@ public class Car
 			case KeyEvent.VK_V: roulette.previous(); break;
 			
 			case KeyEvent.VK_Q: if(turning && !falling) drift(); break;
+			
+			case KeyEvent.VK_M: camera = CameraMode.cycle(camera); break;
 			
 			case KeyEvent.VK_9: if(camera != CameraMode.DRIVERS_VIEW) displayModel = !displayModel; break;
 		}

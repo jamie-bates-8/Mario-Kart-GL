@@ -24,8 +24,11 @@ import java.io.File;
 import java.util.List;
 import static java.lang.Math.*;
 
+import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.GL.GL_TEXTURE_2D;
 /** OpenGL (JOGL) imports **/
 import static javax.media.opengl.GL2.*;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
@@ -98,7 +101,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 	private float[] global_specular = {1.0f, 1.0f, 1.0f};
 	private float[] global_ambience = {0.8f, 0.8f, 0.8f, 1.0f};
 	
-	private float[] position = {0.0f, 20.0f, 0.0f, 1.0f};
+	private float[] position = {0.0f, 50.0f, 0.0f, 0.0f};
 	
     private float[] material_ambience  = {0.7f, 0.7f, 0.7f, 1.0f};
     private float[] material_shininess = {100.0f};
@@ -165,11 +168,10 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		
 		GL2 gl = drawable.getGL().getGL2();
 		glu = new GLU();
-
+		
 		gl.glShadeModel(GL_SMOOTH);
 		gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		
-		gl.glClearDepth(1.0f);
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -200,7 +202,9 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 	    gl.glEnable(GL_LIGHT0);
 		
 	    
-		gl.glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+	    gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
+	    gl.glEnable(GL2.GL_COLOR_MATERIAL);
+		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
 
@@ -231,11 +235,9 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		gl.glLoadIdentity();
-
 		gl.glMatrixMode(GL_MODELVIEW);
 
 		setupCamera(gl);
-		
 		setupLights(gl);
 		
 		if(enableAnimation)
@@ -250,7 +252,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		System.out.println("Total Model Rendering Time: " + (System.currentTimeMillis() - t0));
 		t0 = System.currentTimeMillis();
 		
-		if(camera != CameraMode.MODEL_VIEW) renderHUD(drawable, gl);
+		if(camera != CameraMode.MODEL_VIEW) renderHUD(gl);
 		
 		System.out.println("Total HUD Rendering Time: " + (System.currentTimeMillis() - t0));
 		System.out.println();
@@ -291,16 +293,31 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		catch(Exception e) {}
 	}
 	
-	private void renderHUD(GLAutoDrawable drawable, GL2 gl)
+	private void renderHUD(GL2 gl)
 	{
 		ortho2DBegin(gl);
+		
+		gl.glDisable(GL_LIGHTING);
 
+		renderSpeedometer(gl);
+		
+		gl.glColor3f(1.0f, 1.0f, 1.0f);
+		
+		renderText();
+		
+		gl.glEnable(GL_LIGHTING);
+		
+		ortho2DEnd(gl);
+	}
+
+	private void renderSpeedometer(GL2 gl)
+	{
 		gl.glEnable(GL_TEXTURE_2D);
 		gl.glEnable(GL_BLEND);
+		
+		gl.glColor3f(1, 1, 1);
 
 		speedometer.bind(gl);
-		
-		gl.glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 		
 		gl.glBegin(GL_QUADS);
 		{
@@ -316,52 +333,44 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		double speedRatio = abs(car.velocity) / (2 * Car.TOP_SPEED);
 		float zRotation_Meter = (float) ((speedRatio * 240) + 60);
 		
-		gl.glTranslatef(canvasWidth - 150, canvasHeight - 100, 0);
-		gl.glRotatef(zRotation_Meter, 0.0f, 0.0f, 1.0f);
-		
 		gl.glDisable(GL_TEXTURE_2D);
-		gl.glDisable(GL_LIGHTING);
 		
-		gl.glBegin(GL_QUADS);
+		gl.glPushMatrix();
 		{
-			gl.glColor3f(1.0f, 0.0f, 0.0f);
-			
-			gl.glVertex2f(0, -10);
-			gl.glVertex2f(-10, 0);
-			gl.glVertex2f(0, 100);
-			gl.glVertex2f(10, 0);
+			gl.glTranslatef(canvasWidth - 150, canvasHeight - 100, 0);
+			gl.glRotatef(zRotation_Meter, 0.0f, 0.0f, 1.0f);
+
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glColor3f(1, 0, 0);
+
+				gl.glVertex2f(  0, -10);
+				gl.glVertex2f(-10,   0);
+				gl.glVertex2f(  0, 100);
+				gl.glVertex2f( 10,   0);
+			}
+			gl.glEnd();
 		}
-		gl.glEnd();
+		gl.glPopMatrix();
 		
 		gl.glEnable(GL_TEXTURE_2D);
-		gl.glEnable(GL_LIGHTING);
-		
-		
-		renderer.beginRendering(drawable.getWidth(), drawable.getHeight());
+	}
+
+	private void renderText()
+	{
+		renderer.beginRendering(canvasWidth, canvasHeight);
 		renderer.setSmoothing(true);
 		
 		renderer.draw("Distance: " + (int) car.distance + " m", 40, 40);
 		renderer.draw("FPS: " + frameRate, 40, 80);
 		
-		renderer.draw("x: " + String.format("%.2f", car.x), 40, 200);
-		renderer.draw("y: " + String.format("%.2f", car.y), 40, 160);
-		renderer.draw("z: " + String.format("%.2f", car.z), 40, 120);
+		float[] p = car.getPosition();
+		
+		renderer.draw("x: " + String.format("%.2f", p[0]), 40, 200);
+		renderer.draw("y: " + String.format("%.2f", p[1]), 40, 160);
+		renderer.draw("z: " + String.format("%.2f", p[2]), 40, 120);
 		
 		renderer.endRendering();
-		
-		gl.glViewport(canvasWidth - 100, canvasHeight - 100, 100, 100);
-		gl.glMatrixMode(GL_PROJECTION);
-		gl.glLoadIdentity();
-		gl.glOrtho(-50, 50, -50, 50, 1, 50);
-		glu.gluLookAt(0, 40, 0,
-			          0, 0, 0,
-			          0, 0, 1);
-		gl.glMatrixMode(GL_MODELVIEW);
-		gl.glLoadIdentity();
-		
-		displayMap(gl);
-		
-		ortho2DEnd(gl);
 	}
 
 	private void setupCamera(GL2 gl)
@@ -415,15 +424,12 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 				float[] p = car.getPosition();
 				
 				gl.glTranslatef(0, -1.5f, 0);
-				
-				gl.glRotatef(car.xr, 1.0f, 0.0f, 0.0f);
-				gl.glRotatef(car.yr, 0.0f, 1.0f, 0.0f);
-				gl.glRotatef(car.zr, 0.0f, 0.0f, 1.0f);
+				gl.glRotated(car.trajectory, 0.0f, -1.0f, 0.0f);
+				gl.glRotated(car.zr, 1.0f, 0.0f, 0.0f);
 				
 				glu.gluLookAt(p[0], p[1], p[2],
 							  p[0] - 10, p[1], p[2],
 					          0, 1, 0);
-				
 				break;
 			}
 			
@@ -456,14 +462,9 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		}
 	}
 
-	private void displayMap(GL2 gl)
-	{
-		
-	}
-
 	private void render3DModels(GL2 gl)
-	{
-		long t0 = System.currentTimeMillis();
+	{	
+		car.render(gl);
 		
 		gl.glPushMatrix();
 		{
@@ -478,9 +479,6 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		}	
 		gl.glPopMatrix();
 		
-		System.out.println("\t" + (System.currentTimeMillis() - t0));
-		t0 = System.currentTimeMillis();
-		
 		gl.glPushMatrix();
 		{
 			/*************************
@@ -494,11 +492,6 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 				gl.glCallList(trackList);
 		}
 		gl.glPopMatrix();
-		
-		System.out.println("\t" + (System.currentTimeMillis() - t0));
-		t0 = System.currentTimeMillis();
-
-		car.render(gl);
 	}
 	
 	private void ortho2DBegin(GL2 gl)
@@ -608,13 +601,12 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		if(camera == CameraMode.MODEL_VIEW)
 		{	
 			//Re-enable the skybox for the dynamic view 
-			enableSkybox = true; 
-			
-			camera = CameraMode.DYNAMIC_VIEW;
+			enableSkybox = true;
+			car.enableAnimation = true;
 		}
-		else if(camera == CameraMode.DYNAMIC_VIEW) camera = CameraMode.BIRDS_EYE_VIEW;
-		else if(camera == CameraMode.BIRDS_EYE_VIEW) camera = CameraMode.DRIVERS_VIEW;
-		else camera =  CameraMode.MODEL_VIEW;
+		else if(camera == CameraMode.DRIVERS_VIEW) car.enableAnimation = false;
+		
+		camera = CameraMode.cycle(camera);
 	}
 	
 	private enum CameraMode
@@ -623,5 +615,10 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		DYNAMIC_VIEW,
 		BIRDS_EYE_VIEW,
 		DRIVERS_VIEW;
+		
+		public static CameraMode cycle(CameraMode camera)
+		{
+			return values()[(camera.ordinal() + 1) % values().length];
+		}
 	}
 }

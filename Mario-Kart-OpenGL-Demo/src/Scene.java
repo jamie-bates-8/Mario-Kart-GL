@@ -18,10 +18,10 @@ import static javax.media.opengl.GL.GL_TEXTURE_MAG_FILTER;
 import static javax.media.opengl.GL.GL_TEXTURE_MIN_FILTER;
 import static javax.media.opengl.GL.GL_TEXTURE_WRAP_S;
 import static javax.media.opengl.GL.GL_TEXTURE_WRAP_T;
-import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
 import static javax.media.opengl.GL2.GL_ACCUM;
-import static javax.media.opengl.GL2.GL_MULT;
+import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
 import static javax.media.opengl.GL2.GL_LOAD;
+import static javax.media.opengl.GL2.GL_MULT;
 import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.GL2.GL_RETURN;
 import static javax.media.opengl.GL2ES1.GL_EXP2;
@@ -329,7 +329,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener
 	    new StarParticle(ORIGIN, null, 0, 0);
 	    
 	    cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
-	    cars.add(new Car(gl, new float[] {-78.75f, 1.8f, 0}, 0, 180, 0, this));
+	    
+	    if(GamePad.numberOfGamepads() > 1)
+	    	cars.add(new Car(gl, new float[] {-78.75f, 1.8f, 0}, 0, 180, 0, this));
 	    
 	    itemBoxes.addAll(ItemBox.generateDiamond( 56.25f, 30f, particles));
 	    itemBoxes.addAll(ItemBox.generateSquare (101.25f, 60f, particles));
@@ -384,7 +386,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener
 			
 			for(Particle p : particles) p.update();
 			
-			for(Car car : cars) car.update(); 
+			detectCarCollisions();
+			for(Car car : cars) car.update();
+			
 		}
 		
 		int[] order = new int[cars.size()];
@@ -519,6 +523,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener
 		}
 	}
 	
+	private void detectCarCollisions()
+	{
+		for(int i = 0; i < cars.size() - 1; i++)
+		{
+			for(int j = i + 1; j < cars.size(); j++)
+			{
+				Car a = cars.get(i);
+				Car b = cars.get(j);
+				
+				if(a.getBound().testBound(b.getBound())) a.collide(b);
+			}
+		}
+	}
+	
 	public void removeParticles()
 	{
 		List<Particle> toRemove = new ArrayList<Particle>();
@@ -633,6 +651,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener
 		renderer.draw("Falling: "   + car.falling,      40, 280);
 		renderer.draw("Items: "     + itemList.size(),  40, 320);
 		renderer.draw("Particle: "  + particles.size(), 40, 360);
+		renderer.draw("Velocity: "  + String.format("%.2f", car.velocity), 40, 400);
+		renderer.draw("Turn Rate: " + String.format("%.2f", car.turnRate), 40, 440);
 		
 		renderer.endRendering();
 	}
