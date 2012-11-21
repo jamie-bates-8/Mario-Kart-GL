@@ -22,6 +22,8 @@ public class OBJParser
 	 */
 	public static List<Face> parseTriangles(String fileName)
 	{
+		long startTime = System.nanoTime();
+		
 		List<Face> faces = new ArrayList<Face>();
 		
 		List<float[]> vertices        = new ArrayList<float[]>();
@@ -49,16 +51,19 @@ public class OBJParser
 				{
 					Scanner ls = new Scanner(line.replaceAll("v", "").trim());
 					vertices.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
 				}
 				if (line.startsWith("vt"))
 				{
 					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
 					textureVertices.add(new float[] {ls.nextFloat(), ls.nextFloat()});
+					ls.close();
 				}
 				if (line.startsWith("vn"))
 				{
 					Scanner ls = new Scanner(line.replaceAll("vn", "").trim());
 					normals.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
 				}
 				if (line.startsWith("usemtl"))
 				{
@@ -117,12 +122,19 @@ public class OBJParser
 						normals.get(v2[2] - 1),
 						normals.get(v3[2] - 1)
 					};
+					
+					ls.close();
 
 					faces.add(new Face(vs, ns, ts, currentTexture, hasTexture, wildcard));
 				}
 			}
+			fs.close();
 		}
 		catch (IOException e) { e.printStackTrace(); }
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Parsed \"" + fileName + "\" in %.3f ms" + "\n", (endTime - startTime) / 1E6);
 
 		return faces;
 	}

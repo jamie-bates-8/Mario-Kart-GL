@@ -9,14 +9,12 @@
 	<classpathentry kind="lib" path="JMF_lib/jmf.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/mediaplayer.jar"/>
 	<classpathentry kind="lib" path="JMF_lib/multiplayer.jar"/>
-	<classpathentry kind="lib" path="JMF_lib/sound.jar"/>
 	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-gl.jar"/>
-	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-rt-natives-windows-i586.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-rt-natives-windows-amd64.jar"/>
 	<classpathentry kind="lib" path="Mario Kart_lib/gluegen-rt.jar"/>
-	<classpathentry kind="lib" path="Mario Kart_lib/jogl-all-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="Mario Kart_lib/jogl-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="Mario Kart_lib/jogl.all.jar"/>
-	<classpathentry kind="lib" path="Mario Kart_lib/nativewindow-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="Mario Kart_lib/nativewindow.awt.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/jogl-all-natives-windows-amd64.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/jogl-all.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/nativewindow-awt.jar"/>
+	<classpathentry kind="lib" path="Mario Kart_lib/nativewindow-natives-windows-amd64.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

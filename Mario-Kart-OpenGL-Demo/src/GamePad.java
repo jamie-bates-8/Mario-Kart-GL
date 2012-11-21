@@ -18,7 +18,7 @@ public class GamePad
 	
 	private Controller controller;
 	private Component[] components;
-	private int xAxis, zAxis, xRotation;
+	private int xAxis, yAxis, zAxis, xRotation, yRotation;
 	private float z = 0.0f;
 	private float rx = 0.0f;
 	
@@ -42,9 +42,9 @@ public class GamePad
 		
 		listControllers();
 		
-		printDetails(cs[4]);
+		printDetails(cs[5]);
 		
-		pollComponent(cs[4], cs[4].getComponents()[3]);
+		pollComponent(cs[5], cs[5].getComponents()[3]);
 	}
 	
 	public GamePad()
@@ -168,6 +168,17 @@ public class GamePad
 		}
 	}
 	
+	public float getYAxis()
+	{
+		if(yAxis == -1) return 0;
+		else
+		{
+			float y = components[yAxis].getPollData();
+
+			return (Math.abs(y) > EPSILON) ? -y : 0; 
+		}
+	}
+	
 	public float getZAxis()
 	{
 		if(zAxis == -1) return 0;
@@ -190,6 +201,17 @@ public class GamePad
 		}
 	}
 	
+	public float getYRotation()
+	{
+		if(yRotation == -1) return 0;
+		else
+		{
+			float y = components[yRotation].getPollData();
+			
+			return (Math.abs(y) > EPSILON) ? y : 0; 
+		}
+	}
+	
 	private void findComponentIndices(Controller controller)
 	{
 		components = controller.getComponents();
@@ -198,9 +220,11 @@ public class GamePad
 		else
 		{
 			xAxis = findComponentIndex(components, Component.Identifier.Axis.X);
+			yAxis = findComponentIndex(components, Component.Identifier.Axis.Y);
 			zAxis = findComponentIndex(components, Component.Identifier.Axis.Z);
 			
 			xRotation = findComponentIndex(components, Component.Identifier.Axis.RX);
+			yRotation = findComponentIndex(components, Component.Identifier.Axis.RY);
 			
 			findButtons(components);
 		}

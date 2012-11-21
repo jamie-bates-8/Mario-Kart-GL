@@ -52,6 +52,19 @@ public class GreenShell extends Shell
 		this.orbiting = orbiting;
 	}
 	
+	public GreenShell(Scene scene, float[] c, float trajectory)
+	{	
+		super(null, scene, null, trajectory);
+		
+		bound = new Sphere(c, RADIUS);
+		
+		velocity = MAX_VELOCITY;
+		durability = MAX_DURABILITY;
+		
+		this.trajectory = trajectory;
+		setRotation(0, trajectory, 0);
+	}
+	
 	public void render(GL2 gl, float trajectory)
 	{
 		gl.glPushMatrix();

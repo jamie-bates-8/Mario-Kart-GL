@@ -62,6 +62,15 @@ public class BlueShell extends Shell
 		generator = new ParticleGenerator();
 	}
 	
+	public BlueShell(Scene scene, float[] c)
+	{
+		super(null, scene, null, 0);
+		
+		bound = new Sphere(c, RADIUS);
+		
+		generator = new ParticleGenerator();
+	}
+	
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{

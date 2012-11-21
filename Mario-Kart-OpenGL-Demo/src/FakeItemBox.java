@@ -1,4 +1,3 @@
-
 import static graphics.util.Renderer.displayPartiallyTexturedObject;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
@@ -14,6 +13,7 @@ import javax.media.opengl.GL2;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
+//TODO Fake Item Boxes should rebound off slopes
 
 public class FakeItemBox extends Item
 {
@@ -57,6 +57,22 @@ public class FakeItemBox extends Item
 		}
 	}
 	
+	public FakeItemBox(Scene scene, float[] c, float trajectory)
+	{
+		this.scene = scene;
+		
+		bound = new Sphere(c, 2.5f);
+		
+		generator = new ParticleGenerator();
+		
+		gravity = 0.025;
+		
+		this.trajectory = trajectory;
+		setRotation(0, trajectory, 0);
+		
+		velocity = 1.0f;
+	}
+	
 	public static void increaseRotation() { rotation -= 4; }
 	
 	@Override
@@ -74,7 +90,7 @@ public class FakeItemBox extends Item
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_DST_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDepthMask(false);
 			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);

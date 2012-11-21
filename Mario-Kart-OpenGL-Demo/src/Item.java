@@ -51,7 +51,7 @@ public abstract class Item
 	
 	public void displayBoundVisuals(GL2 gl, GLUT glut, float[] color)
 	{
-		if(enableBoundWireframes) bound.displayWireframe(gl, glut, color);
+		if(enableBoundWireframes) bound.displayWireframe(gl, glut, new float[] {0, 0, 0, 1});
 		if(enableBoundSolids) bound.displaySolid(gl, glut, color);
 	}
 	
@@ -206,7 +206,7 @@ public abstract class Item
 			new float[] {_t[0], _t[2]});
 		
 		double angle = (90 - theta) * 2;
-		
+
 		trajectory += (orient > 0) ? angle : -angle;
 		trajectory %= 360;
 	}

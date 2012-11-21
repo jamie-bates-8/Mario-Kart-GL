@@ -52,14 +52,20 @@ public class RedShell extends Shell
 		
 		this.orbiting = orbiting;
 		
+		target = seekTarget();
+	}
+
+	private Car seekTarget()
+	{
 		Car target = null;
+		
 		float min_distance = Float.MAX_VALUE;
 		
 		for(Car c : scene.getCars())
 		{
 			if(!c.equals(car))
 			{
-				float distance = dot(c.getPosition(), car.getPosition());
+				float distance = dot(c.getPosition(), getPosition());
 				if(distance < min_distance)
 				{
 					min_distance = distance;
@@ -69,7 +75,22 @@ public class RedShell extends Shell
 		}
 		
 		if(target == null) locked = false;
-		this.target = target;
+		
+		return target;
+	}
+	
+	public RedShell(Scene scene, float[] c, float trajectory)
+	{	
+		super(null, scene, null, trajectory);
+		
+		bound = new Sphere(c, RADIUS);
+		
+		velocity = INITIAL_VELOCITY;
+		
+		this.trajectory = trajectory;
+		setRotation(0, trajectory, 0);
+		
+		target = seekTarget();
 	}
 	
 	@Override

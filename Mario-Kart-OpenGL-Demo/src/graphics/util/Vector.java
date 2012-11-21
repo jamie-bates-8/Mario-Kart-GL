@@ -63,7 +63,12 @@ public class Vector
 	
 	public static double getAngle(float[] u, float[] v)
 	{
-		return acos(dot(u, v) / (sqrt(dot(u, u)) * sqrt(dot(v, v))));
+		double cos = dot(u, v) / (sqrt(dot(u, u)) * sqrt(dot(v, v)));
+		
+		     if(cos < -1) cos = -1;
+		else if(cos >  1) cos =  1;
+		
+		return acos(cos);
 	}
 	
 	public static float orient2D(float[] a, float[] b, float[] c)

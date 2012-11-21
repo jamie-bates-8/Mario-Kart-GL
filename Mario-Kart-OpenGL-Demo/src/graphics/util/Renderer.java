@@ -1,6 +1,7 @@
 package graphics.util;
 
 import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.GL.GL_LINE_LOOP;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL.GL_TRIANGLES;
 import static javax.media.opengl.GL2.GL_QUADS;
@@ -200,6 +201,29 @@ public class Renderer
 		}
 		
 		gl.glEnable(GL_TEXTURE_2D);
+		gl.glColor3f(1, 1, 1);
+	}
+	
+	public static void displayWireframeObject(GL2 gl, List<Face> objectFaces, float[] color)
+	{
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+
+		for(Face face : objectFaces)
+		{
+			gl.glColor3f(color[0], color[1], color[2]);
+
+			gl.glBegin(GL_LINE_LOOP);
+			{
+				for(int i = 0; i < face.getVertices().length; i ++)
+					gl.glVertex3f(face.getVx(i), face.getVy(i), face.getVz(i));
+			}
+			gl.glEnd();
+		}
+
+		gl.glEnable(GL_LIGHTING);	
+		gl.glEnable(GL_TEXTURE_2D);
+		
 		gl.glColor3f(1, 1, 1);
 	}
 	

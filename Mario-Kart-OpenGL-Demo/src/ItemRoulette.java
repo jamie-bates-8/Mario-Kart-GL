@@ -71,7 +71,7 @@ public class ItemRoulette
 			booIcon              = TextureIO.newTexture(new File("tex/booIcon.jpg"), true);
 			blueShellIcon        = TextureIO.newTexture(new File("tex/blueShellIcon.jpg"), true);
 			
-			rouletteBorder      = TextureIO.newTexture(new File("tex/rouletteBorder.png"), true);
+			rouletteBorder       = TextureIO.newTexture(new File("tex/rouletteBorder.png"), true);
 			noItemIcon           = TextureIO.newTexture(new File("tex/noItemIcon.png"), true);
 		}
 		catch (IOException e) { e.printStackTrace(); }

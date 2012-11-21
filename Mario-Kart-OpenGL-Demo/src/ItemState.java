@@ -78,9 +78,10 @@ public enum ItemState
 			case HOLDING_RED_SHELL:
 			case FAKE_ITEM_BOX:
 			case HOLDING_BANANA:
-				return NO_ITEM;
+				
+			return NO_ITEM;
 			
-			default:                  return state;
+			default: return state;
 		}
 	}
 	
@@ -95,7 +96,9 @@ public enum ItemState
 			case POWER_STAR:
 			case BOO:
 			case BLUE_SHELL:
-				return true;
+			
+			return true;
+			
 			default: return false;
 		}
 	}
@@ -107,10 +110,10 @@ public enum ItemState
 			case THREE_MUSHROOMS:
 			case TWO_MUSHROOMS:
 			case GOLDEN_MUSHROOM:
-				return true;
+			
+			return true;
 				
-			default:
-				return false;
+			default: return false;
 		}
 	}
 	
@@ -118,11 +121,9 @@ public enum ItemState
 	{
 		switch(state)
 		{
-			case GOLDEN_MUSHROOM:
-				return true;
+			case GOLDEN_MUSHROOM: return true;
 				
-			default:
-				return false;
+			default: return false;
 		}
 	}
 }

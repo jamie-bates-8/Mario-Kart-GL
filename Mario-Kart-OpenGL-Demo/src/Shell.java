@@ -9,6 +9,8 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+//TODO Add Shell fragments when a Shell is destroyed
+
 public abstract class Shell extends Item
 {
 	protected static final List<Face> SHELL_FACES = OBJParser.parseTriangles("obj/shell.obj");

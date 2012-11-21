@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.media.opengl.GL2;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -104,5 +105,23 @@ public class Test
 		record.pack();
 		record.setVisible(true);
 	}
-
+	
+	public void startGameLoop(final GL2 gl)
+	{
+		//TODO Note: has concurrency issues (particle list) + objects tend to 'bounce' slightly
+		
+		new Thread(new Runnable()
+		{
+			public void run()
+			{
+				while(true)
+				{
+					//TODO GAME LOGIC
+					
+					try { Thread.sleep(17); /*Should be approximately 17 milliseconds per frame*/ }
+					catch (InterruptedException e) { e.printStackTrace(); }
+				}
+			}
+		}).start();
+	}
 }

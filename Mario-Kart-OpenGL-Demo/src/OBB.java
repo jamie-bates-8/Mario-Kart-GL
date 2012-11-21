@@ -9,6 +9,7 @@ import static graphics.util.Matrix.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.media.opengl.GL2;
 
@@ -34,10 +35,10 @@ public class OBB extends Bound
 		Arrays.fill(validFaces, true);
 	}
 	
-	public OBB(float x, float y, float z, float xrot, float yrot, float zrot, float halfWidth, float halfHeight, float halfDepth, boolean[] validFaces)
+	public OBB(float x, float y, float z, float rx, float ry, float rz, float halfWidth, float halfHeight, float halfDepth, boolean[] validFaces)
 	{
 		setPosition(x, y, z);
-		setRotation(xrot, yrot, zrot);
+		setRotation(rx, ry, rz);
 		e = new float[] {halfWidth, halfHeight, halfDepth};	
 		this.validFaces = validFaces;
 	}
@@ -507,5 +508,20 @@ public class OBB extends Bound
 			glut.glutSolidSphere(0.2, 12, 12);
 		}
 		gl.glPopMatrix();
+	}
+	
+	public float[] randomPointInside()
+	{
+		Random random = new Random();
+
+		float x = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
+		float y = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
+		float z = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
+	
+		float[] _x = multiply(u[0], e[0] * x);
+		float[] _y = multiply(u[1], e[1] * y);
+		float[] _z = multiply(u[2], e[2] * z);
+		
+		return add(add(add(c, _x), _y), _z);
 	}
 }

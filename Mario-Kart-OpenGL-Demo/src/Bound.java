@@ -29,6 +29,8 @@ public abstract class Bound
 	
 	public abstract float getHeight();
 	
+	public abstract float[] randomPointInside();
+	
 	public void displayClosestPtToPt(GL2 gl, GLUT glut, float[] p)
 	{
 		gl.glColor4f(1, 1, 1, 1);

@@ -1,12 +1,18 @@
-import static java.lang.Math.*;
-import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
-import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
-
-import static graphics.util.Vector.*;
-import static graphics.util.Matrix.*;
-
-import static graphics.util.Renderer.*;
-
+import static graphics.util.Matrix.getRotationMatrix;
+import static graphics.util.Renderer.displayColoredObject;
+import static graphics.util.Renderer.displayPartiallyTexturedObject;
+import static graphics.util.Renderer.displayTexturedObject;
+import static graphics.util.Renderer.displayTransparentObject;
+import static graphics.util.Renderer.displayWireframeObject;
+import static graphics.util.Vector.add;
+import static graphics.util.Vector.multiply;
+import static graphics.util.Vector.normalize;
+import static graphics.util.Vector.subtract;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.asin;
+import static java.lang.Math.atan;
+import static java.lang.Math.toDegrees;
 import graphics.util.Face;
 
 import java.awt.event.KeyEvent;
@@ -19,6 +25,19 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
+
+/* TODO
+ * 
+ * Improve vehicle collision response with spheres
+ * Driving onto a slope from the side is jittery
+ * 
+ * Add exhaust particles
+ * 
+ * Vehicle collisions could be more realistic (focus on top + bottom collisions)
+ * Star collisions should be different to normal collisions
+ * 
+ * Lightning Bolts should cause players to drop items
+ */
 
 public class Car
 {
@@ -36,7 +55,10 @@ public class Car
 	private float[] color = {1.0f, 0.4f, 0.4f};
 	private float[] windowColor = {0.4f, 0.8f, 1.0f};
 	
+	private static final float[] BLACK = {0.0f, 0.0f, 0.0f};
+	
 	public boolean displayModel = true;
+	public boolean enableWireframe = false;
 	
 	
 	/** Vehicle Fields **/
@@ -60,11 +82,12 @@ public class Car
 	/** Fields that define the vehicle's motion **/
 	public float velocity = 0;
 	public static final float TOP_SPEED = 1.2f;
-	private double acceleration = 0.012;
+	public double acceleration = 0.012;
 	public boolean accelerating = false;
 	public boolean reversing = false;
+	public boolean invertReverse = false;
 	
-	private double gravity = 0.05;
+	public double gravity = 0.05;
 	public boolean falling = false;
 	private float fallRate = 0.0f;
 	private static final double TOP_FALL_RATE = 2.5;
@@ -134,9 +157,11 @@ public class Car
 	private enum Aim {FORWARDS, DEFAULT, BACKWARDS};
 	private Aim aiming = Aim.DEFAULT;
 	
+	/** Scene Fields **/
 	private Scene scene;
-	private CameraMode camera = CameraMode.DYNAMIC_VIEW;
-	private float zoom = 0.75f;
+	public Camera camera;
+	
+	/** Controller Fields **/
 	private GamePad controller;
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
@@ -162,9 +187,11 @@ public class Car
 	    		xrot, yrot, zrot,
 	    		5.5f, 2.0f, 2.7f);
 	    
-	     trajectory = yrot;
+	    trajectory = yrot;
 	    
 	    this.scene = scene; 
+	    camera = new Camera();
+	    
 	    controller = new GamePad();
 	}
 	
@@ -448,10 +475,7 @@ public class Car
 	{
 		gl.glPushMatrix();
 		{
-			/***************************
-			 * Vehicle Transformations *
-			 ***************************/
-
+			/** Vehicle Transformations **/
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			gl.glMultMatrixf(getRotationMatrix(bound.u), 0);
 			gl.glScalef(scale, scale, scale);
@@ -469,6 +493,7 @@ public class Car
 					if(booColor > 0 && booDuration > 0) booColor -= fadeIncrement;
 					displayTransparentObject(gl, CAR_FACES, booColor);
 				}
+				else if(enableWireframe) displayWireframeObject(gl, CAR_FACES, color);
 				else gl.glCallList(carList);
 				
 				gl.glColor3f(1, 1, 1);
@@ -481,9 +506,7 @@ public class Car
 						float y = offsets_Wheel[wheel][1];
 						float z = offsets_Wheel[wheel][2];
 						
-						/*************************
-						 * Wheel Transformations *
-						 *************************/
+						/** Wheel Transformations **/
 						gl.glTranslatef(x, y, z);
 						
 						if(wheel % 2 != 0) // Only turn the front wheels
@@ -499,14 +522,13 @@ public class Car
 							displayColoredObject(gl, WHEEL_FACES, _color);
 						}
 						else if(invisible) displayTransparentObject(gl, WHEEL_FACES, booColor);
+						else if(enableWireframe) displayWireframeObject(gl, WHEEL_FACES, BLACK);
 						else displayTexturedObject(gl, WHEEL_FACES);
 					}
 					gl.glPopMatrix();
 				}
 				
-				/*****************************
-				 * Left Door Transformations *
-				 *****************************/
+				/** Left Door Transformations **/
 				gl.glPushMatrix();
 				{
 					float x = offsets_LeftDoor[0];
@@ -521,23 +543,21 @@ public class Car
 						displayColoredObject(gl, DOOR_FACES, _color);
 					}
 					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
+					else if(enableWireframe) displayWireframeObject(gl, DOOR_FACES, color);
 					else displayColoredObject(gl, DOOR_FACES, color);
 					
-					/************************************
-					 * Left Door Window Transformations *
-					 ************************************/
+					/** Left Door Window Transformations **/
 					gl.glPushMatrix();
 					{
 						if(invisible) displayTransparentObject(gl, DOOR_WINDOW_FACES, booColor);
+						else if(enableWireframe) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
 						else displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
 					}
 					gl.glPopMatrix();	
 				}
 				gl.glPopMatrix();
 				
-				/******************************
-				 * Right Door Transformations *
-				 ******************************/
+				/** Right Door Transformations **/
 				gl.glPushMatrix();
 				{
 					float x = offsets_RightDoor[0];
@@ -555,28 +575,27 @@ public class Car
 						displayColoredObject(gl, DOOR_FACES, _color);
 					}
 					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
+					else if(enableWireframe) displayWireframeObject(gl, DOOR_FACES, color);
 					else displayColoredObject(gl, DOOR_FACES, color);
 					
-					/*************************************
-					 * Right Door Window Transformations *
-					 *************************************/
+					/** Right Door Window Transformations **/
 					gl.glPushMatrix();
 					{	
 						if(invisible) displayTransparentObject(gl, DOOR_WINDOW_FACES, booColor);
+						else if(enableWireframe) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
 						else displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
 					}
 					gl.glPopMatrix();
 				}
 				gl.glPopMatrix();
 				
-				/**************************
-				 * Window Transformations *
-				 **************************/
+				/** Window Transformations **/
 				gl.glPushMatrix();
 				{			
 					gl.glTranslatef(0.3f, -1.2f, 0);
 					
 					if(invisible) displayTransparentObject(gl, WINDOW_FACES, booColor);
+					else if(enableWireframe) displayWireframeObject(gl, WINDOW_FACES, windowColor);
 					else displayTransparentObject(gl, WINDOW_FACES, windowColor);
 				}
 				gl.glPopMatrix();
@@ -722,10 +741,18 @@ public class Car
 		if     (drift == Direction.LEFT ) turnLeft();
 		else if(drift == Direction.RIGHT) turnRight();
 		
-		else if(turning && /*velocity != 0 &&*/ !slipping)
+		else if(turning && !slipping)
 		{
-			if(direction == Direction.LEFT) turnLeft();
-			else turnRight();
+			if(reversing && invertReverse)
+			{
+				if(direction == Direction.RIGHT) turnLeft();
+				else turnRight();
+			}
+			else
+			{
+				if(direction == Direction.LEFT ) turnLeft();
+				else turnRight();
+			}
 		}
 		
 		else stabilize();
@@ -757,7 +784,7 @@ public class Car
 		
 		updateStatus();
 		
-		if(controller.isEnabled())
+		if(!controller.isNull() && controller.isEnabled() && !camera.isFree())
 		{
 			if     (controller.getXAxis() > (isDrifting() ?  0.9f : 0)) steerLeft();
 			else if(controller.getXAxis() < (isDrifting() ? -0.9f : 0)) steerRight();
@@ -1120,9 +1147,9 @@ public class Car
 		turnIncrement = 0.15;
 	}
 	
-	public boolean isSlipping()   { return slipping; }
+	public boolean isSlipping()   { return slipping;  }
 
-	public boolean isCursed()     { return cursed; }
+	public boolean isCursed()     { return cursed;    }
 	
 	public boolean isMiniature()  { return miniature; }
 	
@@ -1130,32 +1157,58 @@ public class Car
 	
 	public boolean isInvisible()  { return invisible; }
 	
-	public boolean isBoosting()   { return boosting; }
+	public boolean isBoosting()   { return boosting;  }
 	
 	public boolean isDrifting()   { return drift != Direction.STRAIGHT; }
 
 	public void keyPressed(KeyEvent e)
 	{
-		controller.disable();
+		if(camera.isFree())
+		{
+			switch(e.getKeyCode())
+			{
+				case KeyEvent.VK_W: camera.moveForward(5);  break;
+				case KeyEvent.VK_S: camera.moveBackward(5); break;
+				case KeyEvent.VK_A: camera.moveLeft(5);     break;
+				case KeyEvent.VK_D: camera.moveRight(5);    break;
+				
+				case KeyEvent.VK_UP:    camera.lookUp(5);    break;
+				case KeyEvent.VK_DOWN:  camera.lookDown(5);  break;
+				case KeyEvent.VK_LEFT:  camera.lookLeft(5);  break;
+				case KeyEvent.VK_RIGHT: camera.lookRight(5); break;
+				
+				case KeyEvent.VK_MINUS:  camera.decreaseSensitivity(); break;
+				case KeyEvent.VK_EQUALS: camera.increaseSensitivity(); break;
+			}
+		}
+		else
+		{
+			controller.disable();
+			
+			switch(e.getKeyCode())
+			{
+				case KeyEvent.VK_W:
+				case KeyEvent.VK_UP:
+					accelerating = true; break;
+					
+				case KeyEvent.VK_S:
+				case KeyEvent.VK_DOWN:
+					reversing = true; accelerating = true; break;
+					
+				case KeyEvent.VK_A:
+				case KeyEvent.VK_LEFT:
+					steerLeft(); break;
+				
+				case KeyEvent.VK_D:
+				case KeyEvent.VK_RIGHT:
+					steerRight(); break;
+					
+				case KeyEvent.VK_E: camera.setRearview(true); break;
+			}
+		}
 		
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_W:
-			case KeyEvent.VK_UP:
-				accelerating = true; break;
-				
-			case KeyEvent.VK_S:
-			case KeyEvent.VK_DOWN:
-				reversing = true; accelerating = true; break;
-				
-			case KeyEvent.VK_A:
-			case KeyEvent.VK_LEFT:
-				steerLeft(); break;
-			
-			case KeyEvent.VK_D:
-			case KeyEvent.VK_RIGHT:
-				steerRight(); break;
-			
 			case KeyEvent.VK_R: if(!cursed && !slipping) { aimForwards();  useItem(); } break;
 			case KeyEvent.VK_F: if(!cursed && !slipping) { resetAim();     useItem(); } break;
 			case KeyEvent.VK_C: if(!cursed && !slipping) { aimBackwards(); useItem(); } break;
@@ -1166,9 +1219,13 @@ public class Car
 			
 			case KeyEvent.VK_Q: if(turning && !falling) drift(); break;
 			
-			case KeyEvent.VK_M: camera = CameraMode.cycle(camera); break;
+			case KeyEvent.VK_X: invertReverse = !invertReverse; break;
 			
-			case KeyEvent.VK_9: if(camera != CameraMode.DRIVERS_VIEW) displayModel = !displayModel; break;
+			case KeyEvent.VK_M: camera.cycleMode(); break;
+			
+			case KeyEvent.VK_9: if(!camera.isFirstPerson()) displayModel = !displayModel; break;
+			
+			case KeyEvent.VK_F3: enableWireframe = !enableWireframe; break;
 		}
 	}
 
@@ -1192,23 +1249,41 @@ public class Car
 			case KeyEvent.VK_F: if(hasItem()) releaseItem(); break;
 		
 			case KeyEvent.VK_Q: miniTurbo(); break;
+			
+			case KeyEvent.VK_E: camera.setRearview(false); break;
 		}
 	}
 	
 	public void buttonPressed(int e)
 	{
+		if(!camera.isFree())
+		{
+			switch(e)
+			{
+				case  3: roulette.next(); break;
+				case -3: roulette.previous(); break;
+				case  4: if(!cursed && !slipping) { aimForwards();  useItem(); } break;
+				case -4: if(!cursed && !slipping) { aimBackwards(); useItem(); } break; 
+				case  5: accelerating = true; break;
+				case  6: camera.setRearview(true); break;
+				case  7: reversing = true; accelerating = true; break;
+				case  9: 
+				case 10: if(turning && !falling) drift(); break;
+				case 14: roulette.repeat(); break;
+			}
+		}
+		else
+		{
+			switch(e)
+			{
+				case  5: camera.increaseSensitivity(); break;
+				case  7: camera.decreaseSensitivity(); break;
+			}
+		}
+		
 		switch(e)
 		{
-			case  3: roulette.next(); break;
-			case -3: roulette.previous(); break;
-			case  4: if(!cursed && !slipping) { aimForwards();  useItem(); } break;
-			case -4: if(!cursed && !slipping) { aimBackwards(); useItem(); } break; 
-			case  5: accelerating = true; break;
-			case  7: reversing = true; accelerating = true; break;
-			case  8: camera = CameraMode.cycle(camera); break;
-			case  9: 
-			case 10: if(turning && !falling) drift(); break;
-			case 14: roulette.repeat(); break;
+			case  8: camera.cycleMode(); break;
 		}
 	}
 	
@@ -1219,6 +1294,7 @@ public class Car
 			case  4: if(hasItem()) releaseItem(); break; 
 			case  5:
 			case  7: accelerating = false; reversing = false; break;
+			case  6: camera.setRearview(false); break;
 			case  9:
 			case 10: miniTurbo(); break;
 		}
@@ -1226,71 +1302,43 @@ public class Car
 	
 	public void setupCamera(GL2 gl, GLU glu)
 	{
-		switch(camera)
+		float _trajectory = trajectory;
+		
+		switch(camera.getMode())
 		{	
-			//Cause the camera to follow the car dynamically as it moves along the track 
-			case DYNAMIC_VIEW:
+			case DYNAMIC_VIEW:	 displayModel =  true;
+								 if(slipping) _trajectory = slipTrajectory; break;
+			case BIRDS_EYE_VIEW: break;
+			case DRIVERS_VIEW:   displayModel = false; break;
+			case FREE_LOOK_VIEW:
 			{
-				displayModel = true;
+				displayModel =  true;
 				
-				float[] p = getPosition();
-				
-				gl.glTranslatef(0, -15.0f * zoom, -30.0f * zoom);
-				if(slipping) gl.glRotated(slipTrajectory, 0.0f, -1.0f, 0.0f);
-				else gl.glRotated(trajectory, 0.0f, -1.0f, 0.0f);
-
-				glu.gluLookAt(p[0], p[1], p[2],
-						p[0] - 10, p[1], p[2],
-						0, 1, 0);
-
-				break;
-			}
-			//Focus the camera on the centre of the track from a bird’s eye view
-			case BIRDS_EYE_VIEW:
-			{
-				gl.glMatrixMode(GL_PROJECTION);
-				gl.glLoadIdentity();
-				gl.glOrtho(-200, 200, -200, 200, 1, 200);
-				glu.gluLookAt(0, 150, 0,
-					          0, 0, 0,
-					          0, 0, 1);
-				gl.glMatrixMode(GL_MODELVIEW);
-				gl.glLoadIdentity();
-
-				break;
-			}
-			//Setup the camera to view the scene from the driver's perspective
-			case DRIVERS_VIEW:
-			{
-				displayModel = false;
-				
-				float[] p = getPosition();
-				
-				gl.glTranslatef(0, -3.0f, 0);
-				gl.glRotated(trajectory, 0.0f, -1.0f, 0.0f);
-				
-				glu.gluLookAt(p[0], p[1], p[2],
-							  p[0] - 10, p[1], p[2],
-					          0, 1, 0);
+				if(controller.isEnabled())
+				{
+					float x  = controller.getXAxis();
+					float y  = controller.getYAxis();
+					float rx = controller.getXRotation();
+					float ry = controller.getYRotation();
+					
+					if     (x > 0) camera.moveLeft(x);
+					else if(x < 0) camera.moveRight(-x);
+					
+					if     (y > 0) camera.moveForward(y);
+					else if(y < 0) camera.moveBackward(-y);
+					
+					if     (rx > 0) camera.lookRight(rx);
+					else if(rx < 0) camera.lookLeft(-rx);
+					
+					if     (ry > 0) camera.lookDown(ry);
+					else if(ry < 0) camera.lookUp(-ry);
+				}
 				
 				break;
 			}
 			
-			default: break;
+			default: break;	
 		}
-	}
-	
-	private enum CameraMode
-	{
-		DYNAMIC_VIEW,
-		BIRDS_EYE_VIEW,
-		DRIVERS_VIEW;
-		
-		public static CameraMode cycle(CameraMode camera)
-		{
-			return values()[(camera.ordinal() + 1) % values().length];
-		}
+		camera.setupView(gl, glu, getPosition(), _trajectory);
 	}
 }
-
-

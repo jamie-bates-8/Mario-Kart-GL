@@ -62,6 +62,13 @@ public class Banana extends Item
 		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
 	}
 	
+	public Banana(Scene scene, float[] c)
+	{
+		this.scene = scene;
+		
+		bound = new Sphere(c, RADIUS);
+	}
+	
 	@Override
 	public void rebound(Bound b)
 	{

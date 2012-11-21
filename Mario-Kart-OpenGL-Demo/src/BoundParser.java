@@ -37,22 +37,26 @@ public class BoundParser
 				{
 					Scanner _sc = new Scanner(line.replaceAll("c", "").trim());
 					positions.add(new float[] {_sc.nextFloat(), _sc.nextFloat(), _sc.nextFloat()});
+					_sc.close();
 				}
 				if(line.startsWith("u"))
 				{
 					Scanner _sc = new Scanner(line.replaceAll("u", "").trim());
 					rotations.add(new float[] {_sc.nextFloat(), _sc.nextFloat(), _sc.nextFloat()});
+					_sc.close();
 				}
 				if(line.startsWith("e"))
 				{
 					Scanner _sc = new Scanner(line.replaceAll("e", "").trim());
 					extents.add(new float[] {_sc.nextFloat(), _sc.nextFloat(), _sc.nextFloat()});
+					_sc.close();
 				}
 				if(line.startsWith("v"))
 				{
 					Scanner _sc = new Scanner(line.replaceAll("v", "").trim());
 					validFaces.add(new boolean[] {_sc.nextBoolean(), _sc.nextBoolean(), _sc.nextBoolean(),
 							                      _sc.nextBoolean(), _sc.nextBoolean(), _sc.nextBoolean()});
+					_sc.close();
 				}
 				if(line.startsWith("obb"))
 				{
@@ -70,8 +74,11 @@ public class BoundParser
 						(extentID     == 0) ? DEFAULT_EXTENTS     : extents.get(extentID - 1),
 						(validFacesID == 0) ? DEFAULT_VALID_FACES : validFaces.get(validFacesID - 1)
 					));
+					
+					_sc.close();
 				}
 			}
+			sc.close();
 		}
 		catch (IOException e) { e.printStackTrace(); }
 		

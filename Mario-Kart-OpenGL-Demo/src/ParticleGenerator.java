@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -8,15 +7,6 @@ import static graphics.util.Vector.normalize;
 
 public class ParticleGenerator
 {
-	public static final float[] RED    = {237.0f,  28.0f,  36.0f};
-	public static final float[] ORANGE = {242.0f, 101.0f,  34.0f};
-	public static final float[] YELLOW = {255.0f, 228.0f,   0.0f};
-	public static final float[] GREEN  = { 57.0f, 180.0f,  74.0f};
-	public static final float[] BLUE   = {  0.0f, 173.0f, 239.0f};
-	public static final float[] INDIGO = {  0.0f, 114.0f, 188.0f};
-	public static final float[] VIOLET = {102.0f,  45.0f, 145.0f};
-	public static final float[] WHITE  = {255.0f, 255.0f, 255.0f}; 
-	
 	private Random generator;
 	
 	public ParticleGenerator() { generator = new Random(); }
@@ -25,7 +15,7 @@ public class ParticleGenerator
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
-		float[][] colors = {RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET};
+		float[][] colors = {RGB.RED, RGB.ORANGE, RGB.YELLOW, RGB.GREEN, RGB.BLUE, RGB.INDIGO, RGB.VIOLET};
 		
 		for(int i = 0; i < n; i++)
 		{
@@ -44,7 +34,7 @@ public class ParticleGenerator
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
-		float[][] colors = {WHITE, YELLOW, ORANGE};
+		float[][] colors = {RGB.WHITE, RGB.YELLOW, RGB.ORANGE};
 		
 		for(int i = 0; i < n; i++)
 		{
@@ -116,7 +106,7 @@ public class ParticleGenerator
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[]  color = RED;
+			float[]  color = RGB.RED;
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
 			
 			float[] t = getRandomVector();

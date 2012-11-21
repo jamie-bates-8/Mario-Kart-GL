@@ -1,12 +1,19 @@
 
-import static java.lang.Math.*;
+import static graphics.util.Vector.add;
+import static graphics.util.Vector.dot;
+import static graphics.util.Vector.multiply;
+import static graphics.util.Vector.normalize;
+import static graphics.util.Vector.subtract;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toRadians;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_LINE_LOOP;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
-import static graphics.util.Vector.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.media.opengl.GL2;
 
@@ -126,7 +133,7 @@ public class Sphere extends Bound
 	
 	public void displayWireframe(GL2 gl, GLUT glut, float[] color)
 	{
-		int v = 12;
+		int v = 24;
 		
 		gl.glColor4f(color[0], color[1], color[2], color[3]);
 		
@@ -159,6 +166,26 @@ public class Sphere extends Bound
 		}
 	}
 	
+	public float[] randomPointInside()
+	{
+		Random random = new Random();
+		
+		float[] p = {0, 0, 0};
+		
+		do
+		{
+			float x = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
+			float y = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
+			float z = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
 	
-
+			x *= r;
+			y *= r;
+			z *= r;
+			
+			p = new float[] {x, y, z};
+		}
+		while(dot(p, p) > r * r);
+		
+		return add(c, p);
+	}
 }
