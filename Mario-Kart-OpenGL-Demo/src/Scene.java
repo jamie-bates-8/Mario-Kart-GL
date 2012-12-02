@@ -3,16 +3,12 @@ import static graphics.util.Renderer.displayTexturedCuboid;
 import static graphics.util.Renderer.displayTexturedObject;
 import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Renderer.displayWireframeObject;
-import static java.lang.Math.abs;
-import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
 import static javax.media.opengl.GL.GL_DONT_CARE;
 import static javax.media.opengl.GL.GL_FRONT;
 import static javax.media.opengl.GL.GL_LEQUAL;
-import static javax.media.opengl.GL.GL_LINES;
-import static javax.media.opengl.GL.GL_NEAREST;
 import static javax.media.opengl.GL.GL_NICEST;
 import static javax.media.opengl.GL.GL_REPEAT;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
@@ -24,7 +20,6 @@ import static javax.media.opengl.GL2.GL_ACCUM;
 import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
 import static javax.media.opengl.GL2.GL_LOAD;
 import static javax.media.opengl.GL2.GL_MULT;
-import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.GL2.GL_RETURN;
 import static javax.media.opengl.GL2ES1.GL_EXP2;
 import static javax.media.opengl.GL2ES1.GL_FOG;
@@ -48,10 +43,8 @@ import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 import graphics.util.Face;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -80,7 +73,6 @@ import javax.swing.JFrame;
 import javax.swing.JTextField;
 
 import com.jogamp.opengl.util.FPSAnimator;
-import com.jogamp.opengl.util.awt.TextRenderer;
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -102,11 +94,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private int canvasWidth = 840;
 	private int canvasHeight = 680;
-	private static final int FPS = 60;
-	private static final int MIN_FPS = 30;
+	
+	public static final int FPS = 60;
+	public static final int MIN_FPS = 30;
+	
 	private final FPSAnimator animator;
 	
-	private static final float FOV = 100.0f;
+	public static final float FOV = 100.0f;
 	
 	private GLU glu;
 	private GLUT glut;
@@ -118,19 +112,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private int frames = 0; //frame counter for current second
 	private int frameRate = FPS; //FPS of previous second
 	private long startTime; //start time of current second
-	
-	private int frameIndex = 0; //time independent frame counter (for FT graph)
 	private long renderTime; //time at which previous frame was rendered 
-	private long[] frameTimes; //buffered frame times (for FT graph)
-	private long[][] renderTimes; //buffered times for rendering each set of components
-	private float yStretch = 1; //stretching factor for y-axis of FT graph
 	
-	private static final float STRETCH_INC = 0.25f;
-	private static final float MIN_STRETCH = 0.25f;
-	private static final float MAX_STRETCH = 8.00f;
-	
-	public boolean frameTimeComponents = true;
-	public int emphasizedComponent = 0; 
+	public int frameIndex = 0; //time independent frame counter (for FT graph)
+	public long[] frameTimes; //buffered frame times (for FT graph)
+	public long[][] renderTimes; //buffered times for rendering each set of components
+	public long[] collisionTimes; //buffered times for collision detection tests (for CT graph)
 	
 	private static final String[] COLUMN_HEADERS =
 		{"World", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
@@ -149,12 +136,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Texture yellowGranite;
 	private Texture yellowMetal;
 	
-	
-	/** HUD Fields **/
-	private boolean enableHUD = true;
-	private Texture speedometer;
-	private TextRenderer renderer;
-	private Color textColor = Color.WHITE;
+	private Texture cobble;
 
 	
 	/** Model Fields **/
@@ -171,18 +153,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 
 	private List<ItemBox> itemBoxes = new ArrayList<ItemBox>();
+	private boolean enableItemBoxes = false;
 	
 	
 	/** Fog Fields **/
-	private float fogDensity = 0.004f;
-	private float[] fogColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	public float fogDensity = 0.004f;
+	public float[] fogColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	
 	
 	/** Lighting Fields **/
 	private float[] global_specular = {1.0f, 1.0f, 1.0f};
 	private float[] global_ambience = {0.8f, 0.8f, 0.8f, 1.0f};
 	
-	private float[] position = {0.0f, 50.0f, 0.0f, 0.0f};
+	private float[] position = {0.0f, 100.0f, 0.0f, 0.0f};
 	
     private float[] material_ambience  = {0.7f, 0.7f, 0.7f, 1.0f};
     private float[] material_shininess = {100.0f};
@@ -207,7 +190,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private boolean enableObstacleWireframes = false;
 	
-	private boolean enableObstacles = true;
+	private boolean enableObstacles = false;
 	
 	private List<OBB> wallBounds;
 	
@@ -227,6 +210,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	int boostCounter = 0;
 	boolean enableMotionBlur = true;
+	
+	
+	HeightMap heightMap;
+	SplashShape[] splashShapes;
 	
 	
 	public Scene()
@@ -279,17 +266,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public static void main(String[] args) { new Scene(); }
 	
+	public int getFrameRate() { return frameRate; }
+	
+	public int getHeight() { return canvasHeight; }
+	
+	public int getWidth()  { return canvasWidth;  }
+	
 	public void init(GLAutoDrawable drawable)
 	{
 		execution = Calendar.getInstance();
 		
-		Font font = new Font("Calibri", Font.PLAIN, 18);
-		renderer = new TextRenderer(font);
-		
 		try
-		{
-			speedometer   = TextureIO.newTexture(new File("tex/speedometer.png"), true);
-			
+		{			
 			brickWall     = TextureIO.newTexture(new File("tex/longBrick.jpg"), false);
 			brickWallTop  = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
 			
@@ -301,6 +289,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			redMetal      = TextureIO.newTexture(new File("tex/redMetal.jpg"), true);
 			yellowGranite = TextureIO.newTexture(new File("tex/yellowGranite.jpg"), true);
 			yellowMetal   = TextureIO.newTexture(new File("tex/yellowMetal.jpg"), true);
+			
+			cobble        = TextureIO.newTexture(new File("tex/cobbles.jpg"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
@@ -321,8 +311,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		/** Texture Options **/
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_BASE_LEVEL, 0);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAX_LEVEL,  4);
+		
+		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR_MIPMAP_NEAREST);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_NEAREST);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
 		
@@ -396,11 +389,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    if(GamePad.numberOfGamepads() > 3)
 		    cars.add(new Car(gl, new float[] {0, 1.8f, -78.75f}, 0,  90, 0, this));
 		    
-	    
-	    itemBoxes.addAll(ItemBox.generateDiamond( 56.25f, 30f, particles));
-	    itemBoxes.addAll(ItemBox.generateSquare (101.25f, 60f, particles));
-	    itemBoxes.addAll(ItemBox.generateSquare (123.75f, 30f, particles));
-	    itemBoxes.addAll(ItemBox.generateDiamond(   180f,  0f, particles));
+	    if(enableItemBoxes)
+	    {
+	    	itemBoxes.addAll(ItemBox.generateDiamond( 56.25f, 30f, particles));
+	    	itemBoxes.addAll(ItemBox.generateSquare (101.25f, 60f, particles));
+	    	itemBoxes.addAll(ItemBox.generateSquare (123.75f, 30f, particles));
+	    	itemBoxes.addAll(ItemBox.generateDiamond(   180f,  0f, particles));
+	    }
 	    
 	    wallBounds = BoundParser.parseOBBs("bound/blockFort.bound");
 	   
@@ -410,12 +405,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
 	    
-	    frameTimes = new long[240];
-	    renderTimes = new long[240][6];
+	    frameTimes     = new long[240];
+	    renderTimes    = new long[240][6];
+	    collisionTimes = new long[240];
+	    
+	    heightMap = new HeightMap(gl, 50);
+	    splashShapes = new SplashShape[10];
+	    
+	    Random generator = new Random();
+	    
+	    for (int i = 0; i < 10; i++)
+	    	splashShapes[i] = new SplashShape(cobble, heightMap.heights, generator.nextInt(10) + 1);
 	}
 	
 	public void display(GLAutoDrawable drawable)
-	{		
+	{	
 		GL2 gl = drawable.getGL().getGL2();
 		
 		gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -472,7 +476,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			else i--;
 			
 			renderTimes[frameIndex][4] = renderBounds(gl);
-			renderTimes[frameIndex][5] = renderHUD(gl, car);
+			renderTimes[frameIndex][5] = car.renderHUD(gl, glu);
 		}
 		
 		/* 
@@ -550,6 +554,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		float c = cloud_density;
 		gl.glColor3f(c, c, c); //affect the color of the environment in addition to fog
 		gl.glFogfv (GL_FOG_COLOR, new float[] {c, c, c, 1}, 0);
+		
+		gl.glFogf  (GL_FOG_DENSITY, fogDensity);
 	}
 	
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
@@ -582,11 +588,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void addItem(Item item) { itemList.add(item); }
 	
+	public List<Item> getItems() { return itemList; }
+	
 	public void clearItems() { itemList.clear(); }
 	
 	public void addParticle(Particle p) { particles.add(p); }
 	
 	public void addParticles(List<Particle> particles) { this.particles.addAll(particles); }
+	
+	public List<Particle> getParticles() { return particles; }
 	
 	private void updateItems()
 	{
@@ -605,10 +615,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		}
 		
-		detectItemCollisions();
+		collisionTimes[frameIndex] = detectItemCollisions();
 	}
 
-	private void detectItemCollisions()
+	private long detectItemCollisions()
 	{
 		List<Item> allItems = new ArrayList<Item>();
 		
@@ -617,6 +627,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		for(Car car : cars)
 			allItems.addAll(car.getItems());
 		
+		long start = System.nanoTime();
+		
 		for(int i = 0; i < allItems.size() - 1; i++)
 		{
 			for(int j = i + 1; j < allItems.size(); j++)
@@ -624,9 +636,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				Item a = allItems.get(i);
 				Item b = allItems.get(j);
 				
-				if(a.getBound().testBound(b.getBound())) a.collide(b);
+				if(a.canCollide(b) && a.getBound().testBound(b.getBound())) a.collide(b);
 			}
 		}
+		
+		return System.nanoTime() - start;
 	}
 	
 	private void detectCarCollisions()
@@ -676,186 +690,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		return System.nanoTime() - start;
-	}
-
-	private long renderHUD(GL2 gl, Car car)
-	{
-		long start = System.nanoTime();
-		
-		ortho2DBegin(gl);
-		
-		if(enableHUD)
-		{
-			gl.glDisable(GL_LIGHTING);
-	
-			renderSpeedometer(gl, car);
-			
-			ItemRoulette roulette = car.getRoulette();
-			roulette.cursed = car.isCursed();
-			if(roulette.isAlive()) roulette.render(gl);
-			
-			renderText(car);
-			
-			if(frameTimeComponents) renderFrameTimeComponents(gl);
-			else renderFrameTimes(gl);
-			
-			
-			gl.glEnable(GL_LIGHTING);
-		}
-		
-		gl.glColor3f(1.0f, 1.0f, 1.0f);
-		
-		ortho2DEnd(gl);
-		
-		return System.nanoTime() - start;
-	}
-
-	private void renderSpeedometer(GL2 gl, Car car)
-	{
-		gl.glEnable(GL_TEXTURE_2D);
-		gl.glEnable(GL_BLEND);
-		
-		gl.glColor3f(1, 1, 1);
-
-		speedometer.bind(gl);
-		
-		gl.glBegin(GL_QUADS);
-		{
-			gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(canvasWidth - 250, canvasHeight - 200);
-			gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(canvasWidth - 250, canvasHeight      );
-			gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(canvasWidth -  50, canvasHeight      );
-			gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(canvasWidth -  50, canvasHeight - 200);
-		}
-		gl.glEnd();
-		
-		gl.glDisable(GL_BLEND);
-		
-		double speedRatio = abs(car.velocity) / (2 * Car.TOP_SPEED);
-		float dialRotation = (float) ((speedRatio * 240) + 60);
-		
-		gl.glDisable(GL_TEXTURE_2D);
-		
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(canvasWidth - 150, canvasHeight - 100, 0);
-			gl.glRotatef(dialRotation, 0.0f, 0.0f, 1.0f);
-
-			gl.glBegin(GL_QUADS);
-			{
-				gl.glColor3f(1, 0, 0);
-
-				gl.glVertex2f(  0, -10);
-				gl.glVertex2f(-10,   0);
-				gl.glVertex2f(  0, 100);
-				gl.glVertex2f( 10,   0);
-			}
-			gl.glEnd();
-		}
-		gl.glPopMatrix();
-		
-		gl.glEnable(GL_TEXTURE_2D);
-		gl.glColor3f(1, 1, 1);
-	}
-
-	/**
-	 * This method renders text on the screen to describe the state of the scene
-	 * (FPS, number of world items, number of particles in the scene...) in
-	 * addition to the state of the car passed as a parameter (such as the position,
-	 * velocity, turn rate...)
-	 */
-	private void renderText(Car car)
-	{
-		renderer.beginRendering(canvasWidth, canvasHeight);
-		renderer.setSmoothing(true);
-		renderer.setColor(textColor); //also sets the scene color
-		
-		renderer.draw("FPS: " + frameRate, 40, 520);
-		
-		renderer.draw("Items: "    + itemList.size(),  40, 460);
-		renderer.draw("Particle: " + particles.size(), 40, 430);
-		
-		float[] p = car.getPosition();
-		
-		int x = canvasWidth - 200;
-		
-		renderer.draw("Colliding: "   + car.colliding, x, 430);
-		renderer.draw("Falling: "     + car.falling,   x, 400);
-		
-		renderer.draw("Turn Rate: "   + String.format("%.2f", car.turnRate), x, 340);
-		
-		renderer.draw("x: " + String.format("%.2f", p[0]), x, 280);
-		renderer.draw("y: " + String.format("%.2f", p[1]), x, 250);
-		renderer.draw("z: " + String.format("%.2f", p[2]), x, 220);
-		
-		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 50);
-		renderer.draw("Distance: " + (int) car.distance + " m", x, 20);
-		
-		renderer.endRendering();
-	}
-
-	private void renderFrameTimes(GL2 gl)
-	{
-		gl.glBegin(GL_LINES);
-		{
-			for(int i = 0; i < frameTimes.length; i++)
-			{
-				float[] color1, color2;
-				
-				     if(i == frameIndex    ) color1 = color2 = RGB.VIOLET;
-				else if(i == frameIndex - 1) color1 = color2 = RGB.INDIGO;
-				else if(i == frameIndex - 2) color1 = color2 = RGB.BLUE;
-				
-				else if(frameTimes[i] < (1000.0 / FPS))
-				{
-					color1 = RGB.GREEN; color2 = RGB.LIME_GREEN;
-				}
-				else if(frameTimes[i] < (1000.0 / MIN_FPS))
-				{
-					color1 = RGB.ORANGE; color2 = RGB.YELLOW;
-				}
-				else
-				{
-					color1 = RGB.DARK_RED; color2 = RGB.RED;
-				}
-				gl.glColor3f(color1[0]/255, color1[1]/255, color1[2]/255);
-				gl.glVertex2f(50 + (i * 2), canvasHeight - 50);
-				
-				gl.glColor3f(color2[0]/255, color2[1]/255, color2[2]/255);
-				gl.glVertex2f(50 + (i * 2), canvasHeight - 50 - (frameTimes[i] * yStretch));
-			}
-		}
-		gl.glEnd();
-	}
-	
-	private void renderFrameTimeComponents(GL2 gl)
-	{
-		float[][] colors = {RGB.RED, RGB.ORANGE, RGB.YELLOW, RGB.GREEN, RGB.BLUE, RGB.INDIGO};
-		float[] color = {};
-		
-		gl.glBegin(GL_LINES);
-		{
-			for(int i = 0; i < renderTimes.length; i++)
-			{
-				float y = canvasHeight - 50;
-				
-				for(int j = 0; j < renderTimes[0].length; j++)
-				{
-				         if(i == frameIndex    ) color = RGB.VIOLET;
-				    else if(i == frameIndex - 1) color = RGB.INDIGO;
-					else if(i == frameIndex - 2) color = RGB.BLUE;
-					
-					else if(j == emphasizedComponent - 1) color = RGB.WHITE;
-					
-					else color = colors[j];
-					
-					gl.glColor3f(color[0]/255, color[1]/255, color[2]/255);
-				
-					gl.glVertex2f(50 + (i * 2), y);
-					gl.glVertex2f(50 + (i * 2), y -= (renderTimes[i][j] / 1E6 * yStretch));
-				}	
-			}
-		}
-		gl.glEnd();
 	}
 	
 	/**
@@ -921,6 +755,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 			if(enableSkybox)
 				gl.glCallList(environmentList);
+		}	
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		{
+			gl.glScalef(10.0f, 3.0f, 10.0f);
+			
+//			gl.glCallList(heightMap.terrainList);
+//			for(SplashShape shape : splashShapes) shape.render(gl);
 		}	
 		gl.glPopMatrix();
 		
@@ -1079,6 +922,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+	
+	public HeightMap getHeightMap() { return heightMap; }
 
 	private void setupLights(GL2 gl)
 	{
@@ -1115,41 +960,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(frameIndex >= frameTimes.length) frameIndex = 0;
 		
 		frameTimes[frameIndex] = currentTime - renderTime;
-	}
-
-	/**
-	 * Switches the matrix mode from Model View, normally used to render 3D models
-	 * without the virtual environment, to Projection, which allows 2D graphics to
-	 * be drawn as an overlay on the screen. In particular, it can be used to render
-	 * a HUD (heads-up display) 
-	 */
-	private void ortho2DBegin(GL2 gl)
-	{
-	    gl.glMatrixMode(GL_PROJECTION);
-	    gl.glLoadIdentity();
-	    glu.gluOrtho2D(0, canvasWidth, canvasHeight, 0);
-	    
-	    gl.glMatrixMode(GL_MODELVIEW);
-	    gl.glLoadIdentity();
-	    gl.glDisable(GL_DEPTH_TEST);
-	}
-	
-	/**
-	 * Switches the matrix mode from Projection to Model View, allowing 3D models
-	 * to be rendered normally in the virtual environment.
-	 */
-	private void ortho2DEnd(GL2 gl)
-	{
-		float ratio = (float) canvasWidth / (float) canvasHeight;
-		gl.glViewport(0, 0, canvasWidth, canvasHeight);
-		
-		gl.glMatrixMode(GL_PROJECTION);
-		gl.glLoadIdentity();
-		glu.gluPerspective(FOV, ratio, 2.0, 700.0);
-		
-		gl.glMatrixMode(GL_MODELVIEW);
-		gl.glLoadIdentity();
-		gl.glEnable(GL_DEPTH_TEST);
 	}
 	
 	/**
@@ -1256,7 +1066,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				default: break;
 			}
 		}
-	}
+	}	
 		
 	/**
 	 * Invoked when a key has been pressed to make global alterations to the scene
@@ -1298,20 +1108,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_0:  enableMotionBlur = !enableMotionBlur; break;
 			
-			case KeyEvent.VK_F4: textColor = (textColor == Color.WHITE) ? Color.BLACK : Color.WHITE; break;
-			case KeyEvent.VK_F5: enableHUD = !enableHUD; break;
-			
-			case KeyEvent.VK_F6: if(yStretch > MIN_STRETCH) yStretch -= STRETCH_INC; break; 
-			case KeyEvent.VK_F7: if(yStretch < MAX_STRETCH) yStretch += STRETCH_INC; break; 
-			case KeyEvent.VK_F8: frameTimeComponents = !frameTimeComponents; break;
-			
-			case KeyEvent.VK_F9:
-			{
-				if(emphasizedComponent < renderTimes[0].length) emphasizedComponent++;
-				else emphasizedComponent = 0;
-				
-				break;
-			}
+			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
 	
 			default: for(Car car : cars) car.keyPressed(e); break;
 		}

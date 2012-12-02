@@ -64,6 +64,15 @@ public abstract class Shell extends Item
 			rotation = car.trajectory;
 		}
 	}
+	
+	@Override
+	public boolean canCollide(Item item)
+	{
+		if(item instanceof Shell ||
+		   item instanceof Banana  ) return true;
+		
+		return false;
+	}
 
 	@Override
 	public void collide(Item item)

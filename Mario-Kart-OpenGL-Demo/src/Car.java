@@ -15,6 +15,8 @@ import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
 import graphics.util.Face;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +27,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
+
+import com.jogamp.opengl.util.awt.TextRenderer;
 
 /* TODO
  * 
@@ -164,6 +168,8 @@ public class Car
 	/** Controller Fields **/
 	private GamePad controller;
 	
+	private HUD hud;
+	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
 		//Using a display list ensures that the complex car model is displayed quickly
@@ -193,7 +199,13 @@ public class Car
 	    camera = new Camera();
 	    
 	    controller = new GamePad();
+	    
+		Font font = new Font("Calibri", Font.PLAIN, 18);
+		TextRenderer renderer = new TextRenderer(font);
+	    hud = new HUD(scene, this, renderer);
 	}
+	
+	public HUD getHUD() { return hud; }
 	
 	public Bound getBound() { return bound; }
 	
@@ -433,6 +445,13 @@ public class Car
 		
 		return heights;
 	}
+	
+	public float[] getHeights(HeightMap map)
+	{
+		float[][] _heights = map.heights;
+		
+		return null;
+	}
 
 	private void setHeights(OBB obb)
 	{
@@ -609,6 +628,8 @@ public class Car
 
 		for(Item item : items) item.render(gl, trajectory);
 	}
+
+	public long renderHUD(GL2 gl, GLU glu) { return hud.render(gl, glu); }
 	
 	private void cycleColor()
 	{
@@ -1226,6 +1247,13 @@ public class Car
 			case KeyEvent.VK_9: if(!camera.isFirstPerson()) displayModel = !displayModel; break;
 			
 			case KeyEvent.VK_F3: enableWireframe = !enableWireframe; break;
+			
+			case KeyEvent.VK_F4: hud.setTextColor(Color.BLACK); break;
+			case KeyEvent.VK_F5: hud.setVisibility(!hud.getVisibility()); break;
+			case KeyEvent.VK_F6: hud.decreaseStretch(); break; 
+			case KeyEvent.VK_F7: hud.increaseStretch(); break; 
+			case KeyEvent.VK_F8: hud.cycleGraphMode(); break;
+			case KeyEvent.VK_F9: hud.nextComponent(); break;
 		}
 	}
 

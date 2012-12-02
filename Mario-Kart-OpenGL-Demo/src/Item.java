@@ -98,6 +98,8 @@ public abstract class Item
 	
 	public void setRotation(float[] angles) { u = getRotationMatrix(angles[0], angles[1], angles[2]); }
 	
+	public abstract boolean canCollide(Item item);
+	
 	public abstract void collide(Item item);
 	
 	public abstract void collide(Car car);

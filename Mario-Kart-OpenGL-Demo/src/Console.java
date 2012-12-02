@@ -26,9 +26,41 @@ public class Console
 		     if(_cmd.equalsIgnoreCase(   "add")) parseAdd(cmd);
 		else if(_cmd.equalsIgnoreCase("delete")) parseDelete(cmd);
 		else if(_cmd.equalsIgnoreCase("player")) parsePlayer(cmd);
-		else if(_cmd.equalsIgnoreCase(   "HUD")) parseHUD(cmd);
+		else if(_cmd.equalsIgnoreCase( "scene")) parseScene(cmd);
 
 		cmd.close();
+	}
+	
+	private void parseScene(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		if(_cmd.equalsIgnoreCase("fog")) parseFog(cmd);
+	}
+	
+	private void parseFog(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		if(_cmd.equalsIgnoreCase("color"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			float a = cmd.nextFloat();
+			
+			/*
+			 * TODO
+			 * 
+			 * Currently has no effect due to the fog color being updated
+			 * on a per frame basis to support lightning bolts visuals
+			 */
+			scene.fogColor = new float[] {r, g, b, a};
+		}
+		else if(_cmd.equalsIgnoreCase("density"))
+		{
+			scene.fogDensity = cmd.nextFloat();
+		}
 	}
 
 	private void parseAdd(Scanner cmd)
@@ -125,20 +157,21 @@ public class Console
 		else if(_cmd.equalsIgnoreCase("invertReverse")) player.invertReverse = !player.invertReverse;
 		else if(_cmd.equalsIgnoreCase(      "gravity")) player.gravity = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase( "acceleration")) player.acceleration = cmd.nextFloat();
+		else if(_cmd.equalsIgnoreCase(          "HUD")) parseHUD(cmd, player);
 	}
 	
-	private void parseHUD(Scanner cmd)
+	private void parseHUD(Scanner cmd, Car player)
 	{
 		String _cmd = cmd.next();
 		
-	     if(_cmd.equalsIgnoreCase("graph")) parseFrameTime(cmd);
+	     if(_cmd.equalsIgnoreCase("graph")) parseFrameTime(cmd, player);
 	}
 	
-	private void parseFrameTime(Scanner cmd)
+	private void parseFrameTime(Scanner cmd, Car player)
 	{
 		String _cmd = cmd.next();
 		
-	         if(_cmd.equalsIgnoreCase("components")) scene.frameTimeComponents = cmd.nextBoolean();
-	    else if(_cmd.equalsIgnoreCase( "emphasize")) scene.emphasizedComponent = cmd.nextInt();
+	         if(_cmd.equalsIgnoreCase(    "cycle")) player.getHUD().cycleGraphMode();
+	    else if(_cmd.equalsIgnoreCase("emphasize")) player.getHUD().emphasizedComponent = cmd.nextInt();
 	}
 }

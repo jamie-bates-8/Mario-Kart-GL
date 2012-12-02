@@ -208,6 +208,9 @@ public class FakeItemBox extends Item
 	}
 	
 	@Override
+	public boolean canCollide(Item item) { return false; }
+	
+	@Override
 	public void collide(Item item) {}
 	
 	@Override

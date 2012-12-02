@@ -138,6 +138,14 @@ public class Banana extends Item
 	}
 	
 	@Override
+	public boolean canCollide(Item item)
+	{
+		if(item instanceof Shell) return true;
+		
+		return false;
+	}
+	
+	@Override
 	public void collide(Item item)
 	{
 		if(item instanceof Shell)
