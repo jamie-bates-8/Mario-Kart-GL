@@ -215,8 +215,60 @@ public class Renderer
 
 			gl.glBegin(GL_LINE_LOOP);
 			{
-				for(int i = 0; i < face.getVertices().length; i ++)
+				for(int i = 0; i < face.getVertices().length; i++)
 					gl.glVertex3f(face.getVx(i), face.getVy(i), face.getVz(i));
+			}
+			gl.glEnd();
+		}
+
+		gl.glEnable(GL_LIGHTING);	
+		gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);
+	}
+	
+	public static void displayWireframeObject(GL2 gl, float[][] vertices, int n, float[] color)
+	{
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+
+		for(int i = 0; i < vertices.length; i += n)
+		{
+			gl.glColor3f(color[0], color[1], color[2]);
+
+			gl.glBegin(GL_LINE_LOOP);
+			{
+				for(int j = 0; j < n; j++)
+				{
+					float[] v = vertices[i + j];
+					gl.glVertex3f(v[0], v[1], v[2]);
+				}
+			}
+			gl.glEnd();
+		}
+
+		gl.glEnable(GL_LIGHTING);	
+		gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);
+	}
+	
+	public static void displayLines(GL2 gl, float[][] vertices, int n, float[] color)
+	{
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+
+		for(int i = 0; i < vertices.length; i += n)
+		{
+			gl.glColor3f(color[0], color[1], color[2]);
+
+			gl.glBegin(GL2.GL_LINE_STRIP);
+			{
+				for(int j = 0; j < n; j++)
+				{
+					float[] v = vertices[i + j];
+					gl.glVertex3f(v[0], v[1], v[2]);
+				}
 			}
 			gl.glEnd();
 		}

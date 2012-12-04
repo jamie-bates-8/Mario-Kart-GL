@@ -448,9 +448,17 @@ public class Car
 	
 	public float[] getHeights(HeightMap map)
 	{
-		float[][] _heights = map.heights;
+		float[][] vertices = bound.getVertices();
+
+		for(int i = 0; i < 4; i++)
+		{
+			heights[i] = map.getHeight(vertices[i]);
+		}
 		
-		return null;
+		bound.c[1] = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
+		bound.c[1] += bound.e[1];
+		
+		return heights;
 	}
 
 	private void setHeights(OBB obb)
@@ -742,7 +750,7 @@ public class Car
 
 	public void update()
 	{
-		setRotation(getRotationAngles(getHeights()));
+		setRotation(getRotationAngles(getHeights(scene.getHeightMap())));
 		
 		detectCollisions();
 		resolveCollisions();
@@ -825,6 +833,10 @@ public class Car
 		}
 	}
 
+	/**
+	 * This method updates the status effects currently inflicted on the player;
+	 * these effects are caused by using or collising with items certain items
+	 */
 	private void updateStatus()
 	{
 		if(miniatureDuration > 0) miniatureDuration--;
@@ -1254,6 +1266,8 @@ public class Car
 			case KeyEvent.VK_F7: hud.increaseStretch(); break; 
 			case KeyEvent.VK_F8: hud.cycleGraphMode(); break;
 			case KeyEvent.VK_F9: hud.nextComponent(); break;
+			
+			case KeyEvent.VK_BACK_SPACE: reset(); break;
 		}
 	}
 

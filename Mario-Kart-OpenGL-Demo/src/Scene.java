@@ -636,6 +636,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				Item a = allItems.get(i);
 				Item b = allItems.get(j);
 				
+				//TODO can be optimised further by using spatial partitioning
 				if(a.canCollide(b) && a.getBound().testBound(b.getBound())) a.collide(b);
 			}
 		}
@@ -760,9 +761,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			gl.glScalef(10.0f, 3.0f, 10.0f);
-			
-//			gl.glCallList(heightMap.terrainList);
+			heightMap.render(gl, glut);
 //			for(SplashShape shape : splashShapes) shape.render(gl);
 		}	
 		gl.glPopMatrix();
