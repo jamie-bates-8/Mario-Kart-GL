@@ -1,18 +1,26 @@
 import graphics.util.MultiTexFace;
-import graphics.util.Renderer;
+
+import static graphics.util.Renderer.displayWireframeObject;
+import static graphics.util.Renderer.displayLines;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+
 import java.io.File;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.media.opengl.GL2;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
@@ -21,8 +29,10 @@ import com.jogamp.opengl.util.texture.TextureIO;
 public class HeightMap
 {
 	private static final int ITERATIONS = 2000;
-	private static final float PEAK_INC = 0.10f;
+	private static final float PEAK_INC = 0.30f;
 	private static final float SIDE_INC = 0.25f;
+	
+	private static final float MAX_HEIGHT = 60.0f;
 	
 	public static final float X_SCALE = 10.0f;
 	public static final float Y_SCALE =  3.0f;
@@ -33,7 +43,7 @@ public class HeightMap
 	private boolean createLightMap = false;
 	
 	public int terrainList;
-	private boolean enableWireframe = true;
+	public boolean enableWireframe = true;
 	
 	float[][] heights;
 	int length;
@@ -56,6 +66,37 @@ public class HeightMap
 	
 	public HeightMap(GL2 gl, int length)
 	{
+		setHeights(length);
+		this.length = length;
+		
+		loadTextures();
+		
+		if(createLightMap) createLightMap();
+		
+		createGeometry(10, 20);
+		
+		displayList(gl);
+	}
+
+	public HeightMap(GL2 gl, String fileName)
+	{
+		importMap(fileName);
+		
+		loadTextures();
+		
+		if(createLightMap) createLightMap();
+		
+		createGeometry(10, 20);
+		
+		displayList(gl);
+	}
+
+	/**
+	 * This method uses a hill-raising algorithm to randomly generate the heights
+	 * of the map; this map is of the length passed as a parameter
+	 */
+	private void setHeights(int length)
+	{
 		float[][] heights = new float[length + 1][length + 1];
 		
 		Random generator = new Random();
@@ -77,18 +118,38 @@ public class HeightMap
 				if(x > (length - 1)) heights[x][z + 1] += SIDE_INC; //front 
 			}
 		}
-		/*
-		for (int i = 0; i < heights.length; i++)
-		{
-			for (int j = 0; j < heights.length; j++)
-			{
-				heights[i][j] = PEAK_INC * i;
-			}
-		}
-		*/
-		this.heights = heights;
-		this.length = length;
 		
+		this.heights = heights;
+	}
+
+	private void importMap(String fileName)
+	{
+		try
+		{
+			BufferedImage map = ImageIO.read(new File("tex/" + fileName));
+			
+			int width  = map.getWidth();
+			int height = map.getHeight();
+			
+			float[][] heights = new float[width + 1][height + 1];
+			
+			for (int i = 0; i < width; i++)
+			{
+				for (int j = 0; j < height; j++)
+				{
+					float intensity = RGB.getIntensity(map.getRGB(i, j));
+					heights[i][j] = intensity * MAX_HEIGHT;
+				}
+			}
+			
+			this.heights = heights;
+			this.length = width; //TODO works with square images only
+		}
+		catch (IOException e) { e.printStackTrace(); }
+	}
+
+	private void loadTextures()
+	{
 		try
 		{
 			texture1 = TextureIO.newTexture(new File("tex/grass.jpg"), true);
@@ -96,15 +157,64 @@ public class HeightMap
 			texture3 = TextureIO.newTexture(new File("tex/lightMap.png"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
-		
-		if(createLightMap) createLightMap();
-		
-		createGeometry(10, 20);
-		
+	}
+
+	private void displayList(GL2 gl)
+	{
 		terrainList = gl.glGenLists(1);
 		gl.glNewList(terrainList, GL2.GL_COMPILE);
-		createDisplayList(gl);
+		prerender(gl);
 	    gl.glEndList();
+	}
+	
+	public void export()
+	{
+		BufferedImage image = new BufferedImage(length, length, BufferedImage.TYPE_BYTE_GRAY);
+		
+		for (int i = 0; i < length; i++)
+		{
+			for (int j = 0; j < length; j++)
+			{
+				float height = heights[i][j] / MAX_HEIGHT;
+				int intensity = (int) (height * 255);
+				Color color = new Color(intensity, intensity, intensity);
+				
+				image.setRGB(i, j, color.getRGB());
+			}
+		}
+		
+		try { ImageIO.write(image, "jpg", new File("tex/heightMap.jpg")); }
+		catch (IOException e) { e.printStackTrace(); }
+	}
+	
+	public void displayMap()
+	{
+		BufferedImage image = new BufferedImage(length, length, BufferedImage.TYPE_BYTE_GRAY);
+		
+		for (int i = 0; i < length; i++)
+		{
+			for (int j = 0; j < length; j++)
+			{
+				float height = heights[i][j] / MAX_HEIGHT;
+				int intensity = (int) (height * 255);
+				Color color = new Color(intensity, intensity, intensity);
+				
+				image.setRGB(i, j, color.getRGB());
+			}
+		}
+		
+		JFrame record = new JFrame();
+		
+		int height = image.getHeight();
+		int width = image.getWidth();
+		
+		ImageIcon _image = new ImageIcon(image);
+		JLabel label = new JLabel(_image);
+		
+		record.setPreferredSize(new Dimension(width, height));
+		record.add(label);
+		record.pack();
+		record.setVisible(true);
 	}
 	
 	/**
@@ -121,6 +231,8 @@ public class HeightMap
 		int z1 = (int) Math.floor(z);
 		int x2 = x1 + 1;
 		int z2 = z1 + 1;
+		
+		System.out.printf("%f, %f, %f, %f\n", heights[x1][z1], heights[x1][z2], heights[x2][z1], heights[x2][z2]);
 		
 		float q11 = heights[x1][z1]; //Q11 = (x1, z1), one of the known points
 		float q12 = heights[x1][z2];
@@ -266,42 +378,43 @@ public class HeightMap
 	{
 		if(enableWireframe)
 		{
-			gl.glPushMatrix();
-			{
-				gl.glScalef(X_SCALE, Y_SCALE, Z_SCALE);
-				
-				float[] color = {0, 0, 0};
-				Renderer.displayWireframeObject(gl, vertices, 4, color);
-				color = new float[] {1, 0, 0};
-				Renderer.displayWireframeObject(gl, q, 4, color);
-				color = new float[] {0, 0, 1};
-				Renderer.displayLines(gl, r, 3, color);
-			}
-			gl.glPopMatrix();
-			
-			gl.glColor3f(0, 1, 0);
-			
-			for (int i = 1; i < r.length; i += 3)
-			{
-				gl.glPushMatrix();
-				{
-					gl.glTranslatef(r[i][0] * X_SCALE, r[i][1] * Y_SCALE, r[i][2] * Z_SCALE);
-					glut.glutSolidSphere(0.1, 6, 6);
-				}
-				gl.glPopMatrix();
-			}
-			
-			gl.glColor3f(1, 1, 1);
+			renderWireframe(gl, glut);
 		}
 		else
 		{
 			gl.glScalef(X_SCALE, Y_SCALE, Z_SCALE);
-			
 			gl.glCallList(terrainList);
 		}
 	}
+
+	private void renderWireframe(GL2 gl, GLUT glut)
+	{
+		gl.glPushMatrix();
+		{
+			gl.glScalef(X_SCALE, Y_SCALE, Z_SCALE);
+			
+			displayWireframeObject(gl, vertices, 4, RGB.BLACK_3F);
+			displayWireframeObject(gl, q, 4, RGB.RED_3F);
+			displayLines(gl, r, 3, RGB.BLUE_3F);
+		}
+		gl.glPopMatrix();
+		
+		gl.glColor3f(0, 1, 0); //Pure Green
+		
+		for (int i = 1; i < r.length; i += 3)
+		{
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(r[i][0] * X_SCALE, r[i][1] * Y_SCALE, r[i][2] * Z_SCALE);
+				glut.glutSolidSphere(0.1, 6, 6);
+			}
+			gl.glPopMatrix();
+		}
+		
+		gl.glColor3f(1, 1, 1);
+	}
 	
-	public void createDisplayList(GL2 gl)
+	public void prerender(GL2 gl)
 	{	
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
@@ -389,7 +502,7 @@ public class HeightMap
 				gl.glMultiTexCoord2f(GL2.GL_TEXTURE0, textureVertices3[j][0], textureVertices3[j][1]);
 				gl.glMultiTexCoord2f(GL2.GL_TEXTURE1, textureVertices1[j][0], textureVertices1[j][1]);
 				gl.glMultiTexCoord2f(GL2.GL_TEXTURE2, textureVertices2[j][0], textureVertices2[j][1]);
-
+				
 				gl.glVertex3f(vertices[j][0], vertices[j][1], vertices[j][2]);
 			}
 		}
@@ -430,6 +543,5 @@ public class HeightMap
 		try { ImageIO.write(map, "png", new File("tex/lightMap.png")); }
 		catch (IOException e) { e.printStackTrace(); }
 	}
-	
 	
 }

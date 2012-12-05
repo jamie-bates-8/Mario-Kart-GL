@@ -5,6 +5,7 @@ import static javax.media.opengl.GL.GL_LINE_LOOP;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL.GL_TRIANGLES;
 import static javax.media.opengl.GL2.GL_QUADS;
+
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import static java.lang.Math.abs;

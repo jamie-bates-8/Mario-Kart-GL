@@ -118,7 +118,7 @@ public class Test
 				{
 					//TODO GAME LOGIC
 					
-					try { Thread.sleep(17); /*Should be approximately 17 milliseconds per frame*/ }
+					try { Thread.sleep(17); /*Should be approximately 16.7 milliseconds per frame*/ }
 					catch (InterruptedException e) { e.printStackTrace(); }
 				}
 			}

@@ -1,18 +1,22 @@
 import static graphics.util.Matrix.getRotationMatrix;
+
 import static graphics.util.Renderer.displayColoredObject;
 import static graphics.util.Renderer.displayPartiallyTexturedObject;
 import static graphics.util.Renderer.displayTexturedObject;
 import static graphics.util.Renderer.displayTransparentObject;
 import static graphics.util.Renderer.displayWireframeObject;
+
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.multiply;
 import static graphics.util.Vector.normalize;
 import static graphics.util.Vector.subtract;
+
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.asin;
 import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
+
 import graphics.util.Face;
 
 import java.awt.Color;

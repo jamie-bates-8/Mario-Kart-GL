@@ -35,7 +35,8 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-		if(_cmd.equalsIgnoreCase("fog")) parseFog(cmd);
+		     if(_cmd.equalsIgnoreCase(      "fog")) parseFog(cmd);
+		else if(_cmd.equalsIgnoreCase("heightMap")) parseHeightMap(cmd); 
 	}
 	
 	private void parseFog(Scanner cmd)
@@ -63,6 +64,16 @@ public class Console
 		}
 	}
 
+	private void parseHeightMap(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		HeightMap map = scene.getHeightMap();
+		
+		     if(_cmd.equalsIgnoreCase("wireframe")) map.enableWireframe = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase(   "export")) map.export();
+		else if(_cmd.equalsIgnoreCase(  "display")) map.displayMap();
+	}
+	
 	private void parseAdd(Scanner cmd)
 	{
 		String _cmd = cmd.next();

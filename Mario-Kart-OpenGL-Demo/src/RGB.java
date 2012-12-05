@@ -13,7 +13,13 @@ public class RGB
 	public static final float[] INDIGO     = {  0.0f, 114.0f, 188.0f};
 	public static final float[] VIOLET     = {102.0f,  45.0f, 145.0f};
 	public static final float[] PLUM       = {221.0f, 160.0f, 221.0f};
-	public static final float[] WHITE      = {255.0f, 255.0f, 255.0f}; 
+	public static final float[] WHITE      = {255.0f, 255.0f, 255.0f};
+	
+	public static final float[] BLACK_3F = {0, 0, 0};
+	public static final float[] RED_3F   = {1, 0, 0};
+	public static final float[] GREEN_3F = {0, 1, 0};
+	public static final float[] BLUE_3F  = {0, 0, 1};
+	public static final float[] WHITE_3F = {1, 1, 1};
 	
 	public static int toRGB(int red, int green, int blue)
 	{
@@ -30,7 +36,7 @@ public class RGB
 	
 	public static int getBlue(int color) { return color & 0xFF; }
 	
-	public static int getIntensity(int color)
+	public static float getIntensity(int color)
 	{
 		float red   = (float)   getRed(color) / 255;
 		float green = (float) getGreen(color) / 255;
@@ -40,6 +46,6 @@ public class RGB
 		
 		float[] _color = cs.fromRGB(new float[] {red, green, blue});
 		
-		return (int) ((_color[0] + _color[1] + _color[2]) * 100 / 3);
+		return (_color[0] + _color[1] + _color[2]) / 3;
 	}
 }

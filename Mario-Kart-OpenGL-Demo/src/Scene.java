@@ -409,7 +409,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    renderTimes    = new long[240][6];
 	    collisionTimes = new long[240];
 	    
-	    heightMap = new HeightMap(gl, 50);
+	    heightMap = new HeightMap(gl, 100);
 	    splashShapes = new SplashShape[10];
 	    
 	    Random generator = new Random();
