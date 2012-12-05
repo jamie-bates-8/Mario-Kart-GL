@@ -43,7 +43,7 @@ public class HeightMap
 	private boolean createLightMap = false;
 	
 	public int terrainList;
-	public boolean enableWireframe = true;
+	public boolean enableWireframe = false;
 	
 	float[][] heights;
 	int length;
@@ -232,8 +232,6 @@ public class HeightMap
 		int x2 = x1 + 1;
 		int z2 = z1 + 1;
 		
-		System.out.printf("%f, %f, %f, %f\n", heights[x1][z1], heights[x1][z2], heights[x2][z1], heights[x2][z2]);
-		
 		float q11 = heights[x1][z1]; //Q11 = (x1, z1), one of the known points
 		float q12 = heights[x1][z2];
 		float q21 = heights[x2][z1];
@@ -299,9 +297,9 @@ public class HeightMap
 		
 		int i = 0;
 		
-		for(int z = 0; z <= length - 1; z++)
+		for(int x = 0; x <= length - 1; x++)
 		{
-			for(int x = 0; x <= length - 1; x++)
+			for(int z = 0; z <= length - 1; z++)
 			{
 				createQuad(vertices, i, x, z);
 				i += 4;
@@ -316,7 +314,7 @@ public class HeightMap
 		float _x = x - length / 2;
 		float _z = z - length / 2;
 		
-		vertices[i    ] = new float[] {_x,     heights[x]    [z + 1], _z + 1}; //bottom-right
+		vertices[i    ] = new float[] {_x,     heights[x    ][z + 1], _z + 1}; //bottom-right
 		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1], _z + 1}; //bottom-left
 		vertices[i + 2] = new float[] {_x + 1, heights[x + 1][z    ], _z    }; //top-right
 		vertices[i + 3] = new float[] {_x,     heights[x    ][z    ], _z    }; //top-left

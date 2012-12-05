@@ -153,7 +153,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 
 	private List<ItemBox> itemBoxes = new ArrayList<ItemBox>();
-	private boolean enableItemBoxes = false;
+	private boolean enableItemBoxes = true;
 	
 	
 	/** Fog Fields **/
@@ -761,7 +761,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			heightMap.render(gl, glut);
+//			heightMap.render(gl, glut);
 //			for(SplashShape shape : splashShapes) shape.render(gl);
 		}	
 		gl.glPopMatrix();
@@ -1081,7 +1081,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			case KeyEvent.VK_I:  spawnItemsInSphere(0, 10, new float[] {0, 100, 0}, 50); break;
-			case KeyEvent.VK_U:  spawnItemsInOBB(8, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			case KeyEvent.VK_U:  spawnItemsInOBB(13, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_L: printDataToFile(); break;
 			

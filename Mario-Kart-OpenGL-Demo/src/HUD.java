@@ -239,9 +239,9 @@ public class HUD
 				
 				for(int j = 0; j < renderTimes[0].length; j++)
 				{
-				         if(i == frameIndex    ) color = RGB.VIOLET;
-				    else if(i == frameIndex - 1) color = RGB.INDIGO;
-					else if(i == frameIndex - 2) color = RGB.BLUE;
+				         if(i == frameIndex    ) color = RGB.BLACK;
+				    else if(i == frameIndex - 1) color = RGB.DARK_GRAY;
+					else if(i == frameIndex - 2) color = RGB.GRAY;
 					
 					else if(j == emphasizedComponent - 1) color = RGB.WHITE;
 					
@@ -276,11 +276,11 @@ public class HUD
 				else if(i == frame - 1) color1 = color2 = RGB.INDIGO;
 				else if(i == frame - 2) color1 = color2 = RGB.BLUE;
 				
-				else if(time < (1000.0 / Scene.FPS))
+				else if(time < (200.0 / Scene.FPS))
 				{
 					color1 = RGB.GREEN; color2 = RGB.LIME_GREEN;
 				}
-				else if(time < (1000.0 / Scene.MIN_FPS))
+				else if(time < (200.0 / Scene.MIN_FPS))
 				{
 					color1 = RGB.ORANGE; color2 = RGB.YELLOW;
 				}

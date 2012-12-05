@@ -66,11 +66,11 @@ public class SplashShape
 	{
 		Random generator = new Random();
 
-		int z = (int) (generator.nextDouble() * floorLength);
 		int x = (int) (generator.nextDouble() * floorLength);
+		int z = (int) (generator.nextDouble() * floorLength);
 
-		if(z + splashSize > floorLength) z = floorLength - splashSize;
 		if(x + splashSize > floorLength) x = floorLength - splashSize;
+		if(z + splashSize > floorLength) z = floorLength - splashSize;
 
 		return new int[] {x, 0, z};
 	}
@@ -83,9 +83,9 @@ public class SplashShape
 
 		int i = 0;
 
-		for(int z = 0; z <= splashSize - 1; z++)
+		for(int x = 0; x <= splashSize - 1; x++)
 		{
-			for(int x = 0; x <= splashSize - 1; x++)
+			for(int z = 0; z <= splashSize - 1; z++)
 			{
 				createQuad(vertices, i, x, z, start);
 				i += 4;
@@ -100,21 +100,21 @@ public class SplashShape
 		float _x = start[0] + x - floorLength / 2;
 		float _z = start[2] + z - floorLength / 2;
 
-		vertices[i    ] = new float[] {_x    , heights[z + 1][x    ], _z + 1};
-		vertices[i + 1] = new float[] {_x + 1, heights[z + 1][x + 1], _z + 1};
-		vertices[i + 2] = new float[] {_x + 1, heights[z    ][x + 1], _z    };
-		vertices[i + 3] = new float[] {_x    , heights[z    ][x    ], _z    };
+		vertices[i    ] = new float[] {_x    , heights[x    ][z + 1], _z + 1};
+		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1], _z + 1};
+		vertices[i + 2] = new float[] {_x + 1, heights[x + 1][z    ], _z    };
+		vertices[i + 3] = new float[] {_x    , heights[x    ][z    ], _z    };
 	}
 
 	private float[][] getHeights(int[] start, float[][] heights)
 	{
 		float[][] _heights = new float[splashSize + 1][splashSize + 1];
 
-		for(int z = 0; z <= splashSize; z++)
+		for(int x = 0; x <= splashSize; x++)
 		{
-			for(int x = 0; x <= splashSize; x++)
+			for(int z = 0; z <= splashSize; z++)
 			{
-				_heights[z][x] = heights[start[2] + z][start[0] + x];
+				_heights[x][z] = heights[start[0] + x][start[2] + z];
 			}
 		}
 

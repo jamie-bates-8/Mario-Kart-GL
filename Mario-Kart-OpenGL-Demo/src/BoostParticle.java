@@ -1,7 +1,7 @@
+import static graphics.util.Vector.subtract;
 
-import static graphics.util.Vector.*;
 import static javax.media.opengl.GL.GL_BLEND;
-import static javax.media.opengl.GL2.GL_QUADS;
+import static javax.media.opengl.GL.GL_POINTS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import java.util.Random;
@@ -33,6 +33,9 @@ public class BoostParticle extends Particle
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
+		gl.glEnable(GL2.GL_POINT_SPRITE);
+		gl.glTexEnvi(GL2.GL_POINT_SPRITE, GL2.GL_COORD_REPLACE, GL2.GL_TRUE);
+		
 		gl.glPushMatrix();
 		{	
 			Random generator = new Random();
@@ -45,10 +48,8 @@ public class BoostParticle extends Particle
 			
 			float[] _t = {(float) (-r * Math.cos(rotation)), 0, (float) (r * Math.sin(rotation))};
 			float[] _c = subtract(c, _t);
-
-			gl.glTranslatef(_c[0], _c[1], _c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
-			gl.glScalef(scale, scale, scale);
+			
+			gl.glPointSize(20 * scale);
 			
 			scale /= 2;
 			
@@ -60,13 +61,10 @@ public class BoostParticle extends Particle
 			int spectrum = (special) ? 3 : 3;
 			
 			textures[offset + generator.nextInt(spectrum)].bind(gl);
-
-			gl.glBegin(GL_QUADS);
+			
+			gl.glBegin(GL_POINTS);
 			{
-				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
-				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
-				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
-				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
+				gl.glVertex3f(_c[0], _c[1], _c[2]);
 			}
 			gl.glEnd();
 
@@ -77,5 +75,7 @@ public class BoostParticle extends Particle
 			gl.glColor3f(1, 1, 1);
 		}
 		gl.glPopMatrix();
+		
+		gl.glEnable(GL2.GL_POINT_SPRITE);
 	}
 }

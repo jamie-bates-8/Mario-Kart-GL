@@ -44,6 +44,8 @@ import com.jogamp.opengl.util.awt.TextRenderer;
  * Vehicle collisions could be more realistic (focus on top + bottom collisions)
  * Star collisions should be different to normal collisions
  * 
+ * Combine heights calculated by height maps and bounding volumes
+ * 
  * Lightning Bolts should cause players to drop items
  */
 
@@ -433,75 +435,6 @@ public class Car
 	
 	public float[] getPosition() { return bound.getPosition(); }
 	
-	public float[] getHeights()
-	{
-		float[] _heights = heights;
-		heights = new float[] {0, 0, 0, 0};
-		
-		falling = true;
-		
-		for(Bound collision : collisions)
-		{
-			if(collision instanceof OBB) setHeights((OBB) collision);
-		}
-		
-		if(collisions.isEmpty()) heights = _heights;
-		
-		return heights;
-	}
-	
-	public float[] getHeights(HeightMap map)
-	{
-		float[][] vertices = bound.getVertices();
-
-		for(int i = 0; i < 4; i++)
-		{
-			heights[i] = map.getHeight(vertices[i]);
-		}
-		
-		bound.c[1] = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		bound.c[1] += bound.e[1];
-		
-		return heights;
-	}
-
-	private void setHeights(OBB obb)
-	{
-		float[] face = obb.getFaceVector(getPosition());
-
-		if(Arrays.equals(face, obb.getUpVector(1)))
-		{
-			float[][] vertices = bound.getVertices();
-
-			for(int i = 0; i < 4; i++)
-			{
-				float h = obb.closestPointOnPerimeter(vertices[i])[1];
-				if(h > heights[i]) heights[i] = h;
-			}
-
-			float h = obb.closestPointOnPerimeter(getPosition())[1]
-					+ (bound.e[1] * 0.9f);
-			
-			if(h > bound.c[1]) bound.c[1] = h;
-
-			falling = false;
-			fallRate = 0;
-		}
-	}
-	
-	public float[] getRotationAngles(float[] h)
-	{
-		float frontHeight = (h[0] + h[1]) / 2; 
-		float backHeight  = (h[2] + h[3]) / 2;
-		float leftHeight  = (h[1] + h[3]) / 2;
-		float rightHeight = (h[0] + h[2]) / 2;
-	
-		float xrot = (float) -toDegrees(atan((leftHeight - rightHeight) / (bound.e[2] * 2)));
-		float zrot = (float) -toDegrees(atan((frontHeight - backHeight) / (bound.e[0] * 2)));
-		
-		return new float[] {xrot, trajectory, zrot};
-	}
-
 	public void render(GL2 gl)
 	{
 		gl.glPushMatrix();
@@ -542,7 +475,7 @@ public class Car
 						
 						if(wheel % 2 != 0) // Only turn the front wheels
 							gl.glRotatef(yRotation_Wheel, 0.0f, 1.0f, 0.0f);
-
+	
 						gl.glRotatef(zRotation_Wheel, 0.0f, 0.0f, 1.0f);
 						
 						gl.glScalef(0.6f, 0.6f, 0.6f);
@@ -635,14 +568,12 @@ public class Car
 			}
 		}
 		gl.glPopMatrix();
-
+	
 		gl.glColor3f(1, 1, 1);
-
+	
 		for(Item item : items) item.render(gl, trajectory);
 	}
 
-	public long renderHUD(GL2 gl, GLU glu) { return hud.render(gl, glu); }
-	
 	private void cycleColor()
 	{
 		if(starColor[0] == 255 && starColor[1] == 255 && starColor[2] == 255) whiten = false;
@@ -680,6 +611,86 @@ public class Car
 		spectrum = spectrum % 6;
 	}
 
+	public long renderHUD(GL2 gl, GLU glu) { return hud.render(gl, glu); }
+
+	public float[] getHeights()
+	{
+		falling = true;
+		
+		float[] _heights = heights;
+		heights = new float[] {0, 0, 0, 0};
+		
+		for(Bound collision : collisions)
+		{
+			if(collision instanceof OBB) setHeights((OBB) collision);
+		}
+		
+		if(collisions.isEmpty()) heights = _heights;
+		
+		return heights;
+	}
+	
+	public float[] getHeights(HeightMap map)
+	{
+		float[][] vertices = bound.getVertices();
+
+		for(int i = 0; i < 4; i++)
+		{
+			float h = map.getHeight(vertices[i]);
+			heights[i] = h;
+		}
+		
+		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
+		h += bound.e[1];
+		bound.c[1] = h;
+		
+		return heights;
+	}
+
+	/**
+	 * This method calculates the height of the vehicles as determined by the OBB
+	 * passed as a parameter; note that it is assumed that the vehicle is colliding
+	 * with the top of the OBB (see resolveOBB(OBB) for side and bottom collisions)
+	 */
+	private void setHeights(OBB obb)
+	{
+		float[] face = obb.getFaceVector(getPosition());
+
+		//if the side of collision is the upwards face
+		if(Arrays.equals(face, obb.getUpVector(1)))
+		{
+			float[][] vertices = bound.getVertices();
+
+			//calculate the height at each wheel
+			for(int i = 0; i < 4; i++)
+			{
+				float h = obb.closestPointOnPerimeter(vertices[i])[1];
+				if(h > heights[i]) heights[i] = h;
+			}
+
+			//calculate the height at the centre of the vehicle
+			float h = obb.closestPointOnPerimeter(getPosition())[1]
+					+ (bound.e[1] * 0.9f);
+			
+			if(h > bound.c[1]) bound.c[1] = h;
+
+			falling = false; fallRate = 0; //disable falling
+		}
+	}
+	
+	public float[] getRotationAngles(float[] h)
+	{
+		float frontHeight = (h[0] + h[1]) / 2; 
+		float backHeight  = (h[2] + h[3]) / 2;
+		float leftHeight  = (h[1] + h[3]) / 2;
+		float rightHeight = (h[0] + h[2]) / 2;
+	
+		float xrot = (float) -toDegrees(atan((leftHeight - rightHeight) / (bound.e[2] * 2)));
+		float zrot = (float) -toDegrees(atan((frontHeight - backHeight) / (bound.e[0] * 2)));
+		
+		return new float[] {xrot, trajectory, zrot};
+	}
+
 	public void detectCollisions()
 	{
 		colliding = false;
@@ -695,6 +706,7 @@ public class Car
 			}
 		}
 		
+		//TODO car collisions could be improved
 		for(Car car : scene.getCars())
 		{
 			if(!car.equals(this) && !invisible && !car.isInvisible() &&
@@ -719,28 +731,41 @@ public class Car
 		for(float[] vector : vectors) setPosition(add(getPosition(), vector));
 	}
 
+	/*
+	 * TODO
+	 * 
+	 * There are currently no obstacles in the scene that use a sphere as its
+	 * bounding geometry; therefore, this method is no used and may be inaccurate
+	 * 
+	 */
 	private float[] resolveSphere(Sphere sphere)
 	{
-		if(colliding)
-		{
-			float[] face = sphere.getFaceVector(getPosition());
-			face[1] = 0;
-			
-			float s = this.bound.getPenetration(sphere);
-			
-			velocity *= (slipping) ? 0 : 0.9;
-			
-			return multiply((normalize(subtract(face, sphere.getPosition()))), s);
-		}
-		else return new float[] {0, 0, 0};
+		float[] face = sphere.getFaceVector(getPosition());
+		face[1] = 0;
+
+		float s = this.bound.getPenetration(sphere);
+
+		velocity *= (slipping) ? 0 : 0.9;
+
+		return multiply((normalize(subtract(face, sphere.getPosition()))), s);
 	}
 
+	/**
+	 * This method resolves a collision with an OBB passed as a parameter;
+	 * note that it is assumed that the vehicle is colliding with the side or
+	 * bottom of the OBB (setHeights(OBB) for top collisions) 
+	 */
 	private float[] resolveOBB(OBB obb)
 	{
 		float[] face = obb.getFaceVector(getPosition());
-
-		if(colliding && !Arrays.equals(face, obb.getUpVector(1)) && obb.isValidCollision(face)
-				&& (getPosition()[1] - bound.e[1]) < (obb.c[1] + obb.e[1]))
+		
+		/*
+		 * the vehicles must be colliding with the side or bottom of the OBB
+		 * the face must be a valid collision (not all sides are considered)
+		 * the bottom of the vehicle must be lower than the top of the OBB
+		 */
+		if(!Arrays.equals(face, obb.getUpVector(1)) && obb.isValidCollision(face)
+		   && (getPosition()[1] - bound.e[1]) < (obb.c[1] + obb.e[1]))
 		{
 			float p = bound.getPenetration(obb);
 			
@@ -753,11 +778,14 @@ public class Car
 	}
 
 	public void update()
-	{
-		setRotation(getRotationAngles(getHeights(scene.getHeightMap())));
+	{	
+		getHeights(scene.getHeightMap());
+//		getHeights();
+		
+		setRotation(getRotationAngles(heights));
 		
 		detectCollisions();
-		resolveCollisions();
+		if(colliding) resolveCollisions();
 		
 		if(superBoosting && !slipping) boost();
 		
