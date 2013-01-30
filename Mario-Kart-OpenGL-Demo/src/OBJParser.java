@@ -2,7 +2,6 @@ import graphics.util.Face;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -20,7 +19,7 @@ public class OBJParser
 	 * This method parses a Wavefront (.obj) file for use in OpenGL.
 	 * Note that the faces represented by the file must be triangles.
 	 */
-	public static List<Face> parseTriangles(String fileName)
+	public static List<Face> parseTriangles(String filename)
 	{
 		long startTime = System.nanoTime();
 		
@@ -41,7 +40,7 @@ public class OBJParser
 			int wildcard  = -1;
 			int wildcards =  0; 
 
-			Scanner fs = new Scanner(new File(fileName));
+			Scanner fs = new Scanner(new File(filename));
 			
 			while (fs.hasNextLine())
 			{
@@ -134,7 +133,7 @@ public class OBJParser
 		
 		long endTime = System.nanoTime();
 		
-		System.out.printf("Parsed \"" + fileName + "\" in %.3f ms" + "\n", (endTime - startTime) / 1E6);
+		System.out.printf("Parsed \"" + filename + "\" in %.3f ms" + "\n", (endTime - startTime) / 1E6);
 
 		return faces;
 	}

@@ -1,4 +1,4 @@
-press o
+item boxes true
 scene display skybox true
 collision obstacles true
 scene display fort true

@@ -149,7 +149,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 
 	private List<ItemBox> itemBoxes = new ArrayList<ItemBox>();
-	private boolean enableItemBoxes = false;
+	public boolean enableItemBoxes = false;
 	
 	
 	/** Light Fields **/
@@ -222,6 +222,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean linearFilter = true;
 	
 	public boolean testMode = false;
+	public boolean printVersion = true;
 	
 	public Scene()
 	{
@@ -404,7 +405,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    renderTimes    = new long[240][6];
 	    collisionTimes = new long[240];
 	    
-	    printVersion(gl);
+	    if(printVersion) printVersion(gl);
+	    
+	    console.parseCommand("profile battle");
 	    
 	    generateTerrain(gl, DEFAULT_TERRAIN);
 	    
@@ -438,8 +441,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    float[] anisotropy = new float[1];
 		    gl.glGetFloatv(GL2.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy, 0);
 		    System.out.println("Maximum Anisotropy: " + anisotropy[0] + "\n");
-	    }
-	    
+	    } 
 	    
 	    float[] size = new float[3];
 	    
@@ -689,16 +691,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		vehicleCollisions();
 		for(Car car : cars) car.update();
 		
-		List<BillBoard> toRemove = new ArrayList<BillBoard>();
-		
-		for(BillBoard b : foliage)
-		{
-			if(b.sphere.testOBB(cars.get(0).bound)) toRemove.add(b);
-		}
-		
-		foliage.removeAll(toRemove);
+		if(enableTerrain)
+		{	
+			List<BillBoard> toRemove = new ArrayList<BillBoard>();
 			
-		if(enableTerrain) terrainCollisions();
+			for(BillBoard b : foliage)
+			{
+				if(b.sphere.testOBB(cars.get(0).bound)) toRemove.add(b);
+			}
+			
+			foliage.removeAll(toRemove);
+				
+			terrainCollisions();
+		}
 	}
 
 	private void registerItems(GL2 gl)

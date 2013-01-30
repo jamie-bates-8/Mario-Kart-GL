@@ -91,7 +91,8 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-		if(_cmd.equalsIgnoreCase("smooth")) Item.smooth = cmd.nextBoolean();
+		     if(_cmd.equalsIgnoreCase("smooth")) Item.smooth = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase( "boxes")) scene.enableItemBoxes = cmd.nextBoolean();
 	}
 	
 	private void parsePress(Scanner cmd)
