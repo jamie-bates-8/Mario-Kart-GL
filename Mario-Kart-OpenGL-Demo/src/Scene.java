@@ -312,7 +312,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glClearStencil(0);
 		gl.glEnable(GL2.GL_STENCIL_TEST);
 		
-		float[] quadratic = {1.0f, 0.0f, 0.005f};
+		float[] quadratic = {0.0f, 0.0f, 0.005f};
 		
 		gl.glPointSize(3);
 		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, quadratic, 0);

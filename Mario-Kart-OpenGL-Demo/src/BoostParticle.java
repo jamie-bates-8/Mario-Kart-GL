@@ -49,7 +49,7 @@ public class BoostParticle extends Particle
 			float[] _t = {(float) (-r * Math.cos(rotation)), 0, (float) (r * Math.sin(rotation))};
 			float[] _c = subtract(c, _t);
 			
-			gl.glPointSize(20 * scale);
+			gl.glPointSize(30 * scale);
 			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
@@ -74,7 +74,7 @@ public class BoostParticle extends Particle
 		}
 		gl.glPopMatrix();
 		
-		gl.glEnable(GL2.GL_POINT_SPRITE);
+		gl.glDisable(GL2.GL_POINT_SPRITE);
 	}
 	
 	@Override

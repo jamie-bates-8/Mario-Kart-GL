@@ -33,9 +33,24 @@ public class BlastParticle extends Particle
 				gl.glEnable(GL2.GL_POINT_SMOOTH);
 				gl.glPointSize(60);
 				
+				gl.glEnable(GL_POINT_SPRITE);
+				gl.glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+				
+				float[] p = this.c;
+				
+				float c = 2.0f / (duration + 1);
+				c = (1 - c) * 0.9f;
+
+				gl.glColor4f(c, c, c, c);
+					
+				indigoFlare.bind(gl);
+				current = indigoFlare;
+				
 				gl.glBegin(GL2.GL_POINTS);
-				gl.glVertex3f(c[0], c[1], c[2]);
+				gl.glVertex3f(p[0], p[1], p[2]);
 				gl.glEnd();
+				
+				gl.glDisable(GL2.GL_POINT_SPRITE);
 				
 				gl.glColor4f(1, 1, 1, 1);
 			}
