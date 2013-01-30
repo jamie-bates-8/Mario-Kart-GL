@@ -1,4 +1,5 @@
 import graphics.util.MultiTexFace;
+import graphics.util.Vector;
 
 import static graphics.util.Renderer.displayWireframeObject;
 import static graphics.util.Renderer.displayLines;
@@ -26,17 +27,27 @@ import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
-public class HeightMap
+public class Terrain
 {
-	private static final int ITERATIONS = 2000;
-	private static final float PEAK_INC = 0.30f;
-	private static final float SIDE_INC = 0.25f;
+	private static final float WORLD_LENGTH = 420;
+	
+	private static final float PEAK_INC = 0.15f;
+	private static final float HILL_INC = 3.0f;
+	
+	private float peak_inc = PEAK_INC;
+	private float hill_inc = HILL_INC;
+	
+	private static final int MIN_RADIUS =  4;
+	private static final int MAX_RADIUS = 12;
+	
+	private int min_radius = MIN_RADIUS;
+	private int max_radius = MAX_RADIUS;
 	
 	private static final float MAX_HEIGHT = 60.0f;
 	
-	public static final float X_SCALE = 10.0f;
-	public static final float Y_SCALE =  3.0f;
-	public static final float Z_SCALE = 10.0f;
+	public static float sx = 6.0f;
+	public static float sy = 3.0f;
+	public static float sz = 6.0f;
 	
 	private static final int LIGHT_MAP_SIZE = 128;
 	
@@ -45,18 +56,20 @@ public class HeightMap
 	public int terrainList;
 	public boolean enableWireframe = false;
 	
-	float[][] heights;
-	int length;
+	public float[][] heights;
+	public int length;
 	
 	float[][] vertices;
 	
-	float[][] textureVertices1;
-	float[][] textureVertices2;
-	float[][] textureVertices3;
+	float[][] normals;
 	
-	Texture texture1;
-	Texture texture2;
-	Texture texture3;
+	float[][] texCoords1;
+	float[][] texCoords2;
+	float[][] texCoords3;
+	
+	Texture lowerTexture;
+	Texture upperTexture;
+	Texture alphaMap;
 	
 	float[][] q = new float[16][3];
 	float[][] r = new float[12][3];
@@ -64,10 +77,12 @@ public class HeightMap
 	int qBuffer = 0;
 	int rBuffer = 0;
 	
-	public HeightMap(GL2 gl, int length)
+	public Terrain(GL2 gl, int length, int i)
 	{
-		setHeights(length);
+		setHeights(length, i);
 		this.length = length;
+		
+		sx = sz = WORLD_LENGTH / length;
 		
 		loadTextures();
 		
@@ -77,8 +92,30 @@ public class HeightMap
 		
 		displayList(gl);
 	}
+	
+	public Terrain(GL2 gl, int length, int i, int r0, int r1, float p, float h)
+	{
+		min_radius = r0;
+		max_radius = r1;
+		
+		peak_inc = p;
+		hill_inc = h;
+		
+		setHeights(length, i);
+		this.length = length;
+		
+		sx = sz = WORLD_LENGTH / length;
+		
+		loadTextures();
+		
+		if(createLightMap) createLightMap();
+		
+		createGeometry(5, 20);
+		
+		displayList(gl);
+	}
 
-	public HeightMap(GL2 gl, String fileName)
+	public Terrain(GL2 gl, String fileName)
 	{
 		importMap(fileName);
 		
@@ -86,7 +123,7 @@ public class HeightMap
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(10, 20);
+		createGeometry(5, 20);
 		
 		displayList(gl);
 	}
@@ -95,7 +132,7 @@ public class HeightMap
 	 * This method uses a hill-raising algorithm to randomly generate the heights
 	 * of the map; this map is of the length passed as a parameter
 	 */
-	private void setHeights(int length)
+	private void setHeights(int length, int iterations)
 	{
 		float[][] heights = new float[length + 1][length + 1];
 		
@@ -103,23 +140,55 @@ public class HeightMap
 		
 		int x, z;
 		
-		for (int i = 0; i < ITERATIONS; i++)
+		for (int i = 0; i < iterations; i++)
 		{
 			x = (int) (generator.nextDouble() * length);
 			z = (int) (generator.nextDouble() * length);
 			
 			if(increaseHeight(x, z, generator))
 			{
-				heights[x][z] += PEAK_INC;
-				
-				if(x > 0)            heights[x - 1][z] += SIDE_INC; //left 
-				if(x < (length - 1)) heights[x + 1][z] += SIDE_INC; //right
-				if(z > 0)            heights[x][z - 1] += SIDE_INC; //back 
-				if(x > (length - 1)) heights[x][z + 1] += SIDE_INC; //front 
+				if(generator.nextBoolean())
+				{
+					 increaseRadius(x, z, 2, peak_inc, heights, length);
+				}
+				else increaseRadius(x, z, generator, heights, length);
 			}
 		}
 		
 		this.heights = heights;
+	}
+	
+	private void increaseRadius(int x, int z, int radius, float peak, float[][] heights, int length)
+	{
+		int _x = (x - radius) < 0 ? 0 : x - radius;
+		int _z = (z - radius) < 0 ? 0 : z - radius;
+		int x_ = (x + radius) > length ? length : x + radius;
+		int z_ = (z + radius) > length ? length : z + radius;
+		
+		float offset = 0.5f / radius;
+		
+		for(int a = _x; a <= x_; a++)
+		{
+			for(int b = _z; b <= z_; b++)
+			{
+				int _x_ = x - a;
+				int _z_ = z - b;
+				
+				double d = Math.sqrt((_x_ * _x_) + (_z_ * _z_));
+				d = d > radius ? radius : d;
+				
+				if(a == x && b == z) heights[a][b] += peak * (1 - offset);
+				else heights[a][b] += peak * (1 - (d / radius));
+			}
+		}
+	}
+	
+	private void increaseRadius(int x, int z, Random generator, float[][] heights, int length)
+	{	
+		int radius = min_radius + generator.nextInt(max_radius - min_radius + 1);
+		float peak = generator.nextFloat() * hill_inc;
+		
+		increaseRadius(x, z, radius, peak, heights, length);
 	}
 
 	private void importMap(String fileName)
@@ -152,9 +221,9 @@ public class HeightMap
 	{
 		try
 		{
-			texture1 = TextureIO.newTexture(new File("tex/grass.jpg"), true);
-			texture2 = TextureIO.newTexture(new File("tex/cobbles.jpg"), true);
-			texture3 = TextureIO.newTexture(new File("tex/lightMap.png"), true);
+			lowerTexture = TextureIO.newTexture(new File("tex/grass.jpg"), true);
+			upperTexture = TextureIO.newTexture(new File("tex/grass.jpg"), true);
+			alphaMap = TextureIO.newTexture(new File("tex/lightMap.png"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -224,8 +293,8 @@ public class HeightMap
 	 */
 	public float getHeight(float[] p)
 	{
-		float x = (p[0] / X_SCALE) + length / 2; //x-coordinate translated to map scale
-		float z = (p[2] / Z_SCALE) + length / 2; //z-coordinate translated to map scale
+		float x = (p[0] / sx) + length / 2; //x-coordinate translated to map scale
+		float z = (p[2] / sz) + length / 2; //z-coordinate translated to map scale
 		
 		int x1 = (int) Math.floor(x);
 		int z1 = (int) Math.floor(z);
@@ -268,7 +337,7 @@ public class HeightMap
 		rBuffer += 3;
 		if(rBuffer == 12) rBuffer = 0;
 		
-		return h * Y_SCALE;
+		return h * sy;
 	}
 	
 	private boolean increaseHeight(int x, int z, Random generator)
@@ -286,9 +355,11 @@ public class HeightMap
 		
 		vertices = createVertices();
 		
-		textureVertices1 = createTextureVertices(vertices, texLen1);
-		textureVertices2 = createTextureVertices(vertices, texLen2);
-		textureVertices3 = createTextureVertices(vertices, length);
+		normals = createNormals(vertices);
+		
+		texCoords1 = createTexCoords(vertices, texLen1);
+		texCoords2 = createTexCoords(vertices, texLen2);
+		texCoords3 = createTexCoords(vertices, length);
 	}
 	
 	public float[][] createVertices()
@@ -314,10 +385,25 @@ public class HeightMap
 		float _x = x - length / 2;
 		float _z = z - length / 2;
 		
-		vertices[i    ] = new float[] {_x,     heights[x    ][z + 1], _z + 1}; //bottom-right
-		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1], _z + 1}; //bottom-left
+		vertices[i    ] = new float[] {_x,     heights[x    ][z + 1], _z + 1}; //bottom-left
+		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1], _z + 1}; //bottom-right
 		vertices[i + 2] = new float[] {_x + 1, heights[x + 1][z    ], _z    }; //top-right
 		vertices[i + 3] = new float[] {_x,     heights[x    ][z    ], _z    }; //top-left
+	}
+	
+	public float[][] createNormals(float[][] vertices)
+	{	
+		float[][] normals = new float[length * length * 4][3];
+		
+		for(int i = 0; i < length; i += 4)
+		{
+			normals[i    ] = Vector.normal(vertices[i    ], vertices[i + 1], vertices[i + 3]);
+			normals[i + 1] = Vector.normal(vertices[i + 1], vertices[i    ], vertices[i + 2]);
+			normals[i + 2] = Vector.normal(vertices[i + 2], vertices[i + 1], vertices[i + 3]);
+			normals[i + 3] = Vector.normal(vertices[i + 3], vertices[i    ], vertices[i + 2]);
+		}
+		
+		return normals;
 	}
 	
 	public int coordToIndex(float x, float z)
@@ -328,7 +414,7 @@ public class HeightMap
 		return 3 + (4 * _z) + (4 * _x * length);
 	}
 	
-	public float[][] createTextureVertices(float[][] vertices, int texLen)
+	public float[][] createTexCoords(float[][] vertices, int texLen)
 	{
 		int n = vertices.length;
 		float[][] textureVertices = new float[n][2];
@@ -380,7 +466,7 @@ public class HeightMap
 		}
 		else
 		{
-			gl.glScalef(X_SCALE, Y_SCALE, Z_SCALE);
+			gl.glScalef(sx, sy, sz);
 			gl.glCallList(terrainList);
 		}
 	}
@@ -389,21 +475,33 @@ public class HeightMap
 	{
 		gl.glPushMatrix();
 		{
-			gl.glScalef(X_SCALE, Y_SCALE, Z_SCALE);
+			gl.glScalef(sx, sy, sz);
+			
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(GL2.GL_LINE_SMOOTH);
+		
+			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 			
 			displayWireframeObject(gl, vertices, 4, RGB.BLACK_3F);
-			displayWireframeObject(gl, q, 4, RGB.RED_3F);
-			displayLines(gl, r, 3, RGB.BLUE_3F);
+			displayWireframeObject(gl, q, 4, RGB.PURE_RED_3F);
+			displayLines(gl, r, 3, RGB.PURE_BLUE_3F, true);
+			
+			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+			
+			gl.glDisable(GL2.GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+			gl.glDisable(GL2.GL_LINE_SMOOTH);
 		}
 		gl.glPopMatrix();
 		
-		gl.glColor3f(0, 1, 0); //Pure Green
+		gl.glColor3f(0, 1, 0);
 		
 		for (int i = 1; i < r.length; i += 3)
 		{
 			gl.glPushMatrix();
 			{
-				gl.glTranslatef(r[i][0] * X_SCALE, r[i][1] * Y_SCALE, r[i][2] * Z_SCALE);
+				gl.glTranslatef(r[i][0] * sx, r[i][1] * sy, r[i][2] * sz);
 				glut.glutSolidSphere(0.1, 6, 6);
 			}
 			gl.glPopMatrix();
@@ -430,7 +528,7 @@ public class HeightMap
 
 		for(int i = 0; i < vertices.length; i += 4)
 			renderMultiTexQuad(gl, i);
-
+		
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
@@ -443,38 +541,34 @@ public class HeightMap
 	public void renderMultiTexQuad(GL2 gl, int i)
 	{
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 		
-		//8 Texture Units are supported
-
-		/* BEGIN TEXTURE BLENDING SECTION: */
-
-		/* TEXTURE0 is the alpha map; a texture of type GL_ALPHA8, no rgb channels */
+		//alpha map
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		texture3.bind(gl);
-		texture3.enable(gl);
+		alphaMap.bind(gl);
+		alphaMap.enable(gl);
 
-		/* TEXTURE1 is the 'bottom' texture */
+		//bottom texture
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		texture1.bind(gl);
-		texture1.enable(gl);
-		// use the rgb from the bottom texture
+		lowerTexture.bind(gl);
+		lowerTexture.enable(gl);
 		
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_DECAL    );
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
+		
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_REPLACE  );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_RGB,  GL2.GL_TEXTURE  );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR);
-		//------------------------
-		// use the alpha value from the alphaMap
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_DECAL    );
+
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_REPLACE  );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_ALPHA,  GL2.GL_PREVIOUS );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_ALPHA, GL2.GL_SRC_ALPHA);
 
-		/* TEXTURE2 is the 'top' texture */
+		//top texture
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		texture2.bind(gl);
-		texture2.enable(gl);
+		upperTexture.bind(gl);
+		upperTexture.enable(gl);
 		
-		// interpolate between texture1 and texture2's colors, using the alpha values
-		// from texture1 (which were taken from the alphamap)
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_INTERPOLATE);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_RGB,  GL2.GL_PREVIOUS   );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE1_RGB,  GL2.GL_TEXTURE    );
@@ -482,9 +576,7 @@ public class HeightMap
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR  );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND1_RGB, GL2.GL_SRC_COLOR  );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND2_RGB, GL2.GL_SRC_ALPHA  );
-		//------------------------
-		// interpolate the alphas (this doesn't really matter, neither of the textures
-		// really have alpha values)
+
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_INTERPOLATE);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_ALPHA,  GL2.GL_PREVIOUS   );
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE1_ALPHA,  GL2.GL_TEXTURE    );
@@ -497,9 +589,11 @@ public class HeightMap
 		{
 			for(int j = i; j < i + 4; j++)
 			{
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE0, textureVertices3[j][0], textureVertices3[j][1]);
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE1, textureVertices1[j][0], textureVertices1[j][1]);
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE2, textureVertices2[j][0], textureVertices2[j][1]);
+//				gl.glNormal3f(normals[j][0], normals[j][1], normals[j][2]);
+				
+				gl.glMultiTexCoord2f(GL2.GL_TEXTURE0, texCoords3[j][0], texCoords3[j][1]);
+				gl.glMultiTexCoord2f(GL2.GL_TEXTURE1, texCoords1[j][0], texCoords1[j][1]);
+				gl.glMultiTexCoord2f(GL2.GL_TEXTURE2, texCoords2[j][0], texCoords2[j][1]);
 				
 				gl.glVertex3f(vertices[j][0], vertices[j][1], vertices[j][2]);
 			}

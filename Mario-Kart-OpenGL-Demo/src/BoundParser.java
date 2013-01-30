@@ -19,9 +19,9 @@ public class BoundParser
 	{
 		List<OBB> bounds = new ArrayList<OBB>();
 		
-		List<float[]>   positions  = new ArrayList<float[]>();
-		List<float[]>   rotations  = new ArrayList<float[]>();
-		List<float[]>   extents    = new ArrayList<float[]>();
+		List<float[]> positions  = new ArrayList<float[]>();
+		List<float[]> rotations  = new ArrayList<float[]>();
+		List<float[]> extents    = new ArrayList<float[]>();
 		
 		List<boolean[]> validFaces = new ArrayList<boolean[]>();
 		

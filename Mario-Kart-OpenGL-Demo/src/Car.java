@@ -1,26 +1,23 @@
 import static graphics.util.Matrix.getRotationMatrix;
-
 import static graphics.util.Renderer.displayColoredObject;
 import static graphics.util.Renderer.displayPartiallyTexturedObject;
 import static graphics.util.Renderer.displayTexturedObject;
 import static graphics.util.Renderer.displayTransparentObject;
 import static graphics.util.Renderer.displayWireframeObject;
-
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.multiply;
 import static graphics.util.Vector.normalize;
 import static graphics.util.Vector.subtract;
-
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.asin;
 import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
-
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHT0;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_SPECULAR;
 import graphics.util.Face;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,8 +28,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
-
-import com.jogamp.opengl.util.awt.TextRenderer;
 
 /* TODO
  * 
@@ -52,7 +47,7 @@ import com.jogamp.opengl.util.awt.TextRenderer;
 public class Car
 {
 	/** Model Fields **/
-	private static final List<Face> CAR_FACES         = OBJParser.parseTriangles("obj/car.obj");
+	public  static final List<Face> CAR_FACES         = OBJParser.parseTriangles("obj/car.obj");
 	private static final List<Face> WHEEL_FACES       = OBJParser.parseTriangles("obj/wheel.obj");
 	private static final List<Face> WINDOW_FACES      = OBJParser.parseTriangles("obj/windows.obj");
 	private static final List<Face> DOOR_WINDOW_FACES = OBJParser.parseTriangles("obj/door_windows.obj");
@@ -62,13 +57,13 @@ public class Car
 	
 	private static int carList = -1;
 	
+	public TerrainPatch patch;
+	
 	private float[] color = {1.0f, 0.4f, 0.4f};
 	private float[] windowColor = {0.4f, 0.8f, 1.0f};
 	
-	private static final float[] BLACK = {0.0f, 0.0f, 0.0f};
-	
 	public boolean displayModel = true;
-	public boolean enableWireframe = false;
+	public int renderMode = 0;
 	
 	
 	/** Vehicle Fields **/
@@ -89,22 +84,23 @@ public class Car
 	private float[] offsets_RightDoor = {-1.43f, 0.21f, -1.74f};
 	
 	
-	/** Fields that define the vehicle's motion **/
+	/** Motion Fields **/
 	public float velocity = 0;
 	public static final float TOP_SPEED = 1.2f;
-	public double acceleration = 0.012;
+	public float acceleration = 0.012f;
 	public boolean accelerating = false;
 	public boolean reversing = false;
 	public boolean invertReverse = false;
+	public float friction = 1;
 	
-	public double gravity = 0.05;
+	public float gravity = 0.05f;
 	public boolean falling = false;
 	private float fallRate = 0.0f;
-	private static final double TOP_FALL_RATE = 2.5;
+	private static final float TOP_FALL_RATE = 2.5f;
 	
-	public double turnRate = 0;
-	private static final double TOP_TURN_RATE = 2.0;
-	private double turnIncrement = 0.1;
+	public float turnRate = 0;
+	private static final float TOP_TURN_RATE = 2.0f;
+	private float turnIncrement = 0.1f;
 	public boolean turning = false;
 	
 	private enum Direction {STRAIGHT, LEFT, RIGHT};
@@ -115,7 +111,10 @@ public class Car
 	private enum DriftState {YELLOW, RED, BLUE};
 	private DriftState driftState = DriftState.YELLOW;
 	
-	public double distance = 0;
+	public float distance = 0;
+	
+	private AnchorPoint anchor;
+	private Motion motionMode = Motion.DEFAULT;
 	
 	
 	/** Collision Detection Fields **/
@@ -175,6 +174,10 @@ public class Car
 	private GamePad controller;
 	
 	private HUD hud;
+	private HoloTag tag;
+	
+	public boolean smooth = false;
+	
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
@@ -186,12 +189,12 @@ public class Car
 			displayPartiallyTexturedObject(gl, CAR_FACES, color);
 			gl.glEndList();
 			
-			System.out.println("Car: " + "\n" +
+			System.out.println("\n" + "Car: " + "\n" +
 			"\t" + "Body: "        + CAR_FACES.size()         + " faces" + "\n" +
 			"\t" + "Wheel: "       + WHEEL_FACES.size()       + " faces" + "\n" +
 			"\t" + "Window: "      + WINDOW_FACES.size()      + " faces" + "\n" +
 			"\t" + "Door Window: " + DOOR_WINDOW_FACES.size() + " faces" + "\n" +
-			"\t" + "Door: "        + DOOR_FACES.size()        + " faces");
+			"\t" + "Door: "        + DOOR_FACES.size()        + " faces" + "\n");
 		}
 	    
 	    bound = new OBB(
@@ -206,9 +209,10 @@ public class Car
 	    
 	    controller = new GamePad();
 	    
-		Font font = new Font("Calibri", Font.PLAIN, 18);
-		TextRenderer renderer = new TextRenderer(font);
-	    hud = new HUD(scene, this, renderer);
+	    hud = new HUD(scene, this);
+	    tag = new HoloTag(String.format("(%+3.2f, %+3.2f, %+3.2f)", c[0], c[1], c[2]), c);
+	    
+	    anchor = new AnchorPoint();
 	}
 	
 	public HUD getHUD() { return hud; }
@@ -437,6 +441,18 @@ public class Car
 	
 	public void render(GL2 gl)
 	{
+		if(renderMode == 2)
+		{
+			if(smooth)
+			{
+				gl.glEnable(GL2.GL_BLEND);
+				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+				gl.glEnable(GL2.GL_LINE_SMOOTH);
+			}
+			
+			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+		}
+		
 		gl.glPushMatrix();
 		{
 			/** Vehicle Transformations **/
@@ -457,10 +473,12 @@ public class Car
 					if(booColor > 0 && booDuration > 0) booColor -= fadeIncrement;
 					displayTransparentObject(gl, CAR_FACES, booColor);
 				}
-				else if(enableWireframe) displayWireframeObject(gl, CAR_FACES, color);
+				else if(renderMode == 1) displayWireframeObject(gl, CAR_FACES, color);
 				else gl.glCallList(carList);
 				
 				gl.glColor3f(1, 1, 1);
+				
+				gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {0, 0, 0}, 0);
 				
 				for(int wheel = 0; wheel < 4; wheel++)
 				{
@@ -486,11 +504,13 @@ public class Car
 							displayColoredObject(gl, WHEEL_FACES, _color);
 						}
 						else if(invisible) displayTransparentObject(gl, WHEEL_FACES, booColor);
-						else if(enableWireframe) displayWireframeObject(gl, WHEEL_FACES, BLACK);
+						else if(renderMode == 1) displayWireframeObject(gl, WHEEL_FACES, RGB.BLACK_3F);
 						else displayTexturedObject(gl, WHEEL_FACES);
 					}
 					gl.glPopMatrix();
 				}
+				
+				gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {1, 1, 1}, 0);
 				
 				/** Left Door Transformations **/
 				gl.glPushMatrix();
@@ -507,14 +527,14 @@ public class Car
 						displayColoredObject(gl, DOOR_FACES, _color);
 					}
 					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
-					else if(enableWireframe) displayWireframeObject(gl, DOOR_FACES, color);
+					else if(renderMode == 1) displayWireframeObject(gl, DOOR_FACES, color);
 					else displayColoredObject(gl, DOOR_FACES, color);
 					
 					/** Left Door Window Transformations **/
 					gl.glPushMatrix();
 					{
 						if(invisible) displayTransparentObject(gl, DOOR_WINDOW_FACES, booColor);
-						else if(enableWireframe) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
+						else if(renderMode == 1) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
 						else displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
 					}
 					gl.glPopMatrix();	
@@ -539,14 +559,14 @@ public class Car
 						displayColoredObject(gl, DOOR_FACES, _color);
 					}
 					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
-					else if(enableWireframe) displayWireframeObject(gl, DOOR_FACES, color);
+					else if(renderMode == 1) displayWireframeObject(gl, DOOR_FACES, color);
 					else displayColoredObject(gl, DOOR_FACES, color);
 					
 					/** Right Door Window Transformations **/
 					gl.glPushMatrix();
 					{	
 						if(invisible) displayTransparentObject(gl, DOOR_WINDOW_FACES, booColor);
-						else if(enableWireframe) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
+						else if(renderMode == 1) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
 						else displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
 					}
 					gl.glPopMatrix();
@@ -559,19 +579,30 @@ public class Car
 					gl.glTranslatef(0.3f, -1.2f, 0);
 					
 					if(invisible) displayTransparentObject(gl, WINDOW_FACES, booColor);
-					else if(enableWireframe) displayWireframeObject(gl, WINDOW_FACES, windowColor);
+					else if(renderMode == 1) displayWireframeObject(gl, WINDOW_FACES, windowColor);
 					else displayTransparentObject(gl, WINDOW_FACES, windowColor);
 				}
 				gl.glPopMatrix();
-				
-				gl.glFlush();
 			}
 		}
 		gl.glPopMatrix();
 	
 		gl.glColor3f(1, 1, 1);
+		
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glDisable(GL2.GL_LINE_SMOOTH);
 	
-		for(Item item : items) item.render(gl, trajectory);
+		for(Item item : items)
+		{
+			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);
+			else item.render(gl, trajectory);
+		}
+		
+		if(slipping) tag.render(gl, slipTrajectory);
+		else tag.render(gl, trajectory);
 	}
 
 	private void cycleColor()
@@ -630,7 +661,7 @@ public class Car
 		return heights;
 	}
 	
-	public float[] getHeights(HeightMap map)
+	public float[] getHeights(Terrain map)
 	{
 		float[][] vertices = bound.getVertices();
 
@@ -672,7 +703,16 @@ public class Car
 			float h = obb.closestPointOnPerimeter(getPosition())[1]
 					+ (bound.e[1] * 0.9f);
 			
-			if(h > bound.c[1]) bound.c[1] = h;
+			if(h > bound.c[1])
+			{
+				bound.c[1] = h;
+				
+				if(motionMode == Motion.ANCHOR)
+				{
+					float[] p = anchor.getPosition();
+					anchor.setPosition(new float[] {p[0], h, p[2]});
+				}
+			}
 
 			falling = false; fallRate = 0; //disable falling
 		}
@@ -706,7 +746,7 @@ public class Car
 			}
 		}
 		
-		//TODO car collisions could be improved
+		//TODO car-car collisions could be improved
 		for(Car car : scene.getCars())
 		{
 			if(!car.equals(this) && !invisible && !car.isInvisible() &&
@@ -729,13 +769,15 @@ public class Car
 		}
 		
 		for(float[] vector : vectors) setPosition(add(getPosition(), vector));
+		
+		if(motionMode == Motion.ANCHOR) anchor.setPosition(getPosition());
 	}
 
 	/*
 	 * TODO
 	 * 
 	 * There are currently no obstacles in the scene that use a sphere as its
-	 * bounding geometry; therefore, this method is no used and may be inaccurate
+	 * bounding geometry; therefore, this method is not used and may be inaccurate
 	 * 
 	 */
 	private float[] resolveSphere(Sphere sphere)
@@ -753,7 +795,7 @@ public class Car
 	/**
 	 * This method resolves a collision with an OBB passed as a parameter;
 	 * note that it is assumed that the vehicle is colliding with the side or
-	 * bottom of the OBB (setHeights(OBB) for top collisions) 
+	 * bottom of the OBB (see setHeights(OBB) for top collisions) 
 	 */
 	private float[] resolveOBB(OBB obb)
 	{
@@ -779,10 +821,19 @@ public class Car
 
 	public void update()
 	{	
-		getHeights(scene.getHeightMap());
-//		getHeights();
+		if(scene.enableTerrain) getHeights(scene.getHeightMap());
+		else getHeights();
 		
-		setRotation(getRotationAngles(heights));
+		if(motionMode == Motion.ANCHOR)
+		{
+			setRotation(anchor.getRotation());
+			trajectory = anchor.getRotation()[1];
+		}
+		else setRotation(getRotationAngles(heights));
+		
+		if(motionMode == Motion.ANCHOR) setPosition(anchor.getPosition());
+		else if(!slipping) setPosition(getPositionVector());
+		else setPosition(getSlipVector());
 		
 		detectCollisions();
 		if(colliding) resolveCollisions();
@@ -818,14 +869,11 @@ public class Car
 		
 		else stabilize();
 		
-		double currentDistance = distance;
+		float currentDistance = distance;
 		
-		if(falling) fall();
+		if(falling && motionMode != Motion.ANCHOR) fall();
 	
 		velocity = (velocity > 2 * TOP_SPEED) ? (2 * TOP_SPEED) : velocity;
-	
-		if(!slipping) setPosition(getPositionVector());
-		else setPosition(getSlipVector());
 		
 		distance += velocity;
 		
@@ -843,11 +891,34 @@ public class Car
 			}
 		}
 		
+		if(scene.enableTerrain && patch != null && velocity != 0)
+		{
+			for(float[] source : getDriftVectors())
+			{
+				scene.addParticles(generator.generateTerrainParticles(source, 15, patch.texture));
+			}
+		}
+		
+		float[] p = {bound.c[0], bound.c[1] + 5, bound.c[2]};
+		
+		tag.setPosition(p);
+		tag.displayPosition();
+		
 		updateStatus();
 		
+		updateController();
+	}
+
+	private void updateController()
+	{
 		if(!controller.isNull() && controller.isEnabled() && !camera.isFree())
 		{
-			if     (controller.getXAxis() > (isDrifting() ?  0.9f : 0)) steerLeft();
+			if(motionMode == Motion.ANCHOR)
+			{
+				controller.update();
+				anchor.update(controller);
+			}
+			else if(controller.getXAxis() > (isDrifting() ?  0.9f : 0)) steerLeft();
 			else if(controller.getXAxis() < (isDrifting() ? -0.9f : 0)) steerRight();
 			else 
 			{
@@ -903,7 +974,7 @@ public class Car
 		else
 		{
 			starPower = false;
-			turnIncrement = 0.1;
+			turnIncrement = 0.1f;
 		}
 		
 		if(starPower)
@@ -1007,12 +1078,12 @@ public class Car
 			if(turnRate < TOP_TURN_RATE * controller.getXAxis()) turnRate += turnIncrement;
 		}
 		
-		double k = 1; 
+		float k = 1; 
 		
 		if(drift == Direction.LEFT)
 		{
-			if(direction == Direction.LEFT) k = 1.25;
-			else if(direction == Direction.RIGHT) k = 0.5;
+			if(direction == Direction.LEFT) k = 1.25f;
+			else if(direction == Direction.RIGHT) k = 0.5f;
 		}
 		
 		if(velocity != 0) trajectory += turnRate * k;
@@ -1029,12 +1100,12 @@ public class Car
 			if(turnRate > TOP_TURN_RATE * controller.getXAxis()) turnRate -= turnIncrement;
 		}
 		
-		double k = 1;
+		float k = 1;
 		
 		if(drift == Direction.RIGHT)
 		{
-			if(direction == Direction.LEFT) k = 0.5;
-			else if(direction == Direction.RIGHT) k = 1.25;
+			if(direction == Direction.LEFT) k = 0.5f;
+			else if(direction == Direction.RIGHT) k = 1.25f;
 		}
 		
 		if(velocity != 0) trajectory += turnRate * k;
@@ -1053,7 +1124,7 @@ public class Car
 
 	public void turnWheels()
 	{
-		double turnRatio = turnRate / TOP_TURN_RATE;
+		float turnRatio = turnRate / TOP_TURN_RATE;
 	
 		if(turnRatio > 1) turnRatio = 1;
 		else if(turnRatio < -1) turnRatio = -1;
@@ -1067,7 +1138,7 @@ public class Car
 		float _velocity = (miniature) ?  velocity * 0.75f :  velocity;
 		      _velocity = (starPower) ? _velocity * 1.25f : _velocity;
 		
-		return subtract(bound.c, multiply(bound.u[0], _velocity));
+		return subtract(bound.c, multiply(bound.u[0], _velocity * friction));
 	}
 
 	public float[][] getBoostVectors()
@@ -1079,6 +1150,23 @@ public class Car
 		{
 			subtract(add(getPosition(), eu0), eu2), //right exhaust
 			     add(add(getPosition(), eu0), eu2)  //left exhaust
+		};
+	}
+	
+	public float[][] getLightVectors()
+	{	
+		float[] eu0 = multiply(bound.u[0], bound.e[0]);
+		float[] eu2 = multiply(bound.u[2], bound.e[2] * 0.75f);
+		
+		float[][] boost = getBoostVectors();
+		
+		return new float[][]
+		{
+			subtract(subtract(getPosition(), eu0), eu2), //right exhaust
+			     add(subtract(getPosition(), eu0), eu2),  //left exhaust
+			
+			subtract(bound.c, boost[0]),
+			subtract(bound.c, boost[1])
 		};
 	}
 	
@@ -1209,7 +1297,7 @@ public class Car
 		starPower = true;
 		cursed = false;
 		starDuration = 500;
-		turnIncrement = 0.15;
+		turnIncrement = 0.15f;
 	}
 	
 	public boolean isSlipping()   { return slipping;  }
@@ -1228,24 +1316,8 @@ public class Car
 
 	public void keyPressed(KeyEvent e)
 	{
-		if(camera.isFree())
-		{
-			switch(e.getKeyCode())
-			{
-				case KeyEvent.VK_W: camera.moveForward(5);  break;
-				case KeyEvent.VK_S: camera.moveBackward(5); break;
-				case KeyEvent.VK_A: camera.moveLeft(5);     break;
-				case KeyEvent.VK_D: camera.moveRight(5);    break;
-				
-				case KeyEvent.VK_UP:    camera.lookUp(5);    break;
-				case KeyEvent.VK_DOWN:  camera.lookDown(5);  break;
-				case KeyEvent.VK_LEFT:  camera.lookLeft(5);  break;
-				case KeyEvent.VK_RIGHT: camera.lookRight(5); break;
-				
-				case KeyEvent.VK_MINUS:  camera.decreaseSensitivity(); break;
-				case KeyEvent.VK_EQUALS: camera.increaseSensitivity(); break;
-			}
-		}
+		if(motionMode == Motion.ANCHOR) anchor.keyPressed(e);
+		else if(camera.isFree()) camera.keyPressed(e);
 		else
 		{
 			controller.disable();
@@ -1286,11 +1358,20 @@ public class Car
 			
 			case KeyEvent.VK_X: invertReverse = !invertReverse; break;
 			
-			case KeyEvent.VK_M: camera.cycleMode(); break;
+			case KeyEvent.VK_M: camera.cycleMode(); displayModel = true; break;
+			case KeyEvent.VK_G:
+			{
+				motionMode = Motion.cycle(motionMode);
+				
+				anchor.setPosition(getPosition()); 
+				anchor.setRotation(getRotationAngles(heights));
+				
+				break;
+			}
 			
 			case KeyEvent.VK_9: if(!camera.isFirstPerson()) displayModel = !displayModel; break;
 			
-			case KeyEvent.VK_F3: enableWireframe = !enableWireframe; break;
+			case KeyEvent.VK_F2: renderMode++; renderMode %= 3; break;
 			
 			case KeyEvent.VK_F4: hud.setTextColor(Color.BLACK); break;
 			case KeyEvent.VK_F5: hud.setVisibility(!hud.getVisibility()); break;
@@ -1330,7 +1411,11 @@ public class Car
 	
 	public void buttonPressed(int e)
 	{
-		if(!camera.isFree())
+		if(motionMode == Motion.ANCHOR)
+		{
+			
+		}
+		else if(!camera.isFree())
 		{
 			switch(e)
 			{
@@ -1357,7 +1442,7 @@ public class Car
 		
 		switch(e)
 		{
-			case  8: camera.cycleMode(); break;
+			case  8: camera.cycleMode(); displayModel = true; break;
 		}
 	}
 	
@@ -1380,39 +1465,30 @@ public class Car
 		
 		switch(camera.getMode())
 		{	
-			case DYNAMIC_VIEW:	 displayModel =  true;
-								 if(slipping) _trajectory = slipTrajectory; break;
+			case DYNAMIC_VIEW:	 if(slipping) _trajectory = slipTrajectory; break;
 			case BIRDS_EYE_VIEW: break;
 			case DRIVERS_VIEW:   displayModel = false; break;
 			case FREE_LOOK_VIEW:
-			{
-				displayModel =  true;
-				
-				if(controller.isEnabled())
-				{
-					float x  = controller.getXAxis();
-					float y  = controller.getYAxis();
-					float rx = controller.getXRotation();
-					float ry = controller.getYRotation();
-					
-					if     (x > 0) camera.moveLeft(x);
-					else if(x < 0) camera.moveRight(-x);
-					
-					if     (y > 0) camera.moveForward(y);
-					else if(y < 0) camera.moveBackward(-y);
-					
-					if     (rx > 0) camera.lookRight(rx);
-					else if(rx < 0) camera.lookLeft(-rx);
-					
-					if     (ry > 0) camera.lookDown(ry);
-					else if(ry < 0) camera.lookUp(-ry);
-				}
-				
+			{	
+				if(scene.moveLight) scene.light.setPosition(camera.getPosition());
+				if(controller.isEnabled()) camera.update(controller);
 				break;
 			}
 			
 			default: break;	
 		}
+		
 		camera.setupView(gl, glu, getPosition(), _trajectory);
+	}
+	
+	public enum Motion
+	{
+		DEFAULT,
+		ANCHOR;
+		
+		public static Motion cycle(Motion mode)
+		{
+			return values()[(mode.ordinal() + 1) % values().length];
+		}
 	}
 }

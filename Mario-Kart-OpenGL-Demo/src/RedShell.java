@@ -52,9 +52,26 @@ public class RedShell extends Shell
 		
 		this.orbiting = orbiting;
 		
+		boundColor = RGB.toRGBA(RGB.DARK_RED, BOUND_ALPHA);
+		
 		target = seekTarget();
 	}
 
+	public RedShell(Scene scene, float[] c, float trajectory)
+	{	
+		super(null, scene, null, trajectory);
+		
+		bound = new Sphere(c, RADIUS);
+		boundColor = RGB.toRGBA(RGB.DARK_RED, BOUND_ALPHA);
+		
+		velocity = INITIAL_VELOCITY;
+		
+		this.trajectory = trajectory;
+		setRotation(0, trajectory, 0);
+		
+		target = seekTarget();
+	}
+	
 	private Car seekTarget()
 	{
 		Car target = null;
@@ -78,21 +95,7 @@ public class RedShell extends Shell
 		
 		return target;
 	}
-	
-	public RedShell(Scene scene, float[] c, float trajectory)
-	{	
-		super(null, scene, null, trajectory);
-		
-		bound = new Sphere(c, RADIUS);
-		
-		velocity = INITIAL_VELOCITY;
-		
-		this.trajectory = trajectory;
-		setRotation(0, trajectory, 0);
-		
-		target = seekTarget();
-	}
-	
+
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{

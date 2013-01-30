@@ -440,9 +440,18 @@ public class OBB extends Bound
 		gl.glEnable(GL_LIGHTING);
 	}
 		
-	public void displayWireframe(GL2 gl, GLUT glut, float[] color)
+	public void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth)
 	{
-		gl.glColor4f(color[0], color[1], color[2], color[3]);
+		if(color.length > 3)
+			 gl.glColor4f(color[0], color[1], color[2], color[3]);
+		else gl.glColor3f(color[0], color[1], color[2]);
+		
+		if(smooth)
+		{
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(GL2.GL_LINE_SMOOTH);
+		}
 		
 		gl.glPushMatrix();
 		{
@@ -453,21 +462,48 @@ public class OBB extends Bound
 			glut.glutWireCube(1);
 		}
 		gl.glPopMatrix();
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glDisable(GL2.GL_LINE_SMOOTH);
 	}
 	
-	public void displayVertices(GL2 gl, GLUT glut, float[] color)
+	public void displayVertices(GL2 gl, GLUT glut, float[] color, boolean smooth)
 	{
-		gl.glColor4f(color[0], color[1], color[2], color[3]);
+		if(color.length > 3)
+			 gl.glColor4f(color[0], color[1], color[2], color[3]);
+		else gl.glColor3f(color[0], color[1], color[2]);
+		
+		if(smooth)
+		{
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glEnable(GL2.GL_POINT_SMOOTH);
+			gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
+		}
 		
 		for(float[] vertex : getVertices())
 		{
-			gl.glPushMatrix();
+			if(smooth)
 			{
-				gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
-				glut.glutSolidSphere(0.1, 6, 6);
+				gl.glBegin(GL2.GL_POINTS);
+				gl.glVertex3f(vertex[0], vertex[1], vertex[2]);
+				gl.glEnd();
 			}
-			gl.glPopMatrix();
+			else
+			{
+				gl.glPushMatrix();
+				{
+					gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
+					glut.glutSolidSphere(0.1, 6, 6);
+				}
+				gl.glPopMatrix();
+			}
 		}
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glDisable(GL2.GL_POINT_SMOOTH);
 	}
 		
 	public void displayAxes(GL2 gl, float scale)

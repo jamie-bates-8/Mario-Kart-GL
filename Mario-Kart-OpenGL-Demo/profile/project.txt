@@ -1,0 +1,5 @@
+press o
+scene display skybox true
+collision obstacles false
+scene display fort false
+scene terrain true

@@ -134,13 +134,12 @@ public class ItemRoulette
 		
 		double[] weights = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 	
-		double totalWeight = 0.0;
+		double total = 0.0;
 		
-		for (double weight : weights)
-			totalWeight += weight;
+		for (double weight : weights) total += weight;
 	
 		int randomIndex = -1;
-		double random = generator.nextDouble() * totalWeight;
+		double random = generator.nextDouble() * total;
 	
 		for (int j = 0; j < weights.length; j++)
 		{

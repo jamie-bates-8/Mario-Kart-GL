@@ -20,16 +20,21 @@ public abstract class Item
 	public static final float[] ORIGIN = {0, 0, 0};
 	public static final float GLOBAL_RADIUS = 300;
 	
-	public static boolean enableBoundWireframes = false;
-	public static boolean enableBoundSolids = false;
+	protected static final float BOUND_ALPHA = 0.25f;
+	
+	public static int renderMode = 0;
+	public static boolean smooth = true;
+	
+	public static boolean boundFrames = false;
+	public static boolean boundSolids = false;
 	
 	protected Scene scene;
 	protected Car car;
 	
-	protected double gravity = 0.05;
+	protected float gravity = 0.05f;
 	protected boolean falling = true;
 	protected float fallRate = 0.0f;
-	protected static final double TOP_FALL_RATE = 5.0;
+	protected static final float TOP_FALL_RATE = 5.0f;
 	
 	public float velocity = 0;
 	public float[][] u = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
@@ -40,19 +45,41 @@ public abstract class Item
 	public List<Bound> collisions = new ArrayList<Bound>();
 	protected float[] heights = {0, 0, 0, 0};
 	
+	protected float[] boundColor;
+	
 	public boolean thrown = true;
 	
 	public boolean dead = false;
 	
-	public static void toggleBoundWireframes() { enableBoundWireframes = !enableBoundWireframes; }
-	public static void toggleBoundSolids() { enableBoundSolids = !enableBoundSolids; }
+	public static void toggleBoundFrames() { boundFrames = !boundFrames; }
+	public static void toggleBoundSolids() { boundSolids = !boundSolids; }
 	
 	public abstract void render(GL2 gl, float trajectory);
 	
-	public void displayBoundVisuals(GL2 gl, GLUT glut, float[] color)
+	public void renderWireframe(GL2 gl, float trajectory)
 	{
-		if(enableBoundWireframes) bound.displayWireframe(gl, glut, new float[] {0, 0, 0, 1});
-		if(enableBoundSolids) bound.displaySolid(gl, glut, color);
+		if(smooth)
+		{
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(GL2.GL_LINE_SMOOTH);
+		}
+		
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+		 
+		render(gl, trajectory);
+		 
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glDisable(GL2.GL_LINE_SMOOTH);
+	}
+	
+	public void renderBound(GL2 gl, GLUT glut)
+	{
+		if(boundFrames) bound.displayWireframe(gl, glut, RGB.BLACK_3F, smooth);
+		if(boundSolids) bound.displaySolid(gl, glut, boundColor);
 	}
 	
 	public float getMaximumExtent() { return bound.getMaximumExtent(); }
@@ -252,6 +279,24 @@ public abstract class Item
 			falling = thrown = false;
 			fallRate = 0;
 		}
+	}
+	
+	//TODO Green Shells often disappear upon colliding with the outer walls
+	public float[] getHeights(Terrain map)
+	{
+		float[][] vertices = getAxisVectors();
+
+		for(int i = 0; i < 4; i++)
+		{
+			float h = map.getHeight(vertices[i]);
+			heights[i] = h;
+		}
+
+		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
+		h += bound.getMaximumExtent();
+		bound.c[1] = h;
+
+		return heights;
 	}
 	
 	public void detectCollisions()

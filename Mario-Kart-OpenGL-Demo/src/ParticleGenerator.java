@@ -2,6 +2,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.jogamp.opengl.util.texture.Texture;
+
 import static graphics.util.Vector.multiply;
 import static graphics.util.Vector.normalize;
 
@@ -10,6 +12,23 @@ public class ParticleGenerator
 	private Random generator;
 	
 	public ParticleGenerator() { generator = new Random(); }
+	
+	public List<Particle> generateTerrainParticles(float[] source, int n, Texture texture)
+	{
+		List<Particle> particles = new ArrayList<Particle>();
+		
+		for(int i = 0; i < n; i++)
+		{
+			float[] texCoords = {generator.nextFloat(), generator.nextFloat()};
+			
+			float[] t = getRandomVector();
+			t[1] = Math.abs(t[1] * 0.75f);
+			
+			particles.add(new TerrainParticle(source, t, 0, 12, texCoords, texture));
+		}
+		
+		return particles;
+	}
 	
 	public List<Particle> generateItemBoxParticles(float[] source, int n)
 	{
@@ -42,9 +61,9 @@ public class ParticleGenerator
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255};
 			
 			float[] t = getRandomVector();
-			t[1] = Math.abs(t[1]);
+			t[1] = Math.abs(t[1] * 0.75f);
 			
-			particles.add(new SparkParticle(source, t, 0, 4, _color, miniature));
+			particles.add(new SparkParticle(source, t, 0, 12, _color, miniature));
 		}
 		
 		return particles;

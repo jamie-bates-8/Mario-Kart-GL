@@ -11,6 +11,7 @@ import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.io.File;
 
 import javax.media.opengl.GL2;
@@ -26,6 +27,7 @@ public class HUD
 	private Car car;
 	
 	private boolean visible = true;
+	public boolean smooth = false;
 	
 	private static Texture speedometer;
 	
@@ -47,11 +49,13 @@ public class HUD
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
-	public HUD(Scene scene, Car car, TextRenderer renderer)
+	public HUD(Scene scene, Car car)
 	{
 		this.scene = scene;
 		this.car = car;
-		this.renderer = renderer;
+		
+		Font font = new Font("Calibri", Font.BOLD, 18);
+		renderer = new TextRenderer(font, true, false);
 	}
 	
 	public void increaseStretch() { if(yStretch < MAX_STRETCH) yStretch += STRETCH_INC; }
@@ -65,6 +69,8 @@ public class HUD
 	public long render(GL2 gl, GLU glu)
 	{
 		long start = System.nanoTime();
+		
+		if(smooth) gl.glEnable(GL2.GL_LINE_SMOOTH);
 		
 		ortho2DBegin(gl, glu);
 		
@@ -93,6 +99,8 @@ public class HUD
 		gl.glColor3f(1.0f, 1.0f, 1.0f);
 		
 		ortho2DEnd(gl, glu);
+		
+		gl.glDisable(GL2.GL_LINE_SMOOTH);
 		
 		return System.nanoTime() - start;
 	}
@@ -157,7 +165,7 @@ public class HUD
 	{
 		renderer.beginRendering(scene.getWidth(), scene.getHeight());
 		renderer.setSmoothing(true);
-		renderer.setColor(textColor); //also sets the scene color
+		renderer.setColor(textColor);
 		
 		renderer.draw("FPS: " + scene.getFrameRate(), 40, 520);
 		
@@ -338,7 +346,7 @@ public class HUD
 		
 		gl.glMatrixMode(GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(Scene.FOV, ratio, 2.0, 700.0);
+		glu.gluPerspective(scene.fov, ratio, 1.0, 1000.0);
 		
 		gl.glMatrixMode(GL_MODELVIEW);
 		gl.glLoadIdentity();

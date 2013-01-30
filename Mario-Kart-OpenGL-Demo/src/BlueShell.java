@@ -1,6 +1,5 @@
-import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Renderer.displayColoredObject;
-
+import static graphics.util.Renderer.displayWildcardObject;
 import graphics.util.Face;
 
 import java.io.File;
@@ -60,6 +59,8 @@ public class BlueShell extends Shell
 		}
 		
 		generator = new ParticleGenerator();
+		
+		boundColor = RGB.toRGBA(RGB.INDIGO, BOUND_ALPHA);
 	}
 	
 	public BlueShell(Scene scene, float[] c)
@@ -67,6 +68,7 @@ public class BlueShell extends Shell
 		super(null, scene, null, 0);
 		
 		bound = new Sphere(c, RADIUS);
+		boundColor = RGB.toRGBA(RGB.INDIGO, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
 	}

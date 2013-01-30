@@ -51,8 +51,6 @@ public class BoostParticle extends Particle
 			
 			gl.glPointSize(20 * scale);
 			
-			scale /= 2;
-			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
@@ -77,5 +75,12 @@ public class BoostParticle extends Particle
 		gl.glPopMatrix();
 		
 		gl.glEnable(GL2.GL_POINT_SPRITE);
+	}
+	
+	@Override
+	public void update()
+	{
+		super.update();
+		scale /= 2;
 	}
 }

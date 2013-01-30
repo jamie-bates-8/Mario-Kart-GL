@@ -113,7 +113,9 @@ public class Sphere extends Bound
 	
 	public void displaySolid(GL2 gl, GLUT glut, float[] color)
 	{
-		gl.glColor4f(color[0], color[1], color[2], color[3]);
+		if(color.length > 3)
+			 gl.glColor4f(color[0], color[1], color[2], color[3]);
+		else gl.glColor3f(color[0], color[1], color[2]);
 		
 		gl.glDisable(GL_LIGHTING);
 		gl.glEnable(GL_BLEND);
@@ -131,11 +133,20 @@ public class Sphere extends Bound
 		gl.glEnable(GL_LIGHTING);
 	}
 	
-	public void displayWireframe(GL2 gl, GLUT glut, float[] color)
+	public void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth)
 	{
 		int v = 24;
 		
-		gl.glColor4f(color[0], color[1], color[2], color[3]);
+		if(color.length > 3)
+			 gl.glColor4f(color[0], color[1], color[2], color[3]);
+		else gl.glColor3f(color[0], color[1], color[2]);
+		
+		if(smooth)
+		{
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(GL2.GL_LINE_SMOOTH);
+		}
 		
 		float[][] vertices = new float[v][3];
 		
@@ -164,6 +175,10 @@ public class Sphere extends Bound
 			}
 			gl.glPopMatrix();
 		}
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glDisable(GL2.GL_LINE_SMOOTH);
 	}
 	
 	public float[] randomPointInside()

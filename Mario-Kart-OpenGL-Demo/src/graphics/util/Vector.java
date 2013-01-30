@@ -99,4 +99,13 @@ public class Vector
 		
 		return w;
 	}
+	
+	public static float[] normal(float[] p1, float[] p2, float[] p3)
+	{
+		float[] v1 = subtract(p2, p1);
+		float[] v2 = subtract(p3, p1);
+		float[] v3 = cross(v1, v2);
+		
+		return normalize(v3);
+	}
 }

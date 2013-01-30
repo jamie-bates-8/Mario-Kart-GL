@@ -7,11 +7,7 @@ import javax.media.opengl.GL2;
 
 public class DriftParticle extends Particle
 {
-	public static final float[] RED    = {237.0f,  28.0f,  36.0f};
-	public static final float[] YELLOW = {255.0f, 228.0f,   0.0f};
-	public static final float[] BLUE   = {  0.0f, 173.0f, 239.0f};
-	
-	public static float[][] colors = {YELLOW, RED, BLUE};
+	public static float[][] colors = {RGB.YELLOW, RGB.RED, RGB.BLUE};
 	
 	private int color;
 	private boolean flat;

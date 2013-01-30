@@ -51,7 +51,7 @@ public class Banana extends Item
 			displayGradientObject(gl, BANANA_FACES, gradient, -1.35f, 1.41f);
 		    gl.glEndList();
 		    
-		    System.out.println("Banana: " + BANANA_FACES.size() + " faces");
+		    System.out.println("\n" + "Banana: " + BANANA_FACES.size() + " faces" + "\n");
 		}
 		
 		this.scene = scene;
@@ -60,6 +60,7 @@ public class Banana extends Item
 	    bananaID = id;
 		
 		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
+		boundColor = RGB.toRGBA(RGB.YELLOW, BOUND_ALPHA);
 	}
 	
 	public Banana(Scene scene, float[] c)
@@ -67,6 +68,7 @@ public class Banana extends Item
 		this.scene = scene;
 		
 		bound = new Sphere(c, RADIUS);
+		boundColor = RGB.toRGBA(RGB.YELLOW, BOUND_ALPHA);
 	}
 	
 	@Override

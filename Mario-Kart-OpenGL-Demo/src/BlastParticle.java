@@ -1,13 +1,17 @@
-import static graphics.util.Vector.multiply;
 
-import static javax.media.opengl.GL.GL_BLEND;
-import static javax.media.opengl.GL.GL_POINTS;
+import static javax.media.opengl.GL.*;
+import static javax.media.opengl.GL2.*;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import javax.media.opengl.GL2;
 
+import static graphics.util.Vector.multiply;
+
+
 public class BlastParticle extends Particle
 {
+	public static boolean pointSprite = true;
+	
 	public BlastParticle(float[] c, float[] t, float rotation, int duration)
 	{
 		super(c, t, rotation, duration);
@@ -16,33 +20,51 @@ public class BlastParticle extends Particle
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
-		gl.glEnable(GL2.GL_POINT_SPRITE);
-		gl.glTexEnvi(GL2.GL_POINT_SPRITE, GL2.GL_COORD_REPLACE, GL2.GL_TRUE);
-		
 		gl.glPushMatrix();
-		{	
-			gl.glPointSize(60);
-			
+		{		
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-
-			float c = 2.0f / (duration + 1);
-			c = (1 - c) * 0.9f;
-
-			gl.glColor4f(c, c, c, c);
 			
-			if(!current.equals(indigoFlare))
+			if(pointSprite)
 			{
-				indigoFlare.bind(gl);
-				current = indigoFlare;
+				gl.glColor4f(0, 0, 0.5f, 0.25f);
+				
+				gl.glEnable(GL2.GL_POINT_SMOOTH);
+				gl.glPointSize(60);
+				
+				gl.glBegin(GL2.GL_POINTS);
+				gl.glVertex3f(c[0], c[1], c[2]);
+				gl.glEnd();
+				
+				gl.glColor4f(1, 1, 1, 1);
 			}
-			
-			gl.glBegin(GL_POINTS);
+			else
 			{
-				gl.glVertex3f(this.c[0], this.c[1], this.c[2]);
+				gl.glTranslatef(c[0], c[1], c[2]);
+				gl.glRotatef(trajectory - 90, 0, 1, 0);
+				gl.glScalef(15, 15, 15);
+				
+				float c = 2.0f / (duration + 1);
+				c = (1 - c) * 0.9f;
+
+				gl.glColor4f(c, c, c, c);
+				
+				if(!current.equals(indigoFlare))
+				{
+					indigoFlare.bind(gl);
+					current = indigoFlare;
+				}
+				
+				gl.glBegin(GL_QUADS);
+				{
+					gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
+					gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
+					gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
+					gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
+				}
+				gl.glEnd();
 			}
-			gl.glEnd();
 
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
@@ -50,8 +72,6 @@ public class BlastParticle extends Particle
 			
 		}
 		gl.glPopMatrix();
-		
-		gl.glEnable(GL2.GL_POINT_SPRITE);
 	}
 	
 	@Override

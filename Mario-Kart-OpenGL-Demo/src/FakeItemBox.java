@@ -41,10 +41,11 @@ public class FakeItemBox extends Item
 		this.car = car;
 		
 		bound = new Sphere(new float[] {0, 0, 0}, 2.5f);
+		boundColor = RGB.toRGBA(RGB.RED, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
 		
-		gravity = 0.025;
+		gravity = 0.025f;
 		
 		if(boxList == -1)
 		{
@@ -53,7 +54,7 @@ public class FakeItemBox extends Item
 			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1.0f, 0.5f, 0.5f});
 		    gl.glEndList();
 		    
-		    System.out.println("Fake Item Box: " + BOX_FACES.size() + " faces");
+		    System.out.println("\n" + "Fake Item Box: " + BOX_FACES.size() + " faces" + "\n");
 		}
 	}
 	
@@ -62,10 +63,11 @@ public class FakeItemBox extends Item
 		this.scene = scene;
 		
 		bound = new Sphere(c, 2.5f);
+		boundColor = RGB.toRGBA(RGB.RED, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
 		
-		gravity = 0.025;
+		gravity = 0.025f;
 		
 		this.trajectory = trajectory;
 		setRotation(0, trajectory, 0);

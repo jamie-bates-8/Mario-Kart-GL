@@ -31,23 +31,44 @@ public abstract class Bound
 	
 	public abstract float[] randomPointInside();
 	
-	public void displayClosestPtToPt(GL2 gl, GLUT glut, float[] p)
+	public void displayClosestPtToPt(GL2 gl, GLUT glut, float[] p, boolean smooth)
 	{
 		gl.glColor4f(1, 1, 1, 1);
+		
+		if(smooth)
+		{
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glEnable(GL2.GL_POINT_SMOOTH);
+			gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
+		}
 		
 		gl.glPushMatrix();
 		{
 			float[] vertex = closestPointToPoint(p);
 			
-			gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
-			glut.glutSolidSphere(0.2, 12, 12);
+			if(smooth)
+			{
+				gl.glBegin(GL2.GL_POINTS);
+				gl.glVertex3f(vertex[0], vertex[1], vertex[2]);
+				gl.glEnd();
+			}
+			else
+			{			
+				gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
+				glut.glutSolidSphere(0.2, 12, 12);
+			}
 		}
 		gl.glPopMatrix();
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glDisable(GL2.GL_POINT_SMOOTH);
 	}
 	
 	public abstract void displaySolid(GL2 gl, GLUT glut, float[] color);
 	
-	public abstract void displayWireframe(GL2 gl, GLUT glut, float[] color);
+	public abstract void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth);
 	
 	public boolean testBound(Bound b)
 	{

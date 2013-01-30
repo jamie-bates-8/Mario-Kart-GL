@@ -50,6 +50,8 @@ public class GreenShell extends Shell
 		durability = MAX_DURABILITY;
 		
 		this.orbiting = orbiting;
+		
+		boundColor = RGB.toRGBA(RGB.GREEN, BOUND_ALPHA);
 	}
 	
 	public GreenShell(Scene scene, float[] c, float trajectory)
@@ -57,6 +59,7 @@ public class GreenShell extends Shell
 		super(null, scene, null, trajectory);
 		
 		bound = new Sphere(c, RADIUS);
+		boundColor = RGB.toRGBA(RGB.GREEN, BOUND_ALPHA);
 		
 		velocity = MAX_VELOCITY;
 		durability = MAX_DURABILITY;

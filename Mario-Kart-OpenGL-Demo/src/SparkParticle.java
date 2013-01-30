@@ -7,9 +7,9 @@ import javax.media.opengl.GL2;
 
 public class SparkParticle extends Particle
 {
-	private double gravity = 0.05;
+	private double gravity = 0.1;
 	private float fallRate = 0.0f;
-	private static final double TOP_FALL_RATE = 5.0;
+	private static final double TOP_FALL_RATE = 10.0;
 	
 	private float[] color;
 	private boolean miniature;
