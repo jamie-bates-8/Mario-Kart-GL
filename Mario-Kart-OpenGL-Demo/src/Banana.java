@@ -94,7 +94,6 @@ public class Banana extends Item
 			{
 				gl.glDisable(GL_LIGHTING);
 				gl.glEnable(GL_BLEND);
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 				
 				gl.glTranslatef(0.325f, 0, 0);
 				gl.glRotatef(90, 0, 1, 0);
@@ -110,7 +109,6 @@ public class Banana extends Item
 				}
 				gl.glEnd();
 				
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 				gl.glDisable(GL_BLEND);
 				gl.glEnable(GL_LIGHTING);
 			}

@@ -86,7 +86,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
  * @version 1.0 (22/02/2012)
  * 
  * This class creates a 3D scene which displays a car that can be moved along a
- * track by the use of hotkeys. Users can also interact with the car model and
+ * track by the use of hotkeys. Users can also interact with the car model and 
  * manipulation the scene in a number of ways.
  */
 public class Scene implements GLEventListener, KeyListener, MouseWheelListener, ActionListener
@@ -351,7 +351,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    light = new Light(gl);
 	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 		long setupStart = System.currentTimeMillis();
 		
@@ -626,7 +626,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glDisable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 		gl.glPushMatrix();
 		{
@@ -637,7 +636,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}	
 		gl.glPopMatrix();
 		
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glEnable(GL2.GL_LIGHTING);
 		
@@ -887,11 +885,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		
 		for(Particle particle : particles)
 		{
 			if(car.isSlipping()) particle.render(gl, car.slipTrajectory);
 			else particle.render(gl, car.trajectory);
 		}
+		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 		return System.nanoTime() - start;
 	}
@@ -937,7 +939,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
-		car.render(gl);
+		car.render2(gl);
 
 		for(Car c : cars)
 		{

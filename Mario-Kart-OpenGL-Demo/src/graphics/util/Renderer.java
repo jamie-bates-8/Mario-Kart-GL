@@ -232,9 +232,11 @@ public class Renderer
 	{
 		gl.glDisable(GL_LIGHTING);
 		gl.glEnable(GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
 		displayColoredObject(gl, objectFaces, color);
 		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		gl.glDisable(GL_BLEND);
 		gl.glEnable(GL_LIGHTING);
 	}

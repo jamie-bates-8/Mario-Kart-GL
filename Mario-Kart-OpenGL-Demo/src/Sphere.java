@@ -144,7 +144,6 @@ public class Sphere extends Bound
 		if(smooth)
 		{
 			gl.glEnable(GL2.GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glEnable(GL2.GL_LINE_SMOOTH);
 		}
 		
@@ -177,7 +176,6 @@ public class Sphere extends Bound
 		}
 		
 		gl.glDisable(GL2.GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 	}
 	

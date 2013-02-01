@@ -190,7 +190,6 @@ public class ItemRoulette
 			noItemIcon.bind(gl);
 			
 			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			
 			gl.glBegin(GL2.GL_QUADS);
 			{
@@ -202,13 +201,11 @@ public class ItemRoulette
 			gl.glEnd();
 			
 			gl.glDisable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		}
 		
 		rouletteBorder.bind(gl);
 		
 		gl.glEnable(GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 		gl.glBegin(GL2.GL_QUADS);
 		{
@@ -220,7 +217,6 @@ public class ItemRoulette
 		gl.glEnd();
 		
 		gl.glDisable(GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
 		if(rouletteID < ROTATIONS * itemIcons.length + itemID)
 		{

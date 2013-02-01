@@ -478,7 +478,6 @@ public class Terrain
 			gl.glScalef(sx, sy, sz);
 			
 			gl.glEnable(GL2.GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glEnable(GL2.GL_LINE_SMOOTH);
 		
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
@@ -490,7 +489,6 @@ public class Terrain
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 			
 			gl.glDisable(GL2.GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			gl.glDisable(GL2.GL_LINE_SMOOTH);
 		}
 		gl.glPopMatrix();

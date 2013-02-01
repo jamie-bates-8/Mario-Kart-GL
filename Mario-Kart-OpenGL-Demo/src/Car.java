@@ -59,7 +59,8 @@ public class Car
 	
 	public TerrainPatch patch;
 	
-	private float[] color = {1.0f, 0.4f, 0.4f};
+	private float[]  color = {1.0f, 0.4f, 0.4f};
+	private float[] _color = {1.0f, 0.0f, 0.0f};
 	private float[] windowColor = {0.4f, 0.8f, 1.0f};
 	
 	public boolean displayModel = true;
@@ -178,6 +179,8 @@ public class Car
 	
 	public boolean smooth = false;
 	
+	public SceneGraph graph;
+	
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
@@ -213,6 +216,81 @@ public class Car
 	    tag = new HoloTag(String.format("(%+3.2f, %+3.2f, %+3.2f)", c[0], c[1], c[2]), c);
 	    
 	    anchor = new AnchorPoint();
+	    
+	    setupGraph();
+	}
+	
+	public void setupGraph()
+	{
+		Model car_body = new Model(CAR_FACES, carList, Model.MatrixOrder.T_M_S);
+		car_body.setColor(color);
+		car_body.setTranslation(bound.c);
+		car_body.setOrientation(getRotationMatrix(bound.u));
+		car_body.setScale(new float[] {scale, scale, scale});
+		
+		for(int i = 0; i < 4; i++)
+		{
+			Model wheel = new Model(WHEEL_FACES, -1, Model.MatrixOrder.T_RX_RY_RZ_S);
+			wheel.setColor(new float[] {0.2f, 0.2f, 0.2f});
+			wheel.setRenderMode(Model.RenderMode.TEXTURE);
+			wheel.setTranslation(offsets_Wheel[i]);
+			wheel.setRotation(ORIGIN);
+			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
+			
+			car_body.addChild(wheel);
+		}
+		
+		Model left_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S);
+		left_door.setColor(color);
+		left_door.setRenderMode(Model.RenderMode.COLOR);
+		left_door.setTranslation(offsets_LeftDoor);
+		left_door.setScale(new float[] {1, 1, 1});
+		
+		Model left_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE);
+		left_window.setColor(windowColor);
+		left_window.setRenderMode(Model.RenderMode.TRANSPARENT);
+			
+		left_door.addChild(left_window);
+		car_body.addChild(left_door);
+		
+		Model right_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S);
+		right_door.setColor(color);
+		right_door.setRenderMode(Model.RenderMode.COLOR);
+		right_door.setTranslation(offsets_RightDoor);
+		right_door.setScale(new float[] {1, 1, -1});
+		
+		Model right_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE);
+		right_window.setColor(windowColor);
+		right_window.setRenderMode(Model.RenderMode.TRANSPARENT);
+			
+		right_door.addChild(right_window);
+		car_body.addChild(right_door);
+		
+		Model windows = new Model(WINDOW_FACES, -1, Model.MatrixOrder.T);
+		windows.setColor(windowColor);
+		windows.setRenderMode(Model.RenderMode.TRANSPARENT);
+		windows.setTranslation(new float[] {0.3f, -1.2f, 0});
+		
+		car_body.addChild(windows);
+		
+		graph = new SceneGraph(car_body);
+	}
+	
+	public void updateGraph()
+	{
+		Model car_body = graph.getRoot();
+		
+		car_body.setTranslation(bound.c);
+		car_body.setOrientation(getRotationMatrix(bound.u));
+		
+		for(int i = 0; i < 4; i++)
+		{
+			if(i % 2 != 0)
+			{
+				Model wheel = car_body.getChildren().get(i);
+				wheel.setRotation(new float[] {0, yRotation_Wheel, zRotation_Wheel});
+			}
+		}
 	}
 	
 	public HUD getHUD() { return hud; }
@@ -446,33 +524,25 @@ public class Car
 			if(smooth)
 			{
 				gl.glEnable(GL2.GL_BLEND);
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 				gl.glEnable(GL2.GL_LINE_SMOOTH);
 			}
 			
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		}
 		
-		gl.glPushMatrix();
-		{
-			/** Vehicle Transformations **/
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glMultMatrixf(getRotationMatrix(bound.u), 0);
-			gl.glScalef(scale, scale, scale);
-			//Display the car model by calling a display list
-			if(displayModel)
-			{	
-				if(starPower)
-				{
-					cycleColor();
-					float[] _color = {starColor[0]/255, starColor[1]/255, starColor[2]/255};
-					displayColoredObject(gl, CAR_FACES, _color);
-				}
-				else if(invisible)
-				{
-					if(booColor > 0 && booDuration > 0) booColor -= fadeIncrement;
-					displayTransparentObject(gl, CAR_FACES, booColor);
-				}
+		if(displayModel)
+		{	
+			updateColor();
+			
+			gl.glPushMatrix();
+			{
+				/** Vehicle Transformations **/
+				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+				gl.glMultMatrixf(getRotationMatrix(bound.u), 0);
+				gl.glScalef(scale, scale, scale);
+
+				if(starPower) displayColoredObject(gl, CAR_FACES, _color);
+				else if(invisible) displayTransparentObject(gl, CAR_FACES, booColor);
 				else if(renderMode == 1) displayWireframeObject(gl, CAR_FACES, color);
 				else gl.glCallList(carList);
 				
@@ -498,11 +568,7 @@ public class Car
 						
 						gl.glScalef(0.6f, 0.6f, 0.6f);
 						
-						if(starPower)
-						{
-							float[] _color = {starColor[0]/255, starColor[1]/255, starColor[2]/255};
-							displayColoredObject(gl, WHEEL_FACES, _color);
-						}
+						if(starPower) displayColoredObject(gl, WHEEL_FACES, _color);
 						else if(invisible) displayTransparentObject(gl, WHEEL_FACES, booColor);
 						else if(renderMode == 1) displayWireframeObject(gl, WHEEL_FACES, RGB.BLACK_3F);
 						else displayTexturedObject(gl, WHEEL_FACES);
@@ -521,11 +587,7 @@ public class Car
 					
 					gl.glTranslatef(x, y, z);
 					
-					if(starPower)
-					{
-						float[] _color = {starColor[0]/255, starColor[1]/255, starColor[2]/255};
-						displayColoredObject(gl, DOOR_FACES, _color);
-					}
+					if(starPower) displayColoredObject(gl, DOOR_FACES, _color);
 					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
 					else if(renderMode == 1) displayWireframeObject(gl, DOOR_FACES, color);
 					else displayColoredObject(gl, DOOR_FACES, color);
@@ -553,11 +615,7 @@ public class Car
 					//Display the door model reflected in the z-axis
 					gl.glScalef(1, 1, -1);
 					
-					if(starPower)
-					{
-						float[] _color = {starColor[0]/255, starColor[1]/255, starColor[2]/255};
-						displayColoredObject(gl, DOOR_FACES, _color);
-					}
+					if(starPower) displayColoredObject(gl, DOOR_FACES, _color);
 					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
 					else if(renderMode == 1) displayWireframeObject(gl, DOOR_FACES, color);
 					else displayColoredObject(gl, DOOR_FACES, color);
@@ -584,15 +642,14 @@ public class Car
 				}
 				gl.glPopMatrix();
 			}
+			gl.glPopMatrix();
 		}
-		gl.glPopMatrix();
 	
 		gl.glColor3f(1, 1, 1);
 		
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 		
 		gl.glDisable(GL2.GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 	
 		for(Item item : items)
@@ -603,6 +660,37 @@ public class Car
 		
 		if(slipping) tag.render(gl, slipTrajectory);
 		else tag.render(gl, trajectory);
+	}
+
+	public void render2(GL2 gl)
+	{
+		updateColor();
+		
+		if(invisible) graph.renderGhost(gl, booColor);
+		else if(starPower) graph.renderColor(gl, _color);
+		else graph.render(gl);
+		
+		for(Item item : items)
+		{
+			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);
+			else item.render(gl, trajectory);
+		}
+		
+		if(slipping) tag.render(gl, slipTrajectory);
+		else tag.render(gl, trajectory);
+	}
+
+	private void updateColor()
+	{
+		if(starPower)
+		{
+			cycleColor();
+			_color = new float[] {starColor[0]/255, starColor[1]/255, starColor[2]/255};
+		}
+		if(invisible)
+		{
+			if(booColor > 0 && booDuration > 0) booColor -= fadeIncrement;
+		}
 	}
 
 	private void cycleColor()
@@ -904,11 +992,13 @@ public class Car
 		tag.setPosition(p);
 		tag.displayPosition();
 		
+		updateGraph();
+		
 		updateStatus();
 		
 		updateController();
 	}
-
+	
 	private void updateController()
 	{
 		if(!controller.isNull() && controller.isEnabled() && !camera.isFree())

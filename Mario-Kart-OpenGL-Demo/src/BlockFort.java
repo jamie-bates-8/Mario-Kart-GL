@@ -1,8 +1,5 @@
 import static graphics.util.Renderer.displayWildcardObject;
 import static graphics.util.Renderer.displayWireframeObject;
-import static javax.media.opengl.GL.GL_BLEND;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
-
 import graphics.util.Face;
 
 import java.io.File;
@@ -87,22 +84,6 @@ public class BlockFort
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
-			else if(renderMode == 3)
-			{
-				gl.glDisable(GL_LIGHTING);
-				gl.glEnable(GL_BLEND);
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
-				
-				gl.glColor3f(0.1f, 0.1f, 0.1f);
-				
-				gl.glCallList(fortList);
-				
-				gl.glColor3f(1, 1, 1);
-				
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
-				gl.glDisable(GL_BLEND);
-				gl.glEnable(GL_LIGHTING);
-			}
 			else gl.glCallList(fortList);
 		}	
 		gl.glPopMatrix();

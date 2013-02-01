@@ -39,7 +39,6 @@ public class HoloTag
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
 		gl.glPushMatrix();
@@ -75,7 +74,6 @@ public class HoloTag
 		gl.glPopMatrix();
 		
 		gl.glEnable(GL2.GL_LIGHTING);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		

@@ -60,7 +60,6 @@ public class BillBoard
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDepthMask(false);
 			
 			float[] c = sphere.c;
@@ -80,7 +79,6 @@ public class BillBoard
 			}
 			gl.glEnd();
 			
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 			gl.glDepthMask(true);

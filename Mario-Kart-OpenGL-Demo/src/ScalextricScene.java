@@ -205,7 +205,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 	    gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
 	    gl.glEnable(GL2.GL_COLOR_MATERIAL);
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 
 		/** Model Setup **/

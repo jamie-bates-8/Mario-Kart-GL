@@ -62,7 +62,6 @@ public class ItemBox
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDepthMask(false);
 			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
@@ -81,7 +80,6 @@ public class ItemBox
 			}
 			gl.glEnd();
 			
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 			gl.glDepthMask(true);
@@ -92,6 +90,7 @@ public class ItemBox
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			gl.glRotatef(rotation, 1, 1, 1);
@@ -99,6 +98,7 @@ public class ItemBox
 
 			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {0.5f, 0.5f, 0.5f});
 			
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 		}

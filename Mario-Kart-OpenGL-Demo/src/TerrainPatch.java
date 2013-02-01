@@ -228,7 +228,6 @@ public class TerrainPatch
 	public void render(GL2 gl)
 	{	
 		gl.glEnable(GL2.GL_BLEND);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		gl.glDisable(GL2.GL_LIGHTING);
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
@@ -253,7 +252,6 @@ public class TerrainPatch
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		
 		gl.glEnable(GL2.GL_LIGHTING);
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		gl.glDisable(GL2.GL_BLEND);
 		
 //		if(colliding) renderWireframe(gl);

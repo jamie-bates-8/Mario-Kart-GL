@@ -92,7 +92,6 @@ public class FakeItemBox extends Item
 		{
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDepthMask(false);
 			
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
@@ -110,7 +109,6 @@ public class FakeItemBox extends Item
 			}
 			gl.glEnd();
 			
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 			gl.glDepthMask(true);
@@ -125,9 +123,11 @@ public class FakeItemBox extends Item
 			
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			
 			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1.0f, 0.5f, 0.5f});
 			
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 		}
