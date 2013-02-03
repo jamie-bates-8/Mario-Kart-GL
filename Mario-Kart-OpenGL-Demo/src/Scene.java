@@ -939,7 +939,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
-		car.render2(gl);
+		car.render(gl);
 
 		for(Car c : cars)
 		{

@@ -77,13 +77,13 @@ public class Light extends AnchorPoint
 		gl.glMaterialfv(GL_FRONT, GL_EMISSION, emission, 0);
 	}
 
-	public void setAmbience(float[] ambience)
-	{
-		this.ambience = ambience;
-	}
+	public void setAmbience(float[] ambience) { this.ambience = ambience; }
 	
-	public void setEmission(float[] emission)
+	public void setEmission(float[] emission) { this.emission = emission; }
+	
+	public void useSpecular(GL2 gl, boolean on)
 	{
-		this.emission = emission;
-	}
+		if(on) gl.glLightfv(GL_LIGHT0, GL_SPECULAR, specular, 0);
+		else   gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {0, 0, 0}, 0);
+	} 
 }

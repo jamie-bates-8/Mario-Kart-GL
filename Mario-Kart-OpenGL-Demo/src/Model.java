@@ -25,7 +25,9 @@ public class Model
 	private MatrixOrder order;
 	private RenderMode renderMode;
 	
-	public Model(List<Face> geometry, int displayList, MatrixOrder order)
+	private Material material;
+	
+	public Model(List<Face> geometry, int displayList, MatrixOrder order, Material material)
 	{
 		children = new ArrayList<Model>();
 		
@@ -35,6 +37,8 @@ public class Model
 		color = new float[4];
 		
 		this.order = order;
+		
+		this.material = material;
 	}
 	
 	public void render(GL2 gl)
@@ -42,6 +46,7 @@ public class Model
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
+			if(material != null) material.load(gl);
 			
 			if(displayList != -1) gl.glCallList(displayList);
 			else
@@ -77,6 +82,7 @@ public class Model
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
+			if(material != null) material.load(gl);
 			
 			Renderer.displayColoredObject(gl, geometry, color);
 			
@@ -154,6 +160,16 @@ public class Model
 	public float[] getOrientation() { return orientation; }
 
 	public void setOrientation(float[] orientation) { this.orientation = orientation; }
+
+	public Material getMaterial()
+	{
+		return material;
+	}
+
+	public void setMaterial(Material material)
+	{
+		this.material = material;
+	}
 
 	public enum MatrixOrder
 	{

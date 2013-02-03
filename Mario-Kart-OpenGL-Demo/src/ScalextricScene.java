@@ -67,6 +67,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 	private long startTime = System.currentTimeMillis();
 	
 	private Texture speedometer;
+	private Texture grass;
 	private TextRenderer renderer;
 	
 	
@@ -98,13 +99,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 	
 	
 	/** Lighting Fields **/
-	private float[] global_specular = {1.0f, 1.0f, 1.0f};
-	private float[] global_ambience = {0.8f, 0.8f, 0.8f, 1.0f};
-	
-	private float[] position = {0.0f, 50.0f, 0.0f, 0.0f};
-	
-    private float[] material_ambience  = {0.7f, 0.7f, 0.7f, 1.0f};
-    private float[] material_shininess = {100.0f};
+	Light light;
 	
     
     /** Environment Fields **/
@@ -129,6 +124,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		canvas.requestFocus();
 
 		animator = new FPSAnimator(canvas, FPS, true);
+		
 		addWindowListener(new WindowAdapter()
 		{
 			public void windowClosing(WindowEvent e)
@@ -158,11 +154,12 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 	public void init(GLAutoDrawable drawable)
 	{	
 		Font font = new Font("Calibri", Font.PLAIN, 24);
-		renderer = new TextRenderer(font);
+		renderer = new TextRenderer(font, true, false);
 		
 		try
 		{
 			speedometer  = TextureIO.newTexture(new File("tex/speedometer.png"), true);
+			grass        = TextureIO.newTexture(new File("tex/grass.jpg"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
@@ -171,6 +168,8 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		
 		gl.glShadeModel(GL_SMOOTH);
 		gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		
+		gl.glEnable(GL2.GL_MULTISAMPLE);
 		
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
@@ -196,14 +195,8 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		gl.glFogf  (GL_FOG_DENSITY, fogDensity);
 		gl.glHint  (GL_FOG_HINT, GL_NICEST);
 		
+		light = new Light(gl);
 		
-		/** Lighting Setup **/
-		gl.glEnable(GL_LIGHTING);
-	    gl.glEnable(GL_LIGHT0);
-		
-	    
-	    gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
-	    gl.glEnable(GL2.GL_COLOR_MATERIAL);
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
@@ -238,7 +231,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		gl.glMatrixMode(GL_MODELVIEW);
 
 		setupCamera(gl);
-		setupLights(gl);
+		light.setup(gl, false);
 		
 		if(enableAnimation)
 			if(camera != CameraMode.MODEL_VIEW) car.drive();
@@ -249,13 +242,7 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		
 		if(displayModels) render3DModels(gl);
 		
-		System.out.println("Total Model Rendering Time: " + (System.currentTimeMillis() - t0));
-		t0 = System.currentTimeMillis();
-		
 		if(camera != CameraMode.MODEL_VIEW) renderHUD(gl);
-		
-		System.out.println("Total HUD Rendering Time: " + (System.currentTimeMillis() - t0));
-		System.out.println();
 
 		calculateFPS();
 	}
@@ -437,16 +424,6 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		}
 	}
 
-	private void setupLights(GL2 gl)
-	{
-	    gl.glLightfv(GL_LIGHT0, GL_SPECULAR, global_specular, 0);
-	    gl.glLightfv(GL_LIGHT0, GL_POSITION, position, 0);
-	    gl.glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambience, 0);
-	        
-	    gl.glMaterialfv(GL_FRONT, GL_AMBIENT, material_ambience, 0);
-	    gl.glMaterialfv(GL_FRONT, GL_SHININESS, material_shininess, 0);
-	}
-
 	private void calculateFPS()
 	{
 		frames++;
@@ -474,8 +451,13 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 			gl.glTranslatef(0, -2.1f, 0);
 			gl.glScalef(15.0f, 15.0f, 15.0f);
 			
+			gl.glDisable(GL2.GL_LIGHTING);
+			
 			if(enableSkybox)
 				gl.glCallList(environmentList);
+			
+			gl.glEnable(GL2.GL_LIGHTING);
+			
 		}	
 		gl.glPopMatrix();
 		
@@ -490,6 +472,25 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 			//Disable the track in model view mode
 			if(camera != CameraMode.MODEL_VIEW)
 				gl.glCallList(trackList);
+		}
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		{
+			grass.bind(gl);
+			
+			grass.setTexParameteri(gl, GL_TEXTURE_BASE_LEVEL, 0);
+			grass.setTexParameteri(gl, GL_TEXTURE_MAX_LEVEL, 4);
+			grass.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+			
+			gl.glBegin(GL2.GL_QUADS);
+			
+			gl.glTexCoord2f(10.0f,  0.0f); gl.glVertex3f( 200, -2.1f,  200);
+			gl.glTexCoord2f(10.0f, 10.0f); gl.glVertex3f( 200, -2.1f, -200);
+			gl.glTexCoord2f( 0.0f, 10.0f); gl.glVertex3f(-200, -2.1f, -200);
+			gl.glTexCoord2f( 0.0f,  0.0f); gl.glVertex3f(-200, -2.1f,  200);
+			
+			gl.glEnd();
 		}
 		gl.glPopMatrix();
 	}

@@ -1,9 +1,5 @@
 import static graphics.util.Matrix.getRotationMatrix;
-import static graphics.util.Renderer.displayColoredObject;
 import static graphics.util.Renderer.displayPartiallyTexturedObject;
-import static graphics.util.Renderer.displayTexturedObject;
-import static graphics.util.Renderer.displayTransparentObject;
-import static graphics.util.Renderer.displayWireframeObject;
 import static graphics.util.Vector.add;
 import static graphics.util.Vector.multiply;
 import static graphics.util.Vector.normalize;
@@ -13,8 +9,6 @@ import static java.lang.Math.abs;
 import static java.lang.Math.asin;
 import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHT0;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_SPECULAR;
 import graphics.util.Face;
 
 import java.awt.Color;
@@ -222,7 +216,10 @@ public class Car
 	
 	public void setupGraph()
 	{
-		Model car_body = new Model(CAR_FACES, carList, Model.MatrixOrder.T_M_S);
+		Material shiny = new Material(new float[] {1, 1, 1});
+		Material mat = new Material(new float[] {0, 0, 0});
+		
+		Model car_body = new Model(CAR_FACES, carList, Model.MatrixOrder.T_M_S, shiny);
 		car_body.setColor(color);
 		car_body.setTranslation(bound.c);
 		car_body.setOrientation(getRotationMatrix(bound.u));
@@ -230,7 +227,7 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			Model wheel = new Model(WHEEL_FACES, -1, Model.MatrixOrder.T_RX_RY_RZ_S);
+			Model wheel = new Model(WHEEL_FACES, -1, Model.MatrixOrder.T_RX_RY_RZ_S, mat);
 			wheel.setColor(new float[] {0.2f, 0.2f, 0.2f});
 			wheel.setRenderMode(Model.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
@@ -240,33 +237,33 @@ public class Car
 			car_body.addChild(wheel);
 		}
 		
-		Model left_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S);
+		Model left_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S, shiny);
 		left_door.setColor(color);
 		left_door.setRenderMode(Model.RenderMode.COLOR);
 		left_door.setTranslation(offsets_LeftDoor);
 		left_door.setScale(new float[] {1, 1, 1});
 		
-		Model left_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE);
+		Model left_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE, null);
 		left_window.setColor(windowColor);
 		left_window.setRenderMode(Model.RenderMode.TRANSPARENT);
 			
 		left_door.addChild(left_window);
 		car_body.addChild(left_door);
 		
-		Model right_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S);
+		Model right_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S, shiny);
 		right_door.setColor(color);
 		right_door.setRenderMode(Model.RenderMode.COLOR);
 		right_door.setTranslation(offsets_RightDoor);
 		right_door.setScale(new float[] {1, 1, -1});
 		
-		Model right_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE);
+		Model right_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE, null);
 		right_window.setColor(windowColor);
 		right_window.setRenderMode(Model.RenderMode.TRANSPARENT);
 			
 		right_door.addChild(right_window);
 		car_body.addChild(right_door);
 		
-		Model windows = new Model(WINDOW_FACES, -1, Model.MatrixOrder.T);
+		Model windows = new Model(WINDOW_FACES, -1, Model.MatrixOrder.T, null);
 		windows.setColor(windowColor);
 		windows.setRenderMode(Model.RenderMode.TRANSPARENT);
 		windows.setTranslation(new float[] {0.3f, -1.2f, 0});
@@ -516,10 +513,12 @@ public class Car
 	public void setPosition(float[] c) { bound.setPosition(c); }
 	
 	public float[] getPosition() { return bound.getPosition(); }
-	
+
 	public void render(GL2 gl)
 	{
-		if(renderMode == 2)
+		updateColor();
+		
+		if(renderMode == 1)
 		{
 			if(smooth)
 			{
@@ -532,149 +531,21 @@ public class Car
 		
 		if(displayModel)
 		{	
-			updateColor();
-			
-			gl.glPushMatrix();
-			{
-				/** Vehicle Transformations **/
-				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-				gl.glMultMatrixf(getRotationMatrix(bound.u), 0);
-				gl.glScalef(scale, scale, scale);
-
-				if(starPower) displayColoredObject(gl, CAR_FACES, _color);
-				else if(invisible) displayTransparentObject(gl, CAR_FACES, booColor);
-				else if(renderMode == 1) displayWireframeObject(gl, CAR_FACES, color);
-				else gl.glCallList(carList);
-				
-				gl.glColor3f(1, 1, 1);
-				
-				gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {0, 0, 0}, 0);
-				
-				for(int wheel = 0; wheel < 4; wheel++)
-				{
-					gl.glPushMatrix();
-					{
-						float x = offsets_Wheel[wheel][0];
-						float y = offsets_Wheel[wheel][1];
-						float z = offsets_Wheel[wheel][2];
-						
-						/** Wheel Transformations **/
-						gl.glTranslatef(x, y, z);
-						
-						if(wheel % 2 != 0) // Only turn the front wheels
-							gl.glRotatef(yRotation_Wheel, 0.0f, 1.0f, 0.0f);
-	
-						gl.glRotatef(zRotation_Wheel, 0.0f, 0.0f, 1.0f);
-						
-						gl.glScalef(0.6f, 0.6f, 0.6f);
-						
-						if(starPower) displayColoredObject(gl, WHEEL_FACES, _color);
-						else if(invisible) displayTransparentObject(gl, WHEEL_FACES, booColor);
-						else if(renderMode == 1) displayWireframeObject(gl, WHEEL_FACES, RGB.BLACK_3F);
-						else displayTexturedObject(gl, WHEEL_FACES);
-					}
-					gl.glPopMatrix();
-				}
-				
-				gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {1, 1, 1}, 0);
-				
-				/** Left Door Transformations **/
-				gl.glPushMatrix();
-				{
-					float x = offsets_LeftDoor[0];
-					float y = offsets_LeftDoor[1];
-					float z = offsets_LeftDoor[2];
-					
-					gl.glTranslatef(x, y, z);
-					
-					if(starPower) displayColoredObject(gl, DOOR_FACES, _color);
-					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
-					else if(renderMode == 1) displayWireframeObject(gl, DOOR_FACES, color);
-					else displayColoredObject(gl, DOOR_FACES, color);
-					
-					/** Left Door Window Transformations **/
-					gl.glPushMatrix();
-					{
-						if(invisible) displayTransparentObject(gl, DOOR_WINDOW_FACES, booColor);
-						else if(renderMode == 1) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
-						else displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
-					}
-					gl.glPopMatrix();	
-				}
-				gl.glPopMatrix();
-				
-				/** Right Door Transformations **/
-				gl.glPushMatrix();
-				{
-					float x = offsets_RightDoor[0];
-					float y = offsets_RightDoor[1];
-					float z = offsets_RightDoor[2];
-					
-					gl.glTranslatef(x, y, z);
-					
-					//Display the door model reflected in the z-axis
-					gl.glScalef(1, 1, -1);
-					
-					if(starPower) displayColoredObject(gl, DOOR_FACES, _color);
-					else if(invisible) displayTransparentObject(gl, DOOR_FACES, booColor);
-					else if(renderMode == 1) displayWireframeObject(gl, DOOR_FACES, color);
-					else displayColoredObject(gl, DOOR_FACES, color);
-					
-					/** Right Door Window Transformations **/
-					gl.glPushMatrix();
-					{	
-						if(invisible) displayTransparentObject(gl, DOOR_WINDOW_FACES, booColor);
-						else if(renderMode == 1) displayWireframeObject(gl, DOOR_WINDOW_FACES, windowColor);
-						else displayTransparentObject(gl, DOOR_WINDOW_FACES, windowColor);
-					}
-					gl.glPopMatrix();
-				}
-				gl.glPopMatrix();
-				
-				/** Window Transformations **/
-				gl.glPushMatrix();
-				{			
-					gl.glTranslatef(0.3f, -1.2f, 0);
-					
-					if(invisible) displayTransparentObject(gl, WINDOW_FACES, booColor);
-					else if(renderMode == 1) displayWireframeObject(gl, WINDOW_FACES, windowColor);
-					else displayTransparentObject(gl, WINDOW_FACES, windowColor);
-				}
-				gl.glPopMatrix();
-			}
-			gl.glPopMatrix();
+			if(invisible) graph.renderGhost(gl, booColor);
+			else if(starPower) graph.renderColor(gl, _color);
+			else graph.render(gl);
 		}
-	
-		gl.glColor3f(1, 1, 1);
+		
+		for(Item item : items)
+		{
+			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);
+			else item.render(gl, trajectory);
+		}
 		
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
-	
-		for(Item item : items)
-		{
-			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);
-			else item.render(gl, trajectory);
-		}
-		
-		if(slipping) tag.render(gl, slipTrajectory);
-		else tag.render(gl, trajectory);
-	}
-
-	public void render2(GL2 gl)
-	{
-		updateColor();
-		
-		if(invisible) graph.renderGhost(gl, booColor);
-		else if(starPower) graph.renderColor(gl, _color);
-		else graph.render(gl);
-		
-		for(Item item : items)
-		{
-			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);
-			else item.render(gl, trajectory);
-		}
 		
 		if(slipping) tag.render(gl, slipTrajectory);
 		else tag.render(gl, trajectory);
@@ -1461,7 +1332,7 @@ public class Car
 			
 			case KeyEvent.VK_9: if(!camera.isFirstPerson()) displayModel = !displayModel; break;
 			
-			case KeyEvent.VK_F2: renderMode++; renderMode %= 3; break;
+			case KeyEvent.VK_F2: renderMode++; renderMode %= 2; break;
 			
 			case KeyEvent.VK_F4: hud.setTextColor(Color.BLACK); break;
 			case KeyEvent.VK_F5: hud.setVisibility(!hud.getVisibility()); break;
