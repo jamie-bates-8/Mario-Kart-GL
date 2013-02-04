@@ -291,8 +291,15 @@ public abstract class Item
 		}
 
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		h += bound.getMaximumExtent();
-		bound.c[1] = h;
+		
+		if(bound.c[1] - bound.getMaximumExtent() <= h)
+		{
+			h += bound.getMaximumExtent();
+			bound.c[1] = h;
+			
+			falling = thrown = false;
+			fallRate = 0;
+		}
 
 		return heights;
 	}

@@ -126,7 +126,7 @@ public class Banana extends Item
 		detectCollisions();
 		resolveCollisions();
 
-		setRotation(getRotationAngles(getHeights()));
+		setRotation(getRotationAngles(getHeights(scene.getHeightMap())));
 		if(thrown) setRotation(0, trajectory, -45);
 	}
 	
