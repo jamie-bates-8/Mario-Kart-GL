@@ -103,6 +103,12 @@ public class BlueShell extends Shell
 			for(Bound bound : scene.getBounds())
 				if(bound.testBound(this.bound))
 					{ destroy(); break; }
+			
+			if(scene.enableTerrain)
+			{
+				float h = scene.getTerrain().getHeight(getPosition());
+				if(bound.c[1] - bound.getMaximumExtent() <= h) destroy();
+			}
 	
 			rotation += 10 * velocity;
 		}

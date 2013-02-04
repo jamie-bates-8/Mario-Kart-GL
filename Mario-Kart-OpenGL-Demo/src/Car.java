@@ -780,7 +780,7 @@ public class Car
 
 	public void update()
 	{	
-		if(scene.enableTerrain) getHeights(scene.getHeightMap());
+		if(scene.enableTerrain) getHeights(scene.getTerrain());
 		else getHeights();
 		
 		if(motionMode == Motion.ANCHOR)

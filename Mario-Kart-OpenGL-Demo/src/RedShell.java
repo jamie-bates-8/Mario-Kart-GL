@@ -126,7 +126,10 @@ public class RedShell extends Shell
 		resolveCollisions();
 		
 		if(!thrown && locked && target != null) trajectory = target.trajectory;
-		setRotation(getRotationAngles(getHeights()));
+		
+		float[] heights = scene.enableTerrain ? getHeights(scene.getTerrain()) : getHeights();
+		
+		setRotation(getRotationAngles(heights));
 		rotation += 10 * velocity;	
 	}
 	

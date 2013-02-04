@@ -1,18 +1,15 @@
+import static graphics.util.Renderer.displayLines;
+import static graphics.util.Renderer.displayWireframeObject;
 import graphics.util.MultiTexFace;
 import graphics.util.Vector;
-
-import static graphics.util.Renderer.displayWireframeObject;
-import static graphics.util.Renderer.displayLines;
 
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-
 import java.io.File;
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -300,6 +297,9 @@ public class Terrain
 		int z1 = (int) Math.floor(z);
 		int x2 = x1 + 1;
 		int z2 = z1 + 1;
+		
+		//checks whether the point p can be sampled within the bounds of the array
+		if(x1 < 0 || z1 < 0 || x1 >= length || z1 >= length) return 0;
 		
 		float q11 = heights[x1][z1]; //Q11 = (x1, z1), one of the known points
 		float q12 = heights[x1][z2];

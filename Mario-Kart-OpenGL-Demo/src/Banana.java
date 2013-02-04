@@ -125,8 +125,10 @@ public class Banana extends Item
 		
 		detectCollisions();
 		resolveCollisions();
+		
+		float[] heights = scene.enableTerrain ? getHeights(scene.getTerrain()) : getHeights();
 
-		setRotation(getRotationAngles(getHeights(scene.getHeightMap())));
+		setRotation(getRotationAngles(heights));
 		if(thrown) setRotation(0, trajectory, -45);
 	}
 	

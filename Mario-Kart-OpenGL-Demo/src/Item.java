@@ -279,7 +279,6 @@ public abstract class Item
 		}
 	}
 	
-	//TODO Green Shells often disappear upon colliding with the outer walls
 	public float[] getHeights(Terrain map)
 	{
 		float[][] vertices = getAxisVectors();

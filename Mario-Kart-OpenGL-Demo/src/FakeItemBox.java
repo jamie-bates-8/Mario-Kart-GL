@@ -169,17 +169,32 @@ public class FakeItemBox extends Item
 			
 			if(h > bound.c[1]) bound.c[1] = h;
 
-			if(bounces == 0)
-			{
-				falling = thrown = false;
-				fallRate = 0;
-			}
-			else
-			{
-				bounces--;
-				fallRate /= 2;
-			}
+			bounce();
 		}
+	}
+
+	private void bounce()
+	{
+		if(bounces == 0)
+		{
+			falling = thrown = false;
+			fallRate = 0;
+		}
+		else
+		{
+			bounces--;
+			fallRate /= 2;
+		}
+	}
+	
+	@Override
+	public float[] getHeights(Terrain map)
+	{
+		float h = map.getHeight(getPosition());
+		
+		if(bound.c[1] - bound.getMaximumExtent() <= h) bounce();
+
+		return heights;
 	}
 	
 	@Override
@@ -198,7 +213,12 @@ public class FakeItemBox extends Item
 		detectCollisions();
 		resolveCollisions();
 
-		if(falling) getHeights();
+		if(falling)
+		{
+			if(scene.enableTerrain) getHeights(scene.getTerrain());
+			else getHeights();
+		}
+		
 		if(thrown) setRotation(0, trajectory, -45);
 	}
 	

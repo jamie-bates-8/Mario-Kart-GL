@@ -32,7 +32,7 @@ public class HUD
 	private static Texture speedometer;
 	
 	private TextRenderer renderer;
-	private Color textColor = Color.WHITE;
+	private Color textColor = Color.BLACK;
 	
 	private float yStretch = 1; //stretching factor for y-axis of FT graph
 	

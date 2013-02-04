@@ -1251,7 +1251,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glColor3f(1, 1, 1);
 	}
 	
-	public Terrain getHeightMap() { return heightMap; }
+	public Terrain getTerrain() { return heightMap; }
 	
 	public void generateTerrain(GL2 gl, String command)
 	{

@@ -101,7 +101,10 @@ public class GreenShell extends Shell
 		resolveCollisions();
 
 		decelerate();
-		setRotation(getRotationAngles(getHeights()));
+		
+		float[] heights = scene.enableTerrain ? getHeights(scene.getTerrain()) : getHeights();
+
+		setRotation(getRotationAngles(heights));
 		rotation += 10 * velocity;
 		
 		if(durability < 1) destroy();

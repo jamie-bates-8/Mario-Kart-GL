@@ -45,7 +45,7 @@ public class Console
 	private void parseTerrain(Scanner cmd)
 	{
 		String _cmd = cmd.next();
-		Terrain map = scene.getHeightMap();
+		Terrain map = scene.getTerrain();
 		
 		     if(_cmd.equalsIgnoreCase( "generate")) parseGenerate(cmd);
 		else if(_cmd.equalsIgnoreCase("wireframe")) map.enableWireframe = cmd.nextBoolean();
@@ -205,7 +205,7 @@ public class Console
 	private void parseHeightMap(Scanner cmd)
 	{
 		String _cmd = cmd.next();
-		Terrain map = scene.getHeightMap();
+		Terrain map = scene.getTerrain();
 		     
 		     if(_cmd.equalsIgnoreCase( "export")) map.export();
 		else if(_cmd.equalsIgnoreCase("display")) map.displayMap();
