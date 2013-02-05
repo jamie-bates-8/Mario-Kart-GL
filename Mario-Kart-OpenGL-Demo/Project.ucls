@@ -112,16 +112,18 @@
       <operations public="false" package="false" protected="false" private="false"/>    
     </display>  
   </class>  
-  <class id="15" corner="BOTTOM_RIGHT" language="java" name="graphics.util.Face" project="Mario Kart OpenGL Demo" 
-    file="/Mario Kart OpenGL Demo/src/graphics/util/Face.java" binary="false">    
+  <class id="15" corner="BOTTOM_RIGHT" language="java" name="bates.jamie.graphics.util.Face" 
+    project="Mario Kart OpenGL Demo" file="/Mario Kart OpenGL Demo/src/bates/jamie/graphics/util/Face.java" 
+    binary="false">    
     <position height="-1" width="-1" x="625" y="183"/>    
     <display autosize="true" stereotype="true" package="false" initial-value="false" signature="true" visibility="true">      
       <attributes public="false" package="false" protected="false" private="false"/>      
       <operations public="false" package="false" protected="false" private="false"/>    
     </display>  
   </class>  
-  <class id="16" corner="BOTTOM_RIGHT" language="java" name="graphics.util.Renderer" project="Mario Kart OpenGL Demo" 
-    file="/Mario Kart OpenGL Demo/src/graphics/util/Renderer.java" binary="false">    
+  <class id="16" corner="BOTTOM_RIGHT" language="java" name="bates.jamie.graphics.util.Renderer" 
+    project="Mario Kart OpenGL Demo" file="/Mario Kart OpenGL Demo/src/bates/jamie/graphics/util/Renderer.java" 
+    binary="false">    
     <position height="-1" width="-1" x="625" y="278"/>    
     <display autosize="true" stereotype="true" package="false" initial-value="false" signature="true" visibility="true">      
       <attributes public="false" package="false" protected="false" private="false"/>      
