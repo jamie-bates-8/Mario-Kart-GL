@@ -12,6 +12,7 @@ import static java.lang.Math.toDegrees;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -88,6 +89,18 @@ public abstract class Item
 	{
 		if(boundFrames) bound.displayWireframe(gl, glut, RGB.BLACK_3F, smooth);
 		if(boundSolids) bound.displaySolid(gl, glut, boundColor);
+	}
+	
+	public static int removeItems(Collection<Item> items)
+	{
+		List<Item> toRemove = new ArrayList<Item>();
+		
+		for(Item item : items)
+			if(item.isDead()) toRemove.add((Item) item);
+		
+		items.removeAll(toRemove);
+		
+		return toRemove.size();
 	}
 	
 	public float getMaximumExtent() { return bound.getMaximumExtent(); }

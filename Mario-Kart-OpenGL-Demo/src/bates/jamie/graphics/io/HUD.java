@@ -35,6 +35,10 @@ public class HUD
 	private boolean visible = true;
 	public boolean smooth = false;
 	
+	private static final int BUFFER_SIZE = 3;
+	private String[] messageBuffer = new String[BUFFER_SIZE];
+	private int messageIndex = 0;
+	
 	private static Texture speedometer;
 	
 	private TextRenderer renderer;
@@ -62,6 +66,14 @@ public class HUD
 		
 		Font font = new Font("Calibri", Font.BOLD, 18);
 		renderer = new TextRenderer(font, true, false);
+	}
+	
+	public void broadcast(String message)
+	{
+		messageBuffer[messageIndex] = message;
+		
+		messageIndex++;
+		messageIndex %= BUFFER_SIZE;
 	}
 	
 	public void increaseStretch() { if(yStretch < MAX_STRETCH) yStretch += STRETCH_INC; }
@@ -193,6 +205,12 @@ public class HUD
 		
 		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 50);
 		renderer.draw("Distance: " + (int) car.distance + " m", x, 20);
+		
+		for(int i = 0; i < BUFFER_SIZE; i++)
+		{
+			String message = messageBuffer[i] == null ? "" : messageBuffer[i];
+			renderer.draw(message, 150, 580 + (i * 30));
+		}
 		
 		renderer.endRendering();
 	}

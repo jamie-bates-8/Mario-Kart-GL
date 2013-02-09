@@ -15,6 +15,8 @@ import java.util.Random;
 import javax.media.opengl.GL2;
 
 
+import bates.jamie.graphics.util.Renderer;
+
 import com.jogamp.opengl.util.gl2.GLUT;
 
 public class OBB extends Bound
@@ -470,38 +472,7 @@ public class OBB extends Bound
 	
 	public void displayVertices(GL2 gl, GLUT glut, float[] color, boolean smooth)
 	{
-		if(color.length > 3)
-			 gl.glColor4f(color[0], color[1], color[2], color[3]);
-		else gl.glColor3f(color[0], color[1], color[2]);
-		
-		if(smooth)
-		{
-			gl.glEnable(GL2.GL_BLEND);
-			gl.glEnable(GL2.GL_POINT_SMOOTH);
-			gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
-		}
-		
-		for(float[] vertex : getVertices())
-		{
-			if(smooth)
-			{
-				gl.glBegin(GL2.GL_POINTS);
-				gl.glVertex3f(vertex[0], vertex[1], vertex[2]);
-				gl.glEnd();
-			}
-			else
-			{
-				gl.glPushMatrix();
-				{
-					gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
-					glut.glutSolidSphere(0.1, 6, 6);
-				}
-				gl.glPopMatrix();
-			}
-		}
-		
-		gl.glDisable(GL2.GL_BLEND);
-		gl.glDisable(GL2.GL_POINT_SMOOTH);
+		Renderer.displayPoints(gl, glut, getVertices(), color, 5, smooth);
 	}
 		
 	public void displayAxes(GL2 gl, float scale)

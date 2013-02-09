@@ -17,7 +17,55 @@ public class ParticleGenerator
 {
 	private Random generator;
 	
+	private int pulse    = 0;
+	private int counter  = 0;
+	private int quantity = 0;
+	
+	private float[] source = {0, 0, 0};
+	
+	public enum GeneratorType
+	{
+		BLAST,
+		SPARK;
+	}
+	
+	private GeneratorType type;
+	
 	public ParticleGenerator() { generator = new Random(); }
+	
+	public ParticleGenerator(int pulse, int quantity, GeneratorType type, float[] source)
+	{
+		generator = new Random();
+		
+		this.pulse = pulse;
+		this.quantity = quantity;
+		this.type = type;
+		
+		this.source = source;
+	}
+	
+	public void setPulse(int pulse) { this.pulse = pulse; }
+	
+	public void setQuantity(int quantity) { this.quantity = quantity; }
+	
+	public boolean update()
+	{
+		counter++;
+		counter %= pulse;
+		
+		return counter == 0;
+	}
+	
+	public List<Particle> generate()
+	{
+		switch(type)
+		{
+			case BLAST: return generateBlastParticles(source, quantity);
+			case SPARK: return generateSparkParticles(source, quantity, false);
+			
+			default: return null;
+		}
+	}
 	
 	public List<Particle> generateTerrainParticles(float[] source, int n, Texture texture)
 	{

@@ -3,6 +3,9 @@ package bates.jamie.graphics.particle;
 import static bates.jamie.graphics.util.Vector.add;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import javax.media.opengl.GL2;
 
@@ -74,6 +77,18 @@ public abstract class Particle
 		this.rotation = rotation;
 
 		this.duration = duration;
+	}
+	
+	public static int removeParticles(Collection<Particle> particles)
+	{
+		List<Particle> toRemove = new ArrayList<Particle>();
+		
+		for(Particle particle : particles)
+			if(particle.isDead()) toRemove.add(particle);
+		
+		particles.removeAll(toRemove);
+		
+		return toRemove.size();
 	}
 	
 	public float[] getPosition() { return c; }

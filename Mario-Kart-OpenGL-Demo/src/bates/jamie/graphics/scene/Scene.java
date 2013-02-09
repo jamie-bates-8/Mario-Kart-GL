@@ -2,7 +2,6 @@ package bates.jamie.graphics.scene;
 /** Utility imports **/
 import static bates.jamie.graphics.util.Renderer.displayTexturedCuboid;
 import static bates.jamie.graphics.util.Renderer.displayTexturedObject;
-
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
@@ -14,13 +13,11 @@ import static javax.media.opengl.GL.GL_TEXTURE_MAG_FILTER;
 import static javax.media.opengl.GL.GL_TEXTURE_MIN_FILTER;
 import static javax.media.opengl.GL.GL_TEXTURE_WRAP_S;
 import static javax.media.opengl.GL.GL_TEXTURE_WRAP_T;
-
 import static javax.media.opengl.GL2.GL_ACCUM;
 import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
 import static javax.media.opengl.GL2.GL_LOAD;
 import static javax.media.opengl.GL2.GL_MULT;
 import static javax.media.opengl.GL2.GL_RETURN;
-
 import static javax.media.opengl.GL2ES1.GL_EXP2;
 import static javax.media.opengl.GL2ES1.GL_FOG;
 import static javax.media.opengl.GL2ES1.GL_FOG_COLOR;
@@ -30,10 +27,8 @@ import static javax.media.opengl.GL2ES1.GL_FOG_HINT;
 import static javax.media.opengl.GL2ES1.GL_FOG_MODE;
 import static javax.media.opengl.GL2ES1.GL_FOG_START;
 import static javax.media.opengl.GL2ES1.GL_PERSPECTIVE_CORRECTION_HINT;
-
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
-
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -47,13 +42,13 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -68,8 +63,9 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
+import javax.media.opengl.glu.GLUnurbs;
 import javax.media.opengl.glu.GLUquadric;
-
+import javax.media.opengl.glu.gl2.GLUgl2;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
 
@@ -91,9 +87,12 @@ import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.ItemBox;
 import bates.jamie.graphics.item.RedShell;
+import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
+import bates.jamie.graphics.particle.ParticleGenerator;
+import bates.jamie.graphics.particle.ParticleGenerator.GeneratorType;
 import bates.jamie.graphics.particle.StarParticle;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Face;
@@ -219,6 +218,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	private List<Particle> particles = new ArrayList<Particle>();
+	
+	private List<Particle> testParticles1 = new ArrayList<Particle>();
+	private List<Particle> testParticles2 = new ArrayList<Particle>();
+	
+	public List<ParticleGenerator> generators = new ArrayList<ParticleGenerator>();
 
 	
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
@@ -330,7 +334,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		catch (Exception e) { e.printStackTrace(); }
 		
 		GL2 gl = drawable.getGL().getGL2();
-		glu = new GLU();
+		glu = new GLUgl2();
 		glut = new GLUT();
 		
 		// may provide extra speed depending on machine
@@ -406,6 +410,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    new BoostParticle(ORIGIN, null, 0, 0, 0, false, false);
 	    new LightningParticle(ORIGIN);
 	    new StarParticle(ORIGIN, null, 0, 0);
+	    
+	    generators.add(new ParticleGenerator(60, 600, GeneratorType.BLAST, new float[] {0, 50, -50}));
+	    generators.add(new ParticleGenerator(60, 600, GeneratorType.BLAST, new float[] {0, 50, +50}));
 	    
 	    cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
 	    
@@ -698,7 +705,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		removeItems();
 		
-		removeParticles();
+		Particle.removeParticles(particles);
 		
 		if(enableItemBoxes)
 		{
@@ -884,25 +891,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		float friction = (frictions[0] + frictions[1] + frictions[2] + frictions[3]) / 4;
 		cars.get(0).friction = friction;
 	}
-
-	public void removeParticles()
-	{
-		List<Particle> toRemove = new ArrayList<Particle>();
-		
-		for(Particle particle : particles)
-			if(particle.isDead()) toRemove.add(particle);
-		
-		particles.removeAll(toRemove);
-	}
 	
 	public void removeItems()
 	{
-		List<Item> toRemove = new ArrayList<Item>();
-		
-		for(Item item : itemList)
-			if(item.isDead()) toRemove.add((Item) item);
-		
-		itemList.removeAll(toRemove);
+		Item.removeItems(itemList);
 		
 		for(Car car : cars) car.removeItems();
 	}
@@ -1078,7 +1070,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glDisable(GL_TEXTURE_2D);
 		
-		if(testMode) test(gl);
+		if(testMode) test1(gl);
+		test2(gl);
 		
 		List<Bound> bounds = getBounds();
 		
@@ -1142,7 +1135,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 	
-	private void test(GL2 gl) 
+	private void test1(GL2 gl)
 	{
 		gl.glPushMatrix();
 		{
@@ -1235,9 +1228,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		GLUquadric cylinder = glu.gluNewQuadric();
 		
-		float[]  quadratic = {1.0f, 0.0f, 0.005f};
-		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, quadratic, 0);
-		
 		glu.gluQuadricDrawStyle(cylinder, GLU.GLU_POINT);
 		glu.gluQuadricTexture(cylinder, false);
 		
@@ -1272,9 +1262,127 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		gl.glPopMatrix();
 		
+		gl.glColor3f(0.2f, 0.2f, 0.2f);
+		
+		float[][] control =
+		{
+			{-4.0f, 0.0f, 4.0f},
+			{-2.0f, 4.0f, 4.0f},
+			{ 4.0f, 0.0f, 4.0f},
+		
+			{-4.0f, 0.0f, 0.0f},
+			{-2.0f, 4.0f, 0.0f},
+			{ 4.0f, 0.0f, 0.0f},
+		
+			{-4.0f, 0.0f, -4.0f},
+			{-2.0f, 4.0f, -4.0f},
+			{ 4.0f, 0.0f, -4.0f}
+		};
+		
+		gl.glEnable(GL2.GL_AUTO_NORMAL);
+		
+		gl.glPushMatrix();
+		{	
+			gl.glTranslatef(0, 10, 0);
+			
+			Renderer.displayPoints(gl, glut, control, RGB.WHITE_3F, 10, true);
+			
+			gl.glColor3f(0.2f, 0.2f, 0.2f);
+			
+			ByteBuffer bb = ByteBuffer.allocateDirect(control.length * 3 * 3 * 4); 
+			bb.order(ByteOrder.nativeOrder());
+			FloatBuffer fb = bb.asFloatBuffer();
+			
+			for(int i = 0; i < control.length; i++) fb.put(control[i]);
+			fb.position(0);  
+			
+			gl.glMap2f(GL2.GL_MAP2_VERTEX_3, // Type of data generated
+					0.0f, // Lower u range
+					10.0f, // Upper u range
+					3, // Distance between points in the data
+					3, // Dimension in u direction (order)
+					0.0f, // Lower v range
+					10.0f, // Upper v range
+					9, // Distance between points in the data
+					3, // Dimension in v direction (order)
+					fb); // array of control points
+
+			gl.glEnable(GL2.GL_MAP2_VERTEX_3);
+			gl.glMapGrid2f(10, 0.0f, 10.0f, 10, 0.0f, 10.0f);
+			gl.glEvalMesh2(GL2.GL_FILL, 0, 10, 0, 10);
+		}
+		gl.glPopMatrix();
+		
+		float[] control2 =
+		{
+			-6.0f, -6.0f, 0.0f,
+			-6.0f, -2.0f, 0.0f,
+			-6.0f,  2.0f, 0.0f, 
+			-6.0f,  6.0f, 0.0f, 
+			-2.0f, -6.0f, 0.0f, 
+			-2.0f, -2.0f, 8.0f,
+			-2.0f,  2.0f, 8.0f, 
+			-2.0f,  6.0f, 0.0f, 
+			 2.0f, -6.0f, 0.0f,
+			 2.0f, -2.0f, 8.0f,
+			 2.0f,  2.0f, 8.0f,
+			 2.0f,  6.0f, 0.0f,
+			 6.0f, -6.0f, 0.0f,
+			 6.0f, -2.0f, 0.0f,
+			 6.0f,  2.0f, 0.0f,
+			 6.0f,  6.0f, 0.0f
+		};
+		
+		float[] knots = {0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+		
+		gl.glPushMatrix();
+		{		
+			gl.glTranslatef(0, 10, 0);
+			
+            GLUgl2 glugl2 = new GLUgl2(); 
+            GLUnurbs nurb = glugl2.gluNewNurbsRenderer();
+            
+            glugl2.gluBeginSurface(nurb);
+
+            glugl2.gluNurbsSurface(nurb, 8, knots, 8, knots, 4 * 3, 3, control2, 4, 4, GL2.GL_MAP2_VERTEX_3); 
+            
+            glugl2.gluEndSurface(nurb); 
+		}
+		gl.glPopMatrix();
+		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glColor3f(1, 1, 1);
+	}
+	
+	private void test2(GL2 gl)
+	{
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		
+		gl.glColor3f(1, 1, 1);
+		
+		for(Particle particle : testParticles1) particle.update();
+		for(Particle particle : testParticles2) particle.update();
+		
+		Particle.removeParticles(testParticles1);
+		Particle.removeParticles(testParticles2);
+		
+		if(generators.get(0).update()) testParticles1.addAll(generators.get(0).generate());
+		if(generators.get(1).update()) testParticles2.addAll(generators.get(1).generate());
+		
+		long start = System.nanoTime();
+		
+		if(!testParticles1.isEmpty()) BlastParticle.renderList(gl, testParticles1);
+		
+		long end = System.nanoTime();
+		
+		for(Particle particle : testParticles2) particle.render(gl, 0);
+		
+		cars.get(0).getHUD().broadcast(String.format("%11.3f, %11.3f", (end - start) / 1E6, (System.nanoTime() - end) / 1E6));
+		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 	}
 	
 	public Terrain getTerrain() { return heightMap; }

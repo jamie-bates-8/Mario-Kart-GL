@@ -1,6 +1,6 @@
 package bates.jamie.graphics.scene;
-import javax.media.opengl.GL2;
 
+import javax.media.opengl.GL2;
 
 public class SceneGraph
 {

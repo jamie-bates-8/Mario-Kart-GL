@@ -57,7 +57,7 @@ public class Model
 				{
 					case TEXTURE    : Renderer.displayTexturedObject   (gl, geometry);        break;
 					case COLOR      : Renderer.displayColoredObject    (gl, geometry, color); break;
-					case TRANSPARENT: Renderer.displayTransparentObject(gl, geometry, color); break;
+					case TRANSPARENT: Renderer.displayGlassObject(gl, geometry, color); break;
 				}
 			}
 			

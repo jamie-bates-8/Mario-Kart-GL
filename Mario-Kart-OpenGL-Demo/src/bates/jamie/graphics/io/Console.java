@@ -8,6 +8,7 @@ import java.util.Scanner;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.Item;
+import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Renderer;
 
@@ -44,9 +45,27 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(    "press")) parsePress(cmd);
 		else if(_cmd.equalsIgnoreCase(     "item")) parseItem(cmd);
 		else if(_cmd.equalsIgnoreCase(  "texture")) parseTexture(cmd); 
-		else if(_cmd.equalsIgnoreCase(  "terrain")) parseTerrain(cmd);     
+		else if(_cmd.equalsIgnoreCase(  "terrain")) parseTerrain(cmd);
+		else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd); 
 
 		cmd.close();
+	}
+	
+	private void parseParticle(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		     if(_cmd.equalsIgnoreCase("generator")) parseGenerator(cmd);
+	}
+	
+	private void parseGenerator(Scanner cmd)
+	{
+		ParticleGenerator generator = scene.generators.get(cmd.nextInt());
+		
+		String _cmd = cmd.next();
+		
+		     if(_cmd.equalsIgnoreCase("quantity")) generator.setQuantity(cmd.nextInt());
+		else if(_cmd.equalsIgnoreCase(   "pulse")) generator.setPulse(cmd.nextInt());
 	}
 	
 	private void parseTerrain(Scanner cmd)

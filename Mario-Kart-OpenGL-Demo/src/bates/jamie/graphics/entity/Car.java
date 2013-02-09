@@ -82,7 +82,7 @@ public class Car
 	
 	private float[]  color = {1.0f, 0.4f, 0.4f};
 	private float[] _color = {1.0f, 0.0f, 0.0f};
-	private float[] windowColor = {0.4f, 0.8f, 1.0f};
+	private float[] windowColor = {1.0f, 1.0f, 1.0f};
 	
 	public boolean displayModel = true;
 	public int renderMode = 0;
@@ -363,14 +363,7 @@ public class Car
 	
 	public void removeItems()
 	{
-		List<Item> toRemove = new ArrayList<Item>();
-		
-		for(Item item : items)
-			if(item.isDead()) toRemove.add((Item) item);
-		
-		items.removeAll(toRemove); 
-		
-		for(int i = 0; i < toRemove.size(); i++)
+		for(int i = 0; i < Item.removeItems(items); i++)
 		{
 			itemState = ItemState.press(itemState);
 			itemState = ItemState.release(itemState);

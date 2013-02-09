@@ -4,15 +4,33 @@ import static javax.media.opengl.GL.*;
 import static javax.media.opengl.GL2.*;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.List;
+
 import javax.media.opengl.GL2;
 
 
 import static bates.jamie.graphics.util.Vector.multiply;
 
-
 public class BlastParticle extends Particle
 {
 	public static boolean pointSprite = true;
+	
+	public static HashMap<Integer, Float> colorMap = new HashMap<Integer, Float>(60);
+	
+	static
+	{
+		for(int i = 0; i < 60; i++)
+		{
+			float c = 2.0f / (i + 1);
+			c = (1 - c) * 0.9f;
+
+			colorMap.put(i, c);
+		}
+	}
 	
 	public BlastParticle(float[] c, float[] t, float rotation, int duration)
 	{
@@ -40,8 +58,7 @@ public class BlastParticle extends Particle
 				
 				float[] p = this.c;
 				
-				float c = 2.0f / (duration + 1);
-				c = (1 - c) * 0.9f;
+				float c = colorMap.get(duration);
 
 				gl.glColor4f(c, c, c, c);
 					
@@ -87,6 +104,59 @@ public class BlastParticle extends Particle
 			gl.glEnable(GL_LIGHTING);
 			gl.glDepthMask(true);
 			
+		}
+		gl.glPopMatrix();
+	}
+	
+	public static void renderList(GL2 gl, List<Particle> particles)
+	{
+		gl.glPushMatrix();
+		{		
+			gl.glEnableClientState(GL_VERTEX_ARRAY);
+			gl.glEnableClientState(GL_COLOR_ARRAY);
+			
+			gl.glDepthMask(false);
+			gl.glDisable(GL_LIGHTING);
+			gl.glEnable(GL_BLEND);
+				
+			gl.glEnable(GL2.GL_POINT_SMOOTH);
+			gl.glPointSize(60);
+				
+			gl.glEnable(GL_POINT_SPRITE);
+			gl.glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+			
+			indigoFlare.bind(gl);
+			current = indigoFlare;
+			
+			ByteBuffer vb = ByteBuffer.allocateDirect(particles.size() * 3 * 4); 
+			vb.order(ByteOrder.nativeOrder());
+			FloatBuffer vertices = vb.asFloatBuffer();
+			
+			for(Particle particle : particles) vertices.put(particle.c);
+			vertices.position(0);  
+			
+			ByteBuffer cb = ByteBuffer.allocateDirect(particles.size() * 4 * 4); 
+			cb.order(ByteOrder.nativeOrder());
+			FloatBuffer colors = cb.asFloatBuffer();
+			
+			for(Particle particle : particles)
+			{
+				float c = colorMap.get(particle.duration);
+				
+				colors.put(new float[] {c, c, c, c});
+			}
+			colors.position(0);  
+			
+			gl.glVertexPointer(3, GL_FLOAT, 0, vertices);
+			gl.glColorPointer (4, GL_FLOAT, 0, colors);
+			gl.glDrawArrays(GL_POINTS, 0, particles.size() - 1);
+			
+			gl.glDisable(GL_BLEND);
+			gl.glEnable(GL_LIGHTING);
+			gl.glDepthMask(true);
+			
+			gl.glDisableClientState(GL_VERTEX_ARRAY);
+			gl.glDisableClientState(GL_COLOR_ARRAY);
 		}
 		gl.glPopMatrix();
 	}

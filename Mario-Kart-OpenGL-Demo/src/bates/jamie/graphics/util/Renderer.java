@@ -13,6 +13,7 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
 
 
@@ -52,6 +53,43 @@ public class Renderer
 
 			gl.glEnd();
 		}
+	}
+	
+	public static void displayPoints(GL2 gl, GLUT glut, float[][] points, float[] color, float size, boolean smooth)
+	{
+		if(color.length > 3)
+			 gl.glColor4f(color[0], color[1], color[2], color[3]);
+		else gl.glColor3f(color[0], color[1], color[2]);
+		
+		if(smooth)
+		{
+			gl.glEnable(GL2.GL_BLEND);
+			gl.glEnable(GL2.GL_POINT_SMOOTH);
+			gl.glPointSize(size);
+			gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
+		}
+		
+		for(float[] point : points)
+		{
+			if(smooth)
+			{
+				gl.glBegin(GL2.GL_POINTS);
+				gl.glVertex3f(point[0], point[1], point[2]);
+				gl.glEnd();
+			}
+			else
+			{
+				gl.glPushMatrix();
+				{
+					gl.glTranslatef(point[0], point[1], point[2]);
+					glut.glutSolidSphere(0.1, 6, 6);
+				}
+				gl.glPopMatrix();
+			}
+		}
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glDisable(GL2.GL_POINT_SMOOTH);
 	}
 	
 	public static void displayGradientObject(GL2 gl, List<Face> objectFaces, Gradient gradient, float lower, float upper)
@@ -237,6 +275,51 @@ public class Renderer
 		displayColoredObject(gl, objectFaces, color);
 		
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		gl.glDisable(GL_BLEND);
+		gl.glEnable(GL_LIGHTING);
+	}
+	
+	public static void displayGlassObject(GL2 gl, List<Face> objectFaces, float[] color)
+	{
+		gl.glDisable(GL_TEXTURE_2D);
+		gl.glColor4f(color[0], color[1], color[2], 0.25f);
+		
+		gl.glDisable(GL_LIGHTING);
+		gl.glEnable(GL_BLEND);
+		
+		gl.glFrontFace(GL2.GL_CW);
+		
+		gl.glBegin(GL_TRIANGLES);
+		
+		for(Face face : objectFaces)
+		{
+			for(int i = 0; i < face.getVertices().length; i++)
+			{
+				gl.glNormal3f(face.getNx(i), face.getNy(i), face.getNz(i));
+				gl.glVertex3f(face.getVx(i), face.getVy(i), face.getVz(i));
+			}	
+		}
+		
+		gl.glEnd();
+		
+		gl.glFrontFace(GL2.GL_CCW);
+		
+		gl.glBegin(GL_TRIANGLES);
+		
+		for(Face face : objectFaces)
+		{
+			for(int i = 0; i < face.getVertices().length; i++)
+			{
+				gl.glNormal3f(face.getNx(i), face.getNy(i), face.getNz(i));
+				gl.glVertex3f(face.getVx(i), face.getVy(i), face.getVz(i));
+			}	
+		}
+		
+		gl.glEnd();
+		
+		gl.glColor3f(1, 1, 1);
+		gl.glEnable(GL_TEXTURE_2D);	
+		
 		gl.glDisable(GL_BLEND);
 		gl.glEnable(GL_LIGHTING);
 	}
