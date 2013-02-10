@@ -4,16 +4,16 @@ import javax.media.opengl.GL2;
 
 public class SceneGraph
 {
-	private Model root;
+	private SceneNode root;
 	
-	public SceneGraph(Model root)
+	public SceneGraph(SceneNode root)
 	{
 		this.setRoot(root);
 	}
 
-	public Model getRoot() { return root; }
+	public SceneNode getRoot() { return root; }
 
-	public void setRoot(Model root) { this.root = root; }
+	public void setRoot(SceneNode root) { this.root = root; }
 	
 	public void render(GL2 gl) { root.render(gl); }
 	

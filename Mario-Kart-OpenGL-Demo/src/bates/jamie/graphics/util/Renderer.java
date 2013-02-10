@@ -279,6 +279,12 @@ public class Renderer
 		gl.glEnable(GL_LIGHTING);
 	}
 	
+	public static void displayGlassObject(GL2 gl, List<Face> objectFaces, float opacity)
+	{
+		float[] color = {opacity, opacity, opacity};
+		displayGlassObject(gl, objectFaces, color);
+	}
+	
 	public static void displayGlassObject(GL2 gl, List<Face> objectFaces, float[] color)
 	{
 		gl.glDisable(GL_TEXTURE_2D);

@@ -136,7 +136,7 @@ public class FakeItemBox extends Item
 			gl.glEnable(GL_BLEND);
 			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			
-			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1.0f, 0.5f, 0.5f});
+			gl.glCallList(boxList);
 			
 			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDisable(GL_BLEND);

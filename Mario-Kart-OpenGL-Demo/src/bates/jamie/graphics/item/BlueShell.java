@@ -145,7 +145,7 @@ public class BlueShell extends Shell
 		if(!dead)
 		{
 			blastDuration = 60;
-			blast = generator.generateBlastParticles(getPosition(), 600);
+			blast = generator.generateBlastParticles(getPosition(), 1800);
 		}
 		
 		dead = true;

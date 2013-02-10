@@ -44,7 +44,7 @@ import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
@@ -246,7 +246,7 @@ public class Car
 		Material shiny = new Material(new float[] {1, 1, 1});
 		Material mat = new Material(new float[] {0, 0, 0});
 		
-		Model car_body = new Model(CAR_FACES, carList, Model.MatrixOrder.T_M_S, shiny);
+		SceneNode car_body = new SceneNode(CAR_FACES, carList, SceneNode.MatrixOrder.T_M_S, shiny);
 		car_body.setColor(color);
 		car_body.setTranslation(bound.c);
 		car_body.setOrientation(getRotationMatrix(bound.u));
@@ -254,9 +254,9 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			Model wheel = new Model(WHEEL_FACES, -1, Model.MatrixOrder.T_RX_RY_RZ_S, mat);
+			SceneNode wheel = new SceneNode(WHEEL_FACES, -1, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
 			wheel.setColor(new float[] {0.2f, 0.2f, 0.2f});
-			wheel.setRenderMode(Model.RenderMode.TEXTURE);
+			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
 			wheel.setRotation(ORIGIN);
 			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
@@ -264,35 +264,35 @@ public class Car
 			car_body.addChild(wheel);
 		}
 		
-		Model left_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S, shiny);
+		SceneNode left_door = new SceneNode(DOOR_FACES, -1, SceneNode.MatrixOrder.T_S, shiny);
 		left_door.setColor(color);
-		left_door.setRenderMode(Model.RenderMode.COLOR);
+		left_door.setRenderMode(SceneNode.RenderMode.COLOR);
 		left_door.setTranslation(offsets_LeftDoor);
 		left_door.setScale(new float[] {1, 1, 1});
 		
-		Model left_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE, null);
+		SceneNode left_window = new SceneNode(DOOR_WINDOW_FACES, -1, SceneNode.MatrixOrder.NONE, null);
 		left_window.setColor(windowColor);
-		left_window.setRenderMode(Model.RenderMode.TRANSPARENT);
+		left_window.setRenderMode(SceneNode.RenderMode.GLASS);
 			
 		left_door.addChild(left_window);
 		car_body.addChild(left_door);
 		
-		Model right_door = new Model(DOOR_FACES, -1, Model.MatrixOrder.T_S, shiny);
+		SceneNode right_door = new SceneNode(DOOR_FACES, -1, SceneNode.MatrixOrder.T_S, shiny);
 		right_door.setColor(color);
-		right_door.setRenderMode(Model.RenderMode.COLOR);
+		right_door.setRenderMode(SceneNode.RenderMode.COLOR);
 		right_door.setTranslation(offsets_RightDoor);
 		right_door.setScale(new float[] {1, 1, -1});
 		
-		Model right_window = new Model(DOOR_WINDOW_FACES, -1, Model.MatrixOrder.NONE, null);
+		SceneNode right_window = new SceneNode(DOOR_WINDOW_FACES, -1, SceneNode.MatrixOrder.NONE, null);
 		right_window.setColor(windowColor);
-		right_window.setRenderMode(Model.RenderMode.TRANSPARENT);
+		right_window.setRenderMode(SceneNode.RenderMode.GLASS);
 			
 		right_door.addChild(right_window);
 		car_body.addChild(right_door);
 		
-		Model windows = new Model(WINDOW_FACES, -1, Model.MatrixOrder.T, null);
+		SceneNode windows = new SceneNode(WINDOW_FACES, -1, SceneNode.MatrixOrder.T, null);
 		windows.setColor(windowColor);
-		windows.setRenderMode(Model.RenderMode.TRANSPARENT);
+		windows.setRenderMode(SceneNode.RenderMode.GLASS);
 		windows.setTranslation(new float[] {0.3f, -1.2f, 0});
 		
 		car_body.addChild(windows);
@@ -302,7 +302,7 @@ public class Car
 	
 	public void updateGraph()
 	{
-		Model car_body = graph.getRoot();
+		SceneNode car_body = graph.getRoot();
 		
 		car_body.setTranslation(bound.c);
 		car_body.setOrientation(getRotationMatrix(bound.u));
@@ -311,7 +311,7 @@ public class Car
 		{
 			if(i % 2 != 0)
 			{
-				Model wheel = car_body.getChildren().get(i);
+				SceneNode wheel = car_body.getChildren().get(i);
 				wheel.setRotation(new float[] {0, yRotation_Wheel, zRotation_Wheel});
 			}
 		}
