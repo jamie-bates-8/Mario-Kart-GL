@@ -111,7 +111,11 @@ public class BlastParticle extends Particle
 	public static void renderList(GL2 gl, List<Particle> particles)
 	{
 		gl.glPushMatrix();
-		{		
+		{	
+			gl.glEnable(GL2.GL_TEXTURE_2D);
+			
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+			
 			gl.glEnableClientState(GL_VERTEX_ARRAY);
 			gl.glEnableClientState(GL_COLOR_ARRAY);
 			
@@ -157,6 +161,8 @@ public class BlastParticle extends Particle
 			
 			gl.glDisableClientState(GL_VERTEX_ARRAY);
 			gl.glDisableClientState(GL_COLOR_ARRAY);
+			
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		}
 		gl.glPopMatrix();
 	}

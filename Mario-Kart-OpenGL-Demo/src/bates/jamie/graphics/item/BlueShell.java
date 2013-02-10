@@ -3,6 +3,7 @@ import static bates.jamie.graphics.util.Renderer.displayColoredObject;
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -10,6 +11,8 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.particle.BlastParticle;
+import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
@@ -44,6 +47,8 @@ public class BlueShell extends Shell
 	private int blastDuration = 0;
 	private float blastRadius = 0;
 	private float blastSpeed = 2.5f;
+	
+	private List<Particle> blast = new ArrayList<Particle>();
 	
 	public BlueShell(GL2 gl, Scene scene, Car car, float trajectory)
 	{
@@ -99,6 +104,7 @@ public class BlueShell extends Shell
 			}
 			gl.glPopMatrix();
 		}
+		else if(!blast.isEmpty()) BlastParticle.renderList(gl, blast);
 	}
 	
 	@Override
@@ -127,6 +133,9 @@ public class BlueShell extends Shell
 			blastRadius += blastSpeed;
 			blastSpeed *= 0.9f;
 			blastDuration--;
+			
+			for(Particle particle : blast) particle.update();
+			Particle.removeParticles(blast);
 		}
 	}
 	
@@ -136,7 +145,7 @@ public class BlueShell extends Shell
 		if(!dead)
 		{
 			blastDuration = 60;
-			scene.addParticles(generator.generateBlastParticles(getPosition(), 600));
+			blast = generator.generateBlastParticles(getPosition(), 600);
 		}
 		
 		dead = true;

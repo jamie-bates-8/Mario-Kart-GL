@@ -87,7 +87,6 @@ import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.ItemBox;
 import bates.jamie.graphics.item.RedShell;
-import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
@@ -218,10 +217,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	private List<Particle> particles = new ArrayList<Particle>();
-	
-	private List<Particle> testParticles1 = new ArrayList<Particle>();
-	private List<Particle> testParticles2 = new ArrayList<Particle>();
-	
 	public List<ParticleGenerator> generators = new ArrayList<ParticleGenerator>();
 
 	
@@ -1357,32 +1352,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private void test2(GL2 gl)
 	{
-		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
-		
-		gl.glColor3f(1, 1, 1);
-		
-		for(Particle particle : testParticles1) particle.update();
-		for(Particle particle : testParticles2) particle.update();
-		
-		Particle.removeParticles(testParticles1);
-		Particle.removeParticles(testParticles2);
-		
-		if(generators.get(0).update()) testParticles1.addAll(generators.get(0).generate());
-		if(generators.get(1).update()) testParticles2.addAll(generators.get(1).generate());
-		
-		long start = System.nanoTime();
-		
-		if(!testParticles1.isEmpty()) BlastParticle.renderList(gl, testParticles1);
-		
-		long end = System.nanoTime();
-		
-		for(Particle particle : testParticles2) particle.render(gl, 0);
-		
-		cars.get(0).getHUD().broadcast(String.format("%11.3f, %11.3f", (end - start) / 1E6, (System.nanoTime() - end) / 1E6));
-		
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 	}
 	
 	public Terrain getTerrain() { return heightMap; }
