@@ -77,6 +77,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase("wireframe")) map.enableWireframe = cmd.nextBoolean();
 		else if(_cmd.equalsIgnoreCase("heightMap")) parseHeightMap(cmd);
 		else if(_cmd.equalsIgnoreCase(  "foliage")) parseFoliage(cmd);
+		else if(_cmd.equalsIgnoreCase(  "texture")) map.scaleTexCoords(cmd.nextInt());
 	}
 	
 	private void parseFoliage(Scanner cmd)

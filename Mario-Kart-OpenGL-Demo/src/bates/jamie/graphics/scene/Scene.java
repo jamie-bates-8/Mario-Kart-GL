@@ -1,5 +1,5 @@
 package bates.jamie.graphics.scene;
-/** Utility imports **/
+
 import static bates.jamie.graphics.util.Renderer.displayTexturedCuboid;
 import static bates.jamie.graphics.util.Renderer.displayTexturedObject;
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
@@ -38,6 +38,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
@@ -48,6 +50,7 @@ import java.io.FileWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -98,6 +101,7 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
 
+import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
@@ -113,7 +117,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
  * track by the use of hotkeys. Users can also interact with the car model and 
  * manipulation the scene in a number of ways.
  */
-public class Scene implements GLEventListener, KeyListener, MouseWheelListener, ActionListener
+public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener
 {
 	private Console console;
 	private JTextField consoleInput;
@@ -235,12 +239,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private List<BillBoard> foliage;
 	
 	public String terrainCommand = "";
-	public static final String DEFAULT_TERRAIN = "100 1000 25 6 18 0.125 1.5";
+	public static final String DEFAULT_TERRAIN = "100 1000 0 6 18 0.125 1.0";
 	
-	
-	private float ry = 0;
 	public boolean enableReflection = false;
 	public float opacity = 0.75f;
+	
+	private float ry = 0;
+	private float bezier = 0;
+	private boolean rising = true;
 	
 	public boolean smoothBound = false;
 	public boolean multiSample = true;
@@ -248,6 +254,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public boolean testMode = false;
 	public boolean printVersion = true;
+	
+	
+	private Model model;
+	
+	private int selectX = -1;
+	private int selectY = -1;
+	private int selected = 0;
+	private IntBuffer selectBuffer;
+	private static final int BUFFER_SIZE = 512;
+	
 	
 	public Scene()
 	{
@@ -263,10 +279,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		canvas.addGLEventListener(this);
 		canvas.addKeyListener(this);
 		canvas.addMouseWheelListener(this);
+		canvas.addMouseListener(this);
 		canvas.setFocusable(true);
 		canvas.requestFocus();
 
-		animator = new FPSAnimator(canvas, FPS, true);
+		animator = new FPSAnimator(canvas, FPS, false);
 		
 		frame.addWindowListener(new WindowAdapter()
 		{
@@ -314,6 +331,60 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public int getWidth()  { return canvasWidth;  }
 	
+	private void printVersion(GL2 gl)
+	{
+		System.out.println("OpenGL Version: " + gl.glGetString(GL2.GL_VERSION));
+	    System.out.println("OpenGL Vendor : " + gl.glGetString(GL2.GL_VENDOR) + "\n");
+	    
+	    System.out.println("GL Shading Language Version: " + gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION) + "\n");
+	    
+	    String extensions = gl.glGetString(GL2.GL_EXTENSIONS);
+	    
+	    System.out.println("Multitexture Support: " + extensions.contains("GL_ARB_multitexture"));
+	    
+	    int[] textureUnits = new int[1];
+	    gl.glGetIntegerv(GL2.GL_MAX_TEXTURE_UNITS, textureUnits, 0);
+	    System.out.println("Number of Texture Units: " + textureUnits[0] + "\n");
+	    
+	    boolean anisotropic = gl.isExtensionAvailable("GL_EXT_texture_filter_anisotropic");
+	    System.out.println("Anisotropic Filtering Support: " + anisotropic);
+	    
+	    if(anisotropic)
+	    {
+		    float[] anisotropy = new float[1];
+		    gl.glGetFloatv(GL2.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy, 0);
+		    System.out.println("Maximum Anisotropy: " + anisotropy[0] + "\n");
+	    } 
+	    
+	    float[] size = new float[3];
+	    
+	    gl.glGetFloatv(GL2.GL_POINT_SIZE_RANGE, size, 0);
+	    gl.glGetFloatv(GL2.GL_POINT_SIZE_GRANULARITY, size, 2);
+	    
+	    System.out.println("Point Size Range: " + size[0] + " -> " + size[1]);
+	    System.out.println("Point Size Granularity: " + size[2] + "\n");
+	    
+	    gl.glGetFloatv(GL2.GL_ALIASED_POINT_SIZE_RANGE, size, 0);
+	    System.out.println("Aliased Point Size Range: " + size[0] + " -> " + size[1] + "\n");
+	    
+	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_RANGE, size, 0);
+	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_GRANULARITY, size, 2);
+	    
+	    System.out.println("Line Width Range: " + size[0] + " -> " + size[1]);
+	    System.out.println("Line Width Granularity: " + size[2] + "\n");
+	}
+
+	private void printErrors(GL2 gl)
+	{
+		int error = gl.glGetError();
+		
+		while(error != GL2.GL_NO_ERROR)
+		{
+			System.err.println("OpenGL Error: " + glu.gluErrorString(error));
+			error = gl.glGetError();
+		}
+	}
+
 	public void init(GLAutoDrawable drawable)
 	{
 		execution = Calendar.getInstance();
@@ -383,6 +454,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		/** Model Setup **/
 		environmentFaces = OBJParser.parseTriangles("obj/environment.obj");
 		floorFaces = OBJParser.parseTriangles("obj/floor.obj");
+		model = OBJParser.parseTriangleMesh("obj/car.obj");
 		
 		printErrors(gl);
 	    
@@ -435,7 +507,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile battle");
+	    console.parseCommand("profile project");
 	    
 	    generateTerrain(gl, DEFAULT_TERRAIN);
 	    
@@ -446,49 +518,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    //records the time prior to the rendering of the first frame after initialization
 	}
 
-	private void printVersion(GL2 gl)
-	{
-		System.out.println("OpenGL Version: " + gl.glGetString(GL2.GL_VERSION));
-	    System.out.println("OpenGL Vendor : " + gl.glGetString(GL2.GL_VENDOR) + "\n");
-	    
-	    System.out.println("GL Shading Language Version: " + gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION) + "\n");
-	    
-	    String extensions = gl.glGetString(GL2.GL_EXTENSIONS);
-	    
-	    System.out.println("Multitexture Support: " + extensions.contains("GL_ARB_multitexture"));
-	    
-	    int[] textureUnits = new int[1];
-	    gl.glGetIntegerv(GL2.GL_MAX_TEXTURE_UNITS, textureUnits, 0);
-	    System.out.println("Number of Texture Units: " + textureUnits[0] + "\n");
-	    
-	    boolean anisotropic = gl.isExtensionAvailable("GL_EXT_texture_filter_anisotropic");
-	    System.out.println("Anisotropic Filtering Support: " + anisotropic);
-	    
-	    if(anisotropic)
-	    {
-		    float[] anisotropy = new float[1];
-		    gl.glGetFloatv(GL2.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy, 0);
-		    System.out.println("Maximum Anisotropy: " + anisotropy[0] + "\n");
-	    } 
-	    
-	    float[] size = new float[3];
-	    
-	    gl.glGetFloatv(GL2.GL_POINT_SIZE_RANGE, size, 0);
-	    gl.glGetFloatv(GL2.GL_POINT_SIZE_GRANULARITY, size, 2);
-	    
-	    System.out.println("Point Size Range: " + size[0] + " -> " + size[1]);
-	    System.out.println("Point Size Granularity: " + size[2] + "\n");
-	    
-	    gl.glGetFloatv(GL2.GL_ALIASED_POINT_SIZE_RANGE, size, 0);
-	    System.out.println("Aliased Point Size Range: " + size[0] + " -> " + size[1] + "\n");
-	    
-	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_RANGE, size, 0);
-	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_GRANULARITY, size, 2);
-	    
-	    System.out.println("Line Width Range: " + size[0] + " -> " + size[1]);
-	    System.out.println("Line Width Granularity: " + size[2] + "\n");
-	}
-	
 	public void display(GLAutoDrawable drawable)
 	{	
 		GL2 gl = drawable.getGL().getGL2();
@@ -505,9 +534,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(normalize) gl.glEnable(GL2.GL_NORMALIZE);
 		else gl.glDisable(GL2.GL_NORMALIZE);
-		
-		if(linearFilter) gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
-		else gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
 		
 		setupFog(gl);
 		
@@ -528,12 +554,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
+		if(selectX != -1) selectModel(gl);
+
 		for(int index : order)
 		{
 			Car car = cars.get(index);
 			
 			setupScene(gl, index);
 			car.setupCamera(gl, glu);
+			
 			if(enableLight)
 			{
 				light.setup(gl, enableHeadlight);
@@ -591,109 +620,56 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		calculateFPS();
 	}
-
-	private void renderFoliage(GL2 gl, Car car)
-	{
-		gl.glPushMatrix();
-		{	
-			for(BillBoard b : foliage)
-			{
-				if(car.isSlipping()) b.render(gl, car.slipTrajectory);
-				else b.render(gl, car.trajectory);
-			}
-		}	
-		gl.glPopMatrix();
-	}
-
-	private void printErrors(GL2 gl)
-	{
-		int error = gl.glGetError();
-		
-		while(error != GL2.GL_NO_ERROR)
-		{
-			System.err.println("OpenGL Error: " + glu.gluErrorString(error));
-			error = gl.glGetError();
-		}
-	}
-
-	private void displaySkybox(GL2 gl)
-	{
-		gl.glDisable(GL2.GL_LIGHTING);
-		
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(0, 0, 0);
-			gl.glScalef(40.0f, 40.0f, 40.0f);
-
-			gl.glCallList(environmentList);
-		}	
-		gl.glPopMatrix();
-		
-		gl.glEnable(GL2.GL_LIGHTING);
-	}
 	
-	private void displayReflection(GL2 gl, Car car)
+	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
 	{
-		float[] p = light.getPosition();
-		light.setPosition(new float[] {p[0], -p[1], p[2]});
+		GL2 gl = drawable.getGL().getGL2();
+	
+		if (height <= 0) height = 1;
 		
-		gl.glPushMatrix();
-		{
-			gl.glScalef(1.0f, -1.0f, 1.0f);
-			
-			renderWorld(gl);
-			render3DModels(gl, car);
-			
-			renderParticles(gl, car);
-			Particle.resetTexture();
-		}
+		canvasHeight = height;
+		canvasWidth = width;
 		
-		gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
-
-		gl.glPopMatrix();
+		final float ratio = (float) width / (float) height;
 		
-		gl.glDisable(GL2.GL_LIGHTING);
-		gl.glEnable(GL2.GL_BLEND);
+		gl.glViewport(0, 0, width, height);
 		
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(0, 0, 0);
-			gl.glScalef(40.0f, 40.0f, 40.0f);
-
-			gl.glCallList(floorList);
-		}	
-		gl.glPopMatrix();
+		gl.glMatrixMode(GL_PROJECTION);
+		gl.glLoadIdentity();
+		glu.gluPerspective(fov, ratio, 1.0, 1000.0);
 		
-		gl.glDisable(GL2.GL_BLEND);
-		gl.glEnable(GL2.GL_LIGHTING);
+		gl.glMatrixMode(GL_MODELVIEW);
+		gl.glLoadIdentity();
 		
-		light.setPosition(p);
-		
-		gl.glColor3f(1, 1, 1);
+		gl.glClearAccum(0, 0, 0, 0);
+		gl.glClear(GL_ACCUM_BUFFER_BIT);
 	}
 
-	private int orderRender(int[] order)
+	public void dispose(GLAutoDrawable drawable) {}
+
+	private void setupFog(GL2 gl)
 	{
-		int i = 0;
+		if(cloud_density < 1) cloud_density += DENSITY_INC;
 		
-		for(int j = 0; j < cars.size(); j++)
+		float c = cloud_density;
+		gl.glColor3f(c, c, c); //affect the color of the environment in addition to fog
+		gl.glFogfv(GL_FOG_COLOR, new float[] {c, c, c, 1}, 0);
+		
+		gl.glFogf(GL_FOG_DENSITY, fogDensity);
+	}
+
+	private void registerItems(GL2 gl)
+	{
+		for(Car car : cars)
 		{
-			order[j] = j; 
-			
-			/*
-			 * The vehicles that are boosting must come first in the rendering
-			 * order so that the accumulative buffer does not store the frames
-			 * rendered by other vehicles.
-			 */
-			if(cars.get(j).isBoosting())
+			while(!car.getItemCommands().isEmpty())
 			{
-				int t = order[i];
-				order[i] = j;
-				order[j] = t;
-				i++;
+				int itemID = car.getItemCommands().poll();
+				
+				if(itemID == 10) cloud_density = MIN_DENSITY;
+				else car.registerItem(gl, itemID);
 			}
 		}
-		return i;
 	}
 
 	private void update()
@@ -732,73 +708,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	private void registerItems(GL2 gl)
+	public void removeItems()
 	{
-		for(Car car : cars)
-		{
-			while(!car.getItemCommands().isEmpty())
-			{
-				int itemID = car.getItemCommands().poll();
-				
-				if(itemID == 10) cloud_density = MIN_DENSITY;
-				else car.registerItem(gl, itemID);
-			}
-		}
+		Item.removeItems(itemList);
+		
+		for(Car car : cars) car.removeItems();
 	}
 
-	private void setupFog(GL2 gl)
-	{
-		if(cloud_density < 1) cloud_density += DENSITY_INC;
-		
-		float c = cloud_density;
-		gl.glColor3f(c, c, c); //affect the color of the environment in addition to fog
-		gl.glFogfv(GL_FOG_COLOR, new float[] {c, c, c, 1}, 0);
-		
-		gl.glFogf(GL_FOG_DENSITY, fogDensity);
-	}
-	
-	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
-	{
-		GL2 gl = drawable.getGL().getGL2();
-	
-		if (height <= 0) height = 1;
-		
-		canvasHeight = height;
-		canvasWidth = width;
-		
-		final float ratio = (float) width / (float) height;
-		
-		gl.glViewport(0, 0, width, height);
-		
-		gl.glMatrixMode(GL_PROJECTION);
-		gl.glLoadIdentity();
-		glu.gluPerspective(fov, ratio, 1.0, 1000.0);
-		
-		gl.glMatrixMode(GL_MODELVIEW);
-		gl.glLoadIdentity();
-		
-		gl.glClearAccum(0, 0, 0, 0);
-		gl.glClear(GL_ACCUM_BUFFER_BIT);
-	}
-
-	public void dispose(GLAutoDrawable drawable) {}
-	
-	public List<Car> getCars() { return cars; }
-
-	public void sendItemCommand(int itemID) { itemQueue.add(itemID); }
-	
-	public void addItem(Item item) { itemList.add(item); }
-	
-	public List<Item> getItems() { return itemList; }
-	
-	public void clearItems() { itemList.clear(); }
-	
-	public void addParticle(Particle p) { particles.add(p); }
-	
-	public void addParticles(List<Particle> particles) { this.particles.addAll(particles); }
-	
-	public List<Particle> getParticles() { return particles; }
-	
 	private void updateItems()
 	{
 		for(Item item : itemList)
@@ -844,7 +760,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
-	
+
 	private void vehicleCollisions()
 	{
 		for(int i = 0; i < cars.size() - 1; i++)
@@ -858,7 +774,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		}
 	}
-	
+
 	private void terrainCollisions()
 	{
 		//TODO Only considers collisions with player 1
@@ -886,87 +802,170 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		float friction = (frictions[0] + frictions[1] + frictions[2] + frictions[3]) / 4;
 		cars.get(0).friction = friction;
 	}
-	
-	public void removeItems()
+
+	private int orderRender(int[] order)
 	{
-		Item.removeItems(itemList);
+		int i = 0;
 		
-		for(Car car : cars) car.removeItems();
+		for(int j = 0; j < cars.size(); j++)
+		{
+			order[j] = j; 
+			
+			/*
+			 * The vehicles that are boosting must come first in the rendering
+			 * order so that the accumulative buffer does not store the frames
+			 * rendered by other vehicles.
+			 */
+			if(cars.get(j).isBoosting())
+			{
+				int t = order[i];
+				order[i] = j;
+				order[j] = t;
+				i++;
+			}
+		}
+		return i;
+	}
+
+	//TODO does not work in bird's eye view
+	private void selectModel(GL2 gl)
+	{
+		startPicking(gl);
+		
+		gl.glPushName(1);
+		
+		gl.glPushMatrix();
+		{		
+			gl.glTranslatef(0, 15, 15);
+			
+			gl.glColor3f(1.0f, 0.4f, 0.4f);
+			
+			model.render(gl);
+			
+			gl.glColor3f(1, 1, 1);
+		}
+		gl.glPopMatrix();
+		
+		gl.glPopName();
+		
+		endPicking(gl);
 	}
 	
-	public long renderParticles(GL2 gl, Car car)
+	private void startPicking(GL2 gl)
 	{
-		long start = System.nanoTime();
+		selectBuffer = Buffers.newDirectIntBuffer(BUFFER_SIZE);
+		gl.glSelectBuffer(BUFFER_SIZE, selectBuffer);
 		
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glRenderMode(GL2.GL_SELECT);
 		
-		for(Particle particle : particles)
+		gl.glInitNames();
+		
+		gl.glMatrixMode(GL_PROJECTION);
+		
+		gl.glPushMatrix();
 		{
-			if(car.isSlipping()) particle.render(gl, car.slipTrajectory);
-			else particle.render(gl, car.trajectory);
+			gl.glLoadIdentity();
+			
+			int[] viewport = new int[4];
+			gl.glGetIntegerv(GL2.GL_VIEWPORT, viewport, 0);
+			
+			glu.gluPickMatrix(selectX, viewport[3] - selectY, 5, 5, viewport, 0);
+			
+			float aspect = (float) viewport[2] / (float) viewport[3];
+			
+			glu.gluPerspective(fov, aspect, 1.0, 1000.0);
+			cars.get(0).setupCamera(gl, glu);
+			
+			gl.glMatrixMode(GL_MODELVIEW);
 		}
+	}
+
+	private void endPicking(GL2 gl)
+	{
+		gl.glMatrixMode(GL_PROJECTION);
+		gl.glPopMatrix();
 		
-		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		gl.glMatrixMode(GL_MODELVIEW);
+		gl.glFlush();
 		
-		return System.nanoTime() - start;
+		int hits = gl.glRenderMode(GL2.GL_RENDER);
+		
+		selectX = selectY = -1;
+		
+		getSelection(gl, hits);
+	}
+
+	private void getSelection(GL2 gl, int hits)
+	{
+		selected++;
+		
+		if(hits == 0) cars.get(0).getHUD().broadcast("No hit: " + selected);
+		else cars.get(0).getHUD().broadcast("Hit: " + selected);
+
 	}
 	
 	/**
-	 * This method renders all of the dynamic 3D models within the world from the
-	 * perspective of the car passed as a parameter. The term dynamic refers to
-	 * objects that change position, rotation or state such as other vehicles, item
-	 * boxes and world items.
+	 * This method minimises the viewport to create a split-screen effect.
+	 * The size of the viewport is halved so that it occupies one fourth/corner
+	 * of the screen; P1 is top-left, P2 is top-right, P3 is bottom-left and P4
+	 * is bottom-right.
+	 * 
+	 * It uses the OpenGL method glViewport(x, y, w, h). (x, y) is the bottom-left
+	 * corner of the viewport, while w and h are its width and height respectively. 
 	 */
-	private void render3DModels(GL2 gl, Car car)
+	private void setupScene(GL2 gl, int playerID)
 	{
-		renderTimes[frameIndex][1] = renderVehicles(gl, car);
-
-		if(enableItemBoxes)
-	    {
-			for(ItemBox box : itemBoxes)
-				if(!box.isDead()) box.render(gl, car.trajectory);
-	    }
+		int h = canvasHeight / 2;
+		int w = canvasWidth  / 2;
 		
-		renderTimes[frameIndex][2] = renderItems(gl, car);
-	}
-
-	private long renderItems(GL2 gl, Car car)
-	{
-		long start = System.nanoTime();
-		
-		if(enableCulling) gl.glEnable(GL2.GL_CULL_FACE);
-
-		for(Item item : itemList)
-			if(!item.isDead())
-			{
-				if(Item.renderMode == 1) item.renderWireframe(gl, car.trajectory);
-				else item.render(gl, car.trajectory);
-			}
-		
-		gl.glDisable(GL2.GL_CULL_FACE);
-		
-		return System.nanoTime() - start;
-	}
-
-	private long renderVehicles(GL2 gl, Car car)
-	{
-		long start = System.nanoTime();
-		
-		car.render(gl);
-
-		for(Car c : cars)
+		if(cars.size() < 2) gl.glViewport(0, 0, canvasWidth, canvasHeight); //full-screen
+		else
 		{
-			if(!c.equals(car))
-			{
-				boolean visibility = c.displayModel;
-				
-				c.displayModel = true;
-				c.render(gl);
-				c.displayModel = visibility;
-			}
+			     if(playerID == 0) gl.glViewport(0, h, w, h); //top-left
+			else if(playerID == 1) gl.glViewport(w, h, w, h); //top-right
+			else if(playerID == 2) gl.glViewport(0, 0, w, h); //bottom-left
+			else if(playerID == 3) gl.glViewport(w, 0, w, h); //bottom-right
+		}
+	}
+
+	private void displayReflection(GL2 gl, Car car)
+	{
+		float[] p = light.getPosition();
+		light.setPosition(new float[] {p[0], -p[1], p[2]});
+		
+		gl.glPushMatrix();
+		{
+			gl.glScalef(1.0f, -1.0f, 1.0f);
+			
+			renderWorld(gl);
+			render3DModels(gl, car);
+			
+			renderParticles(gl, car);
+			Particle.resetTexture();
 		}
 		
-		return System.nanoTime() - start;
+		gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
+	
+		gl.glPopMatrix();
+		
+		gl.glDisable(GL2.GL_LIGHTING);
+		gl.glEnable(GL2.GL_BLEND);
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslatef(0, 0, 0);
+			gl.glScalef(40.0f, 40.0f, 40.0f);
+	
+			gl.glCallList(floorList);
+		}	
+		gl.glPopMatrix();
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glEnable(GL2.GL_LIGHTING);
+		
+		light.setPosition(p);
+		
+		gl.glColor3f(1, 1, 1);
 	}
 
 	/**
@@ -986,7 +985,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				gl.glTranslatef(0, 0, 0);
 				gl.glScalef(40.0f, 40.0f, 40.0f);
-
+	
 				gl.glCallList(floorList);
 			}	
 			gl.glPopMatrix();
@@ -1012,7 +1011,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+
+	private void displaySkybox(GL2 gl)
+	{
+		gl.glDisable(GL2.GL_LIGHTING);
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslatef(0, 0, 0);
+			gl.glScalef(40.0f, 40.0f, 40.0f);
 	
+			gl.glCallList(environmentList);
+		}	
+		gl.glPopMatrix();
+		
+		gl.glEnable(GL2.GL_LIGHTING);
+	}
+
 	private long renderTerrain(GL2 gl)
 	{
 		long start = System.nanoTime();
@@ -1048,15 +1063,93 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
-	
-	public List<Bound> getBounds()
+
+	/**
+	 * This method renders all of the dynamic 3D models within the world from the
+	 * perspective of the car passed as a parameter. The term dynamic refers to
+	 * objects that change position, rotation or state such as other vehicles, item
+	 * boxes and world items.
+	 */
+	private void render3DModels(GL2 gl, Car car)
 	{
-		List<Bound> bounds = new ArrayList<Bound>();
+		renderTimes[frameIndex][1] = renderVehicles(gl, car);
+	
+		if(enableItemBoxes)
+	    {
+			for(ItemBox box : itemBoxes)
+				if(!box.isDead()) box.render(gl, car.trajectory);
+	    }
 		
-		bounds.addAll(wallBounds);
-		if(enableObstacles) bounds.addAll(fort.getBounds());
+		renderTimes[frameIndex][2] = renderItems(gl, car);
+	}
+
+	private long renderVehicles(GL2 gl, Car car)
+	{
+		long start = System.nanoTime();
 		
-		return bounds;
+		car.render(gl);
+	
+		for(Car c : cars)
+		{
+			if(!c.equals(car))
+			{
+				boolean visibility = c.displayModel;
+				
+				c.displayModel = true;
+				c.render(gl);
+				c.displayModel = visibility;
+			}
+		}
+		
+		return System.nanoTime() - start;
+	}
+
+	private long renderItems(GL2 gl, Car car)
+	{
+		long start = System.nanoTime();
+		
+		if(enableCulling) gl.glEnable(GL2.GL_CULL_FACE);
+	
+		for(Item item : itemList)
+			if(!item.isDead())
+			{
+				if(Item.renderMode == 1) item.renderWireframe(gl, car.trajectory);
+				else item.render(gl, car.trajectory);
+			}
+		
+		gl.glDisable(GL2.GL_CULL_FACE);
+		
+		return System.nanoTime() - start;
+	}
+
+	private long renderParticles(GL2 gl, Car car)
+	{
+		long start = System.nanoTime();
+		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		
+		for(Particle particle : particles)
+		{
+			if(car.isSlipping()) particle.render(gl, car.slipTrajectory);
+			else particle.render(gl, car.trajectory);
+		}
+		
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		
+		return System.nanoTime() - start;
+	}
+
+	private void renderFoliage(GL2 gl, Car car)
+	{
+		gl.glPushMatrix();
+		{	
+			for(BillBoard b : foliage)
+			{
+				if(car.isSlipping()) b.render(gl, car.slipTrajectory);
+				else b.render(gl, car.trajectory);
+			}
+		}	
+		gl.glPopMatrix();
 	}
 
 	private long renderBounds(GL2 gl)
@@ -1129,13 +1222,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
-	
+
 	private void test1(GL2 gl)
 	{
 		gl.glPushMatrix();
 		{
 			gl.glColor3f(0.25f, 0.25f, 0.25f);
-			gl.glTranslatef(0, 15, -30);
+			gl.glTranslatef(0, 30, -30);
 			gl.glRotatef(ry, 0, 1, 0);
 			glut.glutSolidTeapot(3);
 		}
@@ -1150,7 +1243,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(0, 15, -15);
+			gl.glTranslatef(0, 30, -15);
 			gl.glRotatef(ry, 0, 1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);
 			
@@ -1176,7 +1269,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			sky.bind(gl);
 			sky.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			
-			gl.glTranslatef(0, 15, 0);
+			gl.glTranslatef(0, 30, 0);
 			gl.glRotatef(ry, 0, 1, 0);
 			
 			glut.glutSolidTeapot(3);
@@ -1191,7 +1284,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			sky.bind(gl);
 			sky.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			
-			gl.glTranslatef(0, 15, 15);
+			gl.glTranslatef(0, 30, 15);
 			gl.glRotatef(ry, 0, 1, 0);
 			
 			glut.glutSolidTeapot(3);
@@ -1212,52 +1305,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			cobble.bind(gl);
 			cobble.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			
-			gl.glTranslatef(0, 15, 30);
+			gl.glTranslatef(0, 30, 30);
 			gl.glRotatef(ry, 0, 1, 0);
 			
 			glu.gluSphere(sphere, 2, 24, 24);
 		}
 		gl.glPopMatrix();
 		
-		gl.glDisable(GL2.GL_LIGHTING);
+		bezier += rising ? 10 : -10;
+		     if(bezier == 360) rising = false;
+		else if(bezier ==   0) rising = true;
 		
-		GLUquadric cylinder = glu.gluNewQuadric();
-		
-		glu.gluQuadricDrawStyle(cylinder, GLU.GLU_POINT);
-		glu.gluQuadricTexture(cylinder, false);
-		
-		gl.glPushMatrix();
-		{	
-			gl.glColor3f(0.118f, 0.565f, 1.000f);
-			gl.glTranslatef(0, 19, 45);
-			gl.glRotatef(ry, 0, 1, 0);
-			gl.glRotatef(90, 1, 0, 0);
-			
-			glu.gluCylinder(cylinder, 2, 2, 8, 24, 12);
-		}
-		gl.glPopMatrix();
-		
-		gl.glEnable(GL2.GL_LIGHTING);
-		
-		GLUquadric disk = glu.gluNewQuadric();
-		
-		glu.gluQuadricDrawStyle(disk, GLU.GLU_FILL);
-		glu.gluQuadricNormals(disk, GLU.GLU_SMOOTH);
-		
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		
-		gl.glPushMatrix();
-		{	
-			gl.glColor3f(0.75f, 0.75f, 0.75f);
-			gl.glTranslatef(0, 30, 30);
-			gl.glRotatef(45, 1, 0, 0);
-			gl.glRotatef(ry, 0, 1, 0);
-			
-			glu.gluDisk(disk, 1, 4, 32, 8);
-		}
-		gl.glPopMatrix();
-		
-		gl.glColor3f(0.2f, 0.2f, 0.2f);
+		float h = (bezier - 180) / 180;
 		
 		float[][] control =
 		{
@@ -1266,7 +1325,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{ 4.0f, 0.0f, 4.0f},
 		
 			{-4.0f, 0.0f, 0.0f},
-			{-2.0f, 4.0f, 0.0f},
+			{-2.0f, 4.0f * h, 0.0f},
 			{ 4.0f, 0.0f, 0.0f},
 		
 			{-4.0f, 0.0f, -4.0f},
@@ -1278,9 +1337,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{	
-			gl.glTranslatef(0, 10, 0);
+			gl.glTranslatef(0, 15, -15);
 			
-			Renderer.displayPoints(gl, glut, control, RGB.WHITE_3F, 10, true);
+			gl.glDisable(GL2.GL_TEXTURE_2D);
+			
+			Renderer.displayPoints(gl, glut, new float[][] {control[0], control[1], control[2]}, RGB.PURE_GREEN_3F, 10, true);
+			Renderer.displayPoints(gl, glut, new float[][] {control[3], control[4], control[5]}, RGB.PURE_RED_3F,   10, true);
+			Renderer.displayPoints(gl, glut, new float[][] {control[6], control[7], control[8]}, RGB.PURE_BLUE_3F,  10, true);
 			
 			gl.glColor3f(0.2f, 0.2f, 0.2f);
 			
@@ -1301,7 +1364,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					9, // Distance between points in the data
 					3, // Dimension in v direction (order)
 					fb); // array of control points
-
+	
 			gl.glEnable(GL2.GL_MAP2_VERTEX_3);
 			gl.glMapGrid2f(10, 0.0f, 10.0f, 10, 0.0f, 10.0f);
 			gl.glEvalMesh2(GL2.GL_FILL, 0, 10, 0, 10);
@@ -1315,8 +1378,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			-6.0f,  2.0f, 0.0f, 
 			-6.0f,  6.0f, 0.0f, 
 			-2.0f, -6.0f, 0.0f, 
-			-2.0f, -2.0f, 8.0f,
-			-2.0f,  2.0f, 8.0f, 
+			-2.0f, -2.0f, 8.0f * h,
+			-2.0f,  2.0f, 8.0f * h, 
 			-2.0f,  6.0f, 0.0f, 
 			 2.0f, -6.0f, 0.0f,
 			 2.0f, -2.0f, 8.0f,
@@ -1332,16 +1395,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{		
-			gl.glTranslatef(0, 10, 0);
+			gl.glTranslatef(0, 15, -30);
+			gl.glRotatef(-90, 1, 0, 0);
 			
-            GLUgl2 glugl2 = new GLUgl2(); 
-            GLUnurbs nurb = glugl2.gluNewNurbsRenderer();
-            
-            glugl2.gluBeginSurface(nurb);
-
-            glugl2.gluNurbsSurface(nurb, 8, knots, 8, knots, 4 * 3, 3, control2, 4, 4, GL2.GL_MAP2_VERTEX_3); 
-            
-            glugl2.gluEndSurface(nurb); 
+	        GLUgl2 glugl2 = new GLUgl2(); 
+	        GLUnurbs nurb = glugl2.gluNewNurbsRenderer();
+	        
+	        glugl2.gluBeginSurface(nurb);
+	
+	        glugl2.gluNurbsSurface(nurb, 8, knots, 8, knots, 4 * 3, 3, control2, 4, 4, GL2.GL_MAP2_VERTEX_3); 
+	        
+	        glugl2.gluEndSurface(nurb); 
 		}
 		gl.glPopMatrix();
 		
@@ -1349,12 +1413,124 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glColor3f(1, 1, 1);
 	}
-	
+
 	private void test2(GL2 gl)
 	{
+		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
+		gl.glPushMatrix();
+		{		
+			gl.glTranslatef(0, 15, 15);
+			
+			gl.glColor3f(1.0f, 0.4f, 0.4f);
+			
+			model.render(gl);
+		}
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		{		
+			gl.glTranslatef(0, 15, 30);
+			
+			Renderer.displayColoredObject(gl, Car.CAR_FACES, new float[] {1.0f, 0.4f, 0.4f});
+		}
+		gl.glPopMatrix();
+		
+		gl.glColor3f(1, 1, 1);
 	}
+
+	/**
+	 * This method calculates the frames per second (FPS) of the application by
+	 * incrementing a frame counter every time the scene is displayed. Once the
+	 * time elapsed is >= 1000 milliseconds (1 second), the current FPS is set
+	 * equal to the frame counter which is then reset.
+	 */
+	private void calculateFPS()
+	{
+		frames++;
+		frameIndex++;
+		
+		long currentTime = System.currentTimeMillis();
+		long timeElapsed = currentTime - startTime;
+		
+		if(timeElapsed >= 1000)
+		{
+			frameRate = frames;
+			
+			frames = 0;
+			startTime = currentTime + (timeElapsed % 1000);
+		}
+		
+		if(frameIndex >= frameTimes.length) frameIndex = 0;
+		
+		frameTimes[frameIndex] = currentTime - renderTime;
+	}
+
+	public List<Car> getCars() { return cars; }
+
+	public void sendItemCommand(int itemID) { itemQueue.add(itemID); }
 	
+	public void addItem(Item item) { itemList.add(item); }
+	
+	public void addItem(int itemID, float[] c, float trajectory)
+	{
+		switch(itemID)
+		{
+			case  0: itemList.add(new  GreenShell(this, c, trajectory)); break;
+			case  2: itemList.add(new    RedShell(this, c, trajectory)); break;
+			case  7: itemList.add(new FakeItemBox(this, c, trajectory)); break;
+			case  8: itemList.add(new      Banana(this, c)); break;
+			case 13: itemList.add(new   BlueShell(this, c)); break;
+			
+			default: break;
+		}
+	}
+
+	public void spawnItemsInBound(int itemID, int quantity, Bound b)
+	{
+		Random random = new Random();
+		
+		for(int i = 0; i < quantity; i++)
+		{
+			addItem(itemID, b.randomPointInside(), random.nextInt(360));
+		}
+	}
+
+	public void spawnItemsInSphere(int itemID, int quantity, float[] c, float r)
+	{
+		spawnItemsInBound(itemID, quantity, new Sphere(c, r));
+	}
+
+	public void spawnItemsInOBB(int itemID, int quantity, float[] c, float[] u, float[] e)
+	{
+		spawnItemsInBound(itemID, quantity, new OBB(c, u, e, null));
+	}
+
+	public void clearItems() { itemList.clear(); }
+
+	public List<Item> getItems() { return itemList; }
+	
+	public void addItemBox(float x, float y, float z)
+	{
+		itemBoxes.add(new ItemBox(x, y, z, particles));
+	}
+
+	public void addParticle(Particle p) { particles.add(p); }
+	
+	public void addParticles(List<Particle> particles) { this.particles.addAll(particles); }
+	
+	public List<Particle> getParticles() { return particles; }
+	
+	public List<Bound> getBounds()
+	{
+		List<Bound> bounds = new ArrayList<Bound>();
+		
+		bounds.addAll(wallBounds);
+		if(enableObstacles) bounds.addAll(fort.getBounds());
+		
+		return bounds;
+	}
+
 	public Terrain getTerrain() { return heightMap; }
 	
 	public void generateTerrain(GL2 gl, String command)
@@ -1434,57 +1610,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    }
 	}
 
-	/**
-	 * This method calculates the frames per second (FPS) of the application by
-	 * incrementing a frame counter every time the scene is displayed. Once the
-	 * time elapsed is >= 1000 milliseconds (1 second), the current FPS is set
-	 * equal to the frame counter which is then reset.
-	 */
-	private void calculateFPS()
-	{
-		frames++;
-		frameIndex++;
-		
-		long currentTime = System.currentTimeMillis();
-		long timeElapsed = currentTime - startTime;
-		
-		if(timeElapsed >= 1000)
-		{
-			frameRate = frames;
-			
-			frames = 0;
-			startTime = currentTime + (timeElapsed % 1000);
-		}
-		
-		if(frameIndex >= frameTimes.length) frameIndex = 0;
-		
-		frameTimes[frameIndex] = currentTime - renderTime;
-	}
-	
-	/**
-	 * This method minimises the viewport to create a split-screen effect.
-	 * The size of the viewport is halved so that it occupies one fourth/corner
-	 * of the screen; P1 is top-left, P2 is top-right, P3 is bottom-left and P4
-	 * is bottom-right.
-	 * 
-	 * It uses the OpenGL method glViewport(x, y, w, h). (x, y) is the bottom-left
-	 * corner of the viewport, while w and h are its width and height respectively. 
-	 */
-	private void setupScene(GL2 gl, int playerID)
-	{
-		int h = canvasHeight / 2;
-		int w = canvasWidth  / 2;
-		
-		if(cars.size() < 2) gl.glViewport(0, 0, canvasWidth, canvasHeight); //full-screen
-		else
-		{
-			     if(playerID == 0) gl.glViewport(0, h, w, h); //top-left
-			else if(playerID == 1) gl.glViewport(w, h, w, h); //top-right
-			else if(playerID == 2) gl.glViewport(0, 0, w, h); //bottom-left
-			else if(playerID == 3) gl.glViewport(w, 0, w, h); //bottom-right
-		}
-	}
-	
 	public void printDataToFile(String file) //TODO Complete file format
 	{
 		try
@@ -1514,7 +1639,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 				out.write("\r\n ");
 			}
-
+	
 			out.close();
 		}
 		
@@ -1523,46 +1648,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			System.err.println(e.getMessage());
 		}
 	}
-	
-	public void addItem(int itemID, float[] c, float trajectory)
+
+	public void playMusic()
 	{
-		switch(itemID)
+		if(!musicPlaying)
 		{
-			case  0: itemList.add(new  GreenShell(this, c, trajectory)); break;
-			case  2: itemList.add(new    RedShell(this, c, trajectory)); break;
-			case  7: itemList.add(new FakeItemBox(this, c, trajectory)); break;
-			case  8: itemList.add(new      Banana(this, c)); break;
-			case 13: itemList.add(new   BlueShell(this, c)); break;
-			
-			default: break;
+			new MP3(this, MUTE_CITY).start();
+			musicPlaying = true;
 		}
 	}
-	
-	public void addItemBox(float x, float y, float z)
-	{
-		itemBoxes.add(new ItemBox(x, y, z, particles));
-	}
-	
-	public void spawnItemsInSphere(int itemID, int quantity, float[] c, float r)
-	{
-		spawnItemsInBound(itemID, quantity, new Sphere(c, r));
-	}
-	
-	public void spawnItemsInOBB(int itemID, int quantity, float[] c, float[] u, float[] e)
-	{
-		spawnItemsInBound(itemID, quantity, new OBB(c, u, e, null));
-	}
-	
-	public void spawnItemsInBound(int itemID, int quantity, Bound b)
-	{
-		Random random = new Random();
-		
-		for(int i = 0; i < quantity; i++)
-		{
-			addItem(itemID, b.randomPointInside(), random.nextInt(360));
-		}
-	}	
-		
+
+	public void stopMusic() { musicPlaying = false; }
+
 	/**
 	 * Invoked when a key has been pressed to make global alterations to the scene
 	 * such as toggling the display of certain visualizations intended to aid the
@@ -1636,19 +1733,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	public void mouseWheelMoved(MouseWheelEvent e) {}
-
-	public void playMusic()
-	{
-		if(!musicPlaying)
-		{
-			new MP3(this, MUTE_CITY).start();
-			musicPlaying = true;
-		}
-	}
-	
-	public void stopMusic() { musicPlaying = false; }
-
 	public void actionPerformed(ActionEvent event)
 	{
 		console.parseCommand(consoleInput.getText());
@@ -1661,4 +1745,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return new KeyEvent(consoleInput, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
 	}
+	
+	public void mouseWheelMoved(MouseWheelEvent e) {}
+
+	public void mouseClicked(MouseEvent e) {}
+
+	public void mouseEntered(MouseEvent e) {}
+
+	public void mouseExited (MouseEvent e) {}
+
+	public void mousePressed(MouseEvent e)
+	{
+		selectX = e.getX();
+		selectY = e.getY();
+	}
+
+	public void mouseReleased(MouseEvent e) {}
 }

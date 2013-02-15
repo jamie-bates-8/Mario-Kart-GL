@@ -1,4 +1,5 @@
 package bates.jamie.graphics.entity;
+
 import static bates.jamie.graphics.util.Renderer.displayLines;
 import static bates.jamie.graphics.util.Renderer.displayWireframeObject;
 
@@ -7,18 +8,23 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+
 import java.io.File;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
+
 import javax.media.opengl.GL2;
+
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.util.MultiTexFace;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vector;
@@ -44,6 +50,8 @@ public class Terrain
 	private int max_radius = MAX_RADIUS;
 	
 	private static final float MAX_HEIGHT = 60.0f;
+	
+	private static final int TEXTURE_LENGTH = 4;
 	
 	public static float sx = 6.0f;
 	public static float sy = 3.0f;
@@ -77,6 +85,8 @@ public class Terrain
 	int qBuffer = 0;
 	int rBuffer = 0;
 	
+	Model model;
+	
 	public Terrain(GL2 gl, int length, int i)
 	{
 		setHeights(length, i);
@@ -88,7 +98,7 @@ public class Terrain
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(10, 20);
+		createGeometry(TEXTURE_LENGTH, 20);
 		
 		displayList(gl);
 	}
@@ -110,9 +120,74 @@ public class Terrain
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(5, 20);
+		createGeometry(TEXTURE_LENGTH, 20);
 		
 		displayList(gl);
+		
+		toModel();
+	}
+	
+	public void toModel()
+	{
+		int[] indices = new int[length * length * 4];
+		
+		List<float[]> _vertices  = new ArrayList<float[]>();
+		List<float[]> _texCoords = new ArrayList<float[]>();
+		
+		int index = 0;
+		
+		for(int i = 0; i < indices.length; i++)
+		{
+			float[] vertex = vertices[i];
+			float[] texCoord = texCoords1[i];
+			
+			boolean equal = false;
+			
+			for(int j = 0; j < _vertices.size(); j++)
+			{
+				if(Vector.equal(vertex, _vertices.get(j)) &&
+				   Vector.equal(texCoord, _texCoords.get(j)))
+				{
+					equal = true;
+					indices[i] = j;
+	                break;
+				}
+			}
+		
+			if(!equal)
+			{
+				indices[i] = index;
+				index++;
+				
+		        _vertices.add(vertex);
+		        _texCoords.add(texCoord);
+			}
+		}
+		
+		for(int i = 0; i < _vertices.size(); i++)
+		{
+			float[] vertex = _vertices.get(i);
+			_vertices.set(i, new float[] {vertex[0] * sx, vertex[1] * sy, vertex[2] * sz});
+		}
+		
+		model = new Model(_vertices, _texCoords, indices, indices, lowerTexture, 4);
+	}
+	
+	public int foobar(int i)
+	{
+		int cell = i / 4; 
+		
+		int x = cell % length;
+		int z = cell / length;
+		
+		x %= TEXTURE_LENGTH;
+		z %= TEXTURE_LENGTH;
+		
+		if(i % 4 == 0) z += 1;
+		if(i % 4 == 1) { x += 1; z += 1; }
+		if(i % 4 == 2) x += 1;
+		
+		return x + z * (TEXTURE_LENGTH + 1);
 	}
 
 	public Terrain(GL2 gl, String fileName)
@@ -123,7 +198,7 @@ public class Terrain
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(5, 20);
+		createGeometry(TEXTURE_LENGTH, 20);
 		
 		displayList(gl);
 	}
@@ -144,15 +219,12 @@ public class Terrain
 		{
 			x = (int) (generator.nextDouble() * length);
 			z = (int) (generator.nextDouble() * length);
-			
-			if(increaseHeight(x, z, generator))
+
+			if(generator.nextBoolean())
 			{
-				if(generator.nextBoolean())
-				{
-					 increaseRadius(x, z, 2, peak_inc, heights, length);
-				}
-				else increaseRadius(x, z, generator, heights, length);
+				 increaseRadius(x, z, 2, peak_inc, heights, length);
 			}
+			else increaseRadius(x, z, generator, heights, length);
 		}
 		
 		this.heights = heights;
@@ -238,13 +310,15 @@ public class Terrain
 	
 	public void export()
 	{
+		float max_height = getMaxHeight();
+		
 		BufferedImage image = new BufferedImage(length, length, BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int i = 0; i < length; i++)
 		{
 			for (int j = 0; j < length; j++)
 			{
-				float height = heights[i][j] / MAX_HEIGHT;
+				float height = heights[i][j] / max_height;
 				int intensity = (int) (height * 255);
 				Color color = new Color(intensity, intensity, intensity);
 				
@@ -256,15 +330,28 @@ public class Terrain
 		catch (IOException e) { e.printStackTrace(); }
 	}
 	
+	public float getMaxHeight()
+	{
+		float max_height = 0;
+		
+		for(int i = 0; i < heights.length; i++)
+			for(int j = 0; j < heights[0].length; j++)
+				if(heights[i][j] > max_height) max_height = heights[i][j];
+		
+		return max_height;
+	}
+	
 	public void displayMap()
 	{
+		float max_height = getMaxHeight();
+		
 		BufferedImage image = new BufferedImage(length, length, BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int i = 0; i < length; i++)
 		{
 			for (int j = 0; j < length; j++)
 			{
-				float height = heights[i][j] / MAX_HEIGHT;
+				float height = heights[i][j] / max_height;
 				int intensity = (int) (height * 255);
 				Color color = new Color(intensity, intensity, intensity);
 				
@@ -343,15 +430,6 @@ public class Terrain
 		return h * sy;
 	}
 	
-	private boolean increaseHeight(int x, int z, Random generator)
-	{
-		if(z < length /  5.0f) return (generator.nextDouble() < 0.5);
-		if(x < length / 10.0f) return (generator.nextDouble() < 0.5);
-		if((length - x) < length / 10.0f) return (generator.nextDouble() < 0.5);
-		
-		return (generator.nextDouble() < 0.05f);
-	}
-	
 	public void createGeometry(int texLen1, int texLen2)
 	{
 		List<MultiTexFace> faces = new ArrayList<MultiTexFace>();
@@ -388,6 +466,7 @@ public class Terrain
 		float _x = x - length / 2;
 		float _z = z - length / 2;
 		
+		//construct vertices anti-clockwise from bottom-left
 		vertices[i    ] = new float[] {_x,     heights[x    ][z + 1], _z + 1}; //bottom-left
 		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1], _z + 1}; //bottom-right
 		vertices[i + 2] = new float[] {_x + 1, heights[x + 1][z    ], _z    }; //top-right
@@ -409,45 +488,70 @@ public class Terrain
 		return normals;
 	}
 	
-	public int coordToIndex(float x, float z)
+	public int coordToIndex(int x, int z)
 	{
-		int _x = (int) (x / 10) + length / 2;
-		int _z = (int) (z / 10) + length / 2;
+		int index = 3 + (4 * x) + (4 * z * length);
+		if(x == length && z == length) index -= 6 + (4 * length);
+		else if(x == length) index -= 5;
+		else if(z == length) index -= 3 + (4 * length);
 		
-		return 3 + (4 * _z) + (4 * _x * length);
+		return index;
 	}
 	
 	public float[][] createTexCoords(float[][] vertices, int texLen)
-	{
+	{	
 		int n = vertices.length;
-		float[][] textureVertices = new float[n][2];
+		float[][] texCoords = new float[n][2];
 		
 		float[] _tv = {-1, -1};
 		
 		for (int i = 0; i < n; i += 4)
 		{
-			createTexturedQuad(textureVertices, i, texLen, vertices, _tv);
+			createTexturedQuad(texCoords, i, texLen, vertices, _tv);
 		}
 		
-		return textureVertices;
+		return texCoords;
 	}
 	
-	private void createTexturedQuad(float[][] textureVertices, int i, int texLen, float[][] vertices, float[] _tv)
+	public void scaleTexCoords(int texLen)
 	{
-		textureVertices[i] = makeTextureVertex(vertices[i], texLen, _tv);
+		int n = vertices.length;
+		float[][] texCoords = new float[n][2];
+		
+		float[] _tv = {-1, -1};
+		
+		for (int i = 0; i < n; i += 4)
+		{
+			createTexturedQuad(texCoords, i, texLen, vertices, _tv);
+		}
+		
+		texCoords1 = texCoords;
+	}
+	
+	private void createTexturedQuad(float[][] texCoords, int i, int texLen, float[][] vertices, float[] _tv)
+	{
+		texCoords[i] = makeTexCoord(vertices[i], texLen, _tv);
 		
 		for(int j = 1; j < 4; j++)
-			textureVertices[i + j] = makeTextureVertex(vertices[i + j], texLen, textureVertices[i]);
+		{
+			texCoords[i + j] = makeTexCoord(vertices[i + j], texLen, texCoords[i]);
+		}
 	}
 	
-	private float[] makeTextureVertex(float[] vertex, int texLen, float[] tv1)
+	private float[] makeTexCoord(float[] vertex, int texLen, float[] tv1)
 	{
 		float s, t;
 		
 		if(texLen > 1)
 		{
-			s = ((float) ((vertex[0] + length / 2) % texLen)) / texLen;
-			t = ((float) ((length / 2 - vertex[2]) % texLen)) / texLen;
+			float x = vertex[0] + length / 2;
+			float z = length / 2 - vertex[2];
+			
+			boolean xEdge;
+			boolean zEdge;
+			
+			s = (x % texLen) / texLen;
+			t = (z % texLen) / texLen;
 		}
 		else
 		{
@@ -467,10 +571,15 @@ public class Terrain
 		{
 			renderWireframe(gl, glut);
 		}
+		else if(model != null)
+		{
+			model.render(gl);
+		}
 		else
 		{
 			gl.glScalef(sx, sy, sz);
-			gl.glCallList(terrainList);
+//			gl.glCallList(terrainList);
+			prerender(gl);
 		}
 	}
 
@@ -542,7 +651,6 @@ public class Terrain
 	public void renderMultiTexQuad(GL2 gl, int i)
 	{
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
 		
 		//alpha map
 		gl.glActiveTexture(GL2.GL_TEXTURE0);

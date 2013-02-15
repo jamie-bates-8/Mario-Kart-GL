@@ -12,6 +12,8 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import com.jogamp.common.nio.Buffers;
+
 
 import static bates.jamie.graphics.util.Vector.multiply;
 
@@ -48,8 +50,6 @@ public class BlastParticle extends Particle
 			
 			if(pointSprite)
 			{
-				gl.glColor4f(0, 0, 0.5f, 0.25f);
-				
 				gl.glEnable(GL2.GL_POINT_SMOOTH);
 				gl.glPointSize(60);
 				
@@ -62,8 +62,11 @@ public class BlastParticle extends Particle
 
 				gl.glColor4f(c, c, c, c);
 					
-				indigoFlare.bind(gl);
-				current = indigoFlare;
+				if(!current.equals(indigoFlare))
+				{
+					indigoFlare.bind(gl);
+					current = indigoFlare;
+				}
 				
 				gl.glBegin(GL2.GL_POINTS);
 				gl.glVertex3f(p[0], p[1], p[2]);
@@ -129,17 +132,20 @@ public class BlastParticle extends Particle
 			gl.glEnable(GL_POINT_SPRITE);
 			gl.glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 			
-			indigoFlare.bind(gl);
-			current = indigoFlare;
+			if(!current.equals(indigoFlare))
+			{
+				indigoFlare.bind(gl);
+				current = indigoFlare;
+			}
 			
-			ByteBuffer vb = ByteBuffer.allocateDirect(particles.size() * 3 * 4); 
+			ByteBuffer vb = ByteBuffer.allocateDirect(particles.size() * 3 * Buffers.SIZEOF_FLOAT); 
 			vb.order(ByteOrder.nativeOrder());
 			FloatBuffer vertices = vb.asFloatBuffer();
 			
 			for(Particle particle : particles) vertices.put(particle.c);
 			vertices.position(0);  
 			
-			ByteBuffer cb = ByteBuffer.allocateDirect(particles.size() * 4 * 4); 
+			ByteBuffer cb = ByteBuffer.allocateDirect(particles.size() * 4 * Buffers.SIZEOF_FLOAT); 
 			cb.order(ByteOrder.nativeOrder());
 			FloatBuffer colors = cb.asFloatBuffer();
 			

@@ -139,4 +139,124 @@ public class OBJParser
 
 		return faces;
 	}
+	
+	public static Model parseTriangleMesh(String filename)
+	{
+		long startTime = System.nanoTime();
+		
+		List<Face> faces = new ArrayList<Face>();
+		
+		List<float[]> vertices        = new ArrayList<float[]>();
+		List<float[]> textureVertices = new ArrayList<float[]>();
+		List<float[]> normals         = new ArrayList<float[]>();
+		
+		List<Integer> vIndices        = new ArrayList<Integer>();
+		List<Integer> nIndices        = new ArrayList<Integer>();
+
+		try
+		{
+			Texture defaultTexture = TextureIO.newTexture(new File("tex/default.jpg"), true);
+			String current = "default.jpg";
+			Texture currentTexture = defaultTexture;
+			
+			boolean hasTexture = false;
+			
+			int wildcard  = -1;
+			int wildcards =  0; 
+
+			Scanner fs = new Scanner(new File(filename));
+			
+			while (fs.hasNextLine())
+			{
+				String line = fs.nextLine();
+				
+				if (line.startsWith("v "))
+				{
+					Scanner ls = new Scanner(line.replaceAll("v", "").trim());
+					vertices.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("vt"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
+					textureVertices.add(new float[] {ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("vn"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vn", "").trim());
+					normals.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("usemtl"))
+				{
+					wildcard = -1;
+					String texture = line.replaceAll("usemtl", "").trim();
+					
+					if (texture.equals("Material"))
+					{
+						currentTexture = defaultTexture;
+						current = "default.jpg";
+						hasTexture = false;
+					}
+					else if(texture.equals("Material_"))
+					{
+						currentTexture = defaultTexture;
+						current = "default.jpg";
+						hasTexture = true;
+						wildcard = wildcards++;
+					}
+					else
+					{
+						texture = texture.replaceAll("Material_", "");
+						if(!current.equals(texture))
+						{
+							current = texture;
+							currentTexture = TextureIO.newTexture(new File("tex/" + texture), true);
+						}
+						
+						hasTexture = true;
+					}
+
+				}
+				if (line.startsWith("f"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("f", "").trim().replaceAll("/", " "));
+
+					int[] v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					
+					vIndices.add(v1[0] - 1);
+					vIndices.add(v2[0] - 1);
+					vIndices.add(v3[0] - 1);
+					
+					nIndices.add(v1[2] - 1);
+					nIndices.add(v2[2] - 1);
+					nIndices.add(v3[2] - 1);
+					
+					ls.close();
+				}
+			}
+			fs.close();
+		}
+		catch (IOException e) { e.printStackTrace(); }
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Parsed \"" + filename + "\" in %.3f ms" + "\n", (endTime - startTime) / 1E6);
+		
+		int[] _vIndices = new int[vIndices.size()];
+		for(int i = 0; i < vIndices.size(); i++) _vIndices[i] = vIndices.get(i);
+		
+		int[] _nIndices = new int[nIndices.size()];
+		for(int i = 0; i < nIndices.size(); i++) _nIndices[i] = nIndices.get(i);
+
+		System.out.println("Shared Vertices: " + vertices.size());
+		System.out.println("Shared Normals : " + normals.size());
+		System.out.println("Vertex Indices : " + vIndices.size());
+		System.out.println("Normal Indices : " + nIndices.size());
+		
+		return new Model(vertices, normals, _vIndices, _nIndices, 3);
+	}
 }

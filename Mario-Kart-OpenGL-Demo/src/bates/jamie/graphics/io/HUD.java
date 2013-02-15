@@ -209,7 +209,7 @@ public class HUD
 		for(int i = 0; i < BUFFER_SIZE; i++)
 		{
 			String message = messageBuffer[i] == null ? "" : messageBuffer[i];
-			renderer.draw(message, 150, 580 + (i * 30));
+			renderer.draw(message, 150, 640 - (i * 30));
 		}
 		
 		renderer.endRendering();

@@ -146,6 +146,14 @@ public class SceneNode
 				break;
 			}
 			
+			case T_M:
+			{
+				gl.glTranslatef(t[0], t[1], t[2]);
+				gl.glMultMatrixf(orientation, 0);
+				
+				break;
+			}
+			
 			case T_M_S:
 			{
 				gl.glTranslatef(t[0], t[1], t[2]);
@@ -181,7 +189,7 @@ public class SceneNode
 		S,
 		T_RX_RY_RZ_S,
 		T_S,
-		T_M_S;
+		T_M, T_M_S;
 	}
 	
 	public enum RenderMode

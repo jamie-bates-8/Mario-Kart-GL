@@ -1,10 +1,13 @@
 package bates.jamie.graphics.util;
 
-
-import static java.lang.Math.*;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.sqrt;
 
 public class Vector
 {
+	public static final float EPSILON = 0.00001f;
+	
 	public float[] u;
 	
 	public Vector(float[] u) { this.u = u; }
@@ -107,5 +110,15 @@ public class Vector
 		float[] v3 = cross(v1, v2);
 		
 		return normalize(v3);
+	}
+	
+	public static boolean equal(float[] u, float[] v)
+	{
+		for(int i = 0; i < u.length; i++)
+		{
+			if(abs(v[i] - u[i]) > EPSILON) return false;
+		}
+		
+		return true;
 	}
 }
