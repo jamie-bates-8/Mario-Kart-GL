@@ -14,11 +14,11 @@ import bates.jamie.graphics.util.Face;
 
 public class Scalextric
 {
-	private static final List<Face> CAR_FACES         = OBJParser.parseTriangles("obj/car.obj");
-	private static final List<Face> WHEEL_FACES       = OBJParser.parseTriangles("obj/wheel.obj");
-	private static final List<Face> WINDOW_FACES      = OBJParser.parseTriangles("obj/windows.obj");
-	private static final List<Face> DOOR_WINDOW_FACES = OBJParser.parseTriangles("obj/door_windows.obj");
-	private static final List<Face> DOOR_FACES        = OBJParser.parseTriangles("obj/door.obj");
+	private static final List<Face> CAR_FACES         = OBJParser.parseTriangles("car");
+	private static final List<Face> WHEEL_FACES       = OBJParser.parseTriangles("wheel");
+	private static final List<Face> WINDOW_FACES      = OBJParser.parseTriangles("windows");
+	private static final List<Face> DOOR_WINDOW_FACES = OBJParser.parseTriangles("door_windows");
+	private static final List<Face> DOOR_FACES        = OBJParser.parseTriangles("door");
 	
 	private static int carList;
 	

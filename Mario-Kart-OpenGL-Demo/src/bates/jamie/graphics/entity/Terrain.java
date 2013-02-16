@@ -62,7 +62,7 @@ public class Terrain
 	private boolean createLightMap = false;
 	
 	public int terrainList;
-	public boolean enableWireframe = false;
+	public int renderMode = 1;
 	
 	public float[][] heights;
 	public int length;
@@ -567,19 +567,26 @@ public class Terrain
 	
 	public void render(GL2 gl, GLUT glut)
 	{
-		if(enableWireframe)
+		switch(renderMode)
 		{
-			renderWireframe(gl, glut);
-		}
-		else if(model != null)
-		{
-			model.render(gl);
-		}
-		else
-		{
-			gl.glScalef(sx, sy, sz);
-//			gl.glCallList(terrainList);
-			prerender(gl);
+			case 0: renderWireframe(gl, glut); break;
+			case 1: if(model != null)
+			{
+				gl.glColor3f(1, 1, 1);
+				model.render(gl); break;
+			}
+			case 2:
+			{
+				gl.glScalef(sx, sy, sz);
+				prerender(gl);
+				break;
+			}
+			case 3:
+			{
+				gl.glScalef(sx, sy, sz);
+				gl.glCallList(terrainList);
+				break;
+			}
 		}
 	}
 

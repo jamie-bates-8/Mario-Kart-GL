@@ -24,7 +24,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class ItemBox
 {
-	private static final List<Face> BOX_FACES = OBJParser.parseTriangles("obj/itemBox.obj");
+	private static final List<Face> BOX_FACES = OBJParser.parseTriangles("item_box");
 	private static float rotation = 45.0f; 
 	public static final float SCALE = 1.75f;
 	public static final int RESPAWN_TIME = 60;

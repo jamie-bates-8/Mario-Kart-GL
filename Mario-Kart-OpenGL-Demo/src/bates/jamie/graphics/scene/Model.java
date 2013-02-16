@@ -1,5 +1,9 @@
 package bates.jamie.graphics.scene;
 
+import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.GL.GL_TEXTURE_2D;
+
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
 import java.nio.FloatBuffer;
@@ -41,6 +45,8 @@ public class Model
 		this.normals = Buffers.newDirectFloatBuffer(vertices.size() * 3);
 		this.normals.put(_normals);
 		this.normals.position(0);
+		
+		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size() * 3, normals.size() * 2);
 		
 		indices = Buffers.newDirectIntBuffer(vIndices);
 	}
@@ -119,6 +125,9 @@ public class Model
 	
 	public void render(GL2 gl)
 	{
+		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
+		else gl.glEnable(GL2.GL_TEXTURE_2D);
+		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
 		if(normals != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
 		if(texCoords != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
@@ -137,5 +146,29 @@ public class Model
 		gl.glDisableClientState(GL_VERTEX_ARRAY);
 		if(normals != null) gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 		if(texCoords != null) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+	}
+	
+	public void renderGlass(GL2 gl, float[] color)
+	{
+		gl.glDisable(GL_TEXTURE_2D);
+		gl.glColor4f(color[0], color[1], color[2], 0.25f);
+		
+		gl.glDisable(GL_LIGHTING);
+		gl.glEnable(GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		
+		gl.glFrontFace(GL2.GL_CW);
+		
+		render(gl);
+		
+		gl.glFrontFace(GL2.GL_CCW);
+		
+		render(gl);
+		
+		gl.glColor3f(1, 1, 1);
+		gl.glEnable(GL_TEXTURE_2D);	
+		
+		gl.glDisable(GL_BLEND);
+		gl.glEnable(GL_LIGHTING);
 	}
 }

@@ -239,7 +239,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private List<BillBoard> foliage;
 	
 	public String terrainCommand = "";
-	public static final String DEFAULT_TERRAIN = "100 1000 0 6 18 0.125 1.0";
+	public static final String DEFAULT_TERRAIN = "100 1000 25 6 18 0.125 1.0";
 	
 	public boolean enableReflection = false;
 	public float opacity = 0.75f;
@@ -254,9 +254,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public boolean testMode = false;
 	public boolean printVersion = true;
-	
-	
-	private Model model;
 	
 	private int selectX = -1;
 	private int selectY = -1;
@@ -452,9 +449,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long setupStart = System.currentTimeMillis();
 		
 		/** Model Setup **/
-		environmentFaces = OBJParser.parseTriangles("obj/environment.obj");
-		floorFaces = OBJParser.parseTriangles("obj/floor.obj");
-		model = OBJParser.parseTriangleMesh("obj/car.obj");
+		environmentFaces = OBJParser.parseTriangles("environment");
+		floorFaces       = OBJParser.parseTriangles("floor");
 		
 		printErrors(gl);
 	    
@@ -836,13 +832,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{		
-			gl.glTranslatef(0, 15, 15);
+			gl.glTranslatef(0, 30, -30);
+			gl.glRotatef(ry, 0, 1, 0);
 			
-			gl.glColor3f(1.0f, 0.4f, 0.4f);
-			
-			model.render(gl);
-			
-			gl.glColor3f(1, 1, 1);
+			glut.glutSolidTeapot(3);
 		}
 		gl.glPopMatrix();
 		
@@ -1158,8 +1151,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glDisable(GL_TEXTURE_2D);
 		
-		if(testMode) test1(gl);
-		test2(gl);
+		if(testMode) test(gl);
 		
 		List<Bound> bounds = getBounds();
 		
@@ -1223,7 +1215,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	private void test1(GL2 gl)
+	private void test(GL2 gl)
 	{
 		gl.glPushMatrix();
 		{
@@ -1410,31 +1402,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glPopMatrix();
 		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
-		
-		gl.glColor3f(1, 1, 1);
-	}
-
-	private void test2(GL2 gl)
-	{
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		
-		gl.glPushMatrix();
-		{		
-			gl.glTranslatef(0, 15, 15);
-			
-			gl.glColor3f(1.0f, 0.4f, 0.4f);
-			
-			model.render(gl);
-		}
-		gl.glPopMatrix();
-		
-		gl.glPushMatrix();
-		{		
-			gl.glTranslatef(0, 15, 30);
-			
-			Renderer.displayColoredObject(gl, Car.CAR_FACES, new float[] {1.0f, 0.4f, 0.4f});
-		}
-		gl.glPopMatrix();
 		
 		gl.glColor3f(1, 1, 1);
 	}

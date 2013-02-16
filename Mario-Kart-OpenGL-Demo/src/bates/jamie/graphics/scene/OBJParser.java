@@ -42,7 +42,7 @@ public class OBJParser
 			int wildcard  = -1;
 			int wildcards =  0; 
 
-			Scanner fs = new Scanner(new File(filename));
+			Scanner fs = new Scanner(new File("obj/" + filename + ".obj"));
 			
 			while (fs.hasNextLine())
 			{
@@ -135,7 +135,7 @@ public class OBJParser
 		
 		long endTime = System.nanoTime();
 		
-		System.out.printf("Parsed \"" + filename + "\" in %.3f ms" + "\n", (endTime - startTime) / 1E6);
+		System.out.printf("OBJ Parser: %-12s %.3f ms" + "\n", filename, (endTime - startTime) / 1E6);
 
 		return faces;
 	}
@@ -164,7 +164,7 @@ public class OBJParser
 			int wildcard  = -1;
 			int wildcards =  0; 
 
-			Scanner fs = new Scanner(new File(filename));
+			Scanner fs = new Scanner(new File("obj/" + filename + ".obj"));
 			
 			while (fs.hasNextLine())
 			{
@@ -223,17 +223,17 @@ public class OBJParser
 				{
 					Scanner ls = new Scanner(line.replaceAll("f", "").trim().replaceAll("/", " "));
 
-					int[] v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
-					int[] v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
-					int[] v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v1 = new int[] {ls.nextInt(), ls.nextInt()};
+					int[] v2 = new int[] {ls.nextInt(), ls.nextInt()};
+					int[] v3 = new int[] {ls.nextInt(), ls.nextInt()};
 					
 					vIndices.add(v1[0] - 1);
 					vIndices.add(v2[0] - 1);
 					vIndices.add(v3[0] - 1);
 					
-					nIndices.add(v1[2] - 1);
-					nIndices.add(v2[2] - 1);
-					nIndices.add(v3[2] - 1);
+					nIndices.add(v1[1] - 1);
+					nIndices.add(v2[1] - 1);
+					nIndices.add(v3[1] - 1);
 					
 					ls.close();
 				}
@@ -244,18 +244,13 @@ public class OBJParser
 		
 		long endTime = System.nanoTime();
 		
-		System.out.printf("Parsed \"" + filename + "\" in %.3f ms" + "\n", (endTime - startTime) / 1E6);
+		System.out.printf("OBJ Parser: %-13s %.3f ms" + "\n", filename, (endTime - startTime) / 1E6);
 		
 		int[] _vIndices = new int[vIndices.size()];
 		for(int i = 0; i < vIndices.size(); i++) _vIndices[i] = vIndices.get(i);
 		
 		int[] _nIndices = new int[nIndices.size()];
 		for(int i = 0; i < nIndices.size(); i++) _nIndices[i] = nIndices.get(i);
-
-		System.out.println("Shared Vertices: " + vertices.size());
-		System.out.println("Shared Normals : " + normals.size());
-		System.out.println("Vertex Indices : " + vIndices.size());
-		System.out.println("Normal Indices : " + nIndices.size());
 		
 		return new Model(vertices, normals, _vIndices, _nIndices, 3);
 	}

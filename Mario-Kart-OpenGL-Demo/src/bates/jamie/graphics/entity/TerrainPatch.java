@@ -27,6 +27,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class TerrainPatch
 {
+	private static final float EPSILON = 0.001f;
+	
 	public Texture texture;
 	private Texture alphaMap;
 	
@@ -64,7 +66,7 @@ public class TerrainPatch
 	private int splashSize;
 
 	private float[][] vertices;
-	private float[][] textureVertices;
+	private float[][] texCoords;
 
 	private float[][] heights;
 
@@ -136,19 +138,19 @@ public class TerrainPatch
 
 	private void createGeometry(float[][] heights)
 	{
-		int[] start = getStartPoint(heights);
+		int[] start = getStartPoint();
 
 		vertices = createVertices(start, heights);
-		textureVertices = createTextureVertices(start);
+		texCoords = createTexCoords(start);
 	}
 	
 	private void createGeometry(float[][] heights, int[] start)
 	{
 		vertices = createVertices(start, heights);
-		textureVertices = createTextureVertices(start);
+		texCoords = createTexCoords(start);
 	}
 
-	private int[] getStartPoint(float[][] heights)
+	private int[] getStartPoint()
 	{
 		Random generator = new Random();
 
@@ -186,10 +188,10 @@ public class TerrainPatch
 		float _x = start[0] + x - floorLength / 2;
 		float _z = start[2] + z - floorLength / 2;
 
-		vertices[i    ] = new float[] {_x    , heights[x    ][z + 1], _z + 1};
-		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1], _z + 1};
-		vertices[i + 2] = new float[] {_x + 1, heights[x + 1][z    ], _z    };
-		vertices[i + 3] = new float[] {_x    , heights[x    ][z    ], _z    };
+		vertices[i    ] = new float[] {_x    , heights[x    ][z + 1] + EPSILON, _z + 1};
+		vertices[i + 1] = new float[] {_x + 1, heights[x + 1][z + 1] + EPSILON, _z + 1};
+		vertices[i + 2] = new float[] {_x + 1, heights[x + 1][z    ] + EPSILON, _z    };
+		vertices[i + 3] = new float[] {_x    , heights[x    ][z    ] + EPSILON, _z    };
 	}
 
 	private float[][] getHeights(int[] start, float[][] heights)
@@ -207,7 +209,7 @@ public class TerrainPatch
 		return _heights;
 	}
 
-	private float[][] createTextureVertices(int[] start)
+	private float[][] createTexCoords(int[] start)
 	{
 		int n = vertices.length;
 
@@ -215,12 +217,12 @@ public class TerrainPatch
 
 		for(int i = 0; i < n; i += 4)
 			for(int j = 0; j < 4; j++)
-				textureVertices[i + j] = makeTextureVertex(start, vertices[i + j]);
+				textureVertices[i + j] = makeTexCoord(start, vertices[i + j]);
 
 		return textureVertices;
 	}
 
-	private float[] makeTextureVertex(int[] start, float[] vertex)
+	private float[] makeTexCoord(int[] start, float[] vertex)
 	{
 		float s = ((float) vertex[0] - start[0] + floorLength / 2) / splashSize; 
 		float t = ((float) vertex[2] - start[2] + floorLength / 2) / splashSize; 
@@ -229,26 +231,35 @@ public class TerrainPatch
 	}
 
 	public void render(GL2 gl)
-	{	
+	{		
 		gl.glEnable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_LIGHTING);
-		
+
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_DECAL);
+		texture.bind(gl);
+		texture.enable(gl);
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
+		alphaMap.bind(gl);
+		alphaMap.enable(gl);
+	    
+		//replace the color of the alpha map with the color of the texture
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_REPLACE  );
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_RGB,  GL2.GL_PREVIOUS );
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR);
 
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
+		// use the alpha value from the alpha map
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_REPLACE  );
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_ALPHA,  GL2.GL_TEXTURE  );
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_ALPHA, GL2.GL_SRC_ALPHA);
 
-		for(int i = 0; i < vertices.length; i += 4)
-			renderSplashQuad(gl, i);
+		for(int i = 0; i < vertices.length; i += 4) renderSplashQuad(gl, i);
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
@@ -287,54 +298,12 @@ public class TerrainPatch
 
 	public void renderSplashQuad(GL2 gl, int i)
 	{
-		gl.glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
-
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		texture.bind(gl);
-		texture.enable(gl);
-
-		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		alphaMap.bind(gl);
-		alphaMap.enable(gl);
-		
-//		int[] data = new int[4];
-//		
-//		data[0] = r;
-//	    data[1] = g;
-//	    data[2] = b;
-//	    data[3] = a;
-//	    
-//	    Buffer b;
-//	    
-//	    int x = 0;
-//	    int y = 0;
-//		
-//	    gl.glTexSubImage2D(GL2.GL_TEXTURE_2D,
-//                0,
-//                x,
-//                y,
-//                1,
-//                1,
-//                GL2.GL_RGBA,
-//                GL2.GL_UNSIGNED_BYTE,
-//                b);
-	    
-		//replace the color of the alpha map with the color of the texture
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_REPLACE  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_RGB,  GL2.GL_PREVIOUS );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR);
-
-		// use the alpha value from the alpha map
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_REPLACE  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_ALPHA,  GL2.GL_TEXTURE  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_ALPHA, GL2.GL_SRC_ALPHA);
-
 		gl.glBegin(GL2.GL_QUADS);
 		{
 			for(int j = i; j < i + 4; j++)
 			{
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE0, textureVertices[j][0], textureVertices[j][1]);
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE1, textureVertices[j][0], textureVertices[j][1]);
+				gl.glMultiTexCoord2f(GL2.GL_TEXTURE0, texCoords[j][0], texCoords[j][1]);
+				gl.glMultiTexCoord2f(GL2.GL_TEXTURE1, texCoords[j][0], texCoords[j][1]);
 
 				gl.glVertex3f(vertices[j][0], vertices[j][1], vertices[j][2]);
 			}

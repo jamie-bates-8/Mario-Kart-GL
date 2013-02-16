@@ -19,7 +19,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class BlockFort
 {
-	private static final List<Face> FORT_FACES = OBJParser.parseTriangles("obj/blockFort.obj");
+	private static final List<Face> FORT_FACES = OBJParser.parseTriangles("block_fort");
 	
 	public int renderMode = 0;
 	public boolean displayModel = false;

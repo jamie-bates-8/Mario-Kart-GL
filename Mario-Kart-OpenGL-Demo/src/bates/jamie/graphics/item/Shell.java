@@ -20,8 +20,8 @@ import bates.jamie.graphics.util.RGB;
 
 public abstract class Shell extends Item
 {
-	protected static final List<Face> SHELL_FACES = OBJParser.parseTriangles("obj/shell.obj");
-	protected static final List<Face> RIM_FACES   = OBJParser.parseTriangles("obj/shellRim.obj");
+	protected static final List<Face> SHELL_FACES = OBJParser.parseTriangles("shell");
+	protected static final List<Face> RIM_FACES   = OBJParser.parseTriangles("shell_rim");
 	
 	protected static int rimList = -1;
 	

@@ -31,6 +31,8 @@ public class Renderer
      */
 	public static void displayTexturedObject(GL2 gl, List<Face> objectFaces)
 	{
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		
 		Texture current = objectFaces.get(0).getTexture();
 		current.bind(gl);
 		

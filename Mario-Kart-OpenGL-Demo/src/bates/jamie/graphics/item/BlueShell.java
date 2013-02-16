@@ -26,7 +26,7 @@ public class BlueShell extends Shell
 {
 	private static int shellList = -1;
 	private static int spikeList = -1;
-	private static final List<Face> SPIKE_FACES = OBJParser.parseTriangles("obj/spikes.obj");
+	private static final List<Face> SPIKE_FACES = OBJParser.parseTriangles("spikes");
 	
 	private static Texture[] textures;
 	private static Texture shellTop;

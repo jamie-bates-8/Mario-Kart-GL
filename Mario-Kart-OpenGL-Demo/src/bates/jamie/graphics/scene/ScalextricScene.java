@@ -206,8 +206,8 @@ public class ScalextricScene extends Frame implements GLEventListener, KeyListen
 		
 
 		/** Model Setup **/
-		trackFaces       = OBJParser.parseTriangles("obj/track.obj");
-		environmentFaces = OBJParser.parseTriangles("obj/environment.obj");
+		trackFaces       = OBJParser.parseTriangles("track");
+		environmentFaces = OBJParser.parseTriangles("environment");
 	    
 	    environmentList = gl.glGenLists(1);
 	    gl.glNewList(environmentList, GL2.GL_COMPILE_AND_EXECUTE);

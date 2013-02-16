@@ -1,5 +1,8 @@
 package bates.jamie.graphics.scene;
 
+import static javax.media.opengl.GL.GL_BLEND;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,9 +17,10 @@ public class SceneNode
 	private List<SceneNode> children;
 	
 	private List<Face> geometry;
+	private Model model;
 	private int displayList;
 	
-	private float[] color;
+	private float[] color = {1, 1, 1};
 	
 	private float[] t;
 	private float[] r;
@@ -29,12 +33,13 @@ public class SceneNode
 	
 	private Material material;
 	
-	public SceneNode(List<Face> geometry, int displayList, MatrixOrder order, Material material)
+	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
 		children = new ArrayList<SceneNode>();
 		
 		this.geometry = geometry;
 		this.displayList = displayList;
+		this.model = model;
 		
 		color = new float[4];
 		
@@ -49,15 +54,25 @@ public class SceneNode
 		{
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
+			gl.glColor3f(color[0], color[1], color[2]);
 			
-			if(displayList != -1) gl.glCallList(displayList);
+			if(model != null)
+			{	
+				switch(renderMode)
+				{
+					case TEXTURE: model.render(gl); break;      
+					case COLOR  : model.render(gl); break;
+					case GLASS  : model.renderGlass(gl, color); break;
+				}
+			}
+			else if(displayList != -1) gl.glCallList(displayList);
 			else
 			{
 				switch(renderMode)
 				{
-					case TEXTURE    : Renderer.displayTexturedObject   (gl, geometry);        break;
-					case COLOR      : Renderer.displayColoredObject    (gl, geometry, color); break;
-					case GLASS      : Renderer.displayGlassObject      (gl, geometry, color); break;
+					case TEXTURE: Renderer.displayTexturedObject(gl, geometry);        break;
+					case COLOR  : Renderer.displayColoredObject (gl, geometry, color); break;
+					case GLASS  : Renderer.displayGlassObject   (gl, geometry, color); break;
 				}
 			}
 			
@@ -72,7 +87,21 @@ public class SceneNode
 		{
 			setupMatrix(gl);
 			
-			Renderer.displayTransparentObject(gl, geometry, fade);
+			if(model != null)
+			{
+				gl.glColor3f(fade, fade, fade);
+				
+				gl.glDisable(GL_LIGHTING);
+				gl.glEnable(GL_BLEND);
+				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+				
+				model.render(gl);
+				
+				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+				gl.glDisable(GL_BLEND);
+				gl.glEnable(GL_LIGHTING);
+			}
+			else Renderer.displayTransparentObject(gl, geometry, fade);
 			
 			for(SceneNode child : children) child.renderGhost(gl, fade);
 		}
@@ -86,7 +115,12 @@ public class SceneNode
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
-			Renderer.displayColoredObject(gl, geometry, color);
+			if(model != null)
+			{
+				gl.glColor3f(color[0], color[1], color[2]);
+				model.render(gl);
+			}
+			else Renderer.displayColoredObject(gl, geometry, color);
 			
 			for(SceneNode child : children) child.renderColor(gl, color);
 		}

@@ -74,7 +74,7 @@ public class Console
 		Terrain map = scene.getTerrain();
 		
 		     if(_cmd.equalsIgnoreCase( "generate")) parseGenerate(cmd);
-		else if(_cmd.equalsIgnoreCase("wireframe")) map.enableWireframe = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase(   "render")) map.renderMode = cmd.nextInt();
 		else if(_cmd.equalsIgnoreCase("heightMap")) parseHeightMap(cmd);
 		else if(_cmd.equalsIgnoreCase(  "foliage")) parseFoliage(cmd);
 		else if(_cmd.equalsIgnoreCase(  "texture")) map.scaleTexCoords(cmd.nextInt());
