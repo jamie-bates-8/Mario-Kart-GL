@@ -260,7 +260,7 @@ public class HUD
 		
 		int height = scene.getHeight();
 		
-		float[][] colors = {RGB.RED, RGB.ORANGE, RGB.YELLOW, RGB.GREEN, RGB.BLUE, RGB.INDIGO};
+		float[][] colors = {RGB.RED, RGB.ORANGE, RGB.YELLOW, RGB.GREEN, RGB.BLUE, RGB.INDIGO, RGB.PLUM};
 		float[] color = {};
 		
 		gl.glBegin(GL_LINES);

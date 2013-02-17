@@ -153,7 +153,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public long[] collisionTimes; //buffered times for collision detection tests (for CT graph)
 	
 	private static final String[] COLUMN_HEADERS =
-		{"World", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
+		{"Terrain", "Foliage", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
 	
 	public boolean enableCulling = false;
 	
@@ -498,7 +498,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
 	    frameTimes     = new long[240];
-	    renderTimes    = new long[240][6];
+	    renderTimes    = new long[240][COLUMN_HEADERS.length];
 	    collisionTimes = new long[240];
 	    
 	    if(printVersion) printVersion(gl);
@@ -574,13 +574,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 			if(enableReflection) displayReflection(gl, car);
 			
-			renderTimes[frameIndex][0] = renderWorld(gl);
+			renderWorld(gl);
 			render3DModels(gl, car);
 			
-			renderTimes[frameIndex][3] = renderParticles(gl, car);
+			renderTimes[frameIndex][4] = renderParticles(gl, car);
 			Particle.resetTexture();
 			
-			if(enableTerrain) renderFoliage(gl, car);
+			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 			
 			/*
 			 * The condition (i == 1) means that the frames stored in the accumulation
@@ -598,8 +598,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			else i--;
 			
-			renderTimes[frameIndex][4] = renderBounds(gl);
-			renderTimes[frameIndex][5] = car.renderHUD(gl, glu);
+			renderTimes[frameIndex][5] = renderBounds(gl);
+			renderTimes[frameIndex][6] = car.renderHUD(gl, glu);
 		}
 		
 		/* 
@@ -970,7 +970,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
-		if(displaySkybox) displaySkybox(gl);
+		if(displaySkybox) renderSkybox(gl);
 		
 		if(!enableReflection)
 		{
@@ -984,7 +984,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			gl.glPopMatrix();
 		}
 		
-		if(enableTerrain) renderTerrain(gl);
+		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
 		
 		renderObstacles(gl);
 			
@@ -1005,7 +1005,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	private void displaySkybox(GL2 gl)
+	private void renderSkybox(GL2 gl)
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		
@@ -1048,8 +1048,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * or simply as wireframes if obstacle wireframes are enabled for debugging.
 	 */
 	private long renderObstacles(GL2 gl)
-	{
-		
+	{	
 		long start = System.nanoTime();
 		
 		fort.render(gl);
@@ -1065,7 +1064,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 */
 	private void render3DModels(GL2 gl, Car car)
 	{
-		renderTimes[frameIndex][1] = renderVehicles(gl, car);
+		renderTimes[frameIndex][2] = renderVehicles(gl, car);
 	
 		if(enableItemBoxes)
 	    {
@@ -1073,7 +1072,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				if(!box.isDead()) box.render(gl, car.trajectory);
 	    }
 		
-		renderTimes[frameIndex][2] = renderItems(gl, car);
+		renderTimes[frameIndex][3] = renderItems(gl, car);
 	}
 
 	private long renderVehicles(GL2 gl, Car car)
@@ -1132,8 +1131,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	private void renderFoliage(GL2 gl, Car car)
+	private long renderFoliage(GL2 gl, Car car)
 	{
+		long start = System.nanoTime();
+		
 		gl.glPushMatrix();
 		{	
 			for(BillBoard b : foliage)
@@ -1143,6 +1144,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		}	
 		gl.glPopMatrix();
+		
+		return System.nanoTime() - start;
 	}
 
 	private long renderBounds(GL2 gl)
@@ -1502,6 +1505,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void generateTerrain(GL2 gl, String command)
 	{
+		long start = System.currentTimeMillis();
+		
 		Random generator = new Random();
 		
 		String[] args = command.trim().split(" ");
@@ -1538,6 +1543,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 			
 		generateFoliage(60, 10, 30);
+		
+		System.out.printf("Terrain Generated: %d ms\n", (System.currentTimeMillis() - start));
 	}
 
 	public void generateFoliage(int patches, float spread, int patchSize)
@@ -1592,14 +1599,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			out.write("Values recorded at: " + dateFormat.format(now.getTime()) + "\r\n\r\n ");
 			
-			for(int c = 0; c < renderTimes[0].length; c++)
+			for(int c = 0; c < COLUMN_HEADERS.length; c++)
 				out.write(String.format("%11s", COLUMN_HEADERS[c]) + "\t");
 			
 			out.write("\r\n\r\n ");
 			
 			for(int i = 0; i < renderTimes.length; i++)
 			{
-				for(int j = 0; j < renderTimes[0].length; j++)
+				for(int j = 0; j < COLUMN_HEADERS.length; j++)
 				{
 					out.write(String.format("%11.3f", renderTimes[i][j] / 1E6) + "\t");
 				}	
