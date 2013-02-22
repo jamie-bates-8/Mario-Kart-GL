@@ -1237,11 +1237,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 	
-	Quadtree tree = new Quadtree(new float[][] {{-80, 50, -80}, {80, 75, -80}, {80, 75, 80}, {-80, 50, 80}}, 8, new Random());
+	Quadtree tree;
 
 	private void test(GL2 gl)
 	{	
+		if(tree == null) tree = new Quadtree(new float[][] {{-80, 50, -80}, {80, 75, -80}, {80, 75, 80}, {-80, 50, 80}},
+				new float[][] {{0, 0}, {8, 0}, {8, 8}, {0, 8}}, terrain.baseTexture, 8, new Random());
+		
 		tree.render(gl);
+		tree.renderWireframe(gl);
 		
 		gl.glPushMatrix();
 		{

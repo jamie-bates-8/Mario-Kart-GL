@@ -67,7 +67,7 @@ public class Terrain
 	float[][] normals;
 	float[][] texCoords;
 	
-	Texture baseTexture;
+	public Texture baseTexture;
 	
 	float[][] q = new float[16][3];
 	float[][] r = new float[12][3];
