@@ -73,8 +73,6 @@ public class BlockFort
 		displayWildcardObject(gl, FORT_FACES, new Texture[] {yellowMetal, yellowGranite});
 	    gl.glEndList();
 	    
-		System.out.println("\n" + "Block Fort: " + FORT_FACES.size() * 4 + " faces" + "\n");
-	    
 	    bounds = BoundParser.parseOBBs("bound/blockFort.bound");
 	}
 	

@@ -325,7 +325,7 @@ public class Renderer
 		
 		gl.glEnd();
 		
-		gl.glColor3f(1, 1, 1);
+		gl.glColor4f(1, 1, 1, 1);
 		gl.glEnable(GL_TEXTURE_2D);	
 		
 		gl.glDisable(GL_BLEND);

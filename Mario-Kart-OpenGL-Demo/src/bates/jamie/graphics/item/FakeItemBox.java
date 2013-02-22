@@ -64,8 +64,6 @@ public class FakeItemBox extends Item
 			gl.glNewList(boxList, GL2.GL_COMPILE);
 			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {1.0f, 0.5f, 0.5f});
 		    gl.glEndList();
-		    
-		    System.out.println("\n" + "Fake Item Box: " + BOX_FACES.size() + " faces" + "\n");
 		}
 	}
 	

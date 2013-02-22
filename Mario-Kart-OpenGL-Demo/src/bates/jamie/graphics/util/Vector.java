@@ -7,6 +7,7 @@ import static java.lang.Math.sqrt;
 public class Vector
 {
 	public static final float EPSILON = 0.00001f;
+	public static final int DEFAULT_PRECISION = 2;
 	
 	public float[] u;
 	
@@ -60,6 +61,16 @@ public class Vector
 		float[] w = new float[n];
 		
 		for(int i = 0; i < n; i++) w[i] = k * u[i];
+		
+		return w;
+	}
+	
+	public static float[] multiply(float[] u, float[] v)
+	{
+		int n = u.length;
+		float[] w = new float[n];
+		
+		for(int i = 0; i < n; i++) w[i] = u[i] * v[i];
 		
 		return w;
 	}
@@ -120,5 +131,21 @@ public class Vector
 		}
 		
 		return true;
+	}
+	
+	public static String print(float[] u, int precision)
+	{
+		String vec = "(";
+		
+		for(int i = 0; i < u.length - 1; i++) vec += String.format("%." + precision + "f, ", u[i]);
+		
+		vec += String.format("%." + precision + "f)", u[u.length - 1]);
+		
+		return vec;
+	}
+	
+	public static String print(float[] u)
+	{
+		return print(u, DEFAULT_PRECISION);
 	}
 }

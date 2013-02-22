@@ -46,7 +46,7 @@ public class Model
 		this.normals.put(_normals);
 		this.normals.position(0);
 		
-		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size() * 3, normals.size() * 2);
+		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
 		
 		indices = Buffers.newDirectIntBuffer(vIndices);
 	}
@@ -81,6 +81,8 @@ public class Model
 		this.texCoords = Buffers.newDirectFloatBuffer(vertices.size() * 2);
 		for(float[] texCoord : texCoords) this.texCoords.put(texCoord);
 		this.texCoords.position(0);
+		
+		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates: %d\n}\n", indexCount, vertices.size(), texCoords.size());
 		
 		indices = Buffers.newDirectIntBuffer(vIndices);
 	}

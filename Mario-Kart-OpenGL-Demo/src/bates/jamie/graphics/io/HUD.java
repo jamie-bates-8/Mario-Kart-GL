@@ -185,10 +185,11 @@ public class HUD
 		renderer.setSmoothing(true);
 		renderer.setColor(textColor);
 		
-		renderer.draw("FPS: " + scene.getFrameRate(), 40, 520);
+		renderer.draw("FPS: " + scene.getFrameRate(), 40, 500);
 		
-		renderer.draw("Items: "    + scene.getItems().size(),     40, 460);
-		renderer.draw("Particle: " + scene.getParticles().size(), 40, 430);
+		renderer.draw("Items: "    + scene.getItems().size(),     40, 440);
+		renderer.draw("Particle: " + scene.getParticles().size(), 40, 410);
+		renderer.draw("Foliage: "  + scene.foliage.size(),        40, 380);
 		
 		float[] p = car.getPosition();
 		
@@ -209,7 +210,7 @@ public class HUD
 		for(int i = 0; i < BUFFER_SIZE; i++)
 		{
 			String message = messageBuffer[i] == null ? "" : messageBuffer[i];
-			renderer.draw(message, 150, 640 - (i * 30));
+			renderer.draw(message, 150, 620 - (i * 30));
 		}
 		
 		renderer.endRendering();
@@ -292,7 +293,7 @@ public class HUD
 	private void renderCollisionTimes(GL2 gl)
 	{
 		int frame = scene.frameIndex;
-		long[] times = scene.collisionTimes;
+		long[] times = scene.updateTimes;
 		
 		float y = scene.getHeight() - 50;
 		

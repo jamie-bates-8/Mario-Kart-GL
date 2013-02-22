@@ -56,6 +56,7 @@ public class Console
 		String _cmd = cmd.next();
 		
 		     if(_cmd.equalsIgnoreCase("generator")) parseGenerator(cmd);
+		else if(_cmd.equalsIgnoreCase("quadratic")) scene.quadratic = new float[] {cmd.nextFloat(), cmd.nextFloat(), cmd.nextFloat()};
 	}
 	
 	private void parseGenerator(Scanner cmd)

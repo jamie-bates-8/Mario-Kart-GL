@@ -7,12 +7,7 @@ import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
 import static javax.media.opengl.GL.GL_LEQUAL;
 import static javax.media.opengl.GL.GL_NICEST;
-import static javax.media.opengl.GL.GL_REPEAT;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
-import static javax.media.opengl.GL.GL_TEXTURE_MAG_FILTER;
-import static javax.media.opengl.GL.GL_TEXTURE_MIN_FILTER;
-import static javax.media.opengl.GL.GL_TEXTURE_WRAP_S;
-import static javax.media.opengl.GL.GL_TEXTURE_WRAP_T;
 import static javax.media.opengl.GL2.GL_ACCUM;
 import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
 import static javax.media.opengl.GL2.GL_LOAD;
@@ -79,6 +74,7 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
 import bates.jamie.graphics.io.Console;
@@ -94,7 +90,6 @@ import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.particle.ParticleGenerator.GeneratorType;
 import bates.jamie.graphics.particle.StarParticle;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Face;
@@ -122,8 +117,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Console console;
 	private JTextField consoleInput;
 	
-	private int canvasWidth = 840;
-	private int canvasHeight = 680;
+	private int canvasWidth = 880;
+	private int canvasHeight = 660;
 	
 	public static final int FPS = 60;
 	public static final int MIN_FPS = 30;
@@ -150,7 +145,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public int frameIndex = 0; //time independent frame counter (for FT graph)
 	public long[] frameTimes; //buffered frame times (for FT graph)
 	public long[][] renderTimes; //buffered times for rendering each set of components
-	public long[] collisionTimes; //buffered times for collision detection tests (for CT graph)
+	public long[] updateTimes; //buffered times for collision detection tests (for CT graph)
 	
 	private static final String[] COLUMN_HEADERS =
 		{"Terrain", "Foliage", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
@@ -234,12 +229,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public boolean enableTerrain = true;
 	
-	private Terrain heightMap;
+	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
-	private List<BillBoard> foliage;
+	public List<BillBoard> foliage;
 	
 	public String terrainCommand = "";
-	public static final String DEFAULT_TERRAIN = "100 1000 25 6 18 0.125 1.0";
+	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
 	
 	public boolean enableReflection = false;
 	public float opacity = 0.75f;
@@ -260,6 +255,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private int selected = 0;
 	private IntBuffer selectBuffer;
 	private static final int BUFFER_SIZE = 512;
+	
+	public float[] quadratic;
 	
 	
 	public Scene()
@@ -330,6 +327,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private void printVersion(GL2 gl)
 	{
+		System.out.println();
+		
 		System.out.println("OpenGL Version: " + gl.glGetString(GL2.GL_VERSION));
 	    System.out.println("OpenGL Vendor : " + gl.glGetString(GL2.GL_VENDOR) + "\n");
 	    
@@ -386,9 +385,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		execution = Calendar.getInstance();
 		
+		GL2 gl = drawable.getGL().getGL2();
+		glu = new GLUgl2();
+		glut = new GLUT();
+		
 		try
 		{			
-			brickWall    = TextureIO.newTexture(new File("tex/longBrick.jpg"), false);
+			brickWall = TextureIO.newTexture(new File("tex/longBrick.jpg"), true);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+			
 			brickWallTop = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
 			
 			cobble       = TextureIO.newTexture(new File("tex/cobbles.jpg"), true);
@@ -396,17 +403,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
-		GL2 gl = drawable.getGL().getGL2();
-		glu = new GLUgl2();
-		glut = new GLUT();
-		
 		// may provide extra speed depending on machine
 		gl.setSwapInterval(0);
 		
 		gl.glClearStencil(0);
 		gl.glEnable(GL2.GL_STENCIL_TEST);
 		
-		float[] quadratic = {0.0f, 0.0f, 0.005f};
+		quadratic = new float[] {0.0f, 0.0f, 0.005f};
 		
 		gl.glPointSize(3);
 		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, quadratic, 0);
@@ -421,15 +424,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_BASE_LEVEL, 0);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAX_LEVEL,  4);
 		
+		// For toon shading
 		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_WRAP_S,     GL2.GL_CLAMP);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
-		
 
 		/** Fog Setup **/
 		gl.glEnable(GL_FOG);
@@ -474,9 +472,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    new LightningParticle(ORIGIN);
 	    new StarParticle(ORIGIN, null, 0, 0);
 	    
-	    generators.add(new ParticleGenerator(60, 600, GeneratorType.BLAST, new float[] {0, 50, -50}));
-	    generators.add(new ParticleGenerator(60, 600, GeneratorType.BLAST, new float[] {0, 50, +50}));
-	    
 	    cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
 	    
 	    if(GamePad.numberOfGamepads() > 1)
@@ -497,9 +492,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
-	    frameTimes     = new long[240];
-	    renderTimes    = new long[240][COLUMN_HEADERS.length];
-	    collisionTimes = new long[240];
+	    frameTimes  = new long[240];
+	    renderTimes = new long[240][COLUMN_HEADERS.length];
+	    updateTimes = new long[240];
 	    
 	    if(printVersion) printVersion(gl);
 	    
@@ -508,7 +503,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    generateTerrain(gl, DEFAULT_TERRAIN);
 	    
 	    long setupEnd = System.currentTimeMillis();
-	    System.out.println("Setup Time: " + (setupEnd - setupStart) + " ms" + "\n");
+	    System.out.println("\nSetup Time: " + (setupEnd - setupStart) + " ms" + "\n");
 	    
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
@@ -531,11 +526,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(normalize) gl.glEnable(GL2.GL_NORMALIZE);
 		else gl.glDisable(GL2.GL_NORMALIZE);
 		
+		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, quadratic, 0);
+		
 		setupFog(gl);
 		
 		registerItems(gl);
 		
-		if(enableAnimation) update();
+		if(enableAnimation) updateTimes[frameIndex] = update();
 		
 		if(enableTerrain && !terrainCommand.equals(""))
 		{	
@@ -556,7 +553,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			Car car = cars.get(index);
 			
-			setupScene(gl, index);
+			setupViewport(gl, index);
 			car.setupCamera(gl, glu);
 			
 			if(enableLight)
@@ -668,8 +665,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	private void update()
+	private long update()
 	{
+		long start = System.nanoTime();
+		
 		removeItems();
 		
 		Particle.removeParticles(particles);
@@ -702,6 +701,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 			terrainCollisions();
 		}
+		
+		return System.nanoTime() - start;
 	}
 
 	public void removeItems()
@@ -728,7 +729,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		}
 		
-		collisionTimes[frameIndex] = itemCollisions();
+		itemCollisions();
 	}
 
 	private long itemCollisions()
@@ -906,7 +907,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * It uses the OpenGL method glViewport(x, y, w, h). (x, y) is the bottom-left
 	 * corner of the viewport, while w and h are its width and height respectively. 
 	 */
-	private void setupScene(GL2 gl, int playerID)
+	private void setupViewport(GL2 gl, int playerID)
 	{
 		int h = canvasHeight / 2;
 		int w = canvasWidth  / 2;
@@ -1027,7 +1028,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			heightMap.render(gl, glut);
+			gl.glDisable(GL2.GL_LIGHTING);
+			light.useSpecular(gl, false);
+			
+			terrain.render(gl, glut);
+			
+			gl.glEnable(GL2.GL_LIGHTING);
+			light.useSpecular(gl, true);
 		}	
 		gl.glPopMatrix();
 			
@@ -1130,20 +1137,32 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+	
+	public int foliageMode = 0;
 
 	private long renderFoliage(GL2 gl, Car car)
 	{
 		long start = System.nanoTime();
 		
-		gl.glPushMatrix();
-		{	
-			for(BillBoard b : foliage)
+		switch(foliageMode)
+		{
+			case 0: 
 			{
-				if(car.isSlipping()) b.render(gl, car.slipTrajectory);
-				else b.render(gl, car.trajectory);
+				gl.glPushMatrix();
+				{	
+					for(BillBoard b : foliage)
+					{
+						if(car.isSlipping()) b.render(gl, car.slipTrajectory);
+						else b.render(gl, car.trajectory);
+					}
+				}	
+				gl.glPopMatrix();
+				
+				break;
 			}
-		}	
-		gl.glPopMatrix();
+			case 1: BillBoard.renderList(gl, foliage); break;
+			case 2: BillBoard.renderList2(gl, foliage, car.trajectory); break;
+		}
 		
 		return System.nanoTime() - start;
 	}
@@ -1217,9 +1236,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+	
+	Quadtree tree = new Quadtree(new float[][] {{-80, 50, -80}, {80, 75, -80}, {80, 75, 80}, {-80, 50, 80}}, 8, new Random());
 
 	private void test(GL2 gl)
-	{
+	{	
+		tree.render(gl);
+		
 		gl.glPushMatrix();
 		{
 			gl.glColor3f(0.25f, 0.25f, 0.25f);
@@ -1501,12 +1524,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return bounds;
 	}
 
-	public Terrain getTerrain() { return heightMap; }
+	public Terrain getTerrain() { return terrain; }
 	
 	public void generateTerrain(GL2 gl, String command)
 	{
-		long start = System.currentTimeMillis();
-		
 		Random generator = new Random();
 		
 		String[] args = command.trim().split(" ");
@@ -1523,11 +1544,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			float p = Float.parseFloat(args[5]);
 			float h = Float.parseFloat(args[6]);
 			
-			heightMap = new Terrain(gl, length, iterations, r0, r1, p, h);
+			long start = System.currentTimeMillis();
+			
+			terrain = new Terrain(gl, length, iterations, r0, r1, p, h);
+			
+			long end = System.currentTimeMillis();
+			
+			System.out.printf("Terrain Generated: (%d) %d ms\n", terrain.length * terrain.length, (end - start));
+			
 			terrainPatches = new TerrainPatch[splashes];
 	    
 			for (int i = 0; i < terrainPatches.length; i++)
-				terrainPatches[i] = new TerrainPatch(null, heightMap.heights, generator.nextInt(15) + 5);
+				terrainPatches[i] = new TerrainPatch(null, terrain.heights, generator.nextInt(15) + 5);
+			
+			System.out.printf("Patches Generated: %d ms\n", (System.currentTimeMillis() - end));
 		}
 		else
 		{
@@ -1535,22 +1565,33 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			int iterations = Integer.parseInt(args[1]);
 			int splashes   = Integer.parseInt(args[2]);
 			
-			heightMap = new Terrain(gl, length, iterations);
+			long start = System.currentTimeMillis();
+			
+			terrain = new Terrain(gl, length, iterations);
+			
+			long end = System.currentTimeMillis();
+			
+			System.out.printf("Terrain Generated: (%d) %d ms\n", terrain.length * terrain.length, (end - start));
+			
 			terrainPatches = new TerrainPatch[splashes];
 	    
 			for (int i = 0; i < terrainPatches.length; i++)
-				terrainPatches[i] = new TerrainPatch(null, heightMap.heights, generator.nextInt(15) + 5);
+				terrainPatches[i] = new TerrainPatch(null, terrain.heights, generator.nextInt(15) + 5);
+			
+			System.out.printf("Patches Generated: %d ms\n", (System.currentTimeMillis() - end));
 		}
+		
+		long start = System.currentTimeMillis();
 			
 		generateFoliage(60, 10, 30);
 		
-		System.out.printf("Terrain Generated: %d ms\n", (System.currentTimeMillis() - start));
+		System.out.printf("Foliage Generated: (%d) %d ms\n", foliage.size(), (System.currentTimeMillis() - start));
 	}
 
 	public void generateFoliage(int patches, float spread, int patchSize)
 	{
 		foliage = new ArrayList<BillBoard>();
-		Random generator = new Random();
+		Random generator = new Random(); 
 	    
 	    for(int i = 0; i < patches; i++)
 	    {
@@ -1563,7 +1604,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	
 	    	if(i > patches * 0.75)
 	    	{
-	    		p[1] = heightMap.getHeight(p);
+	    		p[1] = terrain.getHeight(p);
 	    		foliage.add(new BillBoard(p, t));
 	    	}
 	    	else
@@ -1576,9 +1617,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    		
 		    		p0[0] += (generator.nextFloat() * spread * 2) - spread;
 		    		p0[2] += (generator.nextFloat() * spread * 2) - spread;
-		    		p0[1] = heightMap.getHeight(p0);
+		    		p0[1] = terrain.getHeight(p0);
 		    		
-		    		foliage.add(new BillBoard(p0, t));
+		    		if(Math.abs(p0[0]) < 200 && Math.abs(p0[2]) < 200) foliage.add(new BillBoard(p0, t));
 		    	}
 	    	}
 	    }
@@ -1674,8 +1715,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_4:	 enableOBBSolids     = !enableOBBSolids;     break;
 			case KeyEvent.VK_5:	 enableClosestPoints = !enableClosestPoints; break;
 			
-			case KeyEvent.VK_F1: fort.renderMode++; fort.renderMode %= 4; break;
-			case KeyEvent.VK_F3: Item.renderMode++; Item.renderMode %= 2; break;
+			case KeyEvent.VK_F1 : fort.renderMode++; fort.renderMode %= 4; break;
+			case KeyEvent.VK_F3 : Item.renderMode++; Item.renderMode %= 2; break;
+			case KeyEvent.VK_F10: foliageMode++; foliageMode %= 3; break;
 			
 			case KeyEvent.VK_6:  Item.toggleBoundSolids(); break;
 			case KeyEvent.VK_7:  Item.toggleBoundFrames(); break;

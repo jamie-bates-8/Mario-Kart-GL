@@ -52,8 +52,6 @@ public class RedShell extends Shell
 			gl.glNewList(shellList, GL2.GL_COMPILE);
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
-			
-			System.out.println("Red Shell: " + (SHELL_FACES.size() + RIM_FACES.size()) + " faces");
 		}
 	    
 		velocity = INITIAL_VELOCITY;

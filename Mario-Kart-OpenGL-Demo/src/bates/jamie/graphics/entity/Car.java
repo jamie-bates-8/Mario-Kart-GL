@@ -222,13 +222,6 @@ public class Car
 			gl.glNewList(carList, GL2.GL_COMPILE);
 			displayPartiallyTexturedObject(gl, CAR_FACES, color);
 			gl.glEndList();
-			
-			System.out.println("\n" + "Car: " + "\n" +
-			"\t" + "Body: "        + CAR_FACES.size()         + " faces" + "\n" +
-			"\t" + "Wheel: "       + WHEEL_FACES.size()       + " faces" + "\n" +
-			"\t" + "Window: "      + WINDOW_FACES.size()      + " faces" + "\n" +
-			"\t" + "Door Window: " + DOOR_WINDOW_FACES.size() + " faces" + "\n" +
-			"\t" + "Door: "        + DOOR_FACES.size()        + " faces" + "\n");
 		}
 	    
 	    bound = new OBB(

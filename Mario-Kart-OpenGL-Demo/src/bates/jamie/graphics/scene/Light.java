@@ -1,4 +1,5 @@
 package bates.jamie.graphics.scene;
+
 import static javax.media.opengl.GL.GL_FRONT;
 
 import static javax.media.opengl.GL2ES1.GL_LIGHT_MODEL_AMBIENT;
@@ -21,7 +22,6 @@ import javax.media.opengl.GL2;
 
 public class Light extends AnchorPoint
 {
-
 	private float[] ambience = {0.3f, 0.3f, 0.3f, 1.0f};
 	private float[] diffuse = {0.7f, 0.7f, 0.7f, 1.0f};
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -87,4 +87,10 @@ public class Light extends AnchorPoint
 		if(on) gl.glLightfv(GL_LIGHT0, GL_SPECULAR, specular, 0);
 		else   gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {0, 0, 0}, 0);
 	} 
+	
+	public static void globalSpecular(GL2 gl, boolean on)
+	{
+		if(on) gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {1, 1, 1}, 0);
+		else   gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {0, 0, 0}, 0);
+	}
 }

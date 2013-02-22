@@ -58,8 +58,6 @@ public class Banana extends Item
 			gl.glNewList(bananaList, GL2.GL_COMPILE);
 			displayGradientObject(gl, BANANA_FACES, gradient, -1.35f, 1.41f);
 		    gl.glEndList();
-		    
-		    System.out.println("\n" + "Banana: " + BANANA_FACES.size() + " faces" + "\n");
 		}
 		
 		this.scene = scene;

@@ -8,18 +8,14 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-
 import java.io.File;
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
-
 import javax.media.opengl.GL2;
-
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -68,16 +64,10 @@ public class Terrain
 	public int length;
 	
 	float[][] vertices;
-	
 	float[][] normals;
+	float[][] texCoords;
 	
-	float[][] texCoords1;
-	float[][] texCoords2;
-	float[][] texCoords3;
-	
-	Texture lowerTexture;
-	Texture upperTexture;
-	Texture alphaMap;
+	Texture baseTexture;
 	
 	float[][] q = new float[16][3];
 	float[][] r = new float[12][3];
@@ -88,17 +78,18 @@ public class Terrain
 	Model model;
 	
 	public Terrain(GL2 gl, int length, int i)
-	{
+	{	
 		setHeights(length, i);
+		
 		this.length = length;
 		
 		sx = sz = WORLD_LENGTH / length;
 		
-		loadTextures();
+		loadTextures(gl);
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(TEXTURE_LENGTH, 20);
+		createGeometry(TEXTURE_LENGTH);
 		
 		displayList(gl);
 	}
@@ -111,16 +102,31 @@ public class Terrain
 		peak_inc = p;
 		hill_inc = h;
 		
+		System.out.println("Terrain:\n{");
+		
+		long start = System.nanoTime();
+		
 		setHeights(length, i);
+		
+		long end = System.nanoTime();
+		
+		System.out.printf("\tDeformation: %.3f ms\n", (end - start) / 1E6);
+		
 		this.length = length;
 		
 		sx = sz = WORLD_LENGTH / length;
 		
-		loadTextures();
+		loadTextures(gl);
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(TEXTURE_LENGTH, 20);
+		start = System.currentTimeMillis();
+		
+		createGeometry(TEXTURE_LENGTH);
+		
+		end = System.currentTimeMillis();
+		
+		System.out.println("\tGeometry: " + (System.currentTimeMillis() - start) + " ms\n}");
 		
 		displayList(gl);
 		
@@ -129,6 +135,8 @@ public class Terrain
 	
 	public void toModel()
 	{
+		long start = System.currentTimeMillis();
+		
 		int[] indices = new int[length * length * 4];
 		
 		List<float[]> _vertices  = new ArrayList<float[]>();
@@ -139,7 +147,7 @@ public class Terrain
 		for(int i = 0; i < indices.length; i++)
 		{
 			float[] vertex = vertices[i];
-			float[] texCoord = texCoords1[i];
+			float[] texCoord = texCoords[i];
 			
 			boolean equal = false;
 			
@@ -170,35 +178,20 @@ public class Terrain
 			_vertices.set(i, new float[] {vertex[0] * sx, vertex[1] * sy, vertex[2] * sz});
 		}
 		
-		model = new Model(_vertices, _texCoords, indices, indices, lowerTexture, 4);
-	}
-	
-	public int foobar(int i)
-	{
-		int cell = i / 4; 
+		model = new Model(_vertices, _texCoords, indices, indices, baseTexture, 4);
 		
-		int x = cell % length;
-		int z = cell / length;
-		
-		x %= TEXTURE_LENGTH;
-		z %= TEXTURE_LENGTH;
-		
-		if(i % 4 == 0) z += 1;
-		if(i % 4 == 1) { x += 1; z += 1; }
-		if(i % 4 == 2) x += 1;
-		
-		return x + z * (TEXTURE_LENGTH + 1);
+		System.out.println("Terrain Model Indexed: " + (System.currentTimeMillis() - start) + " ms");
 	}
 
 	public Terrain(GL2 gl, String fileName)
 	{
 		importMap(fileName);
 		
-		loadTextures();
+		loadTextures(gl);
 		
 		if(createLightMap) createLightMap();
 		
-		createGeometry(TEXTURE_LENGTH, 20);
+		createGeometry(TEXTURE_LENGTH);
 		
 		displayList(gl);
 	}
@@ -215,6 +208,12 @@ public class Terrain
 		
 		int x, z;
 		
+		double[][] distances = new double[max_radius + 1][max_radius + 1];
+		
+		for(int i = 0; i <= max_radius; i++)
+			for(int j = 0; j <= max_radius ; j++)
+				distances[i][j] = Math.sqrt((i * i) + (j * j));
+		
 		for (int i = 0; i < iterations; i++)
 		{
 			x = (int) (generator.nextDouble() * length);
@@ -222,16 +221,20 @@ public class Terrain
 
 			if(generator.nextBoolean())
 			{
-				 increaseRadius(x, z, 2, peak_inc, heights, length);
+				 increaseRadius(x, z, 2, peak_inc, heights, length, distances);
 			}
-			else increaseRadius(x, z, generator, heights, length);
+			else increaseRadius(x, z, generator, heights, length, distances);
 		}
 		
 		this.heights = heights;
 	}
 	
-	private void increaseRadius(int x, int z, int radius, float peak, float[][] heights, int length)
+	private void increaseRadius(int x, int z, int radius, float peak, float[][] heights, int length, double[][] distances)
 	{
+		/*
+		 * calculate extent of the deformation mask in terms of the top-left (_x, _z),
+		 * bottom-right (x_, z_), and centre (x, z) vertices 
+		 */
 		int _x = (x - radius) < 0 ? 0 : x - radius;
 		int _z = (z - radius) < 0 ? 0 : z - radius;
 		int x_ = (x + radius) > length ? length : x + radius;
@@ -243,10 +246,10 @@ public class Terrain
 		{
 			for(int b = _z; b <= z_; b++)
 			{
-				int _x_ = x - a;
-				int _z_ = z - b;
+				int _x_ = Math.abs(x - a);
+				int _z_ = Math.abs(z - b);
 				
-				double d = Math.sqrt((_x_ * _x_) + (_z_ * _z_));
+				double d = distances[_x_][_z_];
 				d = d > radius ? radius : d;
 				
 				if(a == x && b == z) heights[a][b] += peak * (1 - offset);
@@ -255,12 +258,12 @@ public class Terrain
 		}
 	}
 	
-	private void increaseRadius(int x, int z, Random generator, float[][] heights, int length)
+	private void increaseRadius(int x, int z, Random generator, float[][] heights, int length, double[][] distances)
 	{	
 		int radius = min_radius + generator.nextInt(max_radius - min_radius + 1);
 		float peak = generator.nextFloat() * hill_inc;
 		
-		increaseRadius(x, z, radius, peak, heights, length);
+		increaseRadius(x, z, radius, peak, heights, length, distances);
 	}
 
 	private void importMap(String fileName)
@@ -289,13 +292,13 @@ public class Terrain
 		catch (IOException e) { e.printStackTrace(); }
 	}
 
-	private void loadTextures()
+	private void loadTextures(GL2 gl)
 	{
 		try
 		{
-			lowerTexture = TextureIO.newTexture(new File("tex/grass.jpg"), true);
-			upperTexture = TextureIO.newTexture(new File("tex/grass.jpg"), true);
-			alphaMap = TextureIO.newTexture(new File("tex/lightMap.png"), true);
+			baseTexture = TextureIO.newTexture(new File("tex/grass.jpg"), true);
+			baseTexture.setTexParameterf(gl, GL2.GL_TEXTURE_WRAP_S, GL2.GL_REPEAT);
+			baseTexture.setTexParameterf(gl, GL2.GL_TEXTURE_WRAP_T, GL2.GL_REPEAT);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -430,17 +433,13 @@ public class Terrain
 		return h * sy;
 	}
 	
-	public void createGeometry(int texLen1, int texLen2)
+	public void createGeometry(int textureLength)
 	{
 		List<MultiTexFace> faces = new ArrayList<MultiTexFace>();
 		
-		vertices = createVertices();
-		
-		normals = createNormals(vertices);
-		
-		texCoords1 = createTexCoords(vertices, texLen1);
-		texCoords2 = createTexCoords(vertices, texLen2);
-		texCoords3 = createTexCoords(vertices, length);
+		vertices  = createVertices();
+		normals   = createNormals(vertices);
+		texCoords = createTexCoords(vertices, textureLength);
 	}
 	
 	public float[][] createVertices()
@@ -477,7 +476,7 @@ public class Terrain
 	{	
 		float[][] normals = new float[length * length * 4][3];
 		
-		for(int i = 0; i < length; i += 4)
+		for(int i = 0; i < vertices.length; i += 4)
 		{
 			normals[i    ] = Vector.normal(vertices[i    ], vertices[i + 1], vertices[i + 3]);
 			normals[i + 1] = Vector.normal(vertices[i + 1], vertices[i    ], vertices[i + 2]);
@@ -498,69 +497,51 @@ public class Terrain
 		return index;
 	}
 	
-	public float[][] createTexCoords(float[][] vertices, int texLen)
+	public float[][] createTexCoords(float[][] vertices, int tLength)
 	{	
 		int n = vertices.length;
 		float[][] texCoords = new float[n][2];
 		
-		float[] _tv = {-1, -1};
-		
 		for (int i = 0; i < n; i += 4)
 		{
-			createTexturedQuad(texCoords, i, texLen, vertices, _tv);
+			createTexturedQuad(texCoords, i, tLength, vertices);
 		}
 		
 		return texCoords;
 	}
 	
-	public void scaleTexCoords(int texLen)
+	public void scaleTexCoords(int tLength)
 	{
 		int n = vertices.length;
-		float[][] texCoords = new float[n][2];
-		
-		float[] _tv = {-1, -1};
+		float[][] _texCoords = new float[n][2];
 		
 		for (int i = 0; i < n; i += 4)
 		{
-			createTexturedQuad(texCoords, i, texLen, vertices, _tv);
+			createTexturedQuad(_texCoords, i, tLength, vertices);
 		}
 		
-		texCoords1 = texCoords;
+		texCoords = _texCoords;
 	}
 	
-	private void createTexturedQuad(float[][] texCoords, int i, int texLen, float[][] vertices, float[] _tv)
+	private void createTexturedQuad(float[][] texCoords, int i, int tLength, float[][] vertices)
 	{
-		texCoords[i] = makeTexCoord(vertices[i], texLen, _tv);
+		texCoords[i] = makeTexCoord(vertices[i], tLength);
 		
 		for(int j = 1; j < 4; j++)
 		{
-			texCoords[i + j] = makeTexCoord(vertices[i + j], texLen, texCoords[i]);
+			texCoords[i + j] = makeTexCoord(vertices[i + j], tLength);
 		}
 	}
 	
-	private float[] makeTexCoord(float[] vertex, int texLen, float[] tv1)
+	private float[] makeTexCoord(float[] vertex, int texLen)
 	{
 		float s, t;
 		
-		if(texLen > 1)
-		{
-			float x = vertex[0] + length / 2;
-			float z = length / 2 - vertex[2];
+		float x = vertex[0] + length / 2;
+		float z = length / 2 - vertex[2];
 			
-			boolean xEdge;
-			boolean zEdge;
-			
-			s = (x % texLen) / texLen;
-			t = (z % texLen) / texLen;
-		}
-		else
-		{
-			s = ((float) (vertex[0] + length / 2)) / texLen;
-			t = ((float) (length / 2 - vertex[2])) / texLen;
-		}
-		
-		if(s < tv1[0]) s = 1.0f - s;
-		if(t < tv1[1]) t = 1.0f - t;
+		s = x / texLen;
+		t = z / texLen;
 		
 		return new float[] {s, t};
 	}
@@ -572,11 +553,13 @@ public class Terrain
 			case 0: renderWireframe(gl, glut); break;
 			case 1: if(model != null)
 			{
+				gl.glDisable(GL2.GL_LIGHTING);
 				gl.glColor3f(1, 1, 1);
 				model.render(gl); break;
 			}
 			case 2:
 			{
+				gl.glEnable(GL2.GL_LIGHTING);
 				gl.glScalef(sx, sy, sz);
 				prerender(gl);
 				break;
@@ -629,88 +612,24 @@ public class Terrain
 	
 	public void prerender(GL2 gl)
 	{	
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_DECAL);
-
-		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		gl.glEnable(GL2.GL_TEXTURE_2D);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
-
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glEnable(GL2.GL_TEXTURE_2D);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
-
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
+		
+		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 		for(int i = 0; i < vertices.length; i += 4)
 			renderMultiTexQuad(gl, i);
-		
-		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 	}
 	
 	public void renderMultiTexQuad(GL2 gl, int i)
-	{
-		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		
-		//alpha map
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		alphaMap.bind(gl);
-		alphaMap.enable(gl);
-
-		//bottom texture
-		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		lowerTexture.bind(gl);
-		lowerTexture.enable(gl);
-		
-		gl.glEnable(GL2.GL_TEXTURE_2D);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
-		
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_REPLACE  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_RGB,  GL2.GL_TEXTURE  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR);
-
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_REPLACE  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_ALPHA,  GL2.GL_PREVIOUS );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_ALPHA, GL2.GL_SRC_ALPHA);
-
-		//top texture
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		upperTexture.bind(gl);
-		upperTexture.enable(gl);
-		
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB,  GL2.GL_INTERPOLATE);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_RGB,  GL2.GL_PREVIOUS   );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE1_RGB,  GL2.GL_TEXTURE    );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE2_RGB,  GL2.GL_PREVIOUS   );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND1_RGB, GL2.GL_SRC_COLOR  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND2_RGB, GL2.GL_SRC_ALPHA  );
-
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA,  GL2.GL_INTERPOLATE);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE0_ALPHA,  GL2.GL_PREVIOUS   );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE1_ALPHA,  GL2.GL_TEXTURE    );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SOURCE2_ALPHA,  GL2.GL_PREVIOUS   );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_ALPHA, GL2.GL_SRC_ALPHA  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND1_ALPHA, GL2.GL_SRC_ALPHA  );
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND2_ALPHA, GL2.GL_SRC_ALPHA  );
+	{	
+		baseTexture.bind(gl);
 
 		gl.glBegin(GL2.GL_QUADS);
 		{
 			for(int j = i; j < i + 4; j++)
 			{
-//				gl.glNormal3f(normals[j][0], normals[j][1], normals[j][2]);
-				
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE0, texCoords3[j][0], texCoords3[j][1]);
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE1, texCoords1[j][0], texCoords1[j][1]);
-				gl.glMultiTexCoord2f(GL2.GL_TEXTURE2, texCoords2[j][0], texCoords2[j][1]);
-				
+				gl.glNormal3f(normals[j][0], normals[j][1], normals[j][2]);
+				gl.glTexCoord2f(texCoords[j][0], texCoords[j][1]);
 				gl.glVertex3f(vertices[j][0], vertices[j][1], vertices[j][2]);
 			}
 		}

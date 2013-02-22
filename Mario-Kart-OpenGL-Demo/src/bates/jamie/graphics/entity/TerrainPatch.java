@@ -97,22 +97,6 @@ public class TerrainPatch
 		createGeometry(heights);
 	}
 	
-	private float friction(int material)
-	{
-		switch(material)
-		{
-			case 0: return 1.00f;
-			case 1: return 0.90f;
-			case 2: return 0.80f;
-			case 3: return 0.70f;
-			case 4: return 0.60f;
-			case 5: return 0.50f;
-			case 6: return 0.90f;
-			
-			default: return 1.00f;
-		}
-	}
-	
 	public TerrainPatch(Texture texture, float[][] heights, int splashSize, int x, int z)
 	{
 		this.texture = texture;
@@ -134,6 +118,22 @@ public class TerrainPatch
 		if(z + splashSize > floorLength) z = floorLength - splashSize;
 
 		createGeometry(heights, new int[] {x, 0, z});
+	}
+
+	private float friction(int material)
+	{
+		switch(material)
+		{
+			case 0: return 1.00f;
+			case 1: return 0.90f;
+			case 2: return 0.80f;
+			case 3: return 0.70f;
+			case 4: return 0.60f;
+			case 5: return 0.50f;
+			case 6: return 0.90f;
+			
+			default: return 1.00f;
+		}
 	}
 
 	private void createGeometry(float[][] heights)

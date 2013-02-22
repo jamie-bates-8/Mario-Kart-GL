@@ -157,10 +157,11 @@ public class ItemRoulette
 	}
 	
 	public void render(GL2 gl)
-	{
+	{	
 		float yT = 1 - offset;
 		float yV = 20 + 100 * offset;
 		
+		// render bottom of the next panel slidding into the roulette pane 
 		if(offset > 0)
 		{
 			itemIcons[(rouletteID + 1) % itemIcons.length].bind(gl);
@@ -178,6 +179,7 @@ public class ItemRoulette
 		if(isSpinning()) itemIcons[rouletteID % itemIcons.length].bind(gl);
 		else bindIcon(gl);
 
+		// render top of current panel slidding across the roulette pane
 		gl.glBegin(GL2.GL_QUADS);
 		{
 			gl.glTexCoord2f(0,  0); gl.glVertex2f( 20,  yV);

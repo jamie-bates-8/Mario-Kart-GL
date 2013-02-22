@@ -135,7 +135,7 @@ public class OBJParser
 		
 		long endTime = System.nanoTime();
 		
-		System.out.printf("OBJ Parser: %-12s %.3f ms" + "\n", filename, (endTime - startTime) / 1E6);
+		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", filename, faces.size(), (endTime - startTime) / 1E6);
 
 		return faces;
 	}
@@ -244,7 +244,7 @@ public class OBJParser
 		
 		long endTime = System.nanoTime();
 		
-		System.out.printf("OBJ Parser: %-13s %.3f ms" + "\n", filename, (endTime - startTime) / 1E6);
+		System.out.printf("OBJ Parser: %-12s %.3f ms" + "\n", filename, (endTime - startTime) / 1E6);
 		
 		int[] _vIndices = new int[vIndices.size()];
 		for(int i = 0; i < vIndices.size(); i++) _vIndices[i] = vIndices.get(i);
