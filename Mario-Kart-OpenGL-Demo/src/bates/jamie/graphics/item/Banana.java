@@ -1,4 +1,5 @@
 package bates.jamie.graphics.item;
+
 import static bates.jamie.graphics.util.Matrix.getRotationMatrix;
 import static bates.jamie.graphics.util.Renderer.displayGradientObject;
 import static javax.media.opengl.GL.GL_BLEND;
@@ -92,7 +93,6 @@ public class Banana extends Item
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 			if(thrown) gl.glRotatef(trajectory, 0, 1, 0);
 			else gl.glMultMatrixf(getRotationMatrix(u), 0);
-			gl.glScalef(1.0f, 1.0f, 1.0f);
 			
 			gl.glCallList(bananaList);
 			

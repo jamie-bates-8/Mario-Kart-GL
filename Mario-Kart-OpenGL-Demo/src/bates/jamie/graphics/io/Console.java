@@ -169,8 +169,7 @@ public class Console
 		     if(_cmd.equalsIgnoreCase(        "fog")) parseFog(cmd);
 		else if(_cmd.equalsIgnoreCase(      "light")) parseLight(cmd);
 		else if(_cmd.equalsIgnoreCase(    "display")) parseDisplay(cmd);
-		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase("multisample")) scene.multiSample = cmd.nextBoolean();    
+		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();   
 		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat(); 
 		else if(_cmd.equalsIgnoreCase( "reflection")) scene.enableReflection = cmd.nextBoolean(); 
 		else if(_cmd.equalsIgnoreCase(    "opacity")) scene.opacity = cmd.nextFloat();

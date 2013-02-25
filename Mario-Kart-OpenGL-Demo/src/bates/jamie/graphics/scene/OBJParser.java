@@ -27,9 +27,9 @@ public class OBJParser
 		
 		List<Face> faces = new ArrayList<Face>();
 		
-		List<float[]> vertices        = new ArrayList<float[]>();
-		List<float[]> textureVertices = new ArrayList<float[]>();
-		List<float[]> normals         = new ArrayList<float[]>();
+		List<float[]> vertices  = new ArrayList<float[]>();
+		List<float[]> texCoords = new ArrayList<float[]>();
+		List<float[]> normals   = new ArrayList<float[]>();
 
 		try
 		{
@@ -57,7 +57,7 @@ public class OBJParser
 				if (line.startsWith("vt"))
 				{
 					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
-					textureVertices.add(new float[] {ls.nextFloat(), ls.nextFloat()});
+					texCoords.add(new float[] {ls.nextFloat(), ls.nextFloat()});
 					ls.close();
 				}
 				if (line.startsWith("vn"))
@@ -99,11 +99,24 @@ public class OBJParser
 				}
 				if (line.startsWith("f"))
 				{
+					boolean textured = !texCoords.isEmpty(); 
+					
 					Scanner ls = new Scanner(line.replaceAll("f", "").trim().replaceAll("/", " "));
 
-					int[] v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
-					int[] v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
-					int[] v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v1, v2, v3;
+					
+					if(textured)
+					{
+						v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+						v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+						v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					}
+					else
+					{
+						v1 = new int[] {ls.nextInt(), 0, ls.nextInt()};
+						v2 = new int[] {ls.nextInt(), 0, ls.nextInt()};
+						v3 = new int[] {ls.nextInt(), 0, ls.nextInt()};
+					}
 
 					float[][] vs = new float[][]
 					{
@@ -111,12 +124,19 @@ public class OBJParser
 						vertices.get(v2[0] - 1),
 						vertices.get(v3[0] - 1)
 					};
-					float[][] ts = new float[][]
+					
+					float[][] ts = new float[3][2];
+					                         
+					if(textured)
 					{
-						textureVertices.get(v1[1] - 1),
-						textureVertices.get(v2[1] - 1),
-						textureVertices.get(v3[1] - 1)
-					};
+						ts = new float[][]
+						{
+							texCoords.get(v1[1] - 1),
+							texCoords.get(v2[1] - 1),
+							texCoords.get(v3[1] - 1)
+						};
+					}
+					
 					float[][] ns = new float[][]
 					{
 						normals.get(v1[2] - 1),
@@ -146,12 +166,12 @@ public class OBJParser
 		
 		List<Face> faces = new ArrayList<Face>();
 		
-		List<float[]> vertices        = new ArrayList<float[]>();
-		List<float[]> textureVertices = new ArrayList<float[]>();
-		List<float[]> normals         = new ArrayList<float[]>();
+		List<float[]> vertices  = new ArrayList<float[]>();
+		List<float[]> texCoords = new ArrayList<float[]>();
+		List<float[]> normals   = new ArrayList<float[]>();
 		
-		List<Integer> vIndices        = new ArrayList<Integer>();
-		List<Integer> nIndices        = new ArrayList<Integer>();
+		List<Integer> vIndices  = new ArrayList<Integer>();
+		List<Integer> nIndices  = new ArrayList<Integer>();
 
 		try
 		{
@@ -179,7 +199,7 @@ public class OBJParser
 				if (line.startsWith("vt"))
 				{
 					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
-					textureVertices.add(new float[] {ls.nextFloat(), ls.nextFloat()});
+					texCoords.add(new float[] {ls.nextFloat(), ls.nextFloat()});
 					ls.close();
 				}
 				if (line.startsWith("vn"))

@@ -483,7 +483,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			sky          = TextureIO.newTexture(new File("tex/sky.jpg"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
-		System.out.println(0); printErrors(gl);
+		
 		// may provide extra speed depending on machine
 		gl.setSwapInterval(0);
 		
@@ -530,8 +530,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		/** Model Setup **/
 		environmentFaces = OBJParser.parseTriangles("environment");
 		floorFaces       = OBJParser.parseTriangles("floor");
-		
-		printErrors(gl); System.out.println(1);
 	    
 	    environmentList = gl.glGenLists(1);
 	    gl.glNewList(environmentList, GL2.GL_COMPILE);

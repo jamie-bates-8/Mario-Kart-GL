@@ -17,9 +17,12 @@ import com.jogamp.opengl.util.texture.Texture;
 
 public class Model
 {
-	FloatBuffer vertices;
-	FloatBuffer normals;
-	FloatBuffer texCoords;
+	private List<float[]> _vertices;
+	
+	private FloatBuffer vertices;
+	private FloatBuffer normals;
+	private FloatBuffer texCoords;
+	private FloatBuffer colors;
 	
 	int polygon;
 	
@@ -39,6 +42,8 @@ public class Model
 		this.vertices = Buffers.newDirectFloatBuffer(vertices.size() * 3);
 		for(float[] vertex : vertices) this.vertices.put(vertex);
 		this.vertices.position(0);  
+		
+		_vertices = vertices;
 		
 		indexCount = vIndices.length;
 		
@@ -125,18 +130,28 @@ public class Model
 		return _texCoords;
 	}
 	
+	public List<float[]> getVertices() { return _vertices; }
+	
+	public void setColorArray(List<float[]> colors)
+	{
+		this.colors = Buffers.newDirectFloatBuffer(colors.size() * 3);
+		for(float[] color : colors) this.colors.put(color);
+		this.colors.position(0);
+	}
+	
 	public void render(GL2 gl)
 	{
 		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
-		if(normals != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
+		if(normals   != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY       );
 		if(texCoords != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+		if(colors    != null) gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vertices);
-		
-		if(normals != null) gl.glNormalPointer(GL2.GL_FLOAT, 0, normals);
+		if(normals   != null) gl.glNormalPointer(GL2.GL_FLOAT, 0, normals);
+		if(colors    != null) gl.glColorPointer(3, GL2.GL_FLOAT, 0, colors);
 		if(texCoords != null)
 		{
 			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, texCoords);
@@ -146,8 +161,11 @@ public class Model
 		gl.glDrawElements(polygon, indexCount, GL2.GL_UNSIGNED_INT, indices);
 		
 		gl.glDisableClientState(GL_VERTEX_ARRAY);
-		if(normals != null) gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
+		if(normals   != null) gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 		if(texCoords != null) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+		if(colors    != null) gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
+		
+		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	
 	public void renderGlass(GL2 gl, float[] color)
@@ -159,13 +177,8 @@ public class Model
 		gl.glEnable(GL_BLEND);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
-		gl.glFrontFace(GL2.GL_CW);
-		
-		render(gl);
-		
-		gl.glFrontFace(GL2.GL_CCW);
-		
-		render(gl);
+		gl.glFrontFace(GL2.GL_CW ); render(gl);
+		gl.glFrontFace(GL2.GL_CCW); render(gl);
 		
 		gl.glColor3f(1, 1, 1);
 		gl.glEnable(GL_TEXTURE_2D);	
