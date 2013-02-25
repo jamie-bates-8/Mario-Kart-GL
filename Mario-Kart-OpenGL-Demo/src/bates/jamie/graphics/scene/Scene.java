@@ -31,6 +31,8 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -64,8 +66,14 @@ import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUnurbs;
 import javax.media.opengl.glu.GLUquadric;
 import javax.media.opengl.glu.gl2.GLUgl2;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.BoundParser;
@@ -112,13 +120,26 @@ import com.jogamp.opengl.util.texture.TextureIO;
  * track by the use of hotkeys. Users can also interact with the car model and 
  * manipulation the scene in a number of ways.
  */
-public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener
+public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener, ItemListener
 {
 	private Console console;
 	private JTextField consoleInput;
 	
-	private int canvasWidth = 880;
-	private int canvasHeight = 660;
+	private JMenuBar menuBar;
+	
+	private JMenu menu_file;
+	
+	private JMenu menu_load;
+	private JMenuItem menuItem_project;
+	private JMenuItem menuItem_game;
+	
+	private JMenu menu_render;
+	private JMenu menu_quality;
+	private JCheckBoxMenuItem menuItem_multisample;
+	
+	
+	private int canvasWidth = 860;
+	private int canvasHeight = 640;
 	
 	public static final int FPS = 60;
 	public static final int MIN_FPS = 30;
@@ -130,7 +151,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private GLU glu;
 	private GLUT glut;
 	
-	public float[] background = {0.118f, 0.565f, 1.000f};
+	public float[] background = {0.118f, 0.565f, 1.000f}; //sky-blue color
 	
 	private boolean enableAnimation = true;
 	private boolean normalize = true;
@@ -197,11 +218,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Collision Detection Fields **/	
-	private boolean enableOBBAxes          = false;
-	private boolean enableOBBVertices      = false;
-	private boolean enableOBBWireframes    = false;
-	private boolean enableOBBSolids        = false;
-	private boolean enableClosestPoints    = false;
+	private boolean enableOBBAxes       = false;
+	private boolean enableOBBVertices   = false;
+	private boolean enableOBBWireframes = false;
+	private boolean enableOBBSolids     = false;
+	private boolean enableClosestPoints = false;
 	
 	public boolean enableObstacles = false;
 	
@@ -261,6 +282,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public Scene()
 	{
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			
+			for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels())
+			{
+		        if ("Nimbus".equals(info.getName()))
+		        {
+		            UIManager.setLookAndFeel(info.getClassName());
+		            break;
+		        }
+			}
+		}
+		catch (Exception e) { e.printStackTrace(); }
+		
 		JFrame frame = new JFrame();
 		
 		GLCapabilities capabilities = new GLCapabilities(GLProfile.getDefault());
@@ -294,10 +330,55 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		});
 		
+		menuBar = new JMenuBar();
+
+		menu_file = new JMenu("File");
+		menu_file.setMnemonic(KeyEvent.VK_F);
+
+		menu_load = new JMenu("Load");
+		menu_load.setMnemonic(KeyEvent.VK_L);
+		
+		menuItem_project = new JMenuItem("Project", KeyEvent.VK_P);
+		menuItem_project.addActionListener(this);
+		menuItem_project.setActionCommand("load_project");
+		
+		menuItem_game = new JMenuItem("Game", KeyEvent.VK_G);
+		menuItem_game.addActionListener(this);
+		menuItem_game.setActionCommand("load_game");
+		
+		menu_render = new JMenu("Render");
+		menu_render.setMnemonic(KeyEvent.VK_R);
+		
+		menu_quality = new JMenu("Quality");
+		menu_quality.setMnemonic(KeyEvent.VK_Q);
+		
+		menuItem_multisample = new JCheckBoxMenuItem("Multisample");
+		menuItem_multisample.addItemListener(this);
+		menuItem_multisample.setMnemonic(KeyEvent.VK_M);
+		menuItem_multisample.setSelected(multiSample);
+
+		menu_load.add(menuItem_project);
+		menu_load.add(menuItem_game);
+		
+		menu_file.add(menu_load);
+		
+		menuBar.add(menu_file);
+		
+		menu_quality.add(menuItem_multisample);
+		
+		menu_render.add(menu_quality);
+		
+		menuBar.add(menu_file);
+		menuBar.add(menu_render);
+		
+		
+		frame.setJMenuBar(menuBar);
+		
 		console = new Console(this);
 		
 		consoleInput = new JTextField();
 		consoleInput.addActionListener(this);
+		consoleInput.setActionCommand("console");
 		
 		consoleInput.setBackground(Color.DARK_GRAY);
 		consoleInput.setForeground(Color.LIGHT_GRAY);
@@ -394,7 +475,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			brickWall = TextureIO.newTexture(new File("tex/longBrick.jpg"), true);
 			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
-			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 			
 			brickWallTop = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
 			
@@ -402,7 +483,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			sky          = TextureIO.newTexture(new File("tex/sky.jpg"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
-		
+		System.out.println(0); printErrors(gl);
 		// may provide extra speed depending on machine
 		gl.setSwapInterval(0);
 		
@@ -450,7 +531,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		environmentFaces = OBJParser.parseTriangles("environment");
 		floorFaces       = OBJParser.parseTriangles("floor");
 		
-		printErrors(gl);
+		printErrors(gl); System.out.println(1);
 	    
 	    environmentList = gl.glGenLists(1);
 	    gl.glNewList(environmentList, GL2.GL_COMPILE);
@@ -462,7 +543,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    displayTexturedObject(gl, floorFaces);
 	    gl.glEndList();
 	    
-	    new GreenShell (gl, this, null, 0, false); printErrors(gl);
+	    new GreenShell (gl, this, null, 0, false);
 	    new RedShell   (gl, this, null, 0, false); 
 	    new BlueShell  (gl, this, null, 0);
 	    new FakeItemBox(gl, this, null);
@@ -1237,7 +1318,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 	
-	Quadtree tree;
+	public Quadtree tree;
 
 	private void test(GL2 gl)
 	{	
@@ -1245,6 +1326,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				new float[][] {{0, 0}, {8, 0}, {8, 8}, {0, 8}}, terrain.baseTexture, 8, new Random());
 		
 		tree.render(gl);
+		
 		tree.renderWireframe(gl);
 		
 		gl.glPushMatrix();
@@ -1755,7 +1837,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void actionPerformed(ActionEvent event)
 	{
-		console.parseCommand(consoleInput.getText());
+		     if(event.getActionCommand().equals("console"))      console.parseCommand(consoleInput.getText());
+		else if(event.getActionCommand().equals("load_project")) console.parseCommand("profile project");
+		else if(event.getActionCommand().equals("load_game"))    console.parseCommand("profile game");
 	}
 	
 	public KeyEvent pressKey(char c)
@@ -1781,4 +1865,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 
 	public void mouseReleased(MouseEvent e) {}
+
+	public void itemStateChanged(ItemEvent ie)
+	{
+		Object source = ie.getItemSelectable();
+		
+		if(source.equals(menuItem_multisample))
+		{
+			multiSample = (ie.getStateChange() == ItemEvent.SELECTED);
+		}
+	}
 }

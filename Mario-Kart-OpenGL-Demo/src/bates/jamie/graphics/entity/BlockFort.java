@@ -1,8 +1,8 @@
 package bates.jamie.graphics.entity;
+
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
 import static bates.jamie.graphics.util.Renderer.displayWireframeObject;
 
-import java.io.File;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -12,9 +12,9 @@ import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.TextureLoader;
 
 import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
 
 
 public class BlockFort
@@ -35,26 +35,12 @@ public class BlockFort
 	
 	private static int fortList = -1;
 	
-	static
-	{
-		try
-		{
-			greenGranite  = TextureIO.newTexture(new File("tex/greenGranite.jpg"), true);
-			greenMetal    = TextureIO.newTexture(new File("tex/greenMetal.jpg"), true);
-			blueGranite   = TextureIO.newTexture(new File("tex/blueGranite.jpg"), true);
-			blueMetal     = TextureIO.newTexture(new File("tex/blueMetal.jpg"), true);
-			redGranite    = TextureIO.newTexture(new File("tex/redGranite.jpg"), true);
-			redMetal      = TextureIO.newTexture(new File("tex/redMetal.jpg"), true);
-			yellowGranite = TextureIO.newTexture(new File("tex/yellowGranite.jpg"), true);
-			yellowMetal   = TextureIO.newTexture(new File("tex/yellowMetal.jpg"), true);
-		}
-		catch (Exception e) { e.printStackTrace(); }
-	}
-	
 	private List<OBB> bounds;
 	
 	public BlockFort(GL2 gl)
 	{
+		loadTextures(gl);
+		
 		fortList = gl.glGenLists(4);
 
 	    gl.glNewList(fortList, GL2.GL_COMPILE);
@@ -74,6 +60,22 @@ public class BlockFort
 	    gl.glEndList();
 	    
 	    bounds = BoundParser.parseOBBs("bound/blockFort.bound");
+	}
+	
+	public void loadTextures(GL2 gl)
+	{
+		try
+		{
+			greenGranite  = TextureLoader.load(gl, "tex/greenGranite.jpg" , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			greenMetal    = TextureLoader.load(gl, "tex/greenMetal.jpg"   , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			blueGranite   = TextureLoader.load(gl, "tex/blueGranite.jpg"  , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			blueMetal     = TextureLoader.load(gl, "tex/blueMetal.jpg"    , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			redGranite    = TextureLoader.load(gl, "tex/redGranite.jpg"   , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			redMetal      = TextureLoader.load(gl, "tex/redMetal.jpg"     , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			yellowGranite = TextureLoader.load(gl, "tex/yellowGranite.jpg", GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+			yellowMetal   = TextureLoader.load(gl, "tex/yellowMetal.jpg"  , GL2.GL_LINEAR_MIPMAP_LINEAR, true);
+		}
+		catch (Exception e) { e.printStackTrace(); }
 	}
 	
 	public void render(GL2 gl)

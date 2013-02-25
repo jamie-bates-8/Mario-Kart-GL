@@ -230,6 +230,42 @@ public class Quadtree
 	
 	public boolean isLeaf() { return north_west == null; }
 	
+	public void subdivideAll()
+	{
+		if(north_west.isLeaf()) north_west.subdivide(); else north_west.subdivideAll();
+		if(north_east.isLeaf()) north_east.subdivide(); else north_east.subdivideAll();
+		if(south_west.isLeaf()) south_west.subdivide(); else south_west.subdivideAll();
+		if(south_east.isLeaf()) south_east.subdivide(); else south_east.subdivideAll();
+	}
+	
+	public void decimateAll()
+	{
+		if(north_west.isLeaf() && north_east.isLeaf() && south_west.isLeaf() && south_east.isLeaf()) decimate();
+		else
+		{
+		    if(!north_west.isLeaf()) north_west.decimateAll();
+			if(!north_east.isLeaf()) north_east.decimateAll();
+			if(!south_west.isLeaf()) south_west.decimateAll();
+			if(!south_east.isLeaf()) south_east.decimateAll();
+		}
+			
+//	    if(north_west.isLeaf())	north_west.decimate(); else north_west.decimateAll();
+//		if(north_east.isLeaf()) north_east.decimate(); else north_east.decimateAll();
+//		if(south_west.isLeaf()) south_west.decimate(); else south_west.decimateAll();
+//		if(south_east.isLeaf()) south_east.decimate(); else south_east.decimateAll();
+	}
+	
+	public void decimate()
+	{
+		north_west = null;
+		north_east = null;
+		south_west = null;
+		south_east = null;
+	}
+	
+	public static boolean wireframe = true;
+	public static boolean display = true;
+	
 	public void render(GL2 gl)
 	{
 		gl.glPushMatrix();

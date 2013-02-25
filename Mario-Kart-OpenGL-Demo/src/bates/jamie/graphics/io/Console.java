@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Scanner;
 
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.particle.ParticleGenerator;
@@ -46,9 +47,20 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(     "item")) parseItem(cmd);
 		else if(_cmd.equalsIgnoreCase(  "texture")) parseTexture(cmd); 
 		else if(_cmd.equalsIgnoreCase(  "terrain")) parseTerrain(cmd);
-		else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd); 
+		else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd);
+		else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd); 
 
 		cmd.close();
+	}
+	
+	private void parseQuadtree(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		     if(_cmd.equalsIgnoreCase("wireframe")) Quadtree.wireframe = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase(  "display")) Quadtree.display = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase("subdivide")) scene.tree.subdivideAll();
+		else if(_cmd.equalsIgnoreCase( "decimate")) scene.tree.decimateAll(); 
 	}
 	
 	private void parseParticle(Scanner cmd)

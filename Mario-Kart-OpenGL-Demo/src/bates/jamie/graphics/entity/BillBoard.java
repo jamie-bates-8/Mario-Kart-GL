@@ -146,7 +146,7 @@ public class BillBoard
 				float x = (c[0] + 200) / 400;
 				float z = (c[2] + 200) / 400;
 				
-				colors.put(new float[] {1, 1, 1, 1});
+				colors.put(new float[] {x, z, x, 1});
 			}
 			colors.position(0); 
 			
