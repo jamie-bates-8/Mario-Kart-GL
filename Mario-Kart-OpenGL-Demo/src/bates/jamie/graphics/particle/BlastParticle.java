@@ -135,11 +135,7 @@ public class BlastParticle extends Particle
 			gl.glEnable(GL_POINT_SPRITE);
 			gl.glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 			
-			if(!current.equals(indigoFlare))
-			{
-				indigoFlare.bind(gl);
-				current = indigoFlare;
-			}
+			indigoFlare.bind(gl);
 			
 			FloatBuffer vertices = Buffers.newDirectFloatBuffer(particles.size() * 3);
 			

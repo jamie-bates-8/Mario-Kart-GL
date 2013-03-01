@@ -132,6 +132,8 @@ public class BlueShell extends Shell
 			blastSpeed *= 0.9f;
 			blastDuration--;
 			
+			List<Particle> toRemove = new ArrayList<Particle>();
+			
 			for(Particle particle : blast) particle.update();
 			Particle.removeParticles(blast);
 		}

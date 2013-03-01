@@ -1,4 +1,5 @@
 package bates.jamie.graphics.io;
+
 import static java.lang.Math.abs;
 
 import static javax.media.opengl.GL.GL_BLEND;
@@ -13,6 +14,7 @@ import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
 import java.awt.Color;
 import java.awt.Font;
+
 import java.io.File;
 
 import javax.media.opengl.GL2;

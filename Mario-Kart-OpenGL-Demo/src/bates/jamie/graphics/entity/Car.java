@@ -1192,17 +1192,13 @@ public class Car
 	public float[][] getLightVectors()
 	{	
 		float[] eu0 = multiply(bound.u[0], bound.e[0]);
-		float[] eu2 = multiply(bound.u[2], bound.e[2] * 0.75f);
 		
 		float[][] boost = getBoostVectors();
 		
 		return new float[][]
 		{
-			subtract(subtract(getPosition(), eu0), eu2), //right exhaust
-			     add(subtract(getPosition(), eu0), eu2),  //left exhaust
-			
-			subtract(bound.c, boost[0]),
-			subtract(bound.c, boost[1])
+			subtract(getPosition(), eu0),
+			subtract(bound.c, boost[0])
 		};
 	}
 	

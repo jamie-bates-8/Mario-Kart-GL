@@ -6,6 +6,27 @@ public class Matrix
 {
 	public static final float EPSILON = 0.0001f;
 	
+	public static final float[] IDENTITY_MATRIX_9 =
+	{1, 0, 0, 0, 1, 0, 0, 0, 1};
+	
+	public static final float[][] IDENTITY_MATRIX_33 =
+	{
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1}
+	};
+	
+	public static final float[] IDENTITY_MATRIX_16 =
+	{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+	
+	public static final float[][] IDENTITY_MATRIX_44 =
+	{
+		{1, 0, 0, 0},
+		{0, 1, 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}
+	};
+	
 	public static float[][] multiply(float[][] a, float[][] b)
 	{
 		int rows = a.length;
@@ -26,6 +47,18 @@ public class Matrix
 		}
 		
 		return c;
+	}
+	
+	public static void scale(float[][] m, float scale)
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				m[i][j] *= scale;
+	}
+	
+	public static void translateMatrix44(float[][] m, float x, float y, float z)
+	{
+		m[0][3] += x; m[1][3] += y; m[2][3] += z;
 	}
 	
 	public static float[] multiply(float[] a, float[][] b)
@@ -159,6 +192,28 @@ public class Matrix
 		for(int i = 0; i < 4; i++)
 			for(int j = 0; j < 4; j++)
 				R[(i * 4) + j] = _M[i][j];
+		
+		return R;
+	}
+	
+	public static float[] toVector(float[][] m)
+	{
+		float[] R = new float[16];
+		
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				R[(j * 4) + i] = m[i][j];
+		
+		return R;
+	}
+	
+	public static float[][] toMatrix(float[] m)
+	{
+		float[][] R = new float[4][4];
+		
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				R[i][j] = m[(j * 4) + i];
 		
 		return R;
 	}

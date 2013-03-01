@@ -74,9 +74,11 @@ public class BillBoard
 	{
 		gl.glPushMatrix();
 		{
+			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-			gl.glDepthMask(false);
+//			gl.glEnable(GL2.GL_ALPHA_TEST);
+//			gl.glAlphaFunc(GL2.GL_GREATER, 0.25f);
 			
 			float[] c = sphere.c;
 
@@ -99,9 +101,11 @@ public class BillBoard
 			}
 			gl.glEnd();
 			
+			gl.glDepthMask(true);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
-			gl.glDepthMask(true);
+//			gl.glDisable(GL2.GL_ALPHA_TEST);
+			
 		}
 		gl.glPopMatrix();
 		
@@ -119,9 +123,11 @@ public class BillBoard
 			gl.glEnableClientState(GL_VERTEX_ARRAY);
 			gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 			
-			gl.glDepthMask(false);
+//			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
+			gl.glEnable(GL2.GL_ALPHA_TEST);
+			gl.glAlphaFunc(GL2.GL_GREATER, 0.25f);
 				
 			gl.glEnable(GL2.GL_POINT_SMOOTH);
 			gl.glPointSize(100);
@@ -154,9 +160,10 @@ public class BillBoard
 			gl.glColorPointer (4, GL_FLOAT, 0, colors);
 			gl.glDrawArrays(GL_POINTS, 0, boards.size() - 1);
 			
+//			gl.glDepthMask(true);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
-			gl.glDepthMask(true);
+			gl.glDisable(GL2.GL_ALPHA_TEST);
 			
 			gl.glDisableClientState(GL_VERTEX_ARRAY);
 			gl.glDisableClientState(GL2.GL_COLOR_ARRAY);

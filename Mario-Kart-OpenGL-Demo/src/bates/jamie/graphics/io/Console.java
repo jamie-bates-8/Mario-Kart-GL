@@ -11,7 +11,6 @@ import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Scene;
-import bates.jamie.graphics.util.Renderer;
 
 /* TODO
  * 
@@ -115,9 +114,6 @@ public class Console
 	private void parseTexture(Scanner cmd)
 	{
 		String _cmd = cmd.next();
-		 
-		     if(_cmd.equalsIgnoreCase(     "filter")) scene.linearFilter = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase("anisotropic")) Renderer.anisotropic = cmd.nextBoolean(); //TODO seems to have no effect
 	}
 	
 	private void parseBound(Scanner cmd)
@@ -203,9 +199,7 @@ public class Console
 			
 			scene.light.setAmbience(new float[] {r, g, b, a});
 		}
-		else if(_cmd.equalsIgnoreCase(   "smooth")) scene.light.smooth = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase( "parallel")) scene.light.parallel = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase("secondary")) scene.light.secondary = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase("parallel")) scene.light.parallel = cmd.nextBoolean();
 	}
 	
 	private void parseDisplay(Scanner cmd)
@@ -349,7 +343,7 @@ public class Console
 		String _cmd = cmd.next();
 		
 		//TODO nextBoolean() does not parse 1 and 0 as true and false respectively
-		     if(_cmd.equalsIgnoreCase(   "renderMode")) player.renderMode = cmd.nextInt() % 3;
+		     if(_cmd.equalsIgnoreCase(       "render")) player.renderMode = cmd.nextInt() % 3;
 		else if(_cmd.equalsIgnoreCase("invertReverse")) player.invertReverse = !player.invertReverse;
 		else if(_cmd.equalsIgnoreCase(      "gravity")) player.gravity = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase( "acceleration")) player.acceleration = cmd.nextFloat();
