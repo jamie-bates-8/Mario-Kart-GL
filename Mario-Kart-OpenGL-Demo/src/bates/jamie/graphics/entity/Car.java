@@ -12,7 +12,6 @@ import static java.lang.Math.asin;
 import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
 
-import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,10 +44,10 @@ import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
-import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
+import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.util.Face;
 
 /* TODO
@@ -1405,12 +1404,11 @@ public class Car
 			
 			case KeyEvent.VK_F2: renderMode++; renderMode %= 2; break;
 			
-			case KeyEvent.VK_F4: hud.setTextColor(Color.BLACK); break;
-			case KeyEvent.VK_F5: hud.setVisibility(!hud.getVisibility()); break;
-			case KeyEvent.VK_F6: hud.decreaseStretch(); break; 
-			case KeyEvent.VK_F7: hud.increaseStretch(); break; 
-			case KeyEvent.VK_F8: hud.cycleGraphMode(); break;
-			case KeyEvent.VK_F9: hud.nextComponent(); break;
+			case KeyEvent.VK_F4: hud.setVisibility(!hud.getVisibility()); break;
+			case KeyEvent.VK_F5: hud.decreaseStretch(); break; 
+			case KeyEvent.VK_F6: hud.increaseStretch(); break; 
+			case KeyEvent.VK_F7: hud.cycleGraphMode(); break;
+			case KeyEvent.VK_F8: hud.nextComponent(); break;
 			
 			case KeyEvent.VK_F11: high_quality = !high_quality; break;
 			

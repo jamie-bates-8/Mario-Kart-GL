@@ -44,8 +44,6 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.text.SimpleDateFormat;
@@ -63,8 +61,6 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
-import javax.media.opengl.glu.GLUnurbs;
-import javax.media.opengl.glu.GLUquadric;
 import javax.media.opengl.glu.gl2.GLUgl2;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -192,7 +188,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Texture brickWallTop;
 	
 	private Texture cobble;
-	private Texture sky;
 
 	
 	/** Model Fields **/	
@@ -275,14 +270,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public float opacity = 0.75f;
 	
 	private float ry = 0;
-	private float bezier = 0;
-	private boolean rising = true;
 	
 	public boolean smoothBound = false;
 	public boolean multisample = true;
 	
 	public boolean testMode = false;
-	public boolean printVersion = true;
+	public boolean printVersion = false;
 	
 	private int selectX = -1;
 	private int selectY = -1;
@@ -543,7 +536,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			brickWallTop = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
 			
 			cobble       = TextureIO.newTexture(new File("tex/cobbles.jpg"), true);
-			sky          = TextureIO.newTexture(new File("tex/sky.jpg"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
@@ -1039,7 +1031,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{		
-			gl.glTranslatef(0, 30, -30);
+			ry++; ry %= 360;
+			
+			gl.glTranslatef(0, 30, 0);
 			gl.glRotatef(ry, 0, 1, 0);
 			
 			glut.glutSolidTeapot(3);
@@ -1444,203 +1438,37 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 	
 	public Quadtree tree;
+	public int max_lod = 8;
 
 	private void test(GL2 gl)
 	{	
-		if(tree == null) tree = new Quadtree(new float[][] {{-80, 50, -80}, {80, 75, -80}, {80, 75, 80}, {-80, 50, 80}},
-				new float[][] {{0, 0}, {8, 0}, {8, 8}, {0, 8}}, terrain.baseTexture, 8, new Random());
-		
-		tree.render(gl);
-		
-		tree.renderWireframe(gl);
+		if(tree == null)
+		{
+			List<float[]> vBuffer = new ArrayList<float[]>();
+			vBuffer.add(new float[] {-80, 50, -80});
+			vBuffer.add(new float[] { 80, 75, -80});
+			vBuffer.add(new float[] { 80, 75,  80});
+			vBuffer.add(new float[] {-80, 50,  80});
+			
+			List<float[]> tBuffer = new ArrayList<float[]>();
+			tBuffer.add(new float[] {0, 0});
+			tBuffer.add(new float[] {8, 0});
+			tBuffer.add(new float[] {8, 8});
+			tBuffer.add(new float[] {0, 8});
+			
+			int[] indices = {0, 1, 2, 3};
+			
+			tree = new Quadtree(0, vBuffer, tBuffer, indices, terrain.baseTexture, 7, null);
+			
+			System.out.println("Quadtree: " + tree.vertexCount() + " vertices");
+		}
 		
 		gl.glPushMatrix();
 		{
-			gl.glColor3f(0.25f, 0.25f, 0.25f);
-			gl.glTranslatef(0, 30, -30);
-			gl.glRotatef(ry, 0, 1, 0);
-			glut.glutSolidTeapot(3);
+			if(Quadtree.solid) tree.render(gl, max_lod);
+			if(Quadtree.frame) tree.renderWireframe(gl, max_lod);
 		}
 		gl.glPopMatrix();
-		
-		gl.glColor3f(1, 1, 1);
-		
-		ry++;
-		ry %= 360;
-		
-		List<Face> carFaces = Car.CAR_FACES;
-		
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(0, 30, -15);
-			gl.glRotatef(ry, 0, 1, 0);
-			gl.glScalef(1.5f, 1.5f, 1.5f);
-			
-			float[][] colors = Renderer.getCellShades(new float[] {1.0f, 0.4f, 0.4f}, 0.05f, 4);
-			Renderer.cellShadeObject(gl, carFaces, light.getPosition(), colors);
-		}
-		gl.glPopMatrix();
-		
-		float[] plane = {0.25f, 0.5f, 0.75f, 0};
-		
-		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-		
-		gl.glTexGeni (GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_OBJECT_LINEAR);
-		gl.glTexGeni (GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_OBJECT_LINEAR);
-		gl.glTexGenfv(GL2.GL_S, GL2.GL_OBJECT_PLANE, plane, 0);
-		gl.glTexGenfv(GL2.GL_T, GL2.GL_OBJECT_PLANE, plane, 0);
-		
-		gl.glEnable(GL2.GL_TEXTURE_2D);
-		
-		gl.glPushMatrix();
-		{
-			sky.bind(gl);
-			sky.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
-			
-			gl.glTranslatef(0, 30, 0);
-			gl.glRotatef(ry, 0, 1, 0);
-			
-			glut.glutSolidTeapot(3);
-		}
-		gl.glPopMatrix();
-		
-		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
-		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
-		
-		gl.glPushMatrix();
-		{
-			sky.bind(gl);
-			sky.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
-			
-			gl.glTranslatef(0, 30, 15);
-			gl.glRotatef(ry, 0, 1, 0);
-			
-			glut.glutSolidTeapot(3);
-		}
-		gl.glPopMatrix();
-		
-		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
-		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
-		
-		GLUquadric sphere = glu.gluNewQuadric();
-		
-		glu.gluQuadricDrawStyle(sphere, GLU.GLU_FILL);
-		glu.gluQuadricNormals(sphere, GLU.GLU_SMOOTH);
-		glu.gluQuadricTexture(sphere, true);
-		
-		gl.glPushMatrix();
-		{	
-			cobble.bind(gl);
-			cobble.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
-			
-			gl.glTranslatef(0, 30, 30);
-			gl.glRotatef(ry, 0, 1, 0);
-			
-			glu.gluSphere(sphere, 2, 24, 24);
-		}
-		gl.glPopMatrix();
-		
-		bezier += rising ? 10 : -10;
-		     if(bezier == 360) rising = false;
-		else if(bezier ==   0) rising = true;
-		
-		float h = (bezier - 180) / 180;
-		
-		float[][] control =
-		{
-			{-4.0f, 0.0f, 4.0f},
-			{-2.0f, 4.0f, 4.0f},
-			{ 4.0f, 0.0f, 4.0f},
-		
-			{-4.0f, 0.0f, 0.0f},
-			{-2.0f, 4.0f * h, 0.0f},
-			{ 4.0f, 0.0f, 0.0f},
-		
-			{-4.0f, 0.0f, -4.0f},
-			{-2.0f, 4.0f, -4.0f},
-			{ 4.0f, 0.0f, -4.0f}
-		};
-		
-		gl.glEnable(GL2.GL_AUTO_NORMAL);
-		
-		gl.glPushMatrix();
-		{	
-			gl.glTranslatef(0, 15, -15);
-			
-			gl.glDisable(GL2.GL_TEXTURE_2D);
-			
-			Renderer.displayPoints(gl, glut, new float[][] {control[0], control[1], control[2]}, RGB.PURE_GREEN_3F, 10, true);
-			Renderer.displayPoints(gl, glut, new float[][] {control[3], control[4], control[5]}, RGB.PURE_RED_3F,   10, true);
-			Renderer.displayPoints(gl, glut, new float[][] {control[6], control[7], control[8]}, RGB.PURE_BLUE_3F,  10, true);
-			
-			gl.glColor3f(0.2f, 0.2f, 0.2f);
-			
-			ByteBuffer bb = ByteBuffer.allocateDirect(control.length * 3 * 3 * 4); 
-			bb.order(ByteOrder.nativeOrder());
-			FloatBuffer fb = bb.asFloatBuffer();
-			
-			for(int i = 0; i < control.length; i++) fb.put(control[i]);
-			fb.position(0);  
-			
-			gl.glMap2f(GL2.GL_MAP2_VERTEX_3, // Type of data generated
-					0.0f, // Lower u range
-					10.0f, // Upper u range
-					3, // Distance between points in the data
-					3, // Dimension in u direction (order)
-					0.0f, // Lower v range
-					10.0f, // Upper v range
-					9, // Distance between points in the data
-					3, // Dimension in v direction (order)
-					fb); // array of control points
-	
-			gl.glEnable(GL2.GL_MAP2_VERTEX_3);
-			gl.glMapGrid2f(10, 0.0f, 10.0f, 10, 0.0f, 10.0f);
-			gl.glEvalMesh2(GL2.GL_FILL, 0, 10, 0, 10);
-		}
-		gl.glPopMatrix();
-		
-		float[] control2 =
-		{
-			-6.0f, -6.0f, 0.0f,
-			-6.0f, -2.0f, 0.0f,
-			-6.0f,  2.0f, 0.0f, 
-			-6.0f,  6.0f, 0.0f, 
-			-2.0f, -6.0f, 0.0f, 
-			-2.0f, -2.0f, 8.0f * h,
-			-2.0f,  2.0f, 8.0f * h, 
-			-2.0f,  6.0f, 0.0f, 
-			 2.0f, -6.0f, 0.0f,
-			 2.0f, -2.0f, 8.0f,
-			 2.0f,  2.0f, 8.0f,
-			 2.0f,  6.0f, 0.0f,
-			 6.0f, -6.0f, 0.0f,
-			 6.0f, -2.0f, 0.0f,
-			 6.0f,  2.0f, 0.0f,
-			 6.0f,  6.0f, 0.0f
-		};
-		
-		float[] knots = {0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-		
-		gl.glPushMatrix();
-		{		
-			gl.glTranslatef(0, 15, -30);
-			gl.glRotatef(-90, 1, 0, 0);
-			
-	        GLUgl2 glugl2 = new GLUgl2(); 
-	        GLUnurbs nurb = glugl2.gluNewNurbsRenderer();
-	        
-	        glugl2.gluBeginSurface(nurb);
-	
-	        glugl2.gluNurbsSurface(nurb, 8, knots, 8, knots, 4 * 3, 3, control2, 4, 4, GL2.GL_MAP2_VERTEX_3); 
-	        
-	        glugl2.gluEndSurface(nurb); 
-		}
-		gl.glPopMatrix();
-		
-		gl.glEnable(GL2.GL_TEXTURE_2D);
-		
-		gl.glColor3f(1, 1, 1);
 	}
 	
 	private float[] shadowMatrix = new float[16];
@@ -2005,8 +1833,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_6:  Item.toggleBoundSolids(); break;
 			case KeyEvent.VK_7:  Item.toggleBoundFrames(); break;
 			
-			case KeyEvent.VK_8:  displaySkybox = !displaySkybox; break;
-			case KeyEvent.VK_0:  fort.displayModel = !fort.displayModel; break;
+			case KeyEvent.VK_8:  fort.displayModel = !fort.displayModel; break;
+			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
+			
+			case KeyEvent.VK_EQUALS: max_lod++; break;
+			case KeyEvent.VK_MINUS : max_lod--; break;
+			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  break;
+			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); break;
 			
 			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
 	

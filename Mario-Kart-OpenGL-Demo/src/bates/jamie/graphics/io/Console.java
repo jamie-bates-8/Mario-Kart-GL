@@ -1,6 +1,7 @@
 package bates.jamie.graphics.io;
 
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
@@ -56,10 +57,11 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-		     if(_cmd.equalsIgnoreCase("wireframe")) Quadtree.wireframe = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase(  "display")) Quadtree.display = cmd.nextBoolean();
+		     if(_cmd.equalsIgnoreCase("wireframe")) Quadtree.frame = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase(  "display")) Quadtree.solid = cmd.nextBoolean();
 		else if(_cmd.equalsIgnoreCase("subdivide")) scene.tree.subdivideAll();
 		else if(_cmd.equalsIgnoreCase( "decimate")) scene.tree.decimateAll(); 
+		else if(_cmd.equalsIgnoreCase(      "lod")) scene.max_lod = cmd.nextInt();
 	}
 	
 	private void parseParticle(Scanner cmd)
@@ -365,6 +367,14 @@ public class Console
 		
 	         if(_cmd.equalsIgnoreCase( "graph")) parseFrameTime(cmd, player);
 	    else if(_cmd.equalsIgnoreCase("smooth")) player.getHUD().smooth = cmd.nextBoolean();
+	    else if(_cmd.equalsIgnoreCase( "color"))
+	    {
+	    	int r = cmd.nextInt();
+	    	int g = cmd.nextInt();
+	    	int b = cmd.nextInt();
+	    	
+	    	player.getHUD().setTextColor(new Color(r, g, b));
+	    }
 	}
 	
 	private void parseFrameTime(Scanner cmd, Car player)
