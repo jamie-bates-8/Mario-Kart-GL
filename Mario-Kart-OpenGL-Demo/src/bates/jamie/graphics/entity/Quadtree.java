@@ -18,8 +18,14 @@ import com.jogamp.opengl.util.texture.Texture;
 
 public class Quadtree
 {
+	private static final float PEAK_INC = 0.15f;
+	private static final float HILL_INC = 3.0f;
+	
+	private static final int MIN_RADIUS =  8;
+	private static final int MAX_RADIUS = 40;
+	
 	int lod;
-	public static final int MAXIMUM_LOD = 8;
+	public static final int MAXIMUM_LOD = 10;
 	
 	public Quadtree root;
 	
@@ -116,7 +122,7 @@ public class Quadtree
 		for(float[] texCoord : texCoords) tBuffer.put(texCoord);
 		tBuffer.position(0);
 		
-		List<int[]> indices = new ArrayList<int[]>(); getIndices(indices, 7);
+		List<int[]> indices = new ArrayList<int[]>(); getIndices(indices);
 		
 		iBuffer = Buffers.newDirectIntBuffer(indices.size() * 4);
 		for(int[] index : indices) iBuffer.put(index);
@@ -270,6 +276,18 @@ public class Quadtree
 		}
 	}
 	
+	public Quadtree getCell(float[] p)
+	{
+		if(isLeaf() && pointInCell(p)) return this;
+		
+		if(north_west != null && north_west.pointInCell(p)) return north_west.getCell(p);
+		if(north_east != null && north_east.pointInCell(p)) return north_east.getCell(p);
+		if(south_west != null && south_west.pointInCell(p)) return south_west.getCell(p);
+		if(south_east != null && south_east.pointInCell(p)) return south_east.getCell(p);
+		
+		return null;
+	}
+	
 	public float getHeight(float[] p)
 	{	
 		float x = p[0];
@@ -303,6 +321,54 @@ public class Quadtree
 		}
 	}
 	
+	public void setHeights(int iterations)
+	{
+		Random generator = new Random();
+		
+		int x, z;
+		
+		float _x = vertices.get(root.indices[3])[0];
+		float _z = vertices.get(root.indices[3])[2];
+		
+		float length = root.getLength();
+		
+		for (int i = 0; i < iterations; i++)
+		{
+			x = (int) (generator.nextDouble() * length);
+			z = (int) (generator.nextDouble() * length);
+
+			if(generator.nextBoolean())
+			{
+				int radius = MIN_RADIUS + generator.nextInt(MAX_RADIUS - MIN_RADIUS + 1);
+				float peak = generator.nextFloat() * HILL_INC;
+				
+				increaseRadius(new float[] {_x + x, 0, _z + z}, radius, peak);
+			}
+			else increaseRadius(new float[] {_x + x, 0, _z + z}, 2, PEAK_INC);
+		}
+	}
+	
+	public void increaseRadius(float[] p, float radius, float peak)
+	{	
+		float offset = 0.5f / radius;
+		
+		for(float[] vertex : vertices)
+		{	
+			float x = Math.abs(vertex[0] - p[0]);
+			float z = Math.abs(vertex[2] - p[2]);
+			
+			double d = Math.sqrt(x * x + z * z);
+			
+			if(d < radius)
+			{
+				if(d == 0) vertex[1] += peak * (1 - offset);
+				else vertex[1] += peak * (1 - (d / radius));
+			}
+		}
+		
+		updateBuffers();
+	}
+	
 	public void getIndices(List<int[]> _indices, int lod)
 	{
 		if(isLeaf() || this.lod == lod) _indices.add(indices);
@@ -315,7 +381,44 @@ public class Quadtree
 		}
 	}
 	
-	public boolean isLeaf() { return north_west == null; }
+	public int getMaximumLOD()
+	{
+		if(isLeaf()) return lod;
+		
+		int max_lod = 0;
+		int lod = 0;
+		
+		if(north_west != null) { lod = north_west.getMaximumLOD(); if(lod > max_lod) max_lod = lod; }
+		if(north_east != null) { lod = north_east.getMaximumLOD(); if(lod > max_lod) max_lod = lod; }
+		if(south_west != null) { lod = south_west.getMaximumLOD(); if(lod > max_lod) max_lod = lod; }
+		if(south_east != null) { lod = south_east.getMaximumLOD(); if(lod > max_lod) max_lod = lod; }
+		
+		return max_lod;
+	}
+	
+	public float getIncrement()
+	{
+		int max_lod = root.getMaximumLOD();
+		float width = root.getLength();
+		
+		for(int i = 0; i < max_lod; i++) width /= 2;
+		
+		return width;
+	}
+	
+	public float getLength()
+	{
+		float _x = vertices.get(indices[3])[0];
+		float x_ = vertices.get(indices[1])[0];
+		
+		return Math.abs(_x - x_);
+	}
+	
+	public boolean isLeaf()
+	{
+		return north_west == null && north_east == null &&
+			   south_west == null && south_east == null;
+	}
 	
 	public void subdivideAll()
 	{
@@ -359,8 +462,11 @@ public class Quadtree
 		return vertices.size();
 	}
 	
-	public void render(GL2 gl, int lod)
+	public void render(GL2 gl)
 	{
+		gl.glDisable(GL2.GL_LIGHTING);
+		gl.glColor3f(1, 1, 1);
+		
 		if(!textured) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
@@ -382,7 +488,7 @@ public class Quadtree
 		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	
-	public void renderWireframe(GL2 gl, int lod)
+	public void renderWireframe(GL2 gl)
 	{
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		

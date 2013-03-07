@@ -250,7 +250,7 @@ public class Terrain
 				int _z_ = Math.abs(z - b);
 				
 				double d = distances[_x_][_z_];
-				d = d > radius ? radius : d;
+				d = (d > radius) ? radius : d;
 				
 				if(a == x && b == z) heights[a][b] += peak * (1 - offset);
 				else heights[a][b] += peak * (1 - (d / radius));

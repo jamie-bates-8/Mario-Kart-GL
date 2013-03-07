@@ -66,7 +66,7 @@ public class HUD
 		this.scene = scene;
 		this.car = car;
 		
-		Font font = new Font("Calibri", Font.BOLD, 18);
+		Font font = new Font("Calibri", Font.BOLD, 16);
 		renderer = new TextRenderer(font, true, false);
 	}
 	
@@ -110,7 +110,7 @@ public class HUD
 			{
 				case FRAME_TIMES: renderFrameTimes(gl); break;
 				case FRAME_TIME_COMPONENTS: renderFrameTimeComponents(gl); break;
-				case COLLISION_TIMES: renderCollisionTimes(gl); break;
+				case UPDATE_TIMES: renderCollisionTimes(gl); break;
 			}
 			
 			gl.glEnable(GL_LIGHTING);
@@ -215,6 +215,9 @@ public class HUD
 			renderer.draw(message, 150, 620 - (i * 30));
 		}
 		
+		renderer.draw("Graph Mode: " + mode + (mode == GraphMode.FRAME_TIME_COMPONENTS ?
+			(" (" + Scene.COLUMN_HEADERS[emphasizedComponent] + ")") : ""), 50, 20);
+		
 		renderer.endRendering();
 	}
 
@@ -278,7 +281,7 @@ public class HUD
 				    else if(i == frameIndex - 1) color = RGB.DARK_GRAY;
 					else if(i == frameIndex - 2) color = RGB.GRAY;
 					
-					else if(j == emphasizedComponent - 1) color = RGB.WHITE;
+					else if(j == emphasizedComponent) color = RGB.WHITE;
 					
 					else color = colors[j];
 					
@@ -338,8 +341,8 @@ public class HUD
 	
 	public void nextComponent()
 	{
-		if(emphasizedComponent < scene.renderTimes[0].length) emphasizedComponent++;
-		else emphasizedComponent = 0;
+		emphasizedComponent++;
+		emphasizedComponent %= scene.renderTimes[0].length;
 	}
 	
 	/**
@@ -384,11 +387,24 @@ public class HUD
 	{
 		FRAME_TIMES,
 		FRAME_TIME_COMPONENTS,
-		COLLISION_TIMES;
+		UPDATE_TIMES;
 		
 		public static GraphMode cycle(GraphMode mode)
 		{
 			return values()[(mode.ordinal() + 1) % values().length];
+		}
+		
+		@Override
+		public String toString()
+		{
+			switch(this)
+			{
+				case FRAME_TIMES:
+				case FRAME_TIME_COMPONENTS: return "Frame Times";
+				case UPDATE_TIMES: return "Update Times";
+			}
+			
+			return name();
 		}
 	}
 }

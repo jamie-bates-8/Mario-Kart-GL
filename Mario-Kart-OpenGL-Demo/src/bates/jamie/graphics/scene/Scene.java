@@ -177,7 +177,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public long[][] renderTimes; //buffered times for rendering each set of components
 	public long[] updateTimes; //buffered times for collision detection tests (for CT graph)
 	
-	private static final String[] COLUMN_HEADERS =
+	public static final String[] COLUMN_HEADERS =
 		{"Terrain", "Foliage", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
 	
 	public boolean enableCulling = false;
@@ -1445,28 +1445,30 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(tree == null)
 		{
 			List<float[]> vBuffer = new ArrayList<float[]>();
-			vBuffer.add(new float[] {-80, 50, -80});
-			vBuffer.add(new float[] { 80, 75, -80});
-			vBuffer.add(new float[] { 80, 75,  80});
-			vBuffer.add(new float[] {-80, 50,  80});
+			vBuffer.add(new float[] {-220, 0,  220});
+			vBuffer.add(new float[] { 220, 0,  220});
+			vBuffer.add(new float[] { 220, 0, -220});
+			vBuffer.add(new float[] {-220, 0, -220});
 			
 			List<float[]> tBuffer = new ArrayList<float[]>();
-			tBuffer.add(new float[] {0, 0});
-			tBuffer.add(new float[] {8, 0});
-			tBuffer.add(new float[] {8, 8});
-			tBuffer.add(new float[] {0, 8});
+			tBuffer.add(new float[] { 0,  0});
+			tBuffer.add(new float[] {32,  0});
+			tBuffer.add(new float[] {32, 32});
+			tBuffer.add(new float[] { 0, 32});
 			
 			int[] indices = {0, 1, 2, 3};
 			
 			tree = new Quadtree(0, vBuffer, tBuffer, indices, terrain.baseTexture, 7, null);
 			
 			System.out.println("Quadtree: " + tree.vertexCount() + " vertices");
+			
+			tree.setHeights(1000);
 		}
 		
 		gl.glPushMatrix();
 		{
-			if(Quadtree.solid) tree.render(gl, max_lod);
-			if(Quadtree.frame) tree.renderWireframe(gl, max_lod);
+			if(Quadtree.solid) tree.render(gl);
+			if(Quadtree.frame) tree.renderWireframe(gl);
 		}
 		gl.glPopMatrix();
 	}
@@ -1838,8 +1840,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_EQUALS: max_lod++; break;
 			case KeyEvent.VK_MINUS : max_lod--; break;
-			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  break;
-			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); break;
+			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  tree.updateBuffers(); break;
+			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
 			
 			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
 	
