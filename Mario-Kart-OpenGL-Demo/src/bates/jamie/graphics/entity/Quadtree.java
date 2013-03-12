@@ -11,6 +11,8 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.common.nio.Buffers;
@@ -21,11 +23,14 @@ public class Quadtree
 	private static final float PEAK_INC = 0.15f;
 	private static final float HILL_INC = 3.0f;
 	
-	private static final int MIN_RADIUS =  8;
-	private static final int MAX_RADIUS = 40;
+	private static final float MIN_RADIUS =  8;
+	private static final float MAX_RADIUS = 40;
 	
 	int lod;
 	public static final int MAXIMUM_LOD = 10;
+	
+	private static final float EPSILON = 0.005f;
+	private static final float VECTOR_OFFSET = 0.005f;
 	
 	public Quadtree root;
 	
@@ -110,7 +115,107 @@ public class Quadtree
 		System.out.printf("Quadtree, Update: %.3f ms\n", updateBuffers() / 1E6);
 	}
 	
+	public void flatten()
+	{
+		if(isLeaf()) return;
+		
+		if(north_west.isLeaf() && north_east.isLeaf() &&
+		   south_west.isLeaf() && south_east.isLeaf())
+		{
+			float[] northwest = vertices.get(north_west.indices[3]);
+			float[] northeast = vertices.get(north_east.indices[2]);
+			float[] southwest = vertices.get(south_west.indices[0]);
+			float[] southeast = vertices.get(south_east.indices[1]);
+			
+			float[] north  = vertices.get(north_west.indices[2]);
+			float[] east   = vertices.get(south_east.indices[2]);
+			float[] south  = vertices.get(south_east.indices[0]);
+			float[] west   = vertices.get(north_west.indices[0]);
+			float[] centre = vertices.get(north_west.indices[1]);
+			
+			if(gradient(southeast, east , northeast) &&
+			   gradient(southwest, west , northwest) &&
+			   gradient(southwest, south, southeast) &&
+			   gradient(northwest, north, northeast) &&
+			   gradient(west , centre, east ) &&
+			   gradient(north, centre, south)) decimate();
+		}
+		else
+		{
+			north_west.flatten();
+			north_east.flatten();
+			south_west.flatten();
+			south_east.flatten();
+		}
+	}
+	
+	public void divideAtPoint(int index, int lod)
+	{
+		divideAtPoint(vertices.get(index), lod);
+	}
+	
+	public void divideAtPoint(float[] p, int lod)
+	{
+		Quadtree cell = this;
+		
+		while(cell.lod < lod)
+		{
+			cell.subdivide();
+			cell = getCell(p, MAXIMUM_LOD);
+		}
+	}
+	
+	public void repairCrack(int index)
+	{
+		Quadtree[] cells = neighbourhood(index);
+		
+		int lod = 0;
+		
+		for(int i = 0; i < 4; i++)
+			if(cells[i] != null)
+				lod = (cells[i].lod > lod) ? cells[i].lod : lod;
+		
+		for(int i = 0; i < 4; i++)
+		{
+			if(cells[i] != null)
+			{
+				cells[i].divideAtPoint(index, lod);
+				cells = neighbourhood(index);
+			}
+		}
+	}
+	
+	public Quadtree[] neighbourhood(float[] p)
+	{
+		Quadtree[] neighbours = new Quadtree[4];
+		
+		neighbours[0] = getCell(Vector.add(p, new float[] {-VECTOR_OFFSET, 0, -VECTOR_OFFSET}), MAXIMUM_LOD);
+		neighbours[1] = getCell(Vector.add(p, new float[] {+VECTOR_OFFSET, 0, -VECTOR_OFFSET}), MAXIMUM_LOD);
+		neighbours[2] = getCell(Vector.add(p, new float[] {-VECTOR_OFFSET, 0, +VECTOR_OFFSET}), MAXIMUM_LOD);
+		neighbours[3] = getCell(Vector.add(p, new float[] {+VECTOR_OFFSET, 0, +VECTOR_OFFSET}), MAXIMUM_LOD);
+		
+		return neighbours;
+	}
+	
+	public Quadtree[] neighbourhood(int index)
+	{
+		return neighbourhood(vertices.get(index));
+	}
+	
+	public static boolean gradient(float[] a, float[] b, float[] c)
+	{
+		float ba = b[1] - a[1];
+		float cb = c[1] - b[1];
+		
+		return cb - ba < EPSILON;
+	}
+	
 	public long updateBuffers()
+	{
+		return updateBuffers(MAXIMUM_LOD);
+	}
+	
+	public long updateBuffers(int lod)
 	{
 		long start = System.nanoTime();
 		
@@ -122,7 +227,7 @@ public class Quadtree
 		for(float[] texCoord : texCoords) tBuffer.put(texCoord);
 		tBuffer.position(0);
 		
-		List<int[]> indices = new ArrayList<int[]>(); getIndices(indices);
+		List<int[]> indices = new ArrayList<int[]>(); getIndices(indices, lod);
 		
 		iBuffer = Buffers.newDirectIntBuffer(indices.size() * 4);
 		for(int[] index : indices) iBuffer.put(index);
@@ -165,9 +270,9 @@ public class Quadtree
 		float z = p[2];
 		
 		float _x = vertices.get(indices[3])[0];
-		float _z = vertices.get(indices[1])[2];
+		float _z = vertices.get(indices[3])[2];
 		float x_ = vertices.get(indices[1])[0];
-		float z_ = vertices.get(indices[3])[2];
+		float z_ = vertices.get(indices[1])[2];
 		
 		return ((x >= _x) && (x <= x_) && (z >= _z) && (z <= z_)); 
 	}
@@ -189,9 +294,9 @@ public class Quadtree
 		return false;
 	}
 	
-	public void subdivide()
+	public boolean subdivide()
 	{
-		if(lod + 1 > MAXIMUM_LOD) return;
+		if(lod + 1 > MAXIMUM_LOD) return false;
 		
 		float _x = vertices.get(indices[3])[0];
 		float _z = vertices.get(indices[3])[2];
@@ -243,12 +348,14 @@ public class Quadtree
 			north_east = new Quadtree(lod + 1, vertices, new int[] {centre, east, indices[2], north}); north_east.root = root;
 			south_west = new Quadtree(lod + 1, vertices, new int[] {indices[0], south, centre, west}); south_west.root = root;
 			south_east = new Quadtree(lod + 1, vertices, new int[] {south, indices[1], east, centre}); south_east.root = root;
-		}	
+		}
+		
+		return true;
 	}
 	
-	public void subdivide(int iterations)
+	public boolean subdivide(int iterations)
 	{
-		subdivide();
+		boolean divisible = subdivide();
 		
 		iterations--;
 		
@@ -259,6 +366,8 @@ public class Quadtree
 			south_west.subdivide(iterations);
 			south_east.subdivide(iterations);
 		}
+		
+		return divisible;
 	}
 	
 	public void subdivide(int iteration, Random generator)
@@ -276,14 +385,14 @@ public class Quadtree
 		}
 	}
 	
-	public Quadtree getCell(float[] p)
+	public Quadtree getCell(float[] p, int lod)
 	{
-		if(isLeaf() && pointInCell(p)) return this;
+		if((isLeaf() || this.lod == lod) && pointInCell(p)) return this;
 		
-		if(north_west != null && north_west.pointInCell(p)) return north_west.getCell(p);
-		if(north_east != null && north_east.pointInCell(p)) return north_east.getCell(p);
-		if(south_west != null && south_west.pointInCell(p)) return south_west.getCell(p);
-		if(south_east != null && south_east.pointInCell(p)) return south_east.getCell(p);
+		if(north_west != null && north_west.pointInCell(p)) return north_west.getCell(p, lod);
+		if(north_east != null && north_east.pointInCell(p)) return north_east.getCell(p, lod);
+		if(south_west != null && south_west.pointInCell(p)) return south_west.getCell(p, lod);
+		if(south_east != null && south_east.pointInCell(p)) return south_east.getCell(p, lod);
 		
 		return null;
 	}
@@ -321,6 +430,18 @@ public class Quadtree
 		}
 	}
 	
+	public void getIndices(List<int[]> _indices, int lod)
+	{
+		if(isLeaf() || this.lod == lod) _indices.add(indices);
+		else
+		{
+			north_west.getIndices(_indices, lod);
+			north_east.getIndices(_indices, lod);
+			south_west.getIndices(_indices, lod);
+			south_east.getIndices(_indices, lod);
+		}
+	}
+
 	public void setHeights(int iterations)
 	{
 		Random generator = new Random();
@@ -339,12 +460,12 @@ public class Quadtree
 
 			if(generator.nextBoolean())
 			{
-				int radius = MIN_RADIUS + generator.nextInt(MAX_RADIUS - MIN_RADIUS + 1);
+				float radius = MIN_RADIUS + generator.nextFloat() * (MAX_RADIUS - MIN_RADIUS);
 				float peak = generator.nextFloat() * HILL_INC;
 				
 				increaseRadius(new float[] {_x + x, 0, _z + z}, radius, peak);
 			}
-			else increaseRadius(new float[] {_x + x, 0, _z + z}, 2, PEAK_INC);
+			else increaseRadius(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
 		}
 	}
 	
@@ -352,32 +473,22 @@ public class Quadtree
 	{	
 		float offset = 0.5f / radius;
 		
-		for(float[] vertex : vertices)
+		for(int i = 0; i < vertices.size(); i++)
 		{	
+			float[] vertex = vertices.get(i);
+			
 			float x = Math.abs(vertex[0] - p[0]);
 			float z = Math.abs(vertex[2] - p[2]);
 			
 			double d = Math.sqrt(x * x + z * z);
 			
-			if(d < radius)
+			if(d < radius && d > EPSILON)
 			{
+				repairCrack(i);
+				
 				if(d == 0) vertex[1] += peak * (1 - offset);
 				else vertex[1] += peak * (1 - (d / radius));
 			}
-		}
-		
-		updateBuffers();
-	}
-	
-	public void getIndices(List<int[]> _indices, int lod)
-	{
-		if(isLeaf() || this.lod == lod) _indices.add(indices);
-		else
-		{
-			north_west.getIndices(_indices, lod);
-			north_east.getIndices(_indices, lod);
-			south_west.getIndices(_indices, lod);
-			south_east.getIndices(_indices, lod);
 		}
 	}
 	
@@ -507,6 +618,39 @@ public class Quadtree
 		gl.glEnable(GL_TEXTURE_2D);	
 		
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+	}
+	
+	public int testIndex = 0;
+	
+	public void nextTest()
+	{
+		testIndex++;
+		testIndex %= indexCount;
+	}
+	
+	public void renderNeighbourhood(GL2 gl)
+	{
+		Quadtree[] neighbours = neighbourhood(testIndex);
+		
+		List<float[]> _vertices = new ArrayList<float[]>();
+		
+		for(int i = 0; i < neighbours.length; i++)
+		{
+			if(neighbours[i] != null)
+			{
+				_vertices.add(vertices.get(neighbours[i].indices[0]));
+				_vertices.add(vertices.get(neighbours[i].indices[1]));
+				_vertices.add(vertices.get(neighbours[i].indices[2]));
+				_vertices.add(vertices.get(neighbours[i].indices[3]));
+			}
+		}
+		
+		float[][] _vBuffer = new float[_vertices.size()][3];
+		
+		for(int i = 0; i < _vBuffer.length; i++) _vBuffer[i] = _vertices.get(i);
+		
+		Renderer.displayQuads(gl, _vBuffer, RGB.PURE_RED_3F);
+		Renderer.displayWireframeObject(gl, _vBuffer, 4, RGB.WHITE_3F);
 	}
 }
 

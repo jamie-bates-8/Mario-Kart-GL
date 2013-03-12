@@ -69,6 +69,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -140,6 +141,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_anisotropic;
 	private JMenu menu_effects;
 	private JCheckBoxMenuItem menuItem_motionblur;
+	private JCheckBoxMenuItem menuItem_fog;
 	
 	private JMenu menu_light;
 	private JCheckBoxMenuItem menuItem_normalize;
@@ -214,10 +216,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Fog Fields **/
+	public boolean enableFog = true;
 	public float fogDensity = 0.004f;
 	public float[] fogColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	
-	private float cloud_density = 1.0f;
+	private float cloudDensity = 1.0f;
     private static final float MIN_DENSITY = 0.5f;
     private static final float DENSITY_INC = 0.0125f;
 	
@@ -355,6 +358,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_game.setActionCommand("load_game");
 		
 		menuItem_close = new JMenuItem("Close", KeyEvent.VK_C);
+		menuItem_close.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
 		menuItem_close.addActionListener(this);
 		menuItem_close.setActionCommand("close");
 		
@@ -398,7 +402,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_motionblur.setMnemonic(KeyEvent.VK_B);
 		menuItem_motionblur.setSelected(enableMotionBlur);
 		
+		menuItem_fog = new JCheckBoxMenuItem("Fog");
+		menuItem_fog.addItemListener(this);
+		menuItem_fog.setMnemonic(KeyEvent.VK_F);
+		menuItem_fog.setSelected(enableFog);
+		
 		menu_effects.add(menuItem_motionblur);
+		menu_effects.add(menuItem_fog);
 		
 		menu_render.add(menu_effects);
 		
@@ -841,13 +851,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupFog(GL2 gl)
 	{
-		if(cloud_density < 1) cloud_density += DENSITY_INC;
+		if(cloudDensity < 1) cloudDensity += DENSITY_INC;
 		
-		float c = cloud_density;
+		float c = cloudDensity;
 		gl.glColor3f(c, c, c); //affect the color of the environment in addition to fog
 		gl.glFogfv(GL_FOG_COLOR, new float[] {c, c, c, 1}, 0);
 		
-		gl.glFogf(GL_FOG_DENSITY, fogDensity);
+		if(enableFog) gl.glFogf(GL_FOG_DENSITY, fogDensity);
+		else gl.glFogf(GL_FOG_DENSITY, 0);
 	}
 
 	private void registerItems(GL2 gl)
@@ -858,7 +869,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				int itemID = car.getItemCommands().poll();
 				
-				if(itemID == 10) cloud_density = MIN_DENSITY;
+				if(itemID == 10) cloudDensity = MIN_DENSITY;
 				else car.registerItem(gl, itemID);
 			}
 		}
@@ -1173,7 +1184,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(displaySkybox) renderSkybox(gl);
 		
-		if(!enableReflection)
+		if(!enableReflection && !enableTerrain && !testMode)
 		{
 			gl.glPushMatrix();
 			{
@@ -1438,17 +1449,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 	
 	public Quadtree tree;
-	public int max_lod = 8;
+	public int max_lod = 10;
 
 	private void test(GL2 gl)
 	{	
 		if(tree == null)
 		{
 			List<float[]> vBuffer = new ArrayList<float[]>();
-			vBuffer.add(new float[] {-220, 0,  220});
-			vBuffer.add(new float[] { 220, 0,  220});
-			vBuffer.add(new float[] { 220, 0, -220});
-			vBuffer.add(new float[] {-220, 0, -220});
+			vBuffer.add(new float[] {-210, 0,  210});
+			vBuffer.add(new float[] { 210, 0,  210});
+			vBuffer.add(new float[] { 210, 0, -210});
+			vBuffer.add(new float[] {-210, 0, -210});
 			
 			List<float[]> tBuffer = new ArrayList<float[]>();
 			tBuffer.add(new float[] { 0,  0});
@@ -1463,12 +1474,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			System.out.println("Quadtree: " + tree.vertexCount() + " vertices");
 			
 			tree.setHeights(1000);
+			tree.updateBuffers();
 		}
 		
 		gl.glPushMatrix();
 		{
 			if(Quadtree.solid) tree.render(gl);
 			if(Quadtree.frame) tree.renderWireframe(gl);
+			
+			gl.glTranslatef(0, 1, 0);
+			
+			tree.renderNeighbourhood(gl);
 		}
 		gl.glPopMatrix();
 	}
@@ -1801,8 +1817,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		switch (e.getKeyCode())
 		{
-			case KeyEvent.VK_ESCAPE: System.exit(0); break; //Close the application
-	
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			
 			case KeyEvent.VK_T:  enableTerrain = !enableTerrain; cars.get(0).friction = 1; break; //TODO
@@ -1815,8 +1829,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_L:  printDataToFile(null); break;
 			
 			case KeyEvent.VK_DELETE: clearItems(); break;
-	
-			case KeyEvent.VK_P:	 playMusic(); break;
 			
 			case KeyEvent.VK_K:  moveLight = !moveLight; break;
 	 
@@ -1838,10 +1850,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_8:  fort.displayModel = !fort.displayModel; break;
 			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
 			
-			case KeyEvent.VK_EQUALS: max_lod++; break;
-			case KeyEvent.VK_MINUS : max_lod--; break;
+			case KeyEvent.VK_EQUALS: max_lod++; tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_MINUS : max_lod--; tree.updateBuffers(max_lod); break;
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  tree.updateBuffers(); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
+			
+			case KeyEvent.VK_COMMA: tree.nextTest(); break;
+			
+			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(); break;  
 			
 			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
 	
@@ -1904,7 +1920,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		     if(source.equals(menuItem_multisample)) multisample          = selected;
 		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic = selected; 
-		else if(source.equals(menuItem_motionblur )) enableMotionBlur     = selected;      
+		else if(source.equals(menuItem_motionblur )) enableMotionBlur     = selected;
+		else if(source.equals(menuItem_fog        )) enableFog            = selected;    
 		else if(source.equals(menuItem_normalize  )) normalize            = selected;
 		else if(source.equals(menuItem_smooth     )) light.smooth         = selected;
 		else if(source.equals(menuItem_secondary  )) light.secondary      = selected;

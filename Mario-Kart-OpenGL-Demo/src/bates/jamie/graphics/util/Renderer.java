@@ -439,11 +439,11 @@ public class Renderer
 			gl.glEnable(GL2.GL_LINE_STIPPLE);
 			gl.glLineStipple(4, (short) 0xBBBB);
 		}
+		
+		gl.glColor3f(color[0], color[1], color[2]);
 
 		for(int i = 0; i < vertices.length; i += n)
 		{
-			gl.glColor3f(color[0], color[1], color[2]);
-
 			gl.glBegin(GL2.GL_LINE_STRIP);
 			{
 				for(int j = 0; j < n; j++)
@@ -463,6 +463,36 @@ public class Renderer
 		gl.glColor3f(1, 1, 1);
 	}
 	
+	public static void displayQuads(GL2 gl, float[][] vertices, float[] color)
+	{
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+		gl.glEnable(GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		
+		gl.glColor3f(color[0], color[1], color[2]);
+
+		for(int i = 0; i < vertices.length; i += 4)
+		{
+			gl.glBegin(GL2.GL_QUADS);
+			{
+				for(int j = 0; j < 4; j++)
+				{
+					float[] v = vertices[i + j];
+					gl.glVertex3f(v[0], v[1], v[2]);
+				}
+			}
+			gl.glEnd();
+		}
+
+		gl.glEnable(GL_LIGHTING);	
+		gl.glEnable(GL_TEXTURE_2D);
+		gl.glDisable(GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		
+		gl.glColor3f(1, 1, 1);
+	}
+	
 	public static void displayTexturedCuboid(GL2 gl, float x, float y, float z,
 			float xScale, float yScale, float zScale, float rotation, Texture[] t)
 	{
@@ -476,31 +506,39 @@ public class Renderer
 
 			gl.glBegin(GL_QUADS);
 			{	
-				gl.glTexCoord2f(1, 0); gl.glNormal3f(+1, 0, 0); gl.glVertex3f(+1, -1, -1);
-				gl.glTexCoord2f(1, 1); gl.glNormal3f(+1, 0, 0); gl.glVertex3f(+1, +1, -1);
-				gl.glTexCoord2f(0, 1); gl.glNormal3f(+1, 0, 0); gl.glVertex3f(+1, +1, +1);
-				gl.glTexCoord2f(0, 0); gl.glNormal3f(+1, 0, 0); gl.glVertex3f(+1, -1, +1);
+				gl.glNormal3f(+1, 0, 0);
+				
+				gl.glTexCoord2f(1, 0); gl.glVertex3f(+1, -1, -1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f(+1, +1, -1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f(+1, +1, +1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(+1, -1, +1);
+				
+				gl.glNormal3f(-1, 0, 0);
 
-				gl.glTexCoord2f(0, 0); gl.glNormal3f(-1, 0, 0); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(1, 0); gl.glNormal3f(-1, 0, 0); gl.glVertex3f(-1, -1, +1);
-				gl.glTexCoord2f(1, 1); gl.glNormal3f(-1, 0, 0); gl.glVertex3f(-1, +1, +1);
-				gl.glTexCoord2f(0, 1); gl.glNormal3f(-1, 0, 0); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, -1);
 			}
 			gl.glEnd();
 
 			t[1].bind(gl);
 
 			gl.glBegin(GL_QUADS);
-			{		     
-				gl.glTexCoord2f(0, 1); gl.glNormal3f(0, +1, 0); gl.glVertex3f(-1, +1, -1);
-				gl.glTexCoord2f(0, 0); gl.glNormal3f(0, +1, 0); gl.glVertex3f(-1, +1, +1);
-				gl.glTexCoord2f(1, 0); gl.glNormal3f(0, +1, 0); gl.glVertex3f( 1, +1, +1);
-				gl.glTexCoord2f(1, 1); gl.glNormal3f(0, +1, 0); gl.glVertex3f( 1, +1, -1);
+			{		 
+				gl.glNormal3f(0, +1, 0);
+				
+				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(1, 0); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f( 1, +1, -1);
+				
+				gl.glNormal3f(0, -1, 0); 
 
-				gl.glTexCoord2f(1, 1); gl.glNormal3f(0, -1, 0); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(0, 1); gl.glNormal3f(0, -1, 0); gl.glVertex3f( 1, -1, -1);
-				gl.glTexCoord2f(0, 0); gl.glNormal3f(0, -1, 0); gl.glVertex3f( 1, -1, +1);
-				gl.glTexCoord2f(1, 0); gl.glNormal3f(0, -1, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, +1);
 			}
 			gl.glEnd();
 
@@ -508,15 +546,19 @@ public class Renderer
 
 			gl.glBegin(GL_QUADS);
 			{
-				gl.glTexCoord2f(0, 0); gl.glNormal3f(0, 0, +1); gl.glVertex3f(-1, -1, +1);
-				gl.glTexCoord2f(1, 0); gl.glNormal3f(0, 0, +1); gl.glVertex3f( 1, -1, +1);
-				gl.glTexCoord2f(1, 1); gl.glNormal3f(0, 0, +1); gl.glVertex3f( 1, +1, +1);
-				gl.glTexCoord2f(0, 1); gl.glNormal3f(0, 0, +1); gl.glVertex3f(-1, +1, +1);
+				gl.glNormal3f(0, 0, +1);
 				
-				gl.glTexCoord2f(1, 0); gl.glNormal3f(0, 0, -1); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(1, 1); gl.glNormal3f(0, 0, -1); gl.glVertex3f(-1, +1, -1);
-				gl.glTexCoord2f(0, 1); gl.glNormal3f(0, 0, -1); gl.glVertex3f( 1, +1, -1);
-				gl.glTexCoord2f(0, 0); gl.glNormal3f(0, 0, -1); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(1, 0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, +1);
+				
+				gl.glNormal3f(0, 0, -1);
+				
+				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f( 1, +1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, -1);
 			}    
 			gl.glEnd();
 		}

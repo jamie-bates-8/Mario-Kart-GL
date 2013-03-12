@@ -45,7 +45,7 @@ public class Camera extends AnchorPoint
 			{
 				gl.glMatrixMode(GL_PROJECTION);
 				gl.glLoadIdentity();
-				gl.glOrtho(-200, 200, -200, 200, 1, 200);
+				gl.glOrtho(-220, 220, -220, 220, 1, 200);
 				glu.gluLookAt(0, 150, 0,
 					          0, 0, 0,
 					          0, 0, 1);

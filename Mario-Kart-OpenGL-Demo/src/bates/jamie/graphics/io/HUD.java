@@ -187,11 +187,14 @@ public class HUD
 		renderer.setSmoothing(true);
 		renderer.setColor(textColor);
 		
-		renderer.draw("FPS: " + scene.getFrameRate(), 40, 500);
+		int y = scene.getHeight();
 		
-		renderer.draw("Items: "    + scene.getItems().size(),     40, 440);
-		renderer.draw("Particle: " + scene.getParticles().size(), 40, 410);
-		renderer.draw("Foliage: "  + scene.foliage.size(),        40, 380);
+		renderer.draw("FPS: " + scene.getFrameRate(), 40, y - 160);
+		
+		renderer.draw("Items: "    + scene.getItems().size(),     40, y - 220);
+		renderer.draw("Particle: " + scene.getParticles().size(), 40, y - 250);
+		renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
+		renderer.draw("LOD: "      + scene.max_lod,               40, y - 310);
 		
 		float[] p = car.getPosition();
 		
@@ -212,7 +215,7 @@ public class HUD
 		for(int i = 0; i < BUFFER_SIZE; i++)
 		{
 			String message = messageBuffer[i] == null ? "" : messageBuffer[i];
-			renderer.draw(message, 150, 620 - (i * 30));
+			renderer.draw(message, 150, y - ((i + 1) * 30));
 		}
 		
 		renderer.draw("Graph Mode: " + mode + (mode == GraphMode.FRAME_TIME_COMPONENTS ?

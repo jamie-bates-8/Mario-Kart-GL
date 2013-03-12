@@ -207,6 +207,7 @@ public class ItemRoulette
 			gl.glDisable(GL_BLEND);
 		}
 		
+		// render the border of the roulette
 		rouletteBorder.bind(gl);
 		
 		gl.glEnable(GL_BLEND);

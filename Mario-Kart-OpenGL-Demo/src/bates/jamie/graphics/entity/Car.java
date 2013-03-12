@@ -115,7 +115,7 @@ public class Car
 	/** Motion Fields **/
 	public float velocity = 0;
 	public static final float TOP_SPEED = 1.2f;
-	public float acceleration = 0.012f;
+	public float acceleration = 0.006f;
 	public boolean accelerating = false;
 	public boolean reversing = false;
 	public boolean invertReverse = false;
@@ -693,6 +693,41 @@ public class Car
 		return heights;
 	}
 	
+	public float[] getHeights(Quadtree tree)
+	{
+		float[][] vertices = bound.getVertices();
+		boolean update = false;
+		
+		for(int i = 0; i < 4; i++)
+		{
+			Quadtree cell = tree.getCell(vertices[i], scene.max_lod);
+			float h = cell.getHeight(vertices[i]);
+			heights[i] = h;
+			
+			if(accelerating && abs(velocity) > acceleration)
+			{
+				update = true;
+				
+				cell.subdivide();
+				
+				float ratio = abs(velocity / TOP_SPEED);
+				float k = ratio > 0.5 ? 0.5f : 1 - ratio;
+				k = ratio < 0.1 ? 0.1f : k;
+				float depression = k * 0.05f;
+				
+				tree.increaseRadius(vertices[i], 2, -depression);
+			}
+		}
+		
+		if(update) tree.updateBuffers();
+		
+		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
+		h += bound.e[1];
+		bound.c[1] = h;
+		
+		return heights;
+	}
+	
 	public float[] getHeights(Terrain map)
 	{
 		float[][] vertices = bound.getVertices();
@@ -853,7 +888,8 @@ public class Car
 
 	public void update()
 	{	
-		if(scene.enableTerrain) getHeights(scene.getTerrain());
+		if(scene.testMode && scene.tree != null) getHeights(scene.tree);
+		else if(scene.enableTerrain) getHeights(scene.getTerrain());
 		else getHeights();
 		
 		if(motionMode == Motion.ANCHOR)
