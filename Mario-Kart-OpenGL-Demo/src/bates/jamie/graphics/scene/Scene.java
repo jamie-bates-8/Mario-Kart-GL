@@ -81,7 +81,6 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
 import bates.jamie.graphics.io.Console;
@@ -199,6 +198,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private int floorList;
 	
 	private List<Car> cars = new ArrayList<Car>();
+	public boolean enableQuality = false;
 	
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 
@@ -252,6 +252,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<ParticleGenerator> generators = new ArrayList<ParticleGenerator>();
 
 	
+	private boolean enableItems = false;
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
 	private List<Item> itemList = new ArrayList<Item>();
 	
@@ -337,6 +338,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		});
 		
+		// ensure that menu items are not displayed  the GL canvas
 		JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 		ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
 		
@@ -536,18 +538,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		glu = new GLUgl2();
 		glut = new GLUT();
 		
-		try
-		{			
-			brickWall = TextureIO.newTexture(new File("tex/longBrick.jpg"), true);
-			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
-			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
-			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
-			
-			brickWallTop = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
-			
-			cobble       = TextureIO.newTexture(new File("tex/cobbles.jpg"), true);
-		}
-		catch (Exception e) { e.printStackTrace(); }
+		loadTextures(gl);
 		
 		// may provide extra speed depending on machine
 		gl.setSwapInterval(0);
@@ -608,15 +599,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    displayTexturedObject(gl, floorFaces);
 	    gl.glEndList();
 	    
-	    new GreenShell (gl, this, null, 0, false);
-	    new RedShell   (gl, this, null, 0, false); 
-	    new BlueShell  (gl, this, null, 0);
-	    new FakeItemBox(gl, this, null);
-	    new Banana     (gl, this, null, 0);
-	    
-	    new BoostParticle(ORIGIN, null, 0, 0, 0, false, false);
-	    new LightningParticle(ORIGIN);
-	    new StarParticle(ORIGIN, null, 0, 0);
+	    if(enableItems) loadItems(gl);
+	    loadParticles();
 	    
 	    cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
 	    
@@ -655,6 +639,38 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
+	}
+
+	private void loadTextures(GL2 gl)
+	{
+		try
+		{			
+			brickWall = TextureIO.newTexture(new File("tex/longBrick.jpg"), true);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+			brickWall.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
+			
+			brickWallTop = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
+			
+			cobble       = TextureIO.newTexture(new File("tex/cobbles.jpg"), true);
+		}
+		catch (Exception e) { e.printStackTrace(); }
+	}
+
+	private void loadParticles()
+	{
+		new BoostParticle(ORIGIN, null, 0, 0, 0, false, false);
+	    new LightningParticle(ORIGIN);
+	    new StarParticle(ORIGIN, null, 0, 0);
+	}
+
+	private void loadItems(GL2 gl)
+	{
+		new GreenShell (gl, this, null, 0, false);
+	    new RedShell   (gl, this, null, 0, false); 
+	    new BlueShell  (gl, this, null, 0);
+	    new FakeItemBox(gl, this, null);
+	    new Banana     (gl, this, null, 0);
 	}
 	
 	private Texture shadowTexture;
@@ -748,7 +764,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			renderTimes[frameIndex][4] = renderParticles(gl, car);
 			Particle.resetTexture();
 			
-			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+			if(enableTerrain && !getTerrain().enableQuadtree) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 			
 			/*
 			 * The condition (i == 1) means that the frames stored in the accumulation
@@ -1447,46 +1463,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
-	
-	public Quadtree tree;
-	public int max_lod = 10;
 
 	private void test(GL2 gl)
 	{	
-		if(tree == null)
-		{
-			List<float[]> vBuffer = new ArrayList<float[]>();
-			vBuffer.add(new float[] {-210, 0,  210});
-			vBuffer.add(new float[] { 210, 0,  210});
-			vBuffer.add(new float[] { 210, 0, -210});
-			vBuffer.add(new float[] {-210, 0, -210});
-			
-			List<float[]> tBuffer = new ArrayList<float[]>();
-			tBuffer.add(new float[] { 0,  0});
-			tBuffer.add(new float[] {32,  0});
-			tBuffer.add(new float[] {32, 32});
-			tBuffer.add(new float[] { 0, 32});
-			
-			int[] indices = {0, 1, 2, 3};
-			
-			tree = new Quadtree(0, vBuffer, tBuffer, indices, terrain.baseTexture, 7, null);
-			
-			System.out.println("Quadtree: " + tree.vertexCount() + " vertices");
-			
-			tree.setHeights(1000);
-			tree.updateBuffers();
-		}
 		
-		gl.glPushMatrix();
-		{
-			if(Quadtree.solid) tree.render(gl);
-			if(Quadtree.frame) tree.renderWireframe(gl);
-			
-			gl.glTranslatef(0, 1, 0);
-			
-			tree.renderNeighbourhood(gl);
-		}
-		gl.glPopMatrix();
 	}
 	
 	private float[] shadowMatrix = new float[16];
@@ -1819,7 +1799,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			
-			case KeyEvent.VK_T:  enableTerrain = !enableTerrain; cars.get(0).friction = 1; break; //TODO
+			case KeyEvent.VK_T:  enableTerrain = !enableTerrain; cars.get(0).friction = 1; break; //TODO Only includes player 1
 			case KeyEvent.VK_O:  enableItemBoxes = !enableItemBoxes; break;
 			case KeyEvent.VK_I:  spawnItemsInSphere(8, 10, new float[] {0, 100, 0}, 50); break;
 			case KeyEvent.VK_U:  spawnItemsInOBB(0, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
@@ -1850,14 +1830,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_8:  fort.displayModel = !fort.displayModel; break;
 			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
 			
-			case KeyEvent.VK_EQUALS: max_lod++; tree.updateBuffers(max_lod); break;
-			case KeyEvent.VK_MINUS : max_lod--; tree.updateBuffers(max_lod); break;
-			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  tree.updateBuffers(); break;
-			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
-			
-			case KeyEvent.VK_COMMA: tree.nextTest(); break;
-			
-			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(); break;  
+			case KeyEvent.VK_EQUALS       :
+			case KeyEvent.VK_MINUS        :
+			case KeyEvent.VK_OPEN_BRACKET :
+			case KeyEvent.VK_CLOSE_BRACKET: 
+			case KeyEvent.VK_COMMA        :
+			case KeyEvent.VK_P            : terrain.keyPressed(e); break;  
 			
 			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
 	

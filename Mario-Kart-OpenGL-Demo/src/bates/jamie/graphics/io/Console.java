@@ -56,12 +56,13 @@ public class Console
 	private void parseQuadtree(Scanner cmd)
 	{
 		String _cmd = cmd.next();
+		Quadtree tree = scene.getTerrain().tree;
 		
 		     if(_cmd.equalsIgnoreCase("wireframe")) Quadtree.frame = cmd.nextBoolean();
 		else if(_cmd.equalsIgnoreCase(  "display")) Quadtree.solid = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase("subdivide")) scene.tree.subdivideAll();
-		else if(_cmd.equalsIgnoreCase( "decimate")) scene.tree.decimateAll(); 
-		else if(_cmd.equalsIgnoreCase(      "lod")) scene.max_lod = cmd.nextInt();
+		else if(_cmd.equalsIgnoreCase("subdivide")) tree.subdivideAll();
+		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
+		else if(_cmd.equalsIgnoreCase(      "lod")) scene.getTerrain().max_lod = cmd.nextInt();
 	}
 	
 	private void parseParticle(Scanner cmd)

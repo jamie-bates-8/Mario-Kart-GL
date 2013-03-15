@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -77,6 +78,10 @@ public class Terrain
 	
 	Model model;
 	
+	public boolean enableQuadtree = true;
+	public Quadtree tree;
+	public int max_lod = 10;
+	
 	public Terrain(GL2 gl, int length, int i)
 	{	
 		setHeights(length, i);
@@ -131,6 +136,32 @@ public class Terrain
 		displayList(gl);
 		
 		toModel();
+		
+		generateQuadtree();
+	}
+	
+	public void generateQuadtree()
+	{
+		List<float[]> vBuffer = new ArrayList<float[]>();
+		vBuffer.add(new float[] {-210, 0,  210});
+		vBuffer.add(new float[] { 210, 0,  210});
+		vBuffer.add(new float[] { 210, 0, -210});
+		vBuffer.add(new float[] {-210, 0, -210});
+		
+		List<float[]> tBuffer = new ArrayList<float[]>();
+		tBuffer.add(new float[] { 0,  0});
+		tBuffer.add(new float[] {32,  0});
+		tBuffer.add(new float[] {32, 32});
+		tBuffer.add(new float[] { 0, 32});
+		
+		int[] indices = {0, 1, 2, 3};
+		
+		tree = new Quadtree(0, vBuffer, tBuffer, indices, baseTexture, 7, null);
+		
+		System.out.println("Quadtree: " + tree.vertexCount() + " vertices");
+		
+		tree.setHeights(1000);
+		tree.updateBuffers();
 	}
 	
 	public void toModel()
@@ -546,29 +577,60 @@ public class Terrain
 		return new float[] {s, t};
 	}
 	
+	public void keyPressed(KeyEvent e)
+	{
+		switch(e.getKeyCode())
+		{
+			case KeyEvent.VK_EQUALS: max_lod++; tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_MINUS : max_lod--; tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  tree.updateBuffers(); break;
+			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
+			
+			case KeyEvent.VK_COMMA: tree.nextTest(); break;
+			
+			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(); break;
+		}
+	}
+	
 	public void render(GL2 gl, GLUT glut)
 	{
-		switch(renderMode)
+		if(enableQuadtree)
 		{
-			case 0: renderWireframe(gl, glut); break;
-			case 1: if(model != null)
+			gl.glPushMatrix();
 			{
-				gl.glDisable(GL2.GL_LIGHTING);
-				gl.glColor3f(1, 1, 1);
-				model.render(gl); break;
+				if(Quadtree.solid) tree.render(gl);
+				if(Quadtree.frame) tree.renderWireframe(gl);
+				
+				gl.glTranslatef(0, 1, 0);
+				
+				tree.renderNeighbourhood(gl);
 			}
-			case 2:
+			gl.glPopMatrix();
+		}
+		else
+		{
+			switch(renderMode)
 			{
-				gl.glEnable(GL2.GL_LIGHTING);
-				gl.glScalef(sx, sy, sz);
-				prerender(gl);
-				break;
-			}
-			case 3:
-			{
-				gl.glScalef(sx, sy, sz);
-				gl.glCallList(terrainList);
-				break;
+				case 0: renderWireframe(gl, glut); break;
+				case 1: if(model != null)
+				{
+					gl.glDisable(GL2.GL_LIGHTING);
+					gl.glColor3f(1, 1, 1);
+					model.render(gl); break;
+				}
+				case 2:
+				{
+					gl.glEnable(GL2.GL_LIGHTING);
+					gl.glScalef(sx, sy, sz);
+					prerender(gl);
+					break;
+				}
+				case 3:
+				{
+					gl.glScalef(sx, sy, sz);
+					gl.glCallList(terrainList);
+					break;
+				}
 			}
 		}
 	}

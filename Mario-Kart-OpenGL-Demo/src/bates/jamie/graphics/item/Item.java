@@ -20,6 +20,7 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
@@ -304,6 +305,8 @@ public abstract class Item
 	
 	public float[] getHeights(Terrain map)
 	{
+		if(map.enableQuadtree) return getHeights(map.tree, map.max_lod);
+		
 		float[][] vertices = getAxisVectors();
 
 		for(int i = 0; i < 4; i++)
@@ -323,6 +326,31 @@ public abstract class Item
 			fallRate = 0;
 		}
 
+		return heights;
+	}
+	
+	public float[] getHeights(Quadtree tree, int lod)
+	{
+		float[][] vertices = getAxisVectors();
+		
+		for(int i = 0; i < 4; i++)
+		{
+			Quadtree cell = tree.getCell(vertices[i], lod);
+			float h = cell.getHeight(vertices[i]);
+			heights[i] = h;
+		}
+		
+		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
+		
+		if(bound.c[1] - bound.getMaximumExtent() <= h)
+		{
+			h += bound.getMaximumExtent();
+			bound.c[1] = h;
+			
+			falling = thrown = false;
+			fallRate = 0;
+		}
+		
 		return heights;
 	}
 	

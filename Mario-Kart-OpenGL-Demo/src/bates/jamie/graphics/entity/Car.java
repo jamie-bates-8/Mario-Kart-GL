@@ -68,17 +68,17 @@ import bates.jamie.graphics.util.Face;
 public class Car
 {
 	/** Model Fields **/
-	public  static final List<Face> CAR_FACES         = OBJParser.parseTriangles("car");
-	private static final List<Face> WHEEL_FACES       = OBJParser.parseTriangles("wheel");
-	private static final List<Face> WINDOW_FACES      = OBJParser.parseTriangles("windows");
-	private static final List<Face> DOOR_WINDOW_FACES = OBJParser.parseTriangles("door_windows");
-	private static final List<Face> DOOR_FACES        = OBJParser.parseTriangles("door");
-	private static final List<Face> BASE_FACES        = OBJParser.parseTriangles("car_base");
+	public  static List<Face> car_faces;
+	private static List<Face> wheel_faces;
+	private static List<Face> window_faces;
+	private static List<Face> door_window_faces;
+	private static List<Face> door_faces;
+	private static List<Face> base_faces;
 	
 	
-	private static final Model ALL_WINDOWS = OBJParser.parseTriangleMesh("windows_all");
-	private static final Model CAR_BODY    = OBJParser.parseTriangleMesh("car_body");
-	private static final Model HEADLIGHTS  = OBJParser.parseTriangleMesh("head_lights");
+	private static Model all_windows;
+	private static Model car_body;
+	private static Model head_lights;
 	
 	private static final float[] ORIGIN = {0, 1.8f, 0};
 	
@@ -214,13 +214,27 @@ public class Car
 	
 	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
 	{
-		//Using a display list ensures that the complex car model is displayed quickly
 		if(carList == -1)
 		{
-			carList = gl.glGenLists(1);
-			gl.glNewList(carList, GL2.GL_COMPILE);
-			displayPartiallyTexturedObject(gl, CAR_FACES, color);
-			gl.glEndList();
+			if(scene.enableQuality)
+			{
+				car_faces         = OBJParser.parseTriangles("car");
+				window_faces      = OBJParser.parseTriangles("windows");
+				door_window_faces = OBJParser.parseTriangles("door_windows");
+				door_faces        = OBJParser.parseTriangles("door");
+				
+				carList = gl.glGenLists(1);
+				gl.glNewList(carList, GL2.GL_COMPILE);
+				displayPartiallyTexturedObject(gl, car_faces, color);
+				gl.glEndList();
+			}
+			
+			wheel_faces       = OBJParser.parseTriangles("wheel");
+			base_faces        = OBJParser.parseTriangles("car_base");
+			
+			all_windows = OBJParser.parseTriangleMesh("windows_all");
+			car_body    = OBJParser.parseTriangleMesh("car_body");
+			head_lights = OBJParser.parseTriangleMesh("head_lights");
 		}
 	    
 	    bound = new OBB(
@@ -240,63 +254,63 @@ public class Car
 	    
 	    anchor = new AnchorPoint();
 	    
-	    setupGraph();
-	    setupGraph2();
+	    setupHighGraph();
+	    if(scene.enableQuality) setupLowGraph();
 	}
 	
-	public void setupGraph()
+	public void setupHighGraph()
 	{
 		Material shiny = new Material(new float[] {1, 1, 1});
 		Material mat = new Material(new float[] {0, 0, 0});
 		
-		SceneNode car_body = new SceneNode(CAR_FACES, carList, CAR_BODY, SceneNode.MatrixOrder.T_M_S, shiny);
-		car_body.setColor(color);
-		car_body.setTranslation(bound.c);
-		car_body.setOrientation(getRotationMatrix(bound.u));
-		car_body.setScale(new float[] {scale, scale, scale});
-		car_body.setRenderMode(SceneNode.RenderMode.COLOR);
+		SceneNode body = new SceneNode(null, carList, car_body, SceneNode.MatrixOrder.T_M_S, shiny);
+		body.setColor(color);
+		body.setTranslation(bound.c);
+		body.setOrientation(getRotationMatrix(bound.u));
+		body.setScale(new float[] {scale, scale, scale});
+		body.setRenderMode(SceneNode.RenderMode.COLOR);
 		
-		SceneNode headlights = new SceneNode(CAR_FACES, carList, HEADLIGHTS, SceneNode.MatrixOrder.T, shiny);
+		SceneNode headlights = new SceneNode(null, carList, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
 		headlights.setTranslation(new float[] {0.2925f, 0, 0});
 		headlights.setRenderMode(SceneNode.RenderMode.COLOR);
 		
-		car_body.addChild(headlights);
+		body.addChild(headlights);
 		
-		SceneNode car_base = new SceneNode(BASE_FACES, -1, null, SceneNode.MatrixOrder.T, shiny);
+		SceneNode car_base = new SceneNode(base_faces, -1, null, SceneNode.MatrixOrder.T, shiny);
 		car_base.setColor(new float[] {1, 1, 1});
 		car_base.setTranslation(new float[] {0.2925f, 0, 0});
 		car_base.setRenderMode(SceneNode.RenderMode.TEXTURE);
 		
-		car_body.addChild(car_base);
+		body.addChild(car_base);
 		
 		for(int i = 0; i < 4; i++)
 		{
-			SceneNode wheel = new SceneNode(WHEEL_FACES, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
+			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
 			wheel.setColor(new float[] {1, 1, 1});
 			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
 			wheel.setRotation(ORIGIN);
 			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
 			
-			car_body.addChild(wheel);
+			body.addChild(wheel);
 		}
 		
-		SceneNode windows = new SceneNode(null, -1, ALL_WINDOWS, SceneNode.MatrixOrder.NONE, shiny);
+		SceneNode windows = new SceneNode(null, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
 		
-		car_body.addChild(windows);
+		body.addChild(windows);
 		
-		high_graph = new SceneGraph(car_body);
+		high_graph = new SceneGraph(body);
 	}
 	
-	public void setupGraph2()
+	public void setupLowGraph()
 	{
 		Material shiny = new Material(new float[] {1, 1, 1});
 		Material mat = new Material(new float[] {0, 0, 0});
 		
-		SceneNode car_body = new SceneNode(CAR_FACES, carList, null, SceneNode.MatrixOrder.T_M_S, shiny);
+		SceneNode car_body = new SceneNode(car_faces, carList, null, SceneNode.MatrixOrder.T_M_S, shiny);
 		car_body.setColor(new float[] {1, 1, 1});
 		car_body.setTranslation(bound.c);
 		car_body.setOrientation(getRotationMatrix(bound.u));
@@ -305,7 +319,7 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			SceneNode wheel = new SceneNode(WHEEL_FACES, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
+			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
 			wheel.setColor(new float[] {1, 1, 1});
 			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
@@ -315,33 +329,33 @@ public class Car
 			car_body.addChild(wheel);
 		}
 		
-		SceneNode left_door = new SceneNode(DOOR_FACES, -1, null, SceneNode.MatrixOrder.T_S, shiny);
+		SceneNode left_door = new SceneNode(door_faces, -1, null, SceneNode.MatrixOrder.T_S, shiny);
 		left_door.setColor(color);
 		left_door.setRenderMode(SceneNode.RenderMode.COLOR);
 		left_door.setTranslation(offsets_LeftDoor);
 		left_door.setScale(new float[] {1, 1, 1});
 		
-		SceneNode left_window = new SceneNode(DOOR_WINDOW_FACES, -1, null, SceneNode.MatrixOrder.NONE, null);
+		SceneNode left_window = new SceneNode(door_window_faces, -1, null, SceneNode.MatrixOrder.NONE, null);
 		left_window.setColor(windowColor);
 		left_window.setRenderMode(SceneNode.RenderMode.GLASS);
 			
 		left_door.addChild(left_window);
 		car_body.addChild(left_door);
 		
-		SceneNode right_door = new SceneNode(DOOR_FACES, -1, null, SceneNode.MatrixOrder.T_S, shiny);
+		SceneNode right_door = new SceneNode(door_faces, -1, null, SceneNode.MatrixOrder.T_S, shiny);
 		right_door.setColor(color);
 		right_door.setRenderMode(SceneNode.RenderMode.COLOR);
 		right_door.setTranslation(offsets_RightDoor);
 		right_door.setScale(new float[] {1, 1, -1});
 		
-		SceneNode right_window = new SceneNode(DOOR_WINDOW_FACES, -1, null, SceneNode.MatrixOrder.NONE, null);
+		SceneNode right_window = new SceneNode(door_window_faces, -1, null, SceneNode.MatrixOrder.NONE, null);
 		right_window.setColor(windowColor);
 		right_window.setRenderMode(SceneNode.RenderMode.GLASS);
 			
 		right_door.addChild(right_window);
 		car_body.addChild(right_door);
 		
-		SceneNode windows = new SceneNode(WINDOW_FACES, -1, null, SceneNode.MatrixOrder.T, null);
+		SceneNode windows = new SceneNode(window_faces, -1, null, SceneNode.MatrixOrder.T, null);
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
 		windows.setTranslation(new float[] {0.3f, -1.2f, 0});
@@ -693,14 +707,14 @@ public class Car
 		return heights;
 	}
 	
-	public float[] getHeights(Quadtree tree)
+	public float[] getHeights(Quadtree tree, int lod)
 	{
 		float[][] vertices = bound.getVertices();
 		boolean update = false;
 		
 		for(int i = 0; i < 4; i++)
 		{
-			Quadtree cell = tree.getCell(vertices[i], scene.max_lod);
+			Quadtree cell = tree.getCell(vertices[i], lod);
 			float h = cell.getHeight(vertices[i]);
 			heights[i] = h;
 			
@@ -730,6 +744,8 @@ public class Car
 	
 	public float[] getHeights(Terrain map)
 	{
+		if(map.enableQuadtree) return getHeights(map.tree, map.max_lod);
+		
 		float[][] vertices = bound.getVertices();
 
 		for(int i = 0; i < 4; i++)
@@ -888,8 +904,7 @@ public class Car
 
 	public void update()
 	{	
-		if(scene.testMode && scene.tree != null) getHeights(scene.tree);
-		else if(scene.enableTerrain) getHeights(scene.getTerrain());
+		if(scene.enableTerrain) getHeights(scene.getTerrain());
 		else getHeights();
 		
 		if(motionMode == Motion.ANCHOR)
@@ -1446,7 +1461,7 @@ public class Car
 			case KeyEvent.VK_F7: hud.cycleGraphMode(); break;
 			case KeyEvent.VK_F8: hud.nextComponent(); break;
 			
-			case KeyEvent.VK_F11: high_quality = !high_quality; break;
+			case KeyEvent.VK_F11: if(scene.enableQuality) high_quality = !high_quality; break;
 			
 			case KeyEvent.VK_BACK_SPACE: reset(); break;
 		}
