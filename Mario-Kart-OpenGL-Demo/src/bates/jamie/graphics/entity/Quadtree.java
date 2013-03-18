@@ -5,6 +5,7 @@ import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -53,6 +54,18 @@ public class Quadtree
 	Texture texture;
 	boolean textured = false;
 	
+	/**
+	 * This method constructs a Quadtree data structure that maintains an indexed
+	 * list of textured geometry
+	 * 
+	 * @param lod - Specifies the level of detail (LOD), that is, the level at which
+	 * this subtree is located in the quadtree hierarchy.
+	 * @param vertices - A list of (hopefully) unique vertices used to render the
+	 * geometric model maintained by this data structure. 
+	 * @param texCoords - A list of (hopefully) unique texture coordinates.
+	 * @param indices - The array of indices to be used by the indexed vertex buffer
+	 * to reference the vertices and texture coordinates appropriately.
+	 */
 	public Quadtree(int lod, List<float[]> vertices, List<float[]> texCoords, int[] indices)
 	{
 		this.lod = lod;
@@ -107,6 +120,7 @@ public class Quadtree
 		this.texture = texture;
 		textured = true;
 		
+		// a random generator is passed to each subdivision rather than created per call
 		if(generator != null) subdivide(iterations, generator);
 		else subdivide(iterations);
 		
@@ -115,10 +129,21 @@ public class Quadtree
 		System.out.printf("Quadtree, Update: %.3f ms\n", updateBuffers() / 1E6);
 	}
 	
+	/**
+	 * This method decimates a quadtree that has leaf nodes if the leaves do not
+	 * provide any additional detail. This can be determined by checking the gradient
+	 * of all 6 lines that constitute the 4 leaves.
+	 * 
+	 * For example, if the line that connects the north-west and north-east points runs
+	 * through the north point, the gradient is considered smooth. Therefore, the north
+	 * point is not required to represent the curvature of that line.  
+	 */
 	public void flatten()
 	{
+		// cannot remove detail from this quadtree
 		if(isLeaf()) return;
 		
+		// if this quadtree has leaf nodes exclusively
 		if(north_west.isLeaf() && north_east.isLeaf() &&
 		   south_west.isLeaf() && south_east.isLeaf())
 		{
@@ -137,10 +162,10 @@ public class Quadtree
 			   gradient(southwest, west , northwest) &&
 			   gradient(southwest, south, southeast) &&
 			   gradient(northwest, north, northeast) &&
-			   gradient(west , centre, east ) &&
-			   gradient(north, centre, south)) decimate();
+			   gradient(west , centre, east )  && // horizontal centre
+			   gradient(north, centre, south)) decimate(); // vertical centre
 		}
-		else
+		else // traverse the tree to a suitible level
 		{
 			north_west.flatten();
 			north_east.flatten();
@@ -165,12 +190,21 @@ public class Quadtree
 		}
 	}
 	
+	/**
+	 * This method ensures that all of the cells neighbouring the vertex at the
+	 * index specified are of the same detail (LOD). By doing so, this vertex can
+	 * be deformed without introducing any cracking artifacts.
+	 * 
+	 * This is done by finding the maximum LOD of the cells, and then subdividing
+	 * the less detailed cells until they reach this desired level.  
+	 */
 	public void repairCrack(int index)
 	{
 		Quadtree[] cells = neighbourhood(index);
 		
 		int lod = 0;
 		
+		// find the maximum level of detail required
 		for(int i = 0; i < 4; i++)
 			if(cells[i] != null)
 				lod = (cells[i].lod > lod) ? cells[i].lod : lod;
@@ -180,19 +214,30 @@ public class Quadtree
 			if(cells[i] != null)
 			{
 				cells[i].divideAtPoint(index, lod);
+				// subdivide may have introduced new neighbours
 				cells = neighbourhood(index);
 			}
 		}
 	}
 	
+	/**
+	 * This method finds the leaf nodes that reference vertex <code>p</code>.
+	 * For example, the north-east leaf node can be located by finding a cell
+	 * that contains a vertex <code>p</code> with a small diagonal (-x, -z)
+	 * vector added.
+	 * 
+	 * While getting the cell at <code>p</code> may yield one of the four neighbours
+	 * depending on how the tree is traversed, the vector offset allows the traversal
+	 * done by the getCell() method to accurately distinct each neighbouring cell.
+	 */
 	public Quadtree[] neighbourhood(float[] p)
 	{
 		Quadtree[] neighbours = new Quadtree[4];
 		
-		neighbours[0] = getCell(Vector.add(p, new float[] {-VECTOR_OFFSET, 0, -VECTOR_OFFSET}), MAXIMUM_LOD);
-		neighbours[1] = getCell(Vector.add(p, new float[] {+VECTOR_OFFSET, 0, -VECTOR_OFFSET}), MAXIMUM_LOD);
-		neighbours[2] = getCell(Vector.add(p, new float[] {-VECTOR_OFFSET, 0, +VECTOR_OFFSET}), MAXIMUM_LOD);
-		neighbours[3] = getCell(Vector.add(p, new float[] {+VECTOR_OFFSET, 0, +VECTOR_OFFSET}), MAXIMUM_LOD);
+		neighbours[0] = getCell(Vector.add(p, new float[] {-VECTOR_OFFSET, 0, -VECTOR_OFFSET}), MAXIMUM_LOD); // north-west
+		neighbours[1] = getCell(Vector.add(p, new float[] {+VECTOR_OFFSET, 0, -VECTOR_OFFSET}), MAXIMUM_LOD); // south-west
+		neighbours[2] = getCell(Vector.add(p, new float[] {-VECTOR_OFFSET, 0, +VECTOR_OFFSET}), MAXIMUM_LOD); // north-east
+		neighbours[3] = getCell(Vector.add(p, new float[] {+VECTOR_OFFSET, 0, +VECTOR_OFFSET}), MAXIMUM_LOD); // south-east
 		
 		return neighbours;
 	}
@@ -238,7 +283,11 @@ public class Quadtree
 		return System.nanoTime() - start;
 	}
 	
-	public int containsVertex(float[] p)
+	/**
+	 * This method returns the index of a vertex <code>p</code> if it is stored by this
+	 * quadtree's hierarchy, otherwise, an invalid index of -1 is returned.
+	 */
+	public int storesVertex(float[] p)
 	{
 		int index = pointOnCell(p);
 		if(index != -1) return index;
@@ -246,14 +295,18 @@ public class Quadtree
 		int nw, ne, sw, se;
 		nw = ne = sw = se = -1;
 		
-		if(north_west != null && north_west.pointInCell(p)) nw = north_west.containsVertex(p); if(nw != -1) return nw;
-		if(north_east != null && north_east.pointInCell(p)) ne = north_east.containsVertex(p); if(ne != -1) return ne;
-		if(south_west != null && south_west.pointInCell(p)) sw = south_west.containsVertex(p); if(sw != -1) return sw;
-		if(south_east != null && south_east.pointInCell(p)) se = south_east.containsVertex(p); if(se != -1) return se;
+		if(north_west != null && north_west.pointInCell(p)) nw = north_west.storesVertex(p); if(nw != -1) return nw;
+		if(north_east != null && north_east.pointInCell(p)) ne = north_east.storesVertex(p); if(ne != -1) return ne;
+		if(south_west != null && south_west.pointInCell(p)) sw = south_west.storesVertex(p); if(sw != -1) return sw;
+		if(south_east != null && south_east.pointInCell(p)) se = south_east.storesVertex(p); if(se != -1) return se;
 		
 		return -1;
 	}
 	
+	/**
+	 * This method returns the index of a vertex <code>p</code> if it is equal to any of the four
+	 * vertices stored by this quadtree, otherwise, an invalid index of -1 is returned. 
+	 */
 	public int pointOnCell(float[] p)
 	{
 		if(Vector.equal(p, vertices.get(indices[0]))) return indices[0];
@@ -264,6 +317,10 @@ public class Quadtree
 		else return -1;
 	}
 	
+	/**
+	 * This method can be used to determine whether of not a given vertex 'p' is
+	 * located within the implicit bounds of this quadtree.
+	 */
 	public boolean pointInCell(float[] p)
 	{
 		float x = p[0];
@@ -276,26 +333,18 @@ public class Quadtree
 		
 		return ((x >= _x) && (x <= x_) && (z >= _z) && (z <= z_)); 
 	}
-
-	public boolean insert(float[] p)
-	{
-		// Ignore objects which do not belong in this quad tree
-		if(pointInCell(p)) return false;
-
-		// Otherwise, we need to subdivide then add the point to whichever node will accept it
-		if(isLeaf()) subdivide();
-
-		if(north_west.insert(p)) return true;
-		if(north_east.insert(p)) return true;
-		if(south_west.insert(p)) return true;
-		if(south_east.insert(p)) return true;
-
-		// Otherwise, the point cannot be inserted for some unknown reason (which should never happen)
-		return false;
-	}
 	
+	/**
+	 * This method splits the cell into four by halving it across both the horizontal
+	 * and vertical centres. This is accomplished by extending the quadtree hierarchy
+	 * with four children nodes.
+	 * 
+	 * @return <code>true</code> if the subdivision is possible based on the restriction
+	 * set by the maximum level of detail.
+	 */
 	public boolean subdivide()
 	{
+		// do not subdivide if cell will exceed maximum lod
 		if(lod + 1 > MAXIMUM_LOD) return false;
 		
 		float _x = vertices.get(indices[3])[0];
@@ -303,23 +352,28 @@ public class Quadtree
 		float x_ = vertices.get(indices[1])[0];
 		float z_ = vertices.get(indices[1])[2];
 		
-		float _x_ = (_x + x_) / 2;
-		float _z_ = (_z + z_) / 2;
+		float _x_ = (_x + x_) / 2; // horizontal centre of cell
+		float _z_ = (_z + z_) / 2; // vertical centre of cell
 		
-		float[] vNorth  = {_x_, 0, _z }; vNorth [1] = getHeight(vNorth ); 
+		float[] vNorth  = {_x_, 0, _z }; vNorth [1] = getHeight(vNorth ); // north vertex
 		float[] vEast   = { x_, 0, _z_}; vEast  [1] = getHeight(vEast  );
 		float[] vSouth  = {_x_, 0,  z_}; vSouth [1] = getHeight(vSouth );
 		float[] vWest   = {_x , 0, _z_}; vWest  [1] = getHeight(vWest  );
 		float[] vCentre = {_x_, 0, _z_}; vCentre[1] = getHeight(vCentre);
 		
-		int north, east, south, west, centre;
-		north = east = south = west = centre = -1;
+		int north, east, south, west, centre; // the indices of the 5 new vertices
+		north = east = south = west = centre = -1; // -1 means invalid
 		
-		int iNorth  = north  = root.containsVertex(vNorth ); if(iNorth  == -1) { north  = vertices.size(); vertices.add(vNorth ); }
-		int iEast   = east   = root.containsVertex(vEast  ); if(iEast   == -1) { east   = vertices.size(); vertices.add(vEast  ); }
-		int iSouth  = south  = root.containsVertex(vSouth ); if(iSouth  == -1) { south  = vertices.size(); vertices.add(vSouth ); }
-		int iWest   = west   = root.containsVertex(vWest  ); if(iWest   == -1) { west   = vertices.size(); vertices.add(vWest  ); }
-		int iCentre = centre = root.containsVertex(vCentre); if(iCentre == -1) { centre = vertices.size(); vertices.add(vCentre); }
+		/*
+		 * Each iVertex variable acts as a placeholder to store whether or not the
+		 * corresponding index is already stored within the entire quadtree hierarchy.
+		 * If possible, indices are reused, otherwise a new index is created.
+		 */
+		int iNorth  = north  = root.storesVertex(vNorth ); if(iNorth  == -1) { north  = vertices.size(); vertices.add(vNorth ); }
+		int iEast   = east   = root.storesVertex(vEast  ); if(iEast   == -1) { east   = vertices.size(); vertices.add(vEast  ); }
+		int iSouth  = south  = root.storesVertex(vSouth ); if(iSouth  == -1) { south  = vertices.size(); vertices.add(vSouth ); }
+		int iWest   = west   = root.storesVertex(vWest  ); if(iWest   == -1) { west   = vertices.size(); vertices.add(vWest  ); }
+		int iCentre = centre = root.storesVertex(vCentre); if(iCentre == -1) { centre = vertices.size(); vertices.add(vCentre); }
 
 		if(textured)
 		{
@@ -331,12 +385,14 @@ public class Quadtree
 			float _s_ = (_s + s_) / 2;
 			float _t_ = (_t + t_) / 2;
 			
+			// if an index was invalid, a new texture coordinate must also be added 
 			float[] tNorth  = {_s_, _t }; if(iNorth  == -1) texCoords.add(tNorth );
 			float[] tEast   = { s_, _t_}; if(iEast   == -1) texCoords.add(tEast  );
 			float[] tSouth  = {_s_,  t_}; if(iSouth  == -1) texCoords.add(tSouth );
 			float[] tWest   = {_s , _t_}; if(iWest   == -1) texCoords.add(tWest  );
 			float[] tCentre = {_s_, _t_}; if(iCentre == -1) texCoords.add(tCentre);
 			
+			// set children nodes; indices supplied with counter-clockwise winding starting at the bottom-left corner
 			north_west = new Quadtree(lod + 1, vertices, texCoords, new int[] {west, centre, north, indices[3]}); north_west.root = root;
 			north_east = new Quadtree(lod + 1, vertices, texCoords, new int[] {centre, east, indices[2], north}); north_east.root = root;
 			south_west = new Quadtree(lod + 1, vertices, texCoords, new int[] {indices[0], south, centre, west}); south_west.root = root;
@@ -350,41 +406,53 @@ public class Quadtree
 			south_east = new Quadtree(lod + 1, vertices, new int[] {south, indices[1], east, centre}); south_east.root = root;
 		}
 		
+		// subdivide was successful
 		return true;
 	}
 	
-	public boolean subdivide(int iterations)
+	/**
+	 * This method splits the cell into four by halving it across both the horizontal
+	 * and vertical centres. If the argument <code>i</code> is greater than 0, the
+	 * algorithm will be applied recursively to the four new cells until the original
+	 * cell has been split into <code>2</code><sup><code>2i</code></sup> cells.
+	 */
+	public boolean subdivide(int i)
 	{
 		boolean divisible = subdivide();
 		
-		iterations--;
+		i--;
 		
-		if(iterations > 0)
+		if(i > 0)
 		{
-			north_west.subdivide(iterations);
-			north_east.subdivide(iterations);
-			south_west.subdivide(iterations);
-			south_east.subdivide(iterations);
+			north_west.subdivide(i);
+			north_east.subdivide(i);
+			south_west.subdivide(i);
+			south_east.subdivide(i);
 		}
-		
+
 		return divisible;
 	}
 	
-	public void subdivide(int iteration, Random generator)
+	public void subdivide(int i, Random generator)
 	{
 		subdivide();
 		
-		iteration--;
+		i--;
 		
-		if(iteration > 0)
+		if(i > 0)
 		{
-			if(generator.nextFloat() > 0.3) north_west.subdivide(iteration, generator);
-			if(generator.nextFloat() > 0.3) north_east.subdivide(iteration, generator);
-			if(generator.nextFloat() > 0.3) south_west.subdivide(iteration, generator);
-			if(generator.nextFloat() > 0.3) south_east.subdivide(iteration, generator);
+			if(generator.nextFloat() > 0.3) north_west.subdivide(i, generator);
+			if(generator.nextFloat() > 0.3) north_east.subdivide(i, generator);
+			if(generator.nextFloat() > 0.3) south_west.subdivide(i, generator);
+			if(generator.nextFloat() > 0.3) south_east.subdivide(i, generator);
 		}
 	}
 	
+	/**
+	 * This method traverses the quadtree's hierarchy using depth-first search to the level
+	 * specified by the <code>lod</code> argument and returns a node that contains the vertex
+	 * <code>p</code>.
+	 */
 	public Quadtree getCell(float[] p, int lod)
 	{
 		if((isLeaf() || this.lod == lod) && pointInCell(p)) return this;
@@ -397,6 +465,7 @@ public class Quadtree
 		return null;
 	}
 	
+	// perform bilinear interpolate to get the height of the quadtree at a point 'p'
 	public float getHeight(float[] p)
 	{	
 		float x = p[0];
@@ -442,14 +511,18 @@ public class Quadtree
 		}
 	}
 
+	/**
+	 * This method executes a hill-raising algorithm for a number of iterations
+	 * to deform the geometric surface stored by the quadtree.
+	 */
 	public void setHeights(int iterations)
 	{
 		Random generator = new Random();
 		
 		int x, z;
 		
-		float _x = vertices.get(root.indices[3])[0];
-		float _z = vertices.get(root.indices[3])[2];
+		float _x = vertices.get(root.indices[3])[0]; // left-most x-coordinate
+		float _z = vertices.get(root.indices[3])[2]; // bottom-most z-coordinate
 		
 		float length = root.getLength();
 		
@@ -463,16 +536,22 @@ public class Quadtree
 				float radius = MIN_RADIUS + generator.nextFloat() * (MAX_RADIUS - MIN_RADIUS);
 				float peak = generator.nextFloat() * HILL_INC;
 				
-				increaseRadius(new float[] {_x + x, 0, _z + z}, radius, peak);
+				// select random point within the boundaries of the quadtree
+				createHill(new float[] {_x + x, 0, _z + z}, radius, peak);
 			}
-			else increaseRadius(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
+			else createHill(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
 		}
 	}
 	
-	public void increaseRadius(float[] p, float radius, float peak)
-	{	
-		float offset = 0.5f / radius;
-		
+	/**
+	 * This method creates a hill in the geometric surface stored by the quadtree
+	 * at the point <code>p</code>. The extent of the hill is determined by the
+	 * argument <code>radius</code>, while the height of the hill is determined by
+	 * the argument <code>peak</code>. It should be noted that if <code>peak</code>
+	 * is negative, a depression is created instead of a hill.
+	 */
+	public void createHill(float[] p, float radius, float peak)
+	{		
 		for(int i = 0; i < vertices.size(); i++)
 		{	
 			float[] vertex = vertices.get(i);
@@ -480,14 +559,15 @@ public class Quadtree
 			float x = Math.abs(vertex[0] - p[0]);
 			float z = Math.abs(vertex[2] - p[2]);
 			
+			// calculate distance from vertex to centre of deformation
 			double d = Math.sqrt(x * x + z * z);
 			
-			if(d < radius && d > EPSILON)
+			if(d < radius)
 			{
+				// ensure the deformation will not cause cracks
 				repairCrack(i);
-				
-				if(d == 0) vertex[1] += peak * (1 - offset);
-				else vertex[1] += peak * (1 - (d / radius));
+				// change in height is proportional to distance
+				vertex[1] += peak * (1 - (d / radius));
 			}
 		}
 	}
@@ -525,6 +605,7 @@ public class Quadtree
 		return Math.abs(_x - x_);
 	}
 	
+	// a node is classed as a leaf if all of it's children are null
 	public boolean isLeaf()
 	{
 		return north_west == null && north_east == null &&

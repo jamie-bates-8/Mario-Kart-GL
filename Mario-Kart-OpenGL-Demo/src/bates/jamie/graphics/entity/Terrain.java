@@ -107,35 +107,38 @@ public class Terrain
 		peak_inc = p;
 		hill_inc = h;
 		
-		System.out.println("Terrain:\n{");
-		
-		long start = System.nanoTime();
-		
-		setHeights(length, i);
-		
-		long end = System.nanoTime();
-		
-		System.out.printf("\tDeformation: %.3f ms\n", (end - start) / 1E6);
-		
-		this.length = length;
-		
-		sx = sz = WORLD_LENGTH / length;
-		
 		loadTextures(gl);
 		
-		if(createLightMap) createLightMap();
+		System.out.println("Terrain:\n{");
 		
-		start = System.currentTimeMillis();
-		
-		createGeometry(TEXTURE_LENGTH);
-		
-		end = System.currentTimeMillis();
-		
-		System.out.println("\tGeometry: " + (System.currentTimeMillis() - start) + " ms\n}");
-		
-		displayList(gl);
-		
-		toModel();
+		if(!enableQuadtree)
+		{
+			long start = System.nanoTime();
+			
+			setHeights(length, i);
+			
+			long end = System.nanoTime();
+			
+			System.out.printf("\tDeformation: %.3f ms\n", (end - start) / 1E6);
+			
+			this.length = length;
+			
+			sx = sz = WORLD_LENGTH / length;
+			
+			if(createLightMap) createLightMap();
+			
+			start = System.currentTimeMillis();
+			
+			createGeometry(TEXTURE_LENGTH);
+			
+			end = System.currentTimeMillis();
+			
+			System.out.println("\tGeometry: " + (System.currentTimeMillis() - start) + " ms\n}");
+			
+			displayList(gl);
+			
+			toModel();
+		}
 		
 		generateQuadtree();
 	}

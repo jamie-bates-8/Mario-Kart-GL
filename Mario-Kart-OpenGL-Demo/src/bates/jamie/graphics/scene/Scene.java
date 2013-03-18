@@ -321,7 +321,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		canvas.setFocusable(true);
 		canvas.requestFocus();
 
-		animator = new FPSAnimator(canvas, FPS, false);
+		animator = new FPSAnimator(canvas, FPS, true);
 		
 		frame.addWindowListener(new WindowAdapter()
 		{

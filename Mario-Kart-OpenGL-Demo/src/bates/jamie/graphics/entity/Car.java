@@ -729,7 +729,7 @@ public class Car
 				k = ratio < 0.1 ? 0.1f : k;
 				float depression = k * 0.05f;
 				
-				tree.increaseRadius(vertices[i], 2, -depression);
+				tree.createHill(vertices[i], 1, -depression);
 			}
 		}
 		
