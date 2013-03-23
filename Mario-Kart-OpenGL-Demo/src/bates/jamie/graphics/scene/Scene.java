@@ -81,6 +81,7 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
 import bates.jamie.graphics.io.Console;
@@ -147,6 +148,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_smooth;
 	private JCheckBoxMenuItem menuItem_secondary;
 	
+	private JMenu menu_quadtree;
+	private JCheckBoxMenuItem menuItem_solid;
+	private JCheckBoxMenuItem menuItem_frame;
 	
 	private int canvasWidth = 860;
 	private int canvasHeight = 640;
@@ -252,7 +256,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<ParticleGenerator> generators = new ArrayList<ParticleGenerator>();
 
 	
-	private boolean enableItems = false;
+	private boolean enableItems = true;
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
 	private List<Item> itemList = new ArrayList<Item>();
 	
@@ -268,7 +272,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<BillBoard> foliage;
 	
 	public String terrainCommand = "";
-	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
+	public static final String DEFAULT_TERRAIN = "128 1000 20 6 18 0.125 1.0";
 	
 	public boolean enableReflection = false;
 	public float opacity = 0.75f;
@@ -438,6 +442,26 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_light.add(menuItem_secondary);
 		
 		menuBar.add(menu_light);
+		/**------------------**/
+		
+		/** Quadtree Menu **/
+		menu_quadtree = new JMenu("Quadtree");
+		menu_quadtree.setMnemonic(KeyEvent.VK_Q);
+		
+		menuItem_solid = new JCheckBoxMenuItem("Fill Geometry");
+		menuItem_solid.addItemListener(this);
+		menuItem_solid.setMnemonic(KeyEvent.VK_F);
+		menuItem_solid.setSelected(Quadtree.solid);
+		
+		menuItem_frame = new JCheckBoxMenuItem("Show Wireframe");
+		menuItem_frame.addItemListener(this);
+		menuItem_frame.setMnemonic(KeyEvent.VK_F);
+		menuItem_frame.setSelected(Quadtree.frame);
+		
+		menu_quadtree.add(menuItem_solid);
+		menu_quadtree.add(menuItem_frame);
+		
+		menuBar.add(menu_quadtree);
 		/**------------------**/
 		
 		frame.setJMenuBar(menuBar);
@@ -764,7 +788,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			renderTimes[frameIndex][4] = renderParticles(gl, car);
 			Particle.resetTexture();
 			
-			if(enableTerrain && !getTerrain().enableQuadtree) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 			
 			/*
 			 * The condition (i == 1) means that the frames stored in the accumulation
@@ -1265,13 +1289,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}	
 		gl.glPopMatrix();
 			
-		gl.glPushMatrix();
+		if(!terrain.enableQuadtree)
 		{
-			gl.glScalef(Terrain.sx, Terrain.sy, Terrain.sz);
-			
-			for(TerrainPatch shape : terrainPatches) shape.render(gl);
-		}	
-		gl.glPopMatrix();
+			gl.glPushMatrix();
+			{
+				gl.glScalef(Terrain.sx, Terrain.sy, Terrain.sz);
+				
+				for(TerrainPatch shape : terrainPatches) shape.render(gl);
+			}	
+			gl.glPopMatrix();
+		}
 		
 		return System.nanoTime() - start;
 	}
@@ -1387,8 +1414,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 				break;
 			}
-			case 1: BillBoard.renderList(gl, foliage); break;
-			case 2: BillBoard.renderList2(gl, foliage, car.trajectory); break;
+			case 1: BillBoard.renderPoints(gl, foliage); break;
+			case 2: BillBoard.renderQuads(gl, foliage, car.trajectory); break;
 		}
 		
 		return System.nanoTime() - start;
@@ -1716,7 +1743,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	
 	    	if(i > patches * 0.75)
 	    	{
-	    		p[1] = terrain.getHeight(p);
+	    		p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, Quadtree.MAXIMUM_LOD).getHeight(p) : terrain.getHeight(p);
 	    		foliage.add(new BillBoard(p, t));
 	    	}
 	    	else
@@ -1729,9 +1756,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    		
 		    		p0[0] += (generator.nextFloat() * spread * 2) - spread;
 		    		p0[2] += (generator.nextFloat() * spread * 2) - spread;
-		    		p0[1] = terrain.getHeight(p0);
 		    		
-		    		if(Math.abs(p0[0]) < 200 && Math.abs(p0[2]) < 200) foliage.add(new BillBoard(p0, t));
+		    		if(Math.abs(p0[0]) < 200 && Math.abs(p0[2]) < 200)
+		    		{
+		    			p0[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p0, Quadtree.MAXIMUM_LOD).getHeight(p0) : terrain.getHeight(p0);
+		    			foliage.add(new BillBoard(p0, t));
+		    		}
 		    	}
 	    	}
 	    }
@@ -1833,9 +1863,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_EQUALS       :
 			case KeyEvent.VK_MINUS        :
 			case KeyEvent.VK_OPEN_BRACKET :
-			case KeyEvent.VK_CLOSE_BRACKET: 
-			case KeyEvent.VK_COMMA        :
-			case KeyEvent.VK_P            : terrain.keyPressed(e); break;  
+			case KeyEvent.VK_CLOSE_BRACKET:
+			case KeyEvent.VK_P            : terrain.keyPressed(e); break; 
+			case KeyEvent.VK_COMMA        : terrain.keyPressed(e); generateFoliage(60, 10, 30); break;
 			
 			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
 	
@@ -1903,5 +1933,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_normalize  )) normalize            = selected;
 		else if(source.equals(menuItem_smooth     )) light.smooth         = selected;
 		else if(source.equals(menuItem_secondary  )) light.secondary      = selected;
+		else if(source.equals(menuItem_solid      )) Quadtree.solid       = selected;
+		else if(source.equals(menuItem_frame      )) Quadtree.frame       = selected;
 	}
 }

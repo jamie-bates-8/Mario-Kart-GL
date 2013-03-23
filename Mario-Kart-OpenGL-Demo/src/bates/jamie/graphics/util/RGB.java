@@ -4,20 +4,23 @@ import java.awt.color.ColorSpace;
 
 public class RGB
 {
-	public static final float[] DARK_RED   = {153.0f,   0.0f,   0.0f};
-	public static final float[] RED        = {237.0f,  28.0f,  36.0f};
-	public static final float[] ORANGE     = {242.0f, 101.0f,  34.0f};
-	public static final float[] YELLOW     = {255.0f, 228.0f,   0.0f};
-	public static final float[] LIME_GREEN = { 50.0f, 205.0f,  50.0f};
-	public static final float[] GREEN      = { 57.0f, 180.0f,  74.0f};
-	public static final float[] BLUE       = {  0.0f, 173.0f, 239.0f};
-	public static final float[] INDIGO     = {  0.0f, 114.0f, 188.0f};
-	public static final float[] VIOLET     = {102.0f,  45.0f, 145.0f};
-	public static final float[] PLUM       = {221.0f, 160.0f, 221.0f};
-	public static final float[] WHITE      = {255.0f, 255.0f, 255.0f};
-	public static final float[] GRAY       = {127.0f, 127.0f, 127.0f};
-	public static final float[] DARK_GRAY  = { 64.0f,  64.0f,  64.0f};
-	public static final float[] BLACK      = {  0.0f,   0.0f,   0.0f};
+	public static final float[] DARK_RED    = {153,   0,   0};
+	public static final float[] RED         = {237,  28,  36};
+	public static final float[] ORANGE      = {242, 101,  34};
+	public static final float[] YELLOW      = {255, 228,   0};
+	public static final float[] LIME_GREEN  = { 50, 205,  50};
+	public static final float[] GREEN       = { 57, 180,  74};
+	public static final float[] BLUE        = {  0, 173, 239};
+	public static final float[] INDIGO      = {  0, 114, 188};
+	public static final float[] VIOLET      = {102,  45, 145};
+	public static final float[] PLUM        = {221, 160, 221};
+	public static final float[] WHITE       = {255, 255, 255};
+	public static final float[] GRAY        = {127, 127, 127};
+	public static final float[] DARK_GRAY   = { 64,  64,  64};
+	public static final float[] BLACK       = {  0,   0,   0};
+	
+	public static final float[] DARK_BROWN  = { 44,  29,   9};
+	public static final float[] LIGHT_BROWN = { 93,  63,  19};
 	
 	public static final float[] BLACK_3F      = {0, 0, 0};
 	public static final float[] PURE_RED_3F   = {1, 0, 0};

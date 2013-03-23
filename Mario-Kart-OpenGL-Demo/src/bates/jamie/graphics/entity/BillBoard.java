@@ -112,7 +112,7 @@ public class BillBoard
 		gl.glColor3f(1, 1, 1);
 	}
 	
-	public static void renderList(GL2 gl, List<BillBoard> boards)
+	public static void renderPoints(GL2 gl, List<BillBoard> boards)
 	{
 		gl.glPushMatrix();
 		{	
@@ -173,7 +173,7 @@ public class BillBoard
 		gl.glPopMatrix();
 	}
 	
-	public static void renderList2(GL2 gl, List<BillBoard> boards, float trajectory)
+	public static void renderQuads(GL2 gl, List<BillBoard> boards, float trajectory)
 	{
 		gl.glPushMatrix();
 		{	

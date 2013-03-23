@@ -729,7 +729,7 @@ public class Car
 				k = ratio < 0.1 ? 0.1f : k;
 				float depression = k * 0.05f;
 				
-				tree.createHill(vertices[i], 1, -depression);
+				tree.createHill(vertices[i], 1.5f, -depression);
 			}
 		}
 		
@@ -974,7 +974,7 @@ public class Car
 			}
 		}
 		
-		if(scene.enableTerrain && patch != null && velocity != 0)
+		if(scene.enableTerrain && !scene.getTerrain().enableQuadtree && patch != null && velocity != 0)
 		{
 			for(float[] source : getDriftVectors())
 			{

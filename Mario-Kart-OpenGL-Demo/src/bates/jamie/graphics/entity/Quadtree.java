@@ -12,6 +12,7 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Vector;
@@ -22,10 +23,12 @@ import com.jogamp.opengl.util.texture.Texture;
 public class Quadtree
 {
 	private static final float PEAK_INC = 0.15f;
-	private static final float HILL_INC = 3.0f;
+	private static final float HILL_INC = 3.5f;
 	
 	private static final float MIN_RADIUS =  8;
 	private static final float MAX_RADIUS = 40;
+	
+	private static final float MAX_TROUGH = 1.0f;
 	
 	int lod;
 	public static final int MAXIMUM_LOD = 10;
@@ -44,15 +47,22 @@ public class Quadtree
 	
 	List<float[]> vertices;
 	List<float[]> texCoords;
+	List<float[]> colors;
 	
-	IntBuffer iBuffer;
+	List<Float> heights;
+	
+	IntBuffer   iBuffer;
 	FloatBuffer vBuffer;
 	FloatBuffer tBuffer;
+	FloatBuffer cBuffer;
 	
 	int indexCount;
 	
 	Texture texture;
 	boolean textured = false;
+	
+	private static Gradient gradient = Gradient.MUD;
+	public static float[] line_color = RGB.WHITE_3F;
 	
 	/**
 	 * This method constructs a Quadtree data structure that maintains an indexed
@@ -63,16 +73,18 @@ public class Quadtree
 	 * @param vertices - A list of (hopefully) unique vertices used to render the
 	 * geometric model maintained by this data structure. 
 	 * @param texCoords - A list of (hopefully) unique texture coordinates.
+	 * @param colors - A list of colors used for vertex coloring.
 	 * @param indices - The array of indices to be used by the indexed vertex buffer
 	 * to reference the vertices and texture coordinates appropriately.
 	 */
-	public Quadtree(int lod, List<float[]> vertices, List<float[]> texCoords, int[] indices)
+	public Quadtree(int lod, List<float[]> vertices, List<float[]> texCoords, List<float[]> colors, int[] indices)
 	{
 		this.lod = lod;
 		
-		this.vertices = vertices;
+		this.vertices  = vertices;
 		this.texCoords = texCoords;
-		this.indices = indices;
+		this.colors    = colors;
+		this.indices   = indices;
 		
 		textured = true;
 	}
@@ -113,9 +125,15 @@ public class Quadtree
 		
 		this.lod = lod;
 		
-		this.vertices = vertices;
+		this.vertices  = vertices;
 		this.texCoords = texCoords;
-		this.indices = indices;
+		this.indices   = indices;
+		
+		colors = new ArrayList<float[]>();
+		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
+		
+		heights = new ArrayList<Float>();
+		for(int i = 0; i < 4; i++) heights.add(vertices.get(i)[1]);
 		
 		this.texture = texture;
 		textured = true;
@@ -272,6 +290,10 @@ public class Quadtree
 		for(float[] texCoord : texCoords) tBuffer.put(texCoord);
 		tBuffer.position(0);
 		
+		cBuffer = Buffers.newDirectFloatBuffer(colors.size() * 3);
+		for(float[] color : colors) cBuffer.put(color);
+		cBuffer.position(0);
+		
 		List<int[]> indices = new ArrayList<int[]>(); getIndices(indices, lod);
 		
 		iBuffer = Buffers.newDirectIntBuffer(indices.size() * 4);
@@ -374,6 +396,20 @@ public class Quadtree
 		int iSouth  = south  = root.storesVertex(vSouth ); if(iSouth  == -1) { south  = vertices.size(); vertices.add(vSouth ); }
 		int iWest   = west   = root.storesVertex(vWest  ); if(iWest   == -1) { west   = vertices.size(); vertices.add(vWest  ); }
 		int iCentre = centre = root.storesVertex(vCentre); if(iCentre == -1) { centre = vertices.size(); vertices.add(vCentre); }
+		
+		// set default color to white so that final color is sampled using the texture
+		if(iNorth  == -1) { colors.add(RGB.WHITE_3F); }
+		if(iEast   == -1) { colors.add(RGB.WHITE_3F); }
+		if(iSouth  == -1) { colors.add(RGB.WHITE_3F); }
+		if(iWest   == -1) { colors.add(RGB.WHITE_3F); }
+		if(iCentre == -1) { colors.add(RGB.WHITE_3F); }
+		
+		// record original heights for use in color and deformation calculations 
+		if(iNorth  == -1) { heights.add(vNorth [1]); }
+		if(iEast   == -1) { heights.add(vEast  [1]); }
+		if(iSouth  == -1) { heights.add(vSouth [1]); }
+		if(iWest   == -1) { heights.add(vWest  [1]); }
+		if(iCentre == -1) { heights.add(vCentre[1]); }
 
 		if(textured)
 		{
@@ -393,10 +429,10 @@ public class Quadtree
 			float[] tCentre = {_s_, _t_}; if(iCentre == -1) texCoords.add(tCentre);
 			
 			// set children nodes; indices supplied with counter-clockwise winding starting at the bottom-left corner
-			north_west = new Quadtree(lod + 1, vertices, texCoords, new int[] {west, centre, north, indices[3]}); north_west.root = root;
-			north_east = new Quadtree(lod + 1, vertices, texCoords, new int[] {centre, east, indices[2], north}); north_east.root = root;
-			south_west = new Quadtree(lod + 1, vertices, texCoords, new int[] {indices[0], south, centre, west}); south_west.root = root;
-			south_east = new Quadtree(lod + 1, vertices, texCoords, new int[] {south, indices[1], east, centre}); south_east.root = root;
+			north_west = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {west, centre, north, indices[3]}); north_west.root = root; north_west.heights = heights;
+			north_east = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {centre, east, indices[2], north}); north_east.root = root; north_east.heights = heights;
+			south_west = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {indices[0], south, centre, west}); south_west.root = root; south_west.heights = heights;
+			south_east = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {south, indices[1], east, centre}); south_east.root = root; south_east.heights = heights;
 		}
 		else
 		{
@@ -541,6 +577,8 @@ public class Quadtree
 			}
 			else createHill(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
 		}
+		
+		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
 	}
 	
 	/**
@@ -562,12 +600,17 @@ public class Quadtree
 			// calculate distance from vertex to centre of deformation
 			double d = Math.sqrt(x * x + z * z);
 			
-			if(d < radius)
+			if(d <= radius)
 			{
 				// ensure the deformation will not cause cracks
 				repairCrack(i);
 				// change in height is proportional to distance
 				vertex[1] += peak * (1 - (d / radius));
+				if(vertex[1] < heights.get(i) - MAX_TROUGH)
+				   vertex[1] = heights.get(i) - MAX_TROUGH;
+				
+				if(vertex[1] < heights.get(i))
+					colors.set(i, gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH));
 			}
 		}
 	}
@@ -663,9 +706,11 @@ public class Quadtree
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
+		gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		if(textured) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
+		gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
 		if(textured)
 		{
 			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, tBuffer);
@@ -673,8 +718,9 @@ public class Quadtree
 		}
 		
 		gl.glDrawElements(GL2.GL_QUADS, indexCount, GL2.GL_UNSIGNED_INT, iBuffer);
-		
+		gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 		gl.glDisableClientState(GL_VERTEX_ARRAY);
+		
 		if(textured) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
 		gl.glEnable(GL_TEXTURE_2D);	
@@ -685,7 +731,7 @@ public class Quadtree
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
 		gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glColor3f(0, 0, 0);
+		gl.glColor3f(line_color[0], line_color[1], line_color[2]);
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
 		
@@ -732,6 +778,20 @@ public class Quadtree
 		
 		Renderer.displayQuads(gl, _vBuffer, RGB.PURE_RED_3F);
 		Renderer.displayWireframeObject(gl, _vBuffer, 4, RGB.WHITE_3F);
+	}
+	
+	public void testGradient()
+	{
+		float _x = vertices.get(indices[3])[0];
+		
+		float length = getLength();
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{			
+			float x = Math.abs(vertices.get(i)[0] - _x);
+			
+			colors.set(i, gradient.interpolate(x / length));
+		}
 	}
 }
 

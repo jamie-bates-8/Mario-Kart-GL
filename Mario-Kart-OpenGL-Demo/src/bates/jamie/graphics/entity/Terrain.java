@@ -111,7 +111,7 @@ public class Terrain
 		
 		System.out.println("Terrain:\n{");
 		
-		if(!enableQuadtree)
+//		if(!enableQuadtree)
 		{
 			long start = System.nanoTime();
 			
@@ -589,7 +589,7 @@ public class Terrain
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  tree.updateBuffers(); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
 			
-			case KeyEvent.VK_COMMA: tree.nextTest(); break;
+			case KeyEvent.VK_COMMA: enableQuadtree = !enableQuadtree; break;
 			
 			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(); break;
 		}

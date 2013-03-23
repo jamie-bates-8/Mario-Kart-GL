@@ -58,11 +58,25 @@ public class Console
 		String _cmd = cmd.next();
 		Quadtree tree = scene.getTerrain().tree;
 		
-		     if(_cmd.equalsIgnoreCase("wireframe")) Quadtree.frame = cmd.nextBoolean();
-		else if(_cmd.equalsIgnoreCase(  "display")) Quadtree.solid = cmd.nextBoolean();
+		     if(_cmd.equalsIgnoreCase("wireframe")) parseWireframe(cmd);
 		else if(_cmd.equalsIgnoreCase("subdivide")) tree.subdivideAll();
 		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
 		else if(_cmd.equalsIgnoreCase(      "lod")) scene.getTerrain().max_lod = cmd.nextInt();
+	}
+	
+	private void parseWireframe(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		Quadtree tree = scene.getTerrain().tree;
+		
+		if(_cmd.equalsIgnoreCase("color"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			
+			Quadtree.line_color = new float[] {r, g, b};
+		}
 	}
 	
 	private void parseParticle(Scanner cmd)

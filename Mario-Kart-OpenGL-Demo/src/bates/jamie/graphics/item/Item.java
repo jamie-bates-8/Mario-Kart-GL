@@ -336,7 +336,7 @@ public abstract class Item
 		for(int i = 0; i < 4; i++)
 		{
 			Quadtree cell = tree.getCell(vertices[i], lod);
-			float h = cell.getHeight(vertices[i]);
+			float h = (cell == null) ? 0 : cell.getHeight(vertices[i]);
 			heights[i] = h;
 		}
 		
