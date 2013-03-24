@@ -30,10 +30,7 @@ public class Gradient
 		float increment = 100 / (colors.length - 1);
 		
 		for(int i = 0; i < colors.length; i++)
-		{
 			stops.add(new Stop((int) increment * i, colors[i]));
-			System.out.println(((int) increment * i) + ", " + Vector.print(colors[i], 1));
-		}
 	}
 	
 	public void addStop(int location, float[] color)

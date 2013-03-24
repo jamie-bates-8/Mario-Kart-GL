@@ -722,7 +722,7 @@ public class Car
 			{
 				update = true;
 				
-				cell.subdivide();
+				tree.getCell(vertices[i], Quadtree.MAXIMUM_LOD).subdivide();
 				
 				float ratio = abs(velocity / TOP_SPEED);
 				float k = ratio > 0.5 ? 0.5f : 1 - ratio;
@@ -732,8 +732,8 @@ public class Car
 				tree.createHill(vertices[i], 1.5f, -depression);
 			}
 		}
-		
-		if(update) tree.updateBuffers();
+
+		if(update) tree.updateBuffers(scene.getTerrain().max_lod);
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e[1];

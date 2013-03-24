@@ -22,13 +22,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.MultiTexFace;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
 
 public class Terrain
 {
@@ -68,6 +69,9 @@ public class Terrain
 	float[][] normals;
 	float[][] texCoords;
 	
+	public Texture grass;
+	public Texture sand;
+	public Texture snow;
 	public Texture baseTexture;
 	
 	float[][] q = new float[16][3];
@@ -330,9 +334,11 @@ public class Terrain
 	{
 		try
 		{
-			baseTexture = TextureIO.newTexture(new File("tex/grass.jpg"), true);
-			baseTexture.setTexParameterf(gl, GL2.GL_TEXTURE_WRAP_S, GL2.GL_REPEAT);
-			baseTexture.setTexParameterf(gl, GL2.GL_TEXTURE_WRAP_T, GL2.GL_REPEAT);
+			grass = TextureLoader.load(gl, "tex/grass.jpg");
+			sand  = TextureLoader.load(gl, "tex/sand.jpg");
+			snow  = TextureLoader.load(gl, "tex/snow.jpg");
+			
+			baseTexture = grass;
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -584,14 +590,21 @@ public class Terrain
 	{
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_EQUALS: max_lod++; tree.updateBuffers(max_lod); break;
-			case KeyEvent.VK_MINUS : max_lod--; tree.updateBuffers(max_lod); break;
-			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll();  tree.updateBuffers(); break;
+			case KeyEvent.VK_EQUALS       : if(max_lod < Quadtree.MAXIMUM_LOD) max_lod++; tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_MINUS        : if(max_lod >                    0) max_lod--; tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateBuffers(); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
 			
 			case KeyEvent.VK_COMMA: enableQuadtree = !enableQuadtree; break;
 			
-			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(); break;
+			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(max_lod); break;
+			
+			case KeyEvent.VK_Y:
+			{
+				tree.texture  = snow;
+				tree.gradient = Gradient.GRAYSCALE;
+				break;
+			}
 		}
 	}
 	
@@ -603,10 +616,6 @@ public class Terrain
 			{
 				if(Quadtree.solid) tree.render(gl);
 				if(Quadtree.frame) tree.renderWireframe(gl);
-				
-				gl.glTranslatef(0, 1, 0);
-				
-				tree.renderNeighbourhood(gl);
 			}
 			gl.glPopMatrix();
 		}

@@ -33,7 +33,7 @@ public class Quadtree
 	int lod;
 	public static final int MAXIMUM_LOD = 10;
 	
-	private static final float EPSILON = 0.005f;
+	private static final float EPSILON = 0.0005f;
 	private static final float VECTOR_OFFSET = 0.005f;
 	
 	public Quadtree root;
@@ -58,10 +58,10 @@ public class Quadtree
 	
 	int indexCount;
 	
-	Texture texture;
+	public Texture texture;
 	boolean textured = false;
 	
-	private static Gradient gradient = Gradient.MUD;
+	public Gradient gradient = Gradient.MUD;
 	public static float[] line_color = RGB.WHITE_3F;
 	
 	/**
@@ -270,7 +270,7 @@ public class Quadtree
 		float ba = b[1] - a[1];
 		float cb = c[1] - b[1];
 		
-		return cb - ba < EPSILON;
+		return Math.abs(cb - ba) < EPSILON;
 	}
 	
 	public long updateBuffers()
@@ -692,10 +692,9 @@ public class Quadtree
 	public static boolean frame = true;
 	public static boolean solid = true;
 	
-	public int vertexCount()
-	{
-		return vertices.size();
-	}
+	public int cellCount() { return indexCount / 4; }
+	
+	public int vertexCount() { return vertices.size(); }
 	
 	public void render(GL2 gl)
 	{

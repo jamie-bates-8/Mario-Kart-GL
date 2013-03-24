@@ -21,6 +21,7 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
@@ -191,10 +192,13 @@ public class HUD
 		
 		renderer.draw("FPS: " + scene.getFrameRate(), 40, y - 160);
 		
+		Terrain terrain = scene.getTerrain();
+		
 		renderer.draw("Items: "    + scene.getItems().size(),     40, y - 220);
 		renderer.draw("Particle: " + scene.getParticles().size(), 40, y - 250);
 		renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
-		renderer.draw("LOD: "      + scene.getTerrain().max_lod,  40, y - 310);
+		renderer.draw("LOD: "      + terrain.max_lod,             40, y - 310);
+		renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
 		
 		float[] p = car.getPosition();
 		
