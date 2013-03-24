@@ -68,66 +68,87 @@ public class Quadtree
 	 * This method constructs a Quadtree data structure that maintains an indexed
 	 * list of textured geometry
 	 * 
+	 * @param root - A reference to the root of the quadtree hierarchy.
 	 * @param lod - Specifies the level of detail (LOD), that is, the level at which
 	 * this subtree is located in the quadtree hierarchy.
+	 * @param indices - The array of indices to be used by the indexed vertex buffer
+	 * to reference vertices, texture coordinates and colors appropriately.
+	 * @param textured - If <code>true</code>, the geometry will be textured using
+	 * the texture stored by the root.
+	 */
+	public Quadtree(Quadtree root, int lod, int[] indices, boolean textured)
+	{
+		this.root = root;
+		this.lod  = lod;
+		
+		heights = root.heights;
+		
+		vertices  = root.vertices;
+		if(textured) texCoords = root.texCoords;
+		colors    = root.colors;
+		
+		this.indices = indices;
+		
+		this.textured = textured;
+	}
+	
+	/**
+	 * This method constructs the root of a Quadtree data structure that maintains an
+	 * indexed list of colored geometry
+	 * 
+	 * @param vertices - A list of (hopefully) unique vertices used to render the
+	 * geometric model maintained by this data structure. 
+	 * @param iterations - The desired level of detail (LOD).
+	 * @param generator - if this parameter is non-null, an aspect of randomness
+	 * will be added to the quadtree's construction, subdividing randomly rather
+	 * than uniformly.
+	 */
+	public Quadtree(List<float[]> vertices, int iterations, Random generator)
+	{
+		root = this;
+		lod = 0;
+		
+		this.vertices  = vertices;
+		this.indices   = new int[] {0, 1, 2, 3};
+		
+		colors = new ArrayList<float[]>();
+		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
+		
+		heights = new ArrayList<Float>();
+		for(int i = 0; i < 4; i++) heights.add(vertices.get(i)[1]);
+		
+		textured = false;
+		
+		// a random generator is passed to each subdivision rather than created per call
+		if(generator != null) subdivide(iterations, generator);
+		else subdivide(iterations);
+	}
+	
+	/**
+	 * This method constructs the root of a Quadtree data structure that maintains an
+	 * indexed list of textured geometry
+	 * 
 	 * @param vertices - A list of (hopefully) unique vertices used to render the
 	 * geometric model maintained by this data structure. 
 	 * @param texCoords - A list of (hopefully) unique texture coordinates.
-	 * @param colors - A list of colors used for vertex coloring.
-	 * @param indices - The array of indices to be used by the indexed vertex buffer
-	 * to reference the vertices and texture coordinates appropriately.
+	 * @param texture - The base texture used to render the structure's geometry.
+	 * @param iterations - The desired level of detail (LOD).
+	 * @param generator - if this parameter is non-null, an aspect of randomness
+	 * will be added to the quadtree's construction, subdividing randomly rather
+	 * than uniformly.
 	 */
-	public Quadtree(int lod, List<float[]> vertices, List<float[]> texCoords, List<float[]> colors, int[] indices)
-	{
-		this.lod = lod;
-		
-		this.vertices  = vertices;
-		this.texCoords = texCoords;
-		this.colors    = colors;
-		this.indices   = indices;
-		
-		textured = true;
-	}
-	
-	public Quadtree(int lod, List<float[]> vertices, int[] indices)
-	{
-		this.lod = lod;
-		
-		this.vertices = vertices;
-		this.indices = indices;
-	}
-	
-	public Quadtree(int lod, List<float[]> vertices, int[] indices, int iterations)
-	{
-		this.lod = lod;
-		
-		this.vertices = vertices;
-		this.indices = indices;
-		
-		subdivide(iterations);
-	}
-	
-	public Quadtree(int lod, List<float[]> vertices, int[] indices, int iterations, Random generator)
-	{
-		this.lod = lod;
-		
-		this.vertices = vertices;
-		this.indices = indices;
-		
-		subdivide(iterations, generator);
-	}
-	
-	public Quadtree(int lod, List<float[]> vertices, List<float[]> texCoords, int[] indices, Texture texture, int iterations, Random generator)
+	public Quadtree(List<float[]> vertices, List<float[]> texCoords, Texture texture, int iterations, Random generator)
 	{
 		long start = System.nanoTime();
 		
-		root = this;
+		System.out.print("Quadtree:\n{\n");
 		
-		this.lod = lod;
+		root = this;
+		lod = 0;
 		
 		this.vertices  = vertices;
 		this.texCoords = texCoords;
-		this.indices   = indices;
+		this.indices   = new int[] {0, 1, 2, 3};
 		
 		colors = new ArrayList<float[]>();
 		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
@@ -142,9 +163,11 @@ public class Quadtree
 		if(generator != null) subdivide(iterations, generator);
 		else subdivide(iterations);
 		
-		System.out.printf("Quadtree, Construction: %.3f ms\n", (System.nanoTime() - start) / 1E6);
-		
-		System.out.printf("Quadtree, Update: %.3f ms\n", updateBuffers() / 1E6);
+		System.out.printf("\tConstructor: %7.3f ms\n", (System.nanoTime() - start) / 1E6);
+		System.out.printf("\tUpdate     : %7.3f ms\n", updateBuffers() / 1E6);
+		System.out.printf("\tVertices   : %7d ms\n", vertexCount());
+		System.out.printf("\tCells      : %7d ms\n", cellCount());
+		System.out.println("}");
 	}
 	
 	/**
@@ -429,17 +452,17 @@ public class Quadtree
 			float[] tCentre = {_s_, _t_}; if(iCentre == -1) texCoords.add(tCentre);
 			
 			// set children nodes; indices supplied with counter-clockwise winding starting at the bottom-left corner
-			north_west = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {west, centre, north, indices[3]}); north_west.root = root; north_west.heights = heights;
-			north_east = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {centre, east, indices[2], north}); north_east.root = root; north_east.heights = heights;
-			south_west = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {indices[0], south, centre, west}); south_west.root = root; south_west.heights = heights;
-			south_east = new Quadtree(lod + 1, vertices, texCoords, colors, new int[] {south, indices[1], east, centre}); south_east.root = root; south_east.heights = heights;
+			north_west = new Quadtree(root, lod + 1, new int[] {west, centre, north, indices[3]}, true);
+			north_east = new Quadtree(root, lod + 1, new int[] {centre, east, indices[2], north}, true);
+			south_west = new Quadtree(root, lod + 1, new int[] {indices[0], south, centre, west}, true);
+			south_east = new Quadtree(root, lod + 1, new int[] {south, indices[1], east, centre}, true);
 		}
 		else
 		{
-			north_west = new Quadtree(lod + 1, vertices, new int[] {west, centre, north, indices[3]}); north_west.root = root;
-			north_east = new Quadtree(lod + 1, vertices, new int[] {centre, east, indices[2], north}); north_east.root = root;
-			south_west = new Quadtree(lod + 1, vertices, new int[] {indices[0], south, centre, west}); south_west.root = root;
-			south_east = new Quadtree(lod + 1, vertices, new int[] {south, indices[1], east, centre}); south_east.root = root;
+			north_west = new Quadtree(root, lod + 1, new int[] {west, centre, north, indices[3]}, false);
+			north_east = new Quadtree(root, lod + 1, new int[] {centre, east, indices[2], north}, false);
+			south_west = new Quadtree(root, lod + 1, new int[] {indices[0], south, centre, west}, false);
+			south_east = new Quadtree(root, lod + 1, new int[] {south, indices[1], east, centre}, false);
 		}
 		
 		// subdivide was successful

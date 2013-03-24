@@ -161,11 +161,7 @@ public class Terrain
 		tBuffer.add(new float[] {32, 32});
 		tBuffer.add(new float[] { 0, 32});
 		
-		int[] indices = {0, 1, 2, 3};
-		
-		tree = new Quadtree(0, vBuffer, tBuffer, indices, baseTexture, 7, null);
-		
-		System.out.println("Quadtree: " + tree.vertexCount() + " vertices");
+		tree = new Quadtree(vBuffer, tBuffer, baseTexture, 7, null);
 		
 		tree.setHeights(1000);
 		tree.updateBuffers();
