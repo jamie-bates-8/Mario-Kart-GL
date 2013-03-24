@@ -165,8 +165,8 @@ public class Quadtree
 		
 		System.out.printf("\tConstructor: %7.3f ms\n", (System.nanoTime() - start) / 1E6);
 		System.out.printf("\tUpdate     : %7.3f ms\n", updateBuffers() / 1E6);
-		System.out.printf("\tVertices   : %7d ms\n", vertexCount());
-		System.out.printf("\tCells      : %7d ms\n", cellCount());
+		System.out.printf("\tVertices   : %7d\n", vertexCount());
+		System.out.printf("\tCells      : %7d\n", cellCount());
 		System.out.println("}");
 	}
 	
@@ -645,7 +645,15 @@ public class Quadtree
 	
 	public void setHeights(Quadtree tree)
 	{
-		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] vertex = vertices.get(i);
+			
+			Quadtree cell = tree.getCell(vertex, getMaximumLOD());
+			vertex[1] = cell.getHeight(vertex);
+			
+			heights.set(i, vertex[1]);
+		}
 	}
 	
 	public void setGradient(Gradient gradient)

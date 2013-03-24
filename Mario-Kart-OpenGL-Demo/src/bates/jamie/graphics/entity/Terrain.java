@@ -86,6 +86,8 @@ public class Terrain
 	public Quadtree tree;
 	public int max_lod = 10;
 	
+	public Quadtree subtree;
+	
 	public Terrain(GL2 gl, int length, int i)
 	{	
 		setHeights(length, i);
@@ -165,6 +167,22 @@ public class Terrain
 		
 		tree.setHeights(1000);
 		tree.updateBuffers();
+		
+		List<float[]> _vBuffer = new ArrayList<float[]>();
+		_vBuffer.add(new float[] {-40, 0,  40});
+		_vBuffer.add(new float[] { 40, 0,  40});
+		_vBuffer.add(new float[] { 40, 0, -40});
+		_vBuffer.add(new float[] {-40, 0, -40});
+		
+		List<float[]> _tBuffer = new ArrayList<float[]>();
+		_tBuffer.add(new float[] { 0,  0});
+		_tBuffer.add(new float[] { 8,  0});
+		_tBuffer.add(new float[] { 8,  8});
+		_tBuffer.add(new float[] { 0,  8});
+		
+		subtree = new Quadtree(_vBuffer, _tBuffer, sand, 6, null); 
+		subtree.setHeights(tree);
+		subtree.updateBuffers();
 	}
 	
 	public void toModel()
@@ -619,6 +637,8 @@ public class Terrain
 			{
 				if(Quadtree.solid) tree.render(gl);
 				if(Quadtree.frame) tree.renderWireframe(gl);
+				
+				subtree.render(gl);
 			}
 			gl.glPopMatrix();
 		}
