@@ -128,12 +128,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenuBar menuBar;
 	
 	private JMenu menu_file;
-	
 	private JMenu menu_load;
 	private JMenuItem menuItem_project;
 	private JMenuItem menuItem_game;
-	
 	private JMenuItem menuItem_close;
+	
+	private JMenu menu_control;
+	private JCheckBoxMenuItem menuItem_reverse;
 	
 	private JMenu menu_render;
 	private JMenu menu_quality;
@@ -378,6 +379,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuBar.add(menu_file);
 		/**----------------**/
 		
+		/** Controls Menu **/
+		menu_control = new JMenu("Control");
+		menu_control.setMnemonic(KeyEvent.VK_C);
+		
+		menuItem_reverse = new JCheckBoxMenuItem("Invert Reverse");
+		menuItem_reverse.addItemListener(this);
+		menuItem_reverse.setMnemonic(KeyEvent.VK_I);
+		menuItem_reverse.setSelected(false);
+		
+		menu_control.add(menuItem_reverse);
+		
+		menuBar.add(menu_control);
+		/**----------------**/
+		
 		/** Render Menu **/
 		menu_render = new JMenu("Render");
 		menu_render.setMnemonic(KeyEvent.VK_R);
@@ -455,7 +470,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menuItem_frame = new JCheckBoxMenuItem("Show Wireframe");
 		menuItem_frame.addItemListener(this);
-		menuItem_frame.setMnemonic(KeyEvent.VK_F);
+		menuItem_frame.setMnemonic(KeyEvent.VK_W);
 		menuItem_frame.setSelected(Quadtree.frame);
 		
 		menu_quadtree.add(menuItem_solid);
@@ -1840,7 +1855,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_DELETE: clearItems(); break;
 			
-			case KeyEvent.VK_K:  moveLight = !moveLight; break;
+			case KeyEvent.VK_X:  moveLight = !moveLight; break;
 	 
 			case KeyEvent.VK_F12: enableAnimation = !enableAnimation; break;
 	
@@ -1860,7 +1875,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_8:  fort.displayModel = !fort.displayModel; break;
 			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
 			
-			case KeyEvent.VK_Y:
+			case KeyEvent.VK_J:
+			case KeyEvent.VK_K:	
 			case KeyEvent.VK_EQUALS       :
 			case KeyEvent.VK_MINUS        :
 			case KeyEvent.VK_OPEN_BRACKET :
@@ -1927,14 +1943,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Object source = ie.getItemSelectable();
 		boolean selected = (ie.getStateChange() == ItemEvent.SELECTED);
 		
-		     if(source.equals(menuItem_multisample)) multisample          = selected;
-		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic = selected; 
-		else if(source.equals(menuItem_motionblur )) enableMotionBlur     = selected;
-		else if(source.equals(menuItem_fog        )) enableFog            = selected;    
-		else if(source.equals(menuItem_normalize  )) normalize            = selected;
-		else if(source.equals(menuItem_smooth     )) light.smooth         = selected;
-		else if(source.equals(menuItem_secondary  )) light.secondary      = selected;
-		else if(source.equals(menuItem_solid      )) Quadtree.solid       = selected;
-		else if(source.equals(menuItem_frame      )) Quadtree.frame       = selected;
+		     if(source.equals(menuItem_multisample)) multisample               = selected;
+		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic      = selected; 
+		else if(source.equals(menuItem_motionblur )) enableMotionBlur          = selected;
+		else if(source.equals(menuItem_fog        )) enableFog                 = selected;    
+		else if(source.equals(menuItem_normalize  )) normalize                 = selected;
+		else if(source.equals(menuItem_smooth     )) light.smooth              = selected;
+		else if(source.equals(menuItem_secondary  )) light.secondary           = selected;
+		else if(source.equals(menuItem_solid      )) Quadtree.solid            = selected;
+		else if(source.equals(menuItem_frame      )) Quadtree.frame            = selected;
+		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse = selected;
 	}
 }

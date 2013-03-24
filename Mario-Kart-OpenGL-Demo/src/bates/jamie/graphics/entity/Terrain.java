@@ -595,10 +595,17 @@ public class Terrain
 			
 			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(max_lod); break;
 			
-			case KeyEvent.VK_Y:
+			case KeyEvent.VK_J:
 			{
 				tree.texture  = snow;
-				tree.gradient = Gradient.GRAYSCALE;
+				tree.setGradient(Gradient.GRAYSCALE);
+				break;
+			}
+			
+			case KeyEvent.VK_K:
+			{
+				tree.texture  = grass;
+				tree.setGradient(Gradient.MUD);
 				break;
 			}
 		}

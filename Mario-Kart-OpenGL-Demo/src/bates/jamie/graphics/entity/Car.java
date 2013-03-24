@@ -75,7 +75,6 @@ public class Car
 	private static List<Face> door_faces;
 	private static List<Face> base_faces;
 	
-	
 	private static Model all_windows;
 	private static Model car_body;
 	private static Model head_lights;
@@ -1437,8 +1436,6 @@ public class Car
 			case KeyEvent.VK_V: roulette.previous(); break;
 			
 			case KeyEvent.VK_Q: if(turning && !falling) drift(); break;
-			
-			case KeyEvent.VK_X: invertReverse = !invertReverse; break;
 			
 			case KeyEvent.VK_M: camera.cycleMode(); displayModel = true; break;
 			case KeyEvent.VK_G:

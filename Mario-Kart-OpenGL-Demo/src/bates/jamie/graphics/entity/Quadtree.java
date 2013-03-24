@@ -601,6 +601,11 @@ public class Quadtree
 			else createHill(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
 		}
 		
+		setHeights();
+	}
+	
+	public void setHeights()
+	{
 		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
 	}
 	
@@ -636,6 +641,26 @@ public class Quadtree
 					colors.set(i, gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH));
 			}
 		}
+	}
+	
+	public void setHeights(Quadtree tree)
+	{
+		
+	}
+	
+	public void setGradient(Gradient gradient)
+	{
+		this.gradient = gradient;
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{	
+			float[] vertex = vertices.get(i);
+				
+			if(vertex[1] < heights.get(i))
+				colors.set(i, gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH));
+		}
+		
+		updateBuffers();
 	}
 	
 	public int getMaximumLOD()
