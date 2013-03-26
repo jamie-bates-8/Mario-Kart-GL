@@ -117,7 +117,7 @@ public class Terrain
 		
 		System.out.println("Terrain:\n{");
 		
-//		if(!enableQuadtree)
+		if(!enableQuadtree)
 		{
 			long start = System.nanoTime();
 			
@@ -163,7 +163,7 @@ public class Terrain
 		tBuffer.add(new float[] {32, 32});
 		tBuffer.add(new float[] { 0, 32});
 		
-		tree = new Quadtree(vBuffer, tBuffer, baseTexture, 7, null);
+		tree = new Quadtree(vBuffer, tBuffer, sand, 7, null);
 		
 		tree.setHeights(1000);
 		tree.updateBuffers();
@@ -609,7 +609,13 @@ public class Terrain
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateBuffers(); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
 			
-			case KeyEvent.VK_COMMA: enableQuadtree = !enableQuadtree; break;
+			case KeyEvent.VK_COMMA : enableQuadtree = !enableQuadtree; break;
+			
+			case KeyEvent.VK_PERIOD:
+			{
+				
+				break;
+			}
 			
 			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(max_lod); break;
 			
@@ -638,7 +644,7 @@ public class Terrain
 				if(Quadtree.solid) tree.render(gl);
 				if(Quadtree.frame) tree.renderWireframe(gl);
 				
-				subtree.render(gl);
+//				subtree.render(gl);
 			}
 			gl.glPopMatrix();
 		}

@@ -5,7 +5,6 @@ import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -14,7 +13,6 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.common.nio.Buffers;
@@ -51,6 +49,15 @@ public class Quadtree
 	
 	List<Float> heights;
 	
+	int offset;
+	/*
+	 * TODO
+	 * 
+	 * Cannot switch dynamic from non-dynamic as buffers need to be reconstructed
+	 * Cannot load different LODs to vertex buffer (no visual change, only physics)
+	 */
+	public static final boolean DYNAMIC_BUFFERS = true;
+	
 	IntBuffer   iBuffer;
 	FloatBuffer vBuffer;
 	FloatBuffer tBuffer;
@@ -61,7 +68,7 @@ public class Quadtree
 	public Texture texture;
 	boolean textured = false;
 	
-	public Gradient gradient = Gradient.MUD;
+	public Gradient gradient = Gradient.GRAYSCALE;
 	public static float[] line_color = RGB.WHITE_3F;
 	
 	/**
@@ -86,6 +93,14 @@ public class Quadtree
 		vertices  = root.vertices;
 		if(textured) texCoords = root.texCoords;
 		colors    = root.colors;
+		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer = root.vBuffer;
+			tBuffer = root.tBuffer;
+			cBuffer = root.cBuffer;
+			iBuffer = root.iBuffer;
+		}
 		
 		this.indices = indices;
 		
@@ -146,6 +161,8 @@ public class Quadtree
 		root = this;
 		lod = 0;
 		
+		offset = 0;
+		
 		this.vertices  = vertices;
 		this.texCoords = texCoords;
 		this.indices   = new int[] {0, 1, 2, 3};
@@ -155,6 +172,8 @@ public class Quadtree
 		
 		heights = new ArrayList<Float>();
 		for(int i = 0; i < 4; i++) heights.add(vertices.get(i)[1]);
+		
+		if(DYNAMIC_BUFFERS) createBuffers();
 		
 		this.texture = texture;
 		textured = true;
@@ -296,6 +315,45 @@ public class Quadtree
 		return Math.abs(cb - ba) < EPSILON;
 	}
 	
+	public static int getVertexCapacity()
+	{
+		int c = (int) Math.pow(2, MAXIMUM_LOD) + 1;
+		
+		return c * c;
+	}
+	
+	public static int getCellCapacity()
+	{
+		int c = (int) Math.pow(2, MAXIMUM_LOD);
+		
+		return c * c;
+	}
+	
+	public long createBuffers()
+	{
+		long start = System.nanoTime();
+		
+		int capacity = getVertexCapacity();
+		
+		vBuffer = Buffers.newDirectFloatBuffer(capacity * 3);
+		for(float[] vertex : vertices) vBuffer.put(vertex);
+		
+		tBuffer = Buffers.newDirectFloatBuffer(capacity * 2);
+		for(float[] texCoord : texCoords) tBuffer.put(texCoord);
+		
+		cBuffer = Buffers.newDirectFloatBuffer(capacity * 3);
+		for(float[] color : colors) cBuffer.put(color);
+		
+		iBuffer = Buffers.newDirectIntBuffer(getCellCapacity() * 4);
+		for(int index : indices) iBuffer.put(index);
+		
+		indexCount = 4;
+		
+		updateBuffers();
+		
+		return System.nanoTime() - start;
+	}
+	
 	public long updateBuffers()
 	{
 		return updateBuffers(MAXIMUM_LOD);
@@ -305,25 +363,28 @@ public class Quadtree
 	{
 		long start = System.nanoTime();
 		
-		vBuffer = Buffers.newDirectFloatBuffer(vertices.size() * 3);
-		for(float[] vertex : vertices) vBuffer.put(vertex);
-		vBuffer.position(0);
-		
-		tBuffer = Buffers.newDirectFloatBuffer(texCoords.size() * 2);
-		for(float[] texCoord : texCoords) tBuffer.put(texCoord);
-		tBuffer.position(0);
-		
-		cBuffer = Buffers.newDirectFloatBuffer(colors.size() * 3);
-		for(float[] color : colors) cBuffer.put(color);
-		cBuffer.position(0);
-		
-		List<int[]> indices = new ArrayList<int[]>(); getIndices(indices, lod);
-		
-		iBuffer = Buffers.newDirectIntBuffer(indices.size() * 4);
-		for(int[] index : indices) iBuffer.put(index);
-		iBuffer.position(0);
-		
-		indexCount = indices.size() * 4;
+		if(!DYNAMIC_BUFFERS)
+		{
+			vBuffer = Buffers.newDirectFloatBuffer(vertices.size() * 3);
+			for(float[] vertex : vertices) vBuffer.put(vertex);
+			vBuffer.position(0); // read data from start of buffer
+			
+			tBuffer = Buffers.newDirectFloatBuffer(texCoords.size() * 2);
+			for(float[] texCoord : texCoords) tBuffer.put(texCoord);
+			tBuffer.position(0);
+			
+			cBuffer = Buffers.newDirectFloatBuffer(colors.size() * 3);
+			for(float[] color : colors) cBuffer.put(color);
+			cBuffer.position(0);
+			
+			List<int[]> indices = new ArrayList<int[]>(); getIndices(indices, lod);
+			
+			iBuffer = Buffers.newDirectIntBuffer(indices.size() * 4);
+			for(int[] index : indices) iBuffer.put(index);
+			iBuffer.position(0);
+			
+			indexCount = indices.size() * 4;
+		}
 		
 		return System.nanoTime() - start;
 	}
@@ -379,6 +440,19 @@ public class Quadtree
 		return ((x >= _x) && (x <= x_) && (z >= _z) && (z <= z_)); 
 	}
 	
+	public void deallocateBuffers()
+	{
+		vBuffer = null;
+		tBuffer = null;
+		cBuffer = null;
+		iBuffer = null;
+		
+		if(north_west != null) north_west.deallocateBuffers();
+		if(north_east != null) north_east.deallocateBuffers();
+		if(south_west != null) south_west.deallocateBuffers();
+		if(south_east != null) south_east.deallocateBuffers();
+	}
+	
 	/**
 	 * This method splits the cell into four by halving it across both the horizontal
 	 * and vertical centres. This is accomplished by extending the quadtree hierarchy
@@ -391,6 +465,13 @@ public class Quadtree
 	{
 		// do not subdivide if cell will exceed maximum lod
 		if(lod + 1 > MAXIMUM_LOD) return false;
+		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer.limit(vBuffer.capacity());
+			tBuffer.limit(tBuffer.capacity());
+			cBuffer.limit(cBuffer.capacity());
+		}
 		
 		float _x = vertices.get(indices[3])[0];
 		float _z = vertices.get(indices[3])[2];
@@ -414,18 +495,24 @@ public class Quadtree
 		 * corresponding index is already stored within the entire quadtree hierarchy.
 		 * If possible, indices are reused, otherwise a new index is created.
 		 */
-		int iNorth  = north  = root.storesVertex(vNorth ); if(iNorth  == -1) { north  = vertices.size(); vertices.add(vNorth ); }
-		int iEast   = east   = root.storesVertex(vEast  ); if(iEast   == -1) { east   = vertices.size(); vertices.add(vEast  ); }
-		int iSouth  = south  = root.storesVertex(vSouth ); if(iSouth  == -1) { south  = vertices.size(); vertices.add(vSouth ); }
-		int iWest   = west   = root.storesVertex(vWest  ); if(iWest   == -1) { west   = vertices.size(); vertices.add(vWest  ); }
-		int iCentre = centre = root.storesVertex(vCentre); if(iCentre == -1) { centre = vertices.size(); vertices.add(vCentre); }
+		int iNorth  = north  = root.storesVertex(vNorth ); 
+		int iEast   = east   = root.storesVertex(vEast  ); 
+		int iSouth  = south  = root.storesVertex(vSouth ); 
+		int iWest   = west   = root.storesVertex(vWest  ); 
+		int iCentre = centre = root.storesVertex(vCentre); 
+		
+		if(iNorth  == -1) { north  = vertices.size(); vertices.add(vNorth ); if(DYNAMIC_BUFFERS) vBuffer.put(vNorth ); }
+		if(iEast   == -1) { east   = vertices.size(); vertices.add(vEast  ); if(DYNAMIC_BUFFERS) vBuffer.put(vEast  ); }
+		if(iSouth  == -1) { south  = vertices.size(); vertices.add(vSouth ); if(DYNAMIC_BUFFERS) vBuffer.put(vSouth ); }
+		if(iWest   == -1) { west   = vertices.size(); vertices.add(vWest  ); if(DYNAMIC_BUFFERS) vBuffer.put(vWest  ); }
+		if(iCentre == -1) { centre = vertices.size(); vertices.add(vCentre); if(DYNAMIC_BUFFERS) vBuffer.put(vCentre); }
 		
 		// set default color to white so that final color is sampled using the texture
-		if(iNorth  == -1) { colors.add(RGB.WHITE_3F); }
-		if(iEast   == -1) { colors.add(RGB.WHITE_3F); }
-		if(iSouth  == -1) { colors.add(RGB.WHITE_3F); }
-		if(iWest   == -1) { colors.add(RGB.WHITE_3F); }
-		if(iCentre == -1) { colors.add(RGB.WHITE_3F); }
+		if(iNorth  == -1) { colors.add(RGB.WHITE_3F); if(DYNAMIC_BUFFERS) cBuffer.put(RGB.WHITE_3F); }
+		if(iEast   == -1) { colors.add(RGB.WHITE_3F); if(DYNAMIC_BUFFERS) cBuffer.put(RGB.WHITE_3F); }
+		if(iSouth  == -1) { colors.add(RGB.WHITE_3F); if(DYNAMIC_BUFFERS) cBuffer.put(RGB.WHITE_3F); }
+		if(iWest   == -1) { colors.add(RGB.WHITE_3F); if(DYNAMIC_BUFFERS) cBuffer.put(RGB.WHITE_3F); }
+		if(iCentre == -1) { colors.add(RGB.WHITE_3F); if(DYNAMIC_BUFFERS) cBuffer.put(RGB.WHITE_3F); }
 		
 		// record original heights for use in color and deformation calculations 
 		if(iNorth  == -1) { heights.add(vNorth [1]); }
@@ -445,11 +532,11 @@ public class Quadtree
 			float _t_ = (_t + t_) / 2;
 			
 			// if an index was invalid, a new texture coordinate must also be added 
-			float[] tNorth  = {_s_, _t }; if(iNorth  == -1) texCoords.add(tNorth );
-			float[] tEast   = { s_, _t_}; if(iEast   == -1) texCoords.add(tEast  );
-			float[] tSouth  = {_s_,  t_}; if(iSouth  == -1) texCoords.add(tSouth );
-			float[] tWest   = {_s , _t_}; if(iWest   == -1) texCoords.add(tWest  );
-			float[] tCentre = {_s_, _t_}; if(iCentre == -1) texCoords.add(tCentre);
+			float[] tNorth  = {_s_, _t }; if(iNorth  == -1) { texCoords.add(tNorth ); if(DYNAMIC_BUFFERS) tBuffer.put(tNorth ); };
+			float[] tEast   = { s_, _t_}; if(iEast   == -1) { texCoords.add(tEast  ); if(DYNAMIC_BUFFERS) tBuffer.put(tEast  ); };
+			float[] tSouth  = {_s_,  t_}; if(iSouth  == -1) { texCoords.add(tSouth ); if(DYNAMIC_BUFFERS) tBuffer.put(tSouth ); };
+			float[] tWest   = {_s , _t_}; if(iWest   == -1) { texCoords.add(tWest  ); if(DYNAMIC_BUFFERS) tBuffer.put(tWest  ); };
+			float[] tCentre = {_s_, _t_}; if(iCentre == -1) { texCoords.add(tCentre); if(DYNAMIC_BUFFERS) tBuffer.put(tCentre); };
 			
 			// set children nodes; indices supplied with counter-clockwise winding starting at the bottom-left corner
 			north_west = new Quadtree(root, lod + 1, new int[] {west, centre, north, indices[3]}, true);
@@ -463,6 +550,21 @@ public class Quadtree
 			north_east = new Quadtree(root, lod + 1, new int[] {centre, east, indices[2], north}, false);
 			south_west = new Quadtree(root, lod + 1, new int[] {indices[0], south, centre, west}, false);
 			south_east = new Quadtree(root, lod + 1, new int[] {south, indices[1], east, centre}, false);
+		}
+		
+		if(DYNAMIC_BUFFERS)
+		{
+			int position = iBuffer.position();
+			iBuffer.position(offset); // use offset to overwrite parent cell indices
+			
+			north_west.offset = offset; iBuffer.put(north_west.indices);
+			iBuffer.position(position); // set position to end of buffer
+			
+			north_east.offset = iBuffer.position(); iBuffer.put(north_east.indices);
+			south_west.offset = iBuffer.position(); iBuffer.put(south_west.indices);
+			south_east.offset = iBuffer.position(); iBuffer.put(south_east.indices);
+			
+			root.indexCount += 12; // one cell (4 indices) is replaced with four (16) 16 - 4 = 12
 		}
 		
 		// subdivide was successful
@@ -569,6 +671,30 @@ public class Quadtree
 			south_east.getIndices(_indices, lod);
 		}
 	}
+	
+	public void offsetHeights(float trough)
+	{
+		Random generator = new Random();
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] vertex = vertices.get(i);
+			float depression = -generator.nextFloat() * trough;
+			
+			vertex[1] += depression;
+			float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
+			colors.set(i, color);
+			
+			if(DYNAMIC_BUFFERS)
+			{
+				int position = cBuffer.position();
+				cBuffer.position(i * 3); cBuffer.put(color);
+				cBuffer.position(position);
+			}
+		}
+		
+		updateBuffers();
+	}
 
 	/**
 	 * This method executes a hill-raising algorithm for a number of iterations
@@ -604,6 +730,26 @@ public class Quadtree
 		setHeights();
 	}
 	
+	public void setHeights(Quadtree tree)
+	{
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] vertex = vertices.get(i);
+			
+			Quadtree cell = tree.getCell(vertex, getMaximumLOD());
+			vertex[1] = cell.getHeight(vertex);
+			
+			if(DYNAMIC_BUFFERS)
+			{
+				int position = vBuffer.position();
+				vBuffer.position(i * 3); vBuffer.put(vertex);
+				vBuffer.position(position);
+			}
+			
+			heights.set(i, vertex[1]);
+		}
+	}
+
 	public void setHeights()
 	{
 		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
@@ -637,22 +783,25 @@ public class Quadtree
 				if(vertex[1] < heights.get(i) - MAX_TROUGH)
 				   vertex[1] = heights.get(i) - MAX_TROUGH;
 				
+				int position = vBuffer.position();
+				if(DYNAMIC_BUFFERS)
+				{
+					vBuffer.position(i * 3); vBuffer.put(vertex);
+					vBuffer.position(position);
+				}
+				
 				if(vertex[1] < heights.get(i))
-					colors.set(i, gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH));
+				{
+					float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
+					colors.set(i, color);
+					
+					if(DYNAMIC_BUFFERS)
+					{
+						cBuffer.position(i * 3); cBuffer.put(color);
+						cBuffer.position(position);
+					}
+				}
 			}
-		}
-	}
-	
-	public void setHeights(Quadtree tree)
-	{
-		for(int i = 0; i < vertices.size(); i++)
-		{
-			float[] vertex = vertices.get(i);
-			
-			Quadtree cell = tree.getCell(vertex, getMaximumLOD());
-			vertex[1] = cell.getHeight(vertex);
-			
-			heights.set(i, vertex[1]);
 		}
 	}
 	
@@ -665,7 +814,18 @@ public class Quadtree
 			float[] vertex = vertices.get(i);
 				
 			if(vertex[1] < heights.get(i))
-				colors.set(i, gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH));
+			{
+				float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
+				
+				if(DYNAMIC_BUFFERS)
+				{
+					int position = cBuffer.position();
+					cBuffer.position(i * 3); cBuffer.put(color);
+					cBuffer.position(position);
+				}
+				
+				colors.set(i, color);
+			}
 		}
 		
 		updateBuffers();
@@ -764,6 +924,14 @@ public class Quadtree
 		gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		if(textured) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer.flip(); // read data from start of buffer
+			cBuffer.flip();
+			tBuffer.flip();
+			iBuffer.flip();
+		}
+		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
 		gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
 		if(textured)
@@ -778,6 +946,14 @@ public class Quadtree
 		
 		if(textured) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
+			tBuffer.position(tBuffer.limit()); tBuffer.limit(tBuffer.capacity());
+			cBuffer.position(cBuffer.limit()); cBuffer.limit(cBuffer.capacity());
+			iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
+		}
+		
 		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	
@@ -790,6 +966,12 @@ public class Quadtree
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
 		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer.flip();
+			iBuffer.flip();
+		}
+		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
 		
 		gl.glDrawElements(GL2.GL_QUADS, indexCount, GL2.GL_UNSIGNED_INT, iBuffer);
@@ -799,54 +981,13 @@ public class Quadtree
 		gl.glColor3f(1, 1, 1);
 		gl.glEnable(GL_TEXTURE_2D);	
 		
-		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
-	}
-	
-	public int testIndex = 0;
-	
-	public void nextTest()
-	{
-		testIndex++;
-		testIndex %= indexCount;
-	}
-	
-	public void renderNeighbourhood(GL2 gl)
-	{
-		Quadtree[] neighbours = neighbourhood(testIndex);
-		
-		List<float[]> _vertices = new ArrayList<float[]>();
-		
-		for(int i = 0; i < neighbours.length; i++)
+		if(DYNAMIC_BUFFERS)
 		{
-			if(neighbours[i] != null)
-			{
-				_vertices.add(vertices.get(neighbours[i].indices[0]));
-				_vertices.add(vertices.get(neighbours[i].indices[1]));
-				_vertices.add(vertices.get(neighbours[i].indices[2]));
-				_vertices.add(vertices.get(neighbours[i].indices[3]));
-			}
+			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
+			iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
 		}
 		
-		float[][] _vBuffer = new float[_vertices.size()][3];
-		
-		for(int i = 0; i < _vBuffer.length; i++) _vBuffer[i] = _vertices.get(i);
-		
-		Renderer.displayQuads(gl, _vBuffer, RGB.PURE_RED_3F);
-		Renderer.displayWireframeObject(gl, _vBuffer, 4, RGB.WHITE_3F);
-	}
-	
-	public void testGradient()
-	{
-		float _x = vertices.get(indices[3])[0];
-		
-		float length = getLength();
-		
-		for(int i = 0; i < vertices.size(); i++)
-		{			
-			float x = Math.abs(vertices.get(i)[0] - _x);
-			
-			colors.set(i, gradient.interpolate(x / length));
-		}
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 	}
 }
 

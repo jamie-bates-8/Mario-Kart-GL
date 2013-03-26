@@ -25,6 +25,15 @@ public class Vector
 		for(int i = 0; i < u.length; i++) u[i] += v[i];
 	}
 	
+	public static long sum(long[] v)
+	{
+		long sum = 0;
+		
+		for(int i = 0; i < v.length; i++) sum += v[i];
+		
+		return sum;
+	}
+	
 	public static float dot(float[] u, float[] v)
 	{
 		float dot = 0;

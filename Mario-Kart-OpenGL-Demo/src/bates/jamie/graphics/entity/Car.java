@@ -711,6 +711,8 @@ public class Car
 		float[][] vertices = bound.getVertices();
 		boolean update = false;
 		
+		long start = System.nanoTime();
+		
 		for(int i = 0; i < 4; i++)
 		{
 			Quadtree cell = tree.getCell(vertices[i], lod);
@@ -731,8 +733,9 @@ public class Car
 				tree.createHill(vertices[i], 1.5f, -depression);
 			}
 		}
-
-		if(update) tree.updateBuffers(scene.getTerrain().max_lod);
+		
+		scene.updateTimes[scene.frameIndex][1] = System.nanoTime() - start;
+		scene.updateTimes[scene.frameIndex][2] = update ? tree.updateBuffers(scene.getTerrain().max_lod) : 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e[1];

@@ -25,6 +25,7 @@ import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.opengl.util.awt.TextRenderer;
 import com.jogamp.opengl.util.texture.Texture;
@@ -111,7 +112,8 @@ public class HUD
 			{
 				case FRAME_TIMES: renderFrameTimes(gl); break;
 				case FRAME_TIME_COMPONENTS: renderFrameTimeComponents(gl); break;
-				case UPDATE_TIMES: renderCollisionTimes(gl); break;
+				case UPDATE_TIMES: renderUpdateTimes(gl); break;
+				case UPDATE_TIME_COMPONENTS: renderUpdateTimeComponents(gl); break;
 			}
 			
 			gl.glEnable(GL_LIGHTING);
@@ -223,7 +225,7 @@ public class HUD
 		}
 		
 		renderer.draw("Graph Mode: " + mode + (mode == GraphMode.FRAME_TIME_COMPONENTS ?
-			(" (" + Scene.COLUMN_HEADERS[emphasizedComponent] + ")") : ""), 50, 20);
+			(" (" + Scene.RENDER_HEADERS[emphasizedComponent] + ")") : ""), 50, 20);
 		
 		renderer.endRendering();
 	}
@@ -302,18 +304,52 @@ public class HUD
 		gl.glEnd();
 	}
 	
-	private void renderCollisionTimes(GL2 gl)
+	private void renderUpdateTimeComponents(GL2 gl)
 	{
-		int frame = scene.frameIndex;
-		long[] times = scene.updateTimes;
+		int frameIndex = scene.frameIndex;
+		long[][] times = scene.updateTimes;
 		
-		float y = scene.getHeight() - 50;
+		int height = scene.getHeight();
+		
+		float[][] colors = {RGB.GREEN, RGB.BLUE, RGB.INDIGO};
+		float[] color = {};
 		
 		gl.glBegin(GL_LINES);
 		{
 			for(int i = 0; i < times.length; i++)
 			{
-				float time = (float) (times[i] / 1E6);
+				float y = height - 50;
+				
+				for(int j = 0; j < times[0].length; j++)
+				{
+				         if(i == frameIndex    ) color = RGB.RED;
+				    else if(i == frameIndex - 1) color = RGB.ORANGE;
+					else if(i == frameIndex - 2) color = RGB.YELLOW;
+					
+					else color = colors[j];
+					
+					gl.glColor3f(color[0]/255, color[1]/255, color[2]/255);
+				
+					gl.glVertex2f(50 + (i * 2), y);
+					gl.glVertex2f(50 + (i * 2), y -= (times[i][j] / 1E6 * yStretch));
+				}	
+			}
+		}
+		gl.glEnd();
+	}
+	
+	private void renderUpdateTimes(GL2 gl)
+	{
+		int frame = scene.frameIndex;
+		long[][] times = scene.updateTimes;
+		
+		int y = scene.getHeight() - 50;
+		
+		gl.glBegin(GL_LINES);
+		{
+			for(int i = 0; i < times.length; i++)
+			{
+				float time = (float) (Vector.sum(times[i]) / 1E6);
 				
 				float[] color1, color2;
 				
@@ -394,7 +430,8 @@ public class HUD
 	{
 		FRAME_TIMES,
 		FRAME_TIME_COMPONENTS,
-		UPDATE_TIMES;
+		UPDATE_TIMES,
+		UPDATE_TIME_COMPONENTS;
 		
 		public static GraphMode cycle(GraphMode mode)
 		{
@@ -408,7 +445,8 @@ public class HUD
 			{
 				case FRAME_TIMES:
 				case FRAME_TIME_COMPONENTS: return "Frame Times";
-				case UPDATE_TIMES: return "Update Times";
+				case UPDATE_TIMES:
+				case UPDATE_TIME_COMPONENTS: return "Update Times";
 			}
 			
 			return name();

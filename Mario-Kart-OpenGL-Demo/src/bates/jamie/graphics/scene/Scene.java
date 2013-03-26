@@ -181,10 +181,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public int frameIndex = 0; //time independent frame counter (for FT graph)
 	public long[] frameTimes; //buffered frame times (for FT graph)
 	public long[][] renderTimes; //buffered times for rendering each set of components
-	public long[] updateTimes; //buffered times for collision detection tests (for CT graph)
+	public long[][] updateTimes; //buffered times for collision detection tests (for CT graph)
 	
-	public static final String[] COLUMN_HEADERS =
+	public static final String[] RENDER_HEADERS =
 		{"Terrain", "Foliage", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
+	
+	public static final String[] UPDATE_HEADERS =
+		{"Collision", "Deformation", "Buffers"};
 	
 	public boolean enableCulling = false;
 	
@@ -257,7 +260,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<ParticleGenerator> generators = new ArrayList<ParticleGenerator>();
 
 	
-	private boolean enableItems = true;
+	private boolean enableItems = false;
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
 	private List<Item> itemList = new ArrayList<Item>();
 	
@@ -273,7 +276,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<BillBoard> foliage;
 	
 	public String terrainCommand = "";
-	public static final String DEFAULT_TERRAIN = "128 1000 20 6 18 0.125 1.0";
+	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
 	
 	public boolean enableReflection = false;
 	public float opacity = 0.75f;
@@ -326,7 +329,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		canvas.setFocusable(true);
 		canvas.requestFocus();
 
-		animator = new FPSAnimator(canvas, FPS, true);
+		animator = new FPSAnimator(canvas, FPS, false);
 		
 		frame.addWindowListener(new WindowAdapter()
 		{
@@ -664,8 +667,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
 	    frameTimes  = new long[240];
-	    renderTimes = new long[240][COLUMN_HEADERS.length];
-	    updateTimes = new long[240];
+	    renderTimes = new long[240][RENDER_HEADERS.length];
+	    updateTimes = new long[240][UPDATE_HEADERS.length];
 	    
 	    if(printVersion) printVersion(gl);
 	    
@@ -759,7 +762,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		registerItems(gl);
 		
-		if(enableAnimation) updateTimes[frameIndex] = update();
+		if(enableAnimation) update();
 		
 		if(enableTerrain && !terrainCommand.equals(""))
 		{	
@@ -957,7 +960,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		for(Car car : cars) car.update();
 		
 		if(enableTerrain)
-		{				
+		{			
+			long _start = System.nanoTime();
+			
 			List<BillBoard> toRemove = new ArrayList<BillBoard>();
 			
 			for(BillBoard b : foliage)
@@ -966,6 +971,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			
 			foliage.removeAll(toRemove);
+			
+			updateTimes[frameIndex][0] = System.nanoTime() - _start;
 				
 			terrainCollisions();
 		}
@@ -1797,16 +1804,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			out.write("Values recorded at: " + dateFormat.format(now.getTime()) + "\r\n\r\n ");
 			
-			for(int c = 0; c < COLUMN_HEADERS.length; c++)
-				out.write(String.format("%11s", COLUMN_HEADERS[c]) + "\t");
+			for(int c = 0; c < UPDATE_HEADERS.length; c++)
+				out.write(String.format("%11s", UPDATE_HEADERS[c]) + "\t");
 			
 			out.write("\r\n\r\n ");
 			
-			for(int i = 0; i < renderTimes.length; i++)
+			for(int i = 0; i < updateTimes.length; i++)
 			{
-				for(int j = 0; j < COLUMN_HEADERS.length; j++)
+				for(int j = 0; j < UPDATE_HEADERS.length; j++)
 				{
-					out.write(String.format("%11.3f", renderTimes[i][j] / 1E6) + "\t");
+					out.write(String.format("%11.3f", updateTimes[i][j] / 1E6) + "\t");
 				}	
 				
 				out.write("\r\n ");
@@ -1849,7 +1856,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_I:  spawnItemsInSphere(8, 10, new float[] {0, 100, 0}, 50); break;
 			case KeyEvent.VK_U:  spawnItemsInOBB(0, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
-			case KeyEvent.VK_PERIOD: testMode = !testMode; break;
+			case KeyEvent.VK_SLASH: testMode = !testMode; break;
 			
 			case KeyEvent.VK_L:  printDataToFile(null); break;
 			
@@ -1881,6 +1888,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_MINUS        :
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
+			case KeyEvent.VK_PERIOD       :
 			case KeyEvent.VK_P            : terrain.keyPressed(e); break; 
 			case KeyEvent.VK_COMMA        : terrain.keyPressed(e); generateFoliage(60, 10, 30); break;
 			
