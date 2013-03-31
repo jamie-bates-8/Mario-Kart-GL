@@ -199,7 +199,7 @@ public class HUD
 		renderer.draw("Items: "    + scene.getItems().size(),     40, y - 220);
 		renderer.draw("Particle: " + scene.getParticles().size(), 40, y - 250);
 		renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
-		renderer.draw("LOD: "      + terrain.max_lod,             40, y - 310);
+		renderer.draw("LOD: "      + terrain.tree.detail,         40, y - 310);
 		renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
 		
 		float[] p = car.getPosition();

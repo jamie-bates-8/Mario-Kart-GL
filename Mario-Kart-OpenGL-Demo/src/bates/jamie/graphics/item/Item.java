@@ -305,7 +305,7 @@ public abstract class Item
 	
 	public float[] getHeights(Terrain map)
 	{
-		if(map.enableQuadtree) return getHeights(map.tree, map.max_lod);
+		if(map.enableQuadtree) return getHeights(map.tree, map.tree.detail);
 		
 		float[][] vertices = getAxisVectors();
 

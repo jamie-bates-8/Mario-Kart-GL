@@ -84,7 +84,6 @@ public class Terrain
 	
 	public boolean enableQuadtree = true;
 	public Quadtree tree;
-	public int max_lod = 10;
 	
 	public Quadtree subtree;
 	
@@ -604,8 +603,8 @@ public class Terrain
 	{
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_EQUALS       : if(max_lod < Quadtree.MAXIMUM_LOD) max_lod++; tree.updateBuffers(max_lod); break;
-			case KeyEvent.VK_MINUS        : if(max_lod >                    0) max_lod--; tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_EQUALS       : tree.increaseDetail(); break;
+			case KeyEvent.VK_MINUS        : tree.decreaseDetail(); break;
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateBuffers(); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
 			
@@ -617,7 +616,7 @@ public class Terrain
 				break;
 			}
 			
-			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(max_lod); break;
+			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(tree.detail); break;
 			
 			case KeyEvent.VK_J:
 			{

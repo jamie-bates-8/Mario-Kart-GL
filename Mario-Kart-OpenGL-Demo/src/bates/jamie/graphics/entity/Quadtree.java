@@ -28,7 +28,8 @@ public class Quadtree
 	
 	private static final float MAX_TROUGH = 1.0f;
 	
-	int lod;
+	public int detail = MAXIMUM_LOD;
+	public int lod;
 	public static final int MAXIMUM_LOD = 10;
 	
 	private static final float EPSILON = 0.0005f;
@@ -389,6 +390,34 @@ public class Quadtree
 		return System.nanoTime() - start;
 	}
 	
+	public void updateIndices(int lod)
+	{
+		iBuffer.position(0);
+		indexCount = getIndices(lod);
+	}
+	
+	public int getIndices(int lod)
+	{
+		int count = 0;
+		
+		if(isLeaf() || this.lod == lod)
+		{
+			// re-assign offsets for new index buffer
+			offset = iBuffer.position();
+			iBuffer.put(indices);
+			count += 4;
+		}
+		else
+		{
+			count += north_west.getIndices(lod);
+			count += north_east.getIndices(lod);
+			count += south_west.getIndices(lod);
+			count += south_east.getIndices(lod);
+		}
+		
+		return count;
+	}
+	
 	/**
 	 * This method returns the index of a vertex <code>p</code> if it is stored by this
 	 * quadtree's hierarchy, otherwise, an invalid index of -1 is returned.
@@ -552,7 +581,7 @@ public class Quadtree
 			south_east = new Quadtree(root, lod + 1, new int[] {south, indices[1], east, centre}, false);
 		}
 		
-		if(DYNAMIC_BUFFERS)
+		if(DYNAMIC_BUFFERS && lod < root.detail)
 		{
 			int position = iBuffer.position();
 			iBuffer.position(offset); // use offset to overwrite parent cell indices
@@ -569,6 +598,22 @@ public class Quadtree
 		
 		// subdivide was successful
 		return true;
+	}
+	
+	public void increaseDetail()
+	{
+		if(detail < Quadtree.MAXIMUM_LOD) detail++;
+		
+		if(DYNAMIC_BUFFERS) updateIndices(detail); 
+		else updateBuffers(detail);
+	}
+	
+	public void decreaseDetail()
+	{
+		if(detail > 0) detail--;
+		
+		if(DYNAMIC_BUFFERS) updateIndices(detail); 
+		else updateBuffers(detail);
 	}
 	
 	/**
@@ -960,6 +1005,8 @@ public class Quadtree
 	public void renderWireframe(GL2 gl)
 	{
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+		
+		gl.glTranslatef(0, 0.01f, 0);
 		
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		gl.glColor3f(line_color[0], line_color[1], line_color[2]);

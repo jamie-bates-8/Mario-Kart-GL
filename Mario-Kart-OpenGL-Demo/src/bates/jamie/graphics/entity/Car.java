@@ -735,7 +735,7 @@ public class Car
 		}
 		
 		scene.updateTimes[scene.frameIndex][1] = System.nanoTime() - start;
-		scene.updateTimes[scene.frameIndex][2] = update ? tree.updateBuffers(scene.getTerrain().max_lod) : 0;
+		scene.updateTimes[scene.frameIndex][2] = update ? tree.updateBuffers(tree.detail) : 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e[1];
@@ -746,7 +746,7 @@ public class Car
 	
 	public float[] getHeights(Terrain map)
 	{
-		if(map.enableQuadtree) return getHeights(map.tree, map.max_lod);
+		if(map.enableQuadtree) return getHeights(map.tree, map.tree.detail);
 		
 		float[][] vertices = bound.getVertices();
 

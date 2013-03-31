@@ -61,7 +61,7 @@ public class Console
 		     if(_cmd.equalsIgnoreCase("wireframe")) parseWireframe(cmd);
 		else if(_cmd.equalsIgnoreCase("subdivide")) tree.subdivideAll();
 		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
-		else if(_cmd.equalsIgnoreCase(      "lod")) scene.getTerrain().max_lod = cmd.nextInt();
+		else if(_cmd.equalsIgnoreCase(      "lod")) tree.detail = cmd.nextInt();
 	}
 	
 	private void parseWireframe(Scanner cmd)
