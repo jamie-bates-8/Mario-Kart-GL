@@ -2,6 +2,7 @@ package bates.jamie.graphics.scene;
 
 import static bates.jamie.graphics.util.Renderer.displayTexturedCuboid;
 import static bates.jamie.graphics.util.Renderer.displayTexturedObject;
+import static bates.jamie.graphics.util.Vector.dot;
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
@@ -93,6 +94,7 @@ import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.ItemBox;
 import bates.jamie.graphics.item.RedShell;
+import bates.jamie.graphics.particle.Blizzard;
 import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
@@ -166,7 +168,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private GLU glu;
 	private GLUT glut;
 	
-	public float[] background = {0.118f, 0.565f, 1.000f}; //sky-blue color
+	public float[] background = RGB.SKY_BLUE;
 	
 	private boolean enableAnimation = true;
 	private boolean normalize = true;
@@ -209,6 +211,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableQuality = false;
 	
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
+	public static final float GLOBAL_RADIUS = 300;
 
 	private List<ItemBox> itemBoxes = new ArrayList<ItemBox>();
 	public boolean enableItemBoxes = false;
@@ -297,6 +300,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public float[] quadratic;
 	
+	public boolean enableLightning = false;
+	public Blizzard blizzard = new Blizzard(5000);
+	public boolean enableBlizzard = true;
+	
 	
 	public Scene()
 	{
@@ -350,6 +357,36 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 		ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
 		
+		setupMenu();
+		
+		frame.setJMenuBar(menuBar);
+		
+		console = new Console(this);
+		
+		consoleInput = new JTextField();
+		consoleInput.addActionListener(this);
+		consoleInput.setActionCommand("console");
+		
+		consoleInput.setBackground(Color.DARK_GRAY);
+		consoleInput.setForeground(Color.LIGHT_GRAY);
+		consoleInput.setCaretColor(Color.WHITE);
+		
+		Container content = frame.getContentPane();
+		
+		content.setLayout(new BorderLayout());
+		
+		content.add(canvas, BorderLayout.CENTER);
+		content.add(consoleInput, BorderLayout.SOUTH);
+
+		frame.pack();
+		frame.setTitle("OpenGL Project Demo");
+		frame.setVisible(true);
+		
+		animator.start();
+	}
+
+	private void setupMenu()
+	{
 		menuBar = new JMenuBar();
 		
 		/** File Menu **/
@@ -481,31 +518,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menuBar.add(menu_quadtree);
 		/**------------------**/
-		
-		frame.setJMenuBar(menuBar);
-		
-		console = new Console(this);
-		
-		consoleInput = new JTextField();
-		consoleInput.addActionListener(this);
-		consoleInput.setActionCommand("console");
-		
-		consoleInput.setBackground(Color.DARK_GRAY);
-		consoleInput.setForeground(Color.LIGHT_GRAY);
-		consoleInput.setCaretColor(Color.WHITE);
-		
-		Container content = frame.getContentPane();
-		
-		content.setLayout(new BorderLayout());
-		
-		content.add(canvas, BorderLayout.CENTER);
-		content.add(consoleInput, BorderLayout.SOUTH);
-
-		frame.pack();
-		frame.setTitle("OpenGL Project Demo");
-		frame.setVisible(true);
-		
-		animator.start();
 	}
 	
 	public static void main(String[] args) { new Scene(); }
@@ -644,16 +656,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    if(enableItems) loadItems(gl);
 	    loadParticles();
 	    
-	    cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
+	    setupGenerators();
 	    
-	    if(GamePad.numberOfGamepads() > 1)
-	    	cars.add(new Car(gl, new float[] {-78.75f, 1.8f, 0}, 0, 180, 0, this));
-	    
-	    if(GamePad.numberOfGamepads() > 2)
-	    	cars.add(new Car(gl, new float[] {0, 1.8f,  78.75f}, 0, 270, 0, this));
-	    	
-	    if(GamePad.numberOfGamepads() > 3)
-		    cars.add(new Car(gl, new float[] {0, 1.8f, -78.75f}, 0,  90, 0, this));
+	    loadPlayers(gl);
 		    
 	    itemBoxes.addAll(ItemBox.generateDiamond( 56.25f, 30f, particles));
 	    itemBoxes.addAll(ItemBox.generateSquare (101.25f, 60f, particles));
@@ -681,6 +686,25 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
+	}
+
+	private void setupGenerators()
+	{
+		
+	}
+
+	private void loadPlayers(GL2 gl)
+	{
+		cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
+	    
+	    if(GamePad.numberOfGamepads() > 1)
+	    	cars.add(new Car(gl, new float[] {-78.75f, 1.8f, 0}, 0, 180, 0, this));
+	    
+	    if(GamePad.numberOfGamepads() > 2)
+	    	cars.add(new Car(gl, new float[] {0, 1.8f,  78.75f}, 0, 270, 0, this));
+	    	
+	    if(GamePad.numberOfGamepads() > 3)
+		    cars.add(new Car(gl, new float[] {0, 1.8f, -78.75f}, 0,  90, 0, this));
 	}
 
 	private void loadTextures(GL2 gl)
@@ -909,11 +933,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupFog(GL2 gl)
 	{
-		if(cloudDensity < 1) cloudDensity += DENSITY_INC;
-		
-		float c = cloudDensity;
-		gl.glColor3f(c, c, c); //affect the color of the environment in addition to fog
-		gl.glFogfv(GL_FOG_COLOR, new float[] {c, c, c, 1}, 0);
+		if(enableLightning)
+		{
+			if(cloudDensity < 1) cloudDensity += DENSITY_INC;
+			
+			float c = cloudDensity;
+			gl.glColor3f(c, c, c); // affect the color of the environment in addition to fog
+			gl.glFogfv(GL_FOG_COLOR, new float[] {c, c, c, 1}, 0);
+		}
+		else gl.glFogfv(GL_FOG_COLOR, fogColor, 0);
 		
 		if(enableFog) gl.glFogf(GL_FOG_DENSITY, fogDensity);
 		else gl.glFogf(GL_FOG_DENSITY, 0);
@@ -955,6 +983,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			if(generator.update()) particles.addAll(generator.generate());
 		
 		for(Particle p : particles) p.update();
+		
+		if(enableBlizzard) blizzard.update();
 		
 		vehicleCollisions();
 		for(Car car : cars) car.update();
@@ -1401,6 +1431,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
+		if(enableBlizzard) blizzard.render(gl);
+		
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
 		for(Particle particle : particles)
@@ -1618,6 +1650,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(frameIndex >= frameTimes.length) frameIndex = 0;
 		
 		frameTimes[frameIndex] = currentTime - renderTime;
+	}
+	
+	public static boolean outOfBounds(float[] p)
+	{
+		return dot(p, p) > GLOBAL_RADIUS * GLOBAL_RADIUS;
 	}
 
 	public List<Car> getCars() { return cars; }
@@ -1883,7 +1920,25 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
 			
 			case KeyEvent.VK_J:
-			case KeyEvent.VK_K:	
+			{
+				enableBlizzard = true;
+				terrain.keyPressed(e);
+				background = RGB.BLACK;
+				fogDensity = 0.01f;
+				fogColor = new float[] {0, 0, 0, 0};
+				displaySkybox = false;
+				break;
+			}
+			case KeyEvent.VK_K:
+			{
+				enableBlizzard = false;
+				terrain.keyPressed(e);
+				background = RGB.SKY_BLUE;
+				fogDensity = 0.004f;
+				fogColor = new float[] {1, 1, 1, 1};
+				displaySkybox = true;
+				break;
+			}	
 			case KeyEvent.VK_EQUALS       :
 			case KeyEvent.VK_MINUS        :
 			case KeyEvent.VK_OPEN_BRACKET :

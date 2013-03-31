@@ -1,4 +1,5 @@
 package bates.jamie.graphics.particle;
+
 import static bates.jamie.graphics.util.Vector.subtract;
 
 import static javax.media.opengl.GL.GL_BLEND;

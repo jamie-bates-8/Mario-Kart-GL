@@ -2,7 +2,6 @@ package bates.jamie.graphics.item;
 
 import static bates.jamie.graphics.util.Matrix.getRotationMatrix;
 import static bates.jamie.graphics.util.Vector.add;
-import static bates.jamie.graphics.util.Vector.dot;
 import static bates.jamie.graphics.util.Vector.getAngle;
 import static bates.jamie.graphics.util.Vector.multiply;
 import static bates.jamie.graphics.util.Vector.orient2D;
@@ -157,12 +156,6 @@ public abstract class Item
 	{
 		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
 		bound.c[1] -= fallRate;
-	}
-	
-	public boolean outOfBounds()
-	{
-		float[] p = getPosition();
-		return dot(p, p) > GLOBAL_RADIUS * GLOBAL_RADIUS;
 	} 
 	
 	public abstract void update();
@@ -177,7 +170,7 @@ public abstract class Item
 				else if(car.hasStarPower()) destroy();
 			}
 		}
-		if(outOfBounds()) destroy();
+		if(Scene.outOfBounds(getPosition())) destroy();
 	}
 	
 	public void resolveCollisions()
