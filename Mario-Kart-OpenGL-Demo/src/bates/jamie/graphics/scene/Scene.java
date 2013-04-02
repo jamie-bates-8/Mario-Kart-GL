@@ -63,12 +63,14 @@ import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.gl2.GLUgl2;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ToolTipManager;
@@ -95,6 +97,7 @@ import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.ItemBox;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.Blizzard;
+import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
@@ -145,6 +148,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_effects;
 	private JCheckBoxMenuItem menuItem_motionblur;
 	private JCheckBoxMenuItem menuItem_fog;
+	private JMenu menu_weather;
+	private JRadioButtonMenuItem menuItem_none;
+	private JRadioButtonMenuItem menuItem_rain;
+	private JRadioButtonMenuItem menuItem_snow;
 	
 	private JMenu menu_light;
 	private JCheckBoxMenuItem menuItem_normalize;
@@ -292,17 +299,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean testMode = false;
 	public boolean printVersion = false;
 	
-	private int selectX = -1;
-	private int selectY = -1;
-	private int selected = 0;
+	public int selectX = -1;
+	public int selectY = -1;
+	public int selected = 0;
 	private IntBuffer selectBuffer;
 	private static final int BUFFER_SIZE = 512;
 	
 	public float[] quadratic;
 	
 	public boolean enableLightning = false;
-	public Blizzard blizzard = new Blizzard(5000);
-	public boolean enableBlizzard = true;
+	public Blizzard blizzard = new Blizzard(5000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW);
+	public boolean enableBlizzard = false;
 	
 	
 	public Scene()
@@ -468,8 +475,39 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_fog.setMnemonic(KeyEvent.VK_F);
 		menuItem_fog.setSelected(enableFog);
 		
+		menu_weather = new JMenu("Weather");
+		menu_weather.setMnemonic(KeyEvent.VK_W);
+		
+		ButtonGroup group_weather = new ButtonGroup();
+		
+		menuItem_none = new JRadioButtonMenuItem("None");
+		menuItem_none.addActionListener(this);
+		menuItem_none.setSelected(true);
+		menuItem_none.setMnemonic(KeyEvent.VK_N);
+		menuItem_none.setActionCommand("no_weather");
+		group_weather.add(menuItem_none);
+
+		menuItem_snow = new JRadioButtonMenuItem("Snow");
+		menuItem_snow.addActionListener(this);
+		menuItem_snow.setSelected(false);
+		menuItem_snow.setMnemonic(KeyEvent.VK_S);
+		menuItem_snow.setActionCommand("snow");
+		group_weather.add(menuItem_snow);
+		
+		menuItem_rain = new JRadioButtonMenuItem("Rain");
+		menuItem_rain.addActionListener(this);
+		menuItem_rain.setSelected(false);
+		menuItem_rain.setMnemonic(KeyEvent.VK_R);
+		menuItem_rain.setActionCommand("rain");
+		group_weather.add(menuItem_rain);
+		
+		menu_weather.add(menuItem_none);
+		menu_weather.add(menuItem_snow);
+		menu_weather.add(menuItem_rain);
+		
 		menu_effects.add(menuItem_motionblur);
 		menu_effects.add(menuItem_fog);
+		menu_effects.add(menu_weather);
 		
 		menu_render.add(menu_effects);
 		
@@ -1196,9 +1234,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		selected++;
 		
-		if(hits == 0) cars.get(0).getHUD().broadcast("No hit: " + selected);
-		else cars.get(0).getHUD().broadcast("Hit: " + selected);
-
+		
 	}
 	
 	/**
@@ -1921,7 +1957,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_J:
 			{
-				enableBlizzard = true;
 				terrain.keyPressed(e);
 				background = RGB.BLACK;
 				fogDensity = 0.01f;
@@ -1931,7 +1966,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			case KeyEvent.VK_K:
 			{
-				enableBlizzard = false;
 				terrain.keyPressed(e);
 				background = RGB.SKY_BLUE;
 				fogDensity = 0.004f;
@@ -1971,10 +2005,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void actionPerformed(ActionEvent event)
 	{
-		     if(event.getActionCommand().equals("console"))      console.parseCommand(consoleInput.getText());
+		     if(event.getActionCommand().equals("console"     )) console.parseCommand(consoleInput.getText());
 		else if(event.getActionCommand().equals("load_project")) console.parseCommand("profile project");
-		else if(event.getActionCommand().equals("load_game"))    console.parseCommand("profile game");
-		else if(event.getActionCommand().equals("close"))        System.exit(0);
+		else if(event.getActionCommand().equals("load_game"   )) console.parseCommand("profile game");
+		else if(event.getActionCommand().equals("no_weather"  )) enableBlizzard = false;
+		else if(event.getActionCommand().equals("snow"        )) { enableBlizzard = true; blizzard = new Blizzard(5000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
+		else if(event.getActionCommand().equals("rain"        )) { enableBlizzard = true; blizzard = new Blizzard(5000, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
+		else if(event.getActionCommand().equals("close"       )) System.exit(0);
 	}
 	
 	public KeyEvent pressKey(char c)

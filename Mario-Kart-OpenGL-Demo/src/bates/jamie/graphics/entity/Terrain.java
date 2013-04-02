@@ -620,8 +620,6 @@ public class Terrain
 			
 			case KeyEvent.VK_J:
 			{
-				
-				
 				tree.texture  = snow;
 				tree.setGradient(Gradient.GRAYSCALE);
 				break;

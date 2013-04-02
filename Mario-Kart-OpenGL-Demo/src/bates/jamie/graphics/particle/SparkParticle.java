@@ -1,7 +1,9 @@
 package bates.jamie.graphics.particle;
+
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL2.GL_LINES;
+
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import javax.media.opengl.GL2;
@@ -33,7 +35,6 @@ public class SparkParticle extends Particle
 			if(miniature) gl.glScalef(0.25f, 0.25f, 0.25f);
 			else gl.glScalef(0.5f, 0.5f, 0.5f);
 			
-			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			gl.glDisable(GL_TEXTURE_2D);
@@ -50,7 +51,6 @@ public class SparkParticle extends Particle
 			gl.glEnable(GL_TEXTURE_2D);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
-			gl.glDepthMask(true);
 		}
 		gl.glPopMatrix();
 	}
