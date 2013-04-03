@@ -167,6 +167,7 @@ public class Terrain
 		
 		tree.setHeights(1000);
 		tree.updateBuffers();
+		tree.malleable = false;
 		
 		List<float[]> _vBuffer = new ArrayList<float[]>();
 		_vBuffer.add(new float[] {-40, 0,  40});
@@ -199,7 +200,7 @@ public class Terrain
 		water = new Quadtree(vBuffer_, tBuffer_, snow, 9, null);
 		
 		water.textured = false;
-		water.colored = false;
+		water.coloured = false;
 		water.offsetHeights(0.5f);
 		water.updateBuffers();
 	}
@@ -666,7 +667,7 @@ public class Terrain
 				if(Quadtree.solid) tree.render(gl);
 				if(Quadtree.frame) tree.renderWireframe(gl);
 				
-//				subtree.render(gl);
+				subtree.render(gl);
 				gl.glTranslatef(0, 1.5f, 0);
 				
 				gl.glDisable(GL2.GL_LIGHTING);

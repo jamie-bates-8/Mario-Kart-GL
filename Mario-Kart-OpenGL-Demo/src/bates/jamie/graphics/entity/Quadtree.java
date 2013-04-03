@@ -68,8 +68,9 @@ public class Quadtree
 	int indexCount;
 	
 	public Texture texture;
-	public boolean textured = false;
-	public boolean colored = true;
+	public boolean textured  = false;
+	public boolean coloured  = true;
+	public boolean malleable = true;
 	
 	public Gradient gradient = Gradient.GRAYSCALE;
 	public static float[] line_color = RGB.WHITE_3F;
@@ -684,10 +685,10 @@ public class Quadtree
 		float x2 = vertices.get(indices[1])[0];
 		float z2 = vertices.get(indices[1])[2];
 		
-		float q11 = vertices.get(indices[3])[1];
-		float q12 = vertices.get(indices[0])[1];
-		float q21 = vertices.get(indices[2])[1];
-		float q22 = vertices.get(indices[1])[1];
+		float q11 = root.malleable ? vertices.get(indices[3])[1] : heights.get(indices[3]);
+		float q12 = root.malleable ? vertices.get(indices[0])[1] : heights.get(indices[0]);
+		float q21 = root.malleable ? vertices.get(indices[2])[1] : heights.get(indices[2]);
+		float q22 = root.malleable ? vertices.get(indices[1])[1] : heights.get(indices[1]);
 
 		float r1 = ((x2 - x) / (x2 - x1)) * q11 + ((x - x1) / (x2 - x1)) * q21;
 		float r2 = ((x2 - x) / (x2 - x1)) * q12 + ((x - x1) / (x2 - x1)) * q22;
@@ -735,16 +736,12 @@ public class Quadtree
 			if(DYNAMIC_BUFFERS)
 			{
 				int position = cBuffer.position();
-//				cBuffer.position(i * 3); cBuffer.put(color);
-//				cBuffer.position(position);
-				
 				vBuffer.position(i * 3); vBuffer.put(vertex);
 				vBuffer.position(position);
 			}
 		}
 		
 		updateBuffers();
-//		setHeights();
 	}
 	
 	public void offsetHeights(float trough)
@@ -863,7 +860,7 @@ public class Quadtree
 				   vertex[1] = heights.get(i) - MAX_TROUGH;
 				
 				int position = vBuffer.position();
-				if(DYNAMIC_BUFFERS)
+				if(DYNAMIC_BUFFERS && malleable)
 				{
 					vBuffer.position(i * 3); vBuffer.put(vertex);
 					vBuffer.position(position);
@@ -999,7 +996,7 @@ public class Quadtree
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
-		if(colored) gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
+		if(coloured) gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		if(textured) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
 		if(DYNAMIC_BUFFERS)
@@ -1011,7 +1008,7 @@ public class Quadtree
 		}
 		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
-		if(colored) gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
+		if(coloured) gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
 		if(textured)
 		{
 			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, tBuffer);
@@ -1019,7 +1016,7 @@ public class Quadtree
 		}
 		
 		gl.glDrawElements(GL2.GL_QUADS, indexCount, GL2.GL_UNSIGNED_INT, iBuffer);
-		if(colored) gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
+		if(coloured) gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 		gl.glDisableClientState(GL_VERTEX_ARRAY);
 		
 		if(textured) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
