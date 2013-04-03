@@ -86,6 +86,7 @@ public class Terrain
 	public Quadtree tree;
 	
 	public Quadtree subtree;
+	public Quadtree water;
 	
 	public Terrain(GL2 gl, int length, int i)
 	{	
@@ -162,7 +163,7 @@ public class Terrain
 		tBuffer.add(new float[] {32, 32});
 		tBuffer.add(new float[] { 0, 32});
 		
-		tree = new Quadtree(vBuffer, tBuffer, sand, 7, null);
+		tree = new Quadtree(vBuffer, tBuffer, snow, 7, null);
 		
 		tree.setHeights(1000);
 		tree.updateBuffers();
@@ -182,6 +183,25 @@ public class Terrain
 		subtree = new Quadtree(_vBuffer, _tBuffer, sand, 6, null); 
 		subtree.setHeights(tree);
 		subtree.updateBuffers();
+		
+		List<float[]> vBuffer_ = new ArrayList<float[]>();
+		vBuffer_.add(new float[] {-210, 0,  210});
+		vBuffer_.add(new float[] { 210, 0,  210});
+		vBuffer_.add(new float[] { 210, 0, -210});
+		vBuffer_.add(new float[] {-210, 0, -210});
+		
+		List<float[]> tBuffer_ = new ArrayList<float[]>();
+		tBuffer_.add(new float[] { 0,  0});
+		tBuffer_.add(new float[] {32,  0});
+		tBuffer_.add(new float[] {32, 32});
+		tBuffer_.add(new float[] { 0, 32});
+		
+		water = new Quadtree(vBuffer_, tBuffer_, snow, 9, null);
+		
+		water.textured = false;
+		water.colored = false;
+		water.offsetHeights(0.5f);
+		water.updateBuffers();
 	}
 	
 	public void toModel()
@@ -608,6 +628,9 @@ public class Terrain
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateBuffers(); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
 			
+			case KeyEvent.VK_QUOTE      : water.decreaseDetail(); break;
+			case KeyEvent.VK_NUMBER_SIGN: water.increaseDetail(); break;
+			
 			case KeyEvent.VK_COMMA : enableQuadtree = !enableQuadtree; break;
 			
 			case KeyEvent.VK_PERIOD:
@@ -620,14 +643,14 @@ public class Terrain
 			
 			case KeyEvent.VK_J:
 			{
-				tree.texture  = snow;
+				tree.texture = snow;
 				tree.setGradient(Gradient.GRAYSCALE);
 				break;
 			}
 			
 			case KeyEvent.VK_K:
 			{
-				tree.texture  = grass;
+				tree.texture = grass;
 				tree.setGradient(Gradient.MUD);
 				break;
 			}
@@ -644,6 +667,21 @@ public class Terrain
 				if(Quadtree.frame) tree.renderWireframe(gl);
 				
 //				subtree.render(gl);
+				gl.glTranslatef(0, 1.5f, 0);
+				
+				gl.glDisable(GL2.GL_LIGHTING);
+				gl.glEnable(GL2.GL_BLEND);
+				
+				gl.glColor4f(0.75f, 0.75f, 0.75f, 0.20f);
+				
+				water.textured = false;
+				water.render(gl);
+				water.offsetHeights();
+				
+				gl.glDisable(GL2.GL_BLEND);
+				gl.glEnable(GL2.GL_LIGHTING);
+				
+				gl.glColor4f(1, 1, 1, 1);
 			}
 			gl.glPopMatrix();
 		}

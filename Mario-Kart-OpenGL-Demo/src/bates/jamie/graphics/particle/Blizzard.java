@@ -16,6 +16,7 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vector;
 
@@ -25,9 +26,13 @@ public class Blizzard
 {
 	private Random generator = new Random();
 	
+	private Scene scene;
+	
 	public List<WeatherParticle> flakes;
-	public FloatBuffer vBuffer;
 	public int flakeLimit;
+	
+	public FloatBuffer vBuffer;
+	public FloatBuffer cBuffer;
 	
 	public float[] wind;
 	
@@ -36,20 +41,28 @@ public class Blizzard
 	public enum StormType {SNOW, RAIN};
 	public StormType type;
 	
-	public Blizzard(int flakeLimit, float[] wind, StormType type)
+	public Blizzard(Scene scene, int flakeLimit, float[] wind, StormType type)
 	{
+		this.scene = scene;
+		
 		flakes = new ArrayList<WeatherParticle>();
 		
 		this.flakeLimit = flakeLimit;
 		this.wind = wind;
 		this.type = type;
+		
+		vBuffer = Buffers.newDirectFloatBuffer(flakeLimit * 3);
+		cBuffer = Buffers.newDirectFloatBuffer(flakeLimit * 4);
 	}
 	
 	public void update()
 	{
-		if(flakes.size() < flakeLimit - 5)
+		vBuffer.limit(vBuffer.capacity());
+		cBuffer.limit(cBuffer.capacity());
+		
+		if(flakes.size() < flakeLimit - 100)
 		{
-			int i = 1 + generator.nextInt(5);
+			int i = 1 + generator.nextInt(100);
 			
 			while(i > 0)
 			{
@@ -58,14 +71,50 @@ public class Blizzard
 				float alpha = type == StormType.SNOW ? generator.nextFloat() : generator.nextFloat() * 0.40f;
 				
 				flakes.add(new WeatherParticle(source, vector, alpha));
+				
+				vBuffer.put(source);
+				cBuffer.put(new float[] {1, 1, 1, alpha});
+				
 				i--;
 			}
 		}
 		
-		for(WeatherParticle flake : flakes)
+		System.out.println(flakes.size());
+		
+		for(int i = 0; i < flakes.size(); i++)
 		{
-			flake.update(wind);
-			if(Scene.outOfBounds(flake.c)) flake.c = getSource();
+			WeatherParticle flake = flakes.get(i);
+			
+			if(flake.falling)
+			{
+				flake.update(wind);
+				if(Scene.outOfBounds(flake.c))
+				{
+					flake.c = getSource();
+					flake.t = type == StormType.SNOW ? getRandomVector(1) : getRandomVector(0.25f);
+				}
+				
+				int position = vBuffer.position();
+				vBuffer.position(i * 3); vBuffer.put(flake.c);
+				vBuffer.position(position);
+			}
+			
+			if(type == StormType.SNOW && generator.nextBoolean() && flake.falling)
+			{
+				Quadtree tree = scene.getTerrain().tree;
+				Quadtree cell = tree.getCell(flake.c, tree.detail);
+				float h = cell != null ? cell.getHeight(flake.c) : Integer.MIN_VALUE;
+				
+				if(flake.c[1] <= h)
+				{
+					flake.falling = false;
+					flake.c[1] = h + 0.01f;
+					
+					int position = vBuffer.position();
+					vBuffer.position(i * 3); vBuffer.put(flake.c);
+					vBuffer.position(position);
+				}
+			}
 		}
 	}
 	
@@ -112,19 +161,25 @@ public class Blizzard
 			gl.glPointSize(6);
 			gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
 			
-			FloatBuffer vertices = Buffers.newDirectFloatBuffer(flakes.size() * 3);
+			vBuffer.flip();
+			cBuffer.flip();
 			
-			for(Particle particle : flakes) vertices.put(particle.c);
-			vertices.position(0);
+//			FloatBuffer vertices = Buffers.newDirectFloatBuffer(flakes.size() * 3);
+//			
+//			for(Particle particle : flakes) vertices.put(particle.c);
+//			vertices.position(0);
+//			
+//			FloatBuffer colors = Buffers.newDirectFloatBuffer(flakes.size() * 4);
+//			
+//			for(WeatherParticle particle : flakes) colors.put(new float[] {1, 1, 1, particle.alpha});
+//			colors.position(0);
 			
-			FloatBuffer colors = Buffers.newDirectFloatBuffer(flakes.size() * 4);
-			
-			for(WeatherParticle particle : flakes) colors.put(new float[] {1, 1, 1, particle.alpha});
-			colors.position(0);
-			
-			gl.glVertexPointer(3, GL_FLOAT, 0, vertices);
-			gl.glColorPointer(4, GL_FLOAT, 0, colors);
+			gl.glVertexPointer(3, GL_FLOAT, 0, vBuffer);
+			gl.glColorPointer(4, GL_FLOAT, 0, cBuffer);
 			gl.glDrawArrays(GL_POINTS, 0, flakes.size());
+			
+			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
+			cBuffer.position(cBuffer.limit()); cBuffer.limit(cBuffer.capacity());
 			
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);

@@ -708,6 +708,8 @@ public class Car
 	
 	public float[] getHeights(Quadtree tree, int lod)
 	{
+//		tree.offsetHeights();
+		
 		float[][] vertices = bound.getVertices();
 		boolean update = false;
 		
@@ -716,10 +718,10 @@ public class Car
 		for(int i = 0; i < 4; i++)
 		{
 			Quadtree cell = tree.getCell(vertices[i], lod);
-			float h = cell.getHeight(vertices[i]);
+			float h = (cell != null) ? cell.getHeight(vertices[i]) : 0;
 			heights[i] = h;
 			
-			if(accelerating && abs(velocity) > acceleration)
+			if(accelerating && abs(velocity) > acceleration && cell != null)
 			{
 				update = true;
 				

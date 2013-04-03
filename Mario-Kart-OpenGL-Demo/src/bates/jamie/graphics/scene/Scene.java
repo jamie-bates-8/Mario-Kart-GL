@@ -289,7 +289,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
 	
 	public boolean enableReflection = false;
-	public float opacity = 0.75f;
+	public float opacity = 0.50f;
 	
 	private float ry = 0;
 	
@@ -308,7 +308,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public float[] quadratic;
 	
 	public boolean enableLightning = false;
-	public Blizzard blizzard = new Blizzard(5000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW);
+	public Blizzard blizzard = new Blizzard(this, 5000000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW);
 	public boolean enableBlizzard = false;
 	
 	
@@ -1273,32 +1273,39 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			renderWorld(gl);
 			render3DModels(gl, car);
 			
-			renderParticles(gl, car);
+			renderParticles(gl, car); // TODO Weather effects do not work with reflection
 			Particle.resetTexture();
 		}
-		
-		gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
-	
 		gl.glPopMatrix();
+		
+		renderFloor(gl);
+		
+		light.setPosition(p);
+		
+		gl.glColor3f(1, 1, 1);
+	}
+
+	private void renderFloor(GL2 gl)
+	{
+		gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
 		
 		gl.glDisable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_BLEND);
 		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(0, 0, 0);
-			gl.glScalef(40.0f, 40.0f, 40.0f);
-	
-			gl.glCallList(floorList);
+//			gl.glTranslatef(0, 0, 0);
+//			gl.glScalef(40.0f, 40.0f, 40.0f);
+//	
+//			gl.glCallList(floorList);
+			
+			terrain.water.render(gl);
+			terrain.water.offsetHeights();
 		}	
 		gl.glPopMatrix();
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glEnable(GL2.GL_LIGHTING);
-		
-		light.setPosition(p);
-		
-		gl.glColor3f(1, 1, 1);
 	}
 
 	/**
@@ -1527,7 +1534,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableOBBSolids)
 			for(Bound bound : bounds)
-				bound.displaySolid(gl, glut, RGB.toRGBA(RGB.VIOLET, 0.1f));
+				bound.displaySolid(gl, glut, RGB.toRGBAi(RGB.VIOLET, 0.1f));
 		
 		if(enableOBBVertices)
 		{
@@ -1977,6 +1984,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_MINUS        :
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
+			case KeyEvent.VK_QUOTE        :
+			case KeyEvent.VK_NUMBER_SIGN  :
 			case KeyEvent.VK_PERIOD       :
 			case KeyEvent.VK_P            : terrain.keyPressed(e); break; 
 			case KeyEvent.VK_COMMA        : terrain.keyPressed(e); generateFoliage(60, 10, 30); break;
@@ -2009,8 +2018,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(event.getActionCommand().equals("load_project")) console.parseCommand("profile project");
 		else if(event.getActionCommand().equals("load_game"   )) console.parseCommand("profile game");
 		else if(event.getActionCommand().equals("no_weather"  )) enableBlizzard = false;
-		else if(event.getActionCommand().equals("snow"        )) { enableBlizzard = true; blizzard = new Blizzard(5000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
-		else if(event.getActionCommand().equals("rain"        )) { enableBlizzard = true; blizzard = new Blizzard(5000, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
+		else if(event.getActionCommand().equals("snow"        )) { enableBlizzard = true; blizzard = new Blizzard(this, 500000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
+		else if(event.getActionCommand().equals("rain"        )) { enableBlizzard = true; blizzard = new Blizzard(this, 500000, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
 		else if(event.getActionCommand().equals("close"       )) System.exit(0);
 	}
 	

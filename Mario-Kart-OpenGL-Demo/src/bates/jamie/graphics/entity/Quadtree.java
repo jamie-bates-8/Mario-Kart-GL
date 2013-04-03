@@ -26,7 +26,8 @@ public class Quadtree
 	private static final float MIN_RADIUS =  8;
 	private static final float MAX_RADIUS = 40;
 	
-	private static final float MAX_TROUGH = 1.0f;
+	private static final float MAX_TROUGH = 1.00f;
+	private static final float MAX_RIPPLE = 0.25f;
 	
 	public int detail = MAXIMUM_LOD;
 	public int lod;
@@ -67,7 +68,8 @@ public class Quadtree
 	int indexCount;
 	
 	public Texture texture;
-	boolean textured = false;
+	public boolean textured = false;
+	public boolean colored = true;
 	
 	public Gradient gradient = Gradient.GRAYSCALE;
 	public static float[] line_color = RGB.WHITE_3F;
@@ -717,6 +719,34 @@ public class Quadtree
 		}
 	}
 	
+	public void offsetHeights()
+	{
+		Random generator = new Random();
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] vertex = vertices.get(i);
+			
+			     if(vertex[1] >  MAX_RIPPLE) heights.set(i,  MAX_RIPPLE);
+			else if(vertex[1] < -MAX_RIPPLE) heights.set(i, -MAX_RIPPLE);
+			
+			vertex[1] += (heights.get(i) > 0) ? -0.01f : 0.01f;
+			
+			if(DYNAMIC_BUFFERS)
+			{
+				int position = cBuffer.position();
+//				cBuffer.position(i * 3); cBuffer.put(color);
+//				cBuffer.position(position);
+				
+				vBuffer.position(i * 3); vBuffer.put(vertex);
+				vBuffer.position(position);
+			}
+		}
+		
+		updateBuffers();
+//		setHeights();
+	}
+	
 	public void offsetHeights(float trough)
 	{
 		Random generator = new Random();
@@ -726,19 +756,23 @@ public class Quadtree
 			float[] vertex = vertices.get(i);
 			float depression = -generator.nextFloat() * trough;
 			
-			vertex[1] += depression;
-			float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
-			colors.set(i, color);
+			vertex[1] += depression * (generator.nextBoolean() ? 1 : -1);
+//			float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
+//			colors.set(i, color);
 			
 			if(DYNAMIC_BUFFERS)
 			{
 				int position = cBuffer.position();
-				cBuffer.position(i * 3); cBuffer.put(color);
-				cBuffer.position(position);
+//				cBuffer.position(i * 3); cBuffer.put(color);
+//				cBuffer.position(position);
+				
+				vBuffer.position(i * 3); vBuffer.put(vertex);
+				vBuffer.position(position);
 			}
 		}
 		
 		updateBuffers();
+		setHeights();
 	}
 
 	/**
@@ -960,13 +994,12 @@ public class Quadtree
 	public void render(GL2 gl)
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
-		gl.glColor3f(1, 1, 1);
 		
 		if(!textured) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
-		gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
+		if(colored) gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		if(textured) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
 		if(DYNAMIC_BUFFERS)
@@ -978,7 +1011,7 @@ public class Quadtree
 		}
 		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
-		gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
+		if(colored) gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
 		if(textured)
 		{
 			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, tBuffer);
@@ -986,7 +1019,7 @@ public class Quadtree
 		}
 		
 		gl.glDrawElements(GL2.GL_QUADS, indexCount, GL2.GL_UNSIGNED_INT, iBuffer);
-		gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
+		if(colored) gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 		gl.glDisableClientState(GL_VERTEX_ARRAY);
 		
 		if(textured) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);

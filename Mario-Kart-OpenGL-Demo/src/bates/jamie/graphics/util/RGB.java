@@ -30,9 +30,14 @@ public class RGB
 	public static final float[] PURE_BLUE_3F  = {0, 0, 1};
 	public static final float[] WHITE_3F      = {1, 1, 1};
 	
-	public static float[] toRGBA(float[] color, float alpha)
+	public static float[] toRGBAi(float[] color, float alpha)
 	{
 		return new float[] {color[0]/255, color[1]/255, color[2]/255, alpha};
+	}
+	
+	public static float[] toRGBAf(float[] color, float alpha)
+	{
+		return new float[] {color[0], color[1], color[2], alpha};
 	}
 	
 	public static int toRGB(int red, int green, int blue)

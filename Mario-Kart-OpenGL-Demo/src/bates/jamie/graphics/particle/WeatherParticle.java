@@ -8,6 +8,7 @@ import javax.media.opengl.GL2;
 public class WeatherParticle extends Particle
 {	
 	public float alpha;
+	public boolean falling = true;
 	
 	public WeatherParticle(float[] c, float[] t, float alpha)
 	{

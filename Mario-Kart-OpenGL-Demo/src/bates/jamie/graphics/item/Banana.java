@@ -67,7 +67,7 @@ public class Banana extends Item
 	    bananaID = id;
 		
 		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
-		boundColor = RGB.toRGBA(RGB.YELLOW, BOUND_ALPHA);
+		boundColor = RGB.toRGBAi(RGB.YELLOW, BOUND_ALPHA);
 	}
 	
 	public Banana(Scene scene, float[] c)
@@ -75,7 +75,7 @@ public class Banana extends Item
 		this.scene = scene;
 		
 		bound = new Sphere(c, RADIUS);
-		boundColor = RGB.toRGBA(RGB.YELLOW, BOUND_ALPHA);
+		boundColor = RGB.toRGBAi(RGB.YELLOW, BOUND_ALPHA);
 	}
 	
 	@Override

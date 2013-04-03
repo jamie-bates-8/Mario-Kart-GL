@@ -58,7 +58,7 @@ public class RedShell extends Shell
 		
 		this.orbiting = orbiting;
 		
-		boundColor = RGB.toRGBA(RGB.DARK_RED, BOUND_ALPHA);
+		boundColor = RGB.toRGBAi(RGB.DARK_RED, BOUND_ALPHA);
 		
 		target = seekTarget();
 	}
@@ -68,7 +68,7 @@ public class RedShell extends Shell
 		super(null, scene, null, trajectory);
 		
 		bound = new Sphere(c, RADIUS);
-		boundColor = RGB.toRGBA(RGB.DARK_RED, BOUND_ALPHA);
+		boundColor = RGB.toRGBAi(RGB.DARK_RED, BOUND_ALPHA);
 		
 		velocity = INITIAL_VELOCITY;
 		
