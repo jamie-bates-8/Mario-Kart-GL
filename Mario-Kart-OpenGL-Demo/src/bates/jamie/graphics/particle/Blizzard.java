@@ -38,7 +38,23 @@ public class Blizzard
 	
 	public static final int PRECIPITATION_RATE = 10;
 	
-	public enum StormType {SNOW, RAIN};
+	public enum StormType
+	{
+		SNOW,
+		RAIN;
+		
+		@Override
+		public String toString()
+		{
+			switch(this)
+			{
+				case SNOW: return "Snow";
+				case RAIN: return "Rain";
+			}
+			
+			return "Off";
+		}
+	};
 	public StormType type;
 	
 	public Blizzard(Scene scene, int flakeLimit, float[] wind, StormType type)
@@ -51,6 +67,46 @@ public class Blizzard
 		this.wind = wind;
 		this.type = type;
 		
+		allocateBuffers(flakeLimit);
+	}
+	
+	public void setLimit(int flakeLimit)
+	{
+		this.flakeLimit = flakeLimit;
+		
+		allocateBuffers(flakeLimit);
+		
+		int limit = flakeLimit > flakes.size() ? flakes.size() : flakeLimit;
+		
+		for(int i = 0; i < limit; i++)
+		{
+			WeatherParticle flake = flakes.get(i);
+			flakes.add(flake);
+			
+			switch(type)
+			{
+				case SNOW:
+				{
+					vBuffer.put(flake.c);
+					cBuffer.put(new float[] {1, 1, 1, flake.alpha});
+					break;
+				}
+				case RAIN:
+				{
+					vBuffer.put(flake.c);
+					vBuffer.put(flake.getDirectionVector(wind, 4));
+					cBuffer.put(new float[] {1, 1, 1,           0});
+					cBuffer.put(new float[] {1, 1, 1, flake.alpha});
+					break;
+				}
+			}
+		}
+		
+		flakes = flakes.subList(0, limit);
+	}
+
+	private void allocateBuffers(int flakeLimit)
+	{
 		vBuffer = Buffers.newDirectFloatBuffer(flakeLimit * (type == StormType.SNOW ? 3 : 6));
 		cBuffer = Buffers.newDirectFloatBuffer(flakeLimit * (type == StormType.SNOW ? 4 : 8));
 	}
@@ -62,8 +118,6 @@ public class Blizzard
 		
 		addParticles();
 		
-		System.out.println(flakes.size());
-		
 		for(int i = 0; i < flakes.size(); i++)
 		{
 			WeatherParticle flake = flakes.get(i);
@@ -71,7 +125,7 @@ public class Blizzard
 			if(flake.falling)
 			{
 				flake.update(wind);
-				if(Scene.outOfBounds(flake.c))
+				if(flake.c[1] < -10 || Scene.outOfBounds(flake.c))
 				{
 					flake.c = getSource();
 					flake.t = type == StormType.SNOW ? getRandomVector(1) : getRandomVector(0.25f);
@@ -167,11 +221,11 @@ public class Blizzard
 	
 	private float[] getSource()
 	{
-		float x = generator.nextFloat() * (generator.nextBoolean() ? 150 : -150);
+		float x = generator.nextFloat() * (generator.nextBoolean() ? 200 : -200);
 		float y = generator.nextFloat() * (generator.nextBoolean() ?  10 : - 10);
-		float z = generator.nextFloat() * (generator.nextBoolean() ? 150 : -150);
+		float z = generator.nextFloat() * (generator.nextBoolean() ? 200 : -200);
 		
-		return new float[] {x, y + 200, z};
+		return new float[] {x, y + 175, z};
 	}
 	
 	private float[] getRandomVector(float scalar)
@@ -248,28 +302,8 @@ public class Blizzard
 			vBuffer.flip();
 			cBuffer.flip();
 			
-//			FloatBuffer vertices = Buffers.newDirectFloatBuffer(flakes.size() * 2 * 3);
-//			
-//			for(WeatherParticle particle : flakes)
-//			{
-//				vertices.put(particle.c);
-//				vertices.put(particle.getDirectionVector(wind, 4));
-//			}
-//			vertices.position(0);  
-//			
-//			FloatBuffer colors = Buffers.newDirectFloatBuffer(flakes.size() * 2 * 4);
-//			
-//			for(WeatherParticle particle : flakes)
-//			{
-//				colors.put(new float[] {1, 1, 1, 0.00f});
-//				colors.put(new float[] {1, 1, 1, particle.alpha});
-//			}
-//			colors.position(0);
-			
 			gl.glVertexPointer(3, GL_FLOAT, 0, vBuffer);
 			gl.glColorPointer (4, GL_FLOAT, 0, cBuffer);
-//			gl.glVertexPointer(3, GL_FLOAT, 0, vertices);
-//			gl.glColorPointer (4, GL_FLOAT, 0, colors);
 			gl.glDrawArrays(GL2.GL_LINES, 0, flakes.size() * 2);
 			
 			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());

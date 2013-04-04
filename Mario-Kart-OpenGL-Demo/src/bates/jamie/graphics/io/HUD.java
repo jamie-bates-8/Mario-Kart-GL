@@ -54,7 +54,7 @@ public class HUD
 	private static final float MIN_STRETCH = 0.25f;
 	private static final float MAX_STRETCH = 8.00f;
 	
-	public GraphMode mode = GraphMode.FRAME_TIMES;
+	public GraphMode mode = GraphMode.RENDER_TIMES;
 	public int emphasizedComponent = 0; 
 	
 	static
@@ -110,8 +110,8 @@ public class HUD
 			
 			switch(mode)
 			{
-				case FRAME_TIMES: renderFrameTimes(gl); break;
-				case FRAME_TIME_COMPONENTS: renderFrameTimeComponents(gl); break;
+				case RENDER_TIMES: renderFrameTimes(gl); break;
+				case RENDER_TIME_COMPONENTS: renderFrameTimeComponents(gl); break;
 				case UPDATE_TIMES: renderUpdateTimes(gl); break;
 				case UPDATE_TIME_COMPONENTS: renderUpdateTimeComponents(gl); break;
 			}
@@ -202,6 +202,12 @@ public class HUD
 		renderer.draw("LOD: "      + terrain.tree.detail,         40, y - 310);
 		renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
 		
+		String weather = scene.enableBlizzard ? scene.blizzard.type.toString() : "Off";
+		if(scene.enableBlizzard)
+			weather += String.format(" (%d%%)", (scene.blizzard.flakes.size() * 100) / scene.blizzard.flakeLimit);
+		
+		renderer.draw("Weather: " + weather, 40, y - 370);
+		
 		float[] p = car.getPosition();
 		
 		int x = scene.getWidth() - 200;
@@ -224,7 +230,7 @@ public class HUD
 			renderer.draw(message, 150, y - ((i + 1) * 30));
 		}
 		
-		renderer.draw("Graph Mode: " + mode + (mode == GraphMode.FRAME_TIME_COMPONENTS ?
+		renderer.draw("Graph Mode: " + mode + (mode == GraphMode.RENDER_TIME_COMPONENTS ?
 			(" (" + Scene.RENDER_HEADERS[emphasizedComponent] + ")") : ""), 50, 20);
 		
 		renderer.endRendering();
@@ -428,8 +434,8 @@ public class HUD
 
 	public enum GraphMode
 	{
-		FRAME_TIMES,
-		FRAME_TIME_COMPONENTS,
+		RENDER_TIMES,
+		RENDER_TIME_COMPONENTS,
 		UPDATE_TIMES,
 		UPDATE_TIME_COMPONENTS;
 		
@@ -443,10 +449,10 @@ public class HUD
 		{
 			switch(this)
 			{
-				case FRAME_TIMES:
-				case FRAME_TIME_COMPONENTS: return "Frame Times";
-				case UPDATE_TIMES:
-				case UPDATE_TIME_COMPONENTS: return "Update Times";
+				case RENDER_TIMES:
+				case RENDER_TIME_COMPONENTS: return "Render Times";
+				case UPDATE_TIMES:           return "Update Times";
+				case UPDATE_TIME_COMPONENTS: return "Update Times (Components)";
 			}
 			
 			return name();

@@ -50,6 +50,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd);
 		else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd);
 		else if(_cmd.equalsIgnoreCase(   "export")) parseExport(cmd);
+		else if(_cmd.equalsIgnoreCase(  "weather")) parseWeather(cmd);
 
 		cmd.close();
 	}
@@ -79,6 +80,18 @@ public class Console
 		else if(_cmd.equalsIgnoreCase("subdivide")) tree.subdivideAll();
 		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
 		else if(_cmd.equalsIgnoreCase(      "lod")) tree.detail = cmd.nextInt();
+	}
+	
+	private void parseWeather(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		if(_cmd.equalsIgnoreCase("limit"))
+		{
+			int limit = cmd.nextInt();
+			scene.flakeLimit = limit;
+			if(scene.blizzard != null) scene.blizzard.setLimit(limit);
+		}
 	}
 	
 	private void parseWireframe(Scanner cmd)
