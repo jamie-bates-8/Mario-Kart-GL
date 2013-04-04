@@ -676,8 +676,8 @@ public class Terrain
 				gl.glColor4f(0.75f, 0.75f, 0.75f, 0.20f);
 				
 				water.textured = false;
-				water.render(gl);
-				water.offsetHeights();
+//				water.render(gl);
+//				water.offsetHeights();
 				
 				gl.glDisable(GL2.GL_BLEND);
 				gl.glEnable(GL2.GL_LIGHTING);

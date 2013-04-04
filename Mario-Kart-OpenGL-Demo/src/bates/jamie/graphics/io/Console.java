@@ -48,9 +48,26 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(  "texture")) parseTexture(cmd); 
 		else if(_cmd.equalsIgnoreCase(  "terrain")) parseTerrain(cmd);
 		else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd);
-		else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd); 
+		else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd);
+		else if(_cmd.equalsIgnoreCase(   "export")) parseExport(cmd);
 
 		cmd.close();
+	}
+	
+	private void parseExport(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		     if(_cmd.equalsIgnoreCase("update"))
+		     {
+		    	 if(cmd.hasNext()) scene.printDataToFile(cmd.next(), Scene.UPDATE_HEADERS, scene.updateTimes);
+		    	 else  scene.printDataToFile(cmd.next(), Scene.UPDATE_HEADERS, scene.updateTimes);
+		     }
+		else if(_cmd.equalsIgnoreCase("render"))
+		     {
+		    	 if(cmd.hasNext()) scene.printDataToFile(cmd.next(), Scene.RENDER_HEADERS, scene.renderTimes);
+		    	 else  scene.printDataToFile(cmd.next(), Scene.RENDER_HEADERS, scene.renderTimes);
+		     }
 	}
 	
 	private void parseQuadtree(Scanner cmd)
@@ -398,10 +415,5 @@ public class Console
 		
 	         if(_cmd.equalsIgnoreCase(    "cycle")) player.getHUD().cycleGraphMode();
 	    else if(_cmd.equalsIgnoreCase("emphasize")) player.getHUD().emphasizedComponent = cmd.nextInt();
-	    else if(_cmd.equalsIgnoreCase(   "export"))
-	    {
-	    	if(cmd.hasNext()) scene.printDataToFile(cmd.next());
-	    	else scene.printDataToFile(null);
-	    }
 	}
 }

@@ -308,7 +308,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public float[] quadratic;
 	
 	public boolean enableLightning = false;
-	public Blizzard blizzard = new Blizzard(this, 5000000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW);
+	public Blizzard blizzard;
+	public int flakeLimit = 100000;
 	public boolean enableBlizzard = false;
 	
 	
@@ -1869,7 +1870,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    }
 	}
 
-	public void printDataToFile(String file) //TODO Complete file format
+	public void printDataToFile(String file, String[] headers, long[][] data) //TODO Complete file format
 	{
 		try
 		{
@@ -1884,16 +1885,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			out.write("Values recorded at: " + dateFormat.format(now.getTime()) + "\r\n\r\n ");
 			
-			for(int c = 0; c < UPDATE_HEADERS.length; c++)
-				out.write(String.format("%11s", UPDATE_HEADERS[c]) + "\t");
+			for(int c = 0; c < headers.length; c++)
+				out.write(String.format("%11s", headers[c]) + "\t");
 			
 			out.write("\r\n\r\n ");
 			
-			for(int i = 0; i < updateTimes.length; i++)
+			for(int i = 0; i < data.length; i++)
 			{
-				for(int j = 0; j < UPDATE_HEADERS.length; j++)
+				for(int j = 0; j < headers.length; j++)
 				{
-					out.write(String.format("%11.3f", updateTimes[i][j] / 1E6) + "\t");
+					out.write(String.format("%11.3f", data[i][j] / 1E6) + "\t");
 				}	
 				
 				out.write("\r\n ");
@@ -1938,7 +1939,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_SLASH: testMode = !testMode; break;
 			
-			case KeyEvent.VK_L:  printDataToFile(null); break;
+			case KeyEvent.VK_L        : printDataToFile(null, RENDER_HEADERS, renderTimes); break;
+			case KeyEvent.VK_SEMICOLON: printDataToFile(null, UPDATE_HEADERS, updateTimes); break;
 			
 			case KeyEvent.VK_DELETE: clearItems(); break;
 			
@@ -2018,8 +2020,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(event.getActionCommand().equals("load_project")) console.parseCommand("profile project");
 		else if(event.getActionCommand().equals("load_game"   )) console.parseCommand("profile game");
 		else if(event.getActionCommand().equals("no_weather"  )) enableBlizzard = false;
-		else if(event.getActionCommand().equals("snow"        )) { enableBlizzard = true; blizzard = new Blizzard(this, 500000, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
-		else if(event.getActionCommand().equals("rain"        )) { enableBlizzard = true; blizzard = new Blizzard(this, 500000, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
+		else if(event.getActionCommand().equals("snow"        )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
+		else if(event.getActionCommand().equals("rain"        )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
 		else if(event.getActionCommand().equals("close"       )) System.exit(0);
 	}
 	
