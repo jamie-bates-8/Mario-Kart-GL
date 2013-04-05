@@ -82,11 +82,12 @@ public class Terrain
 	
 	Model model;
 	
-	public boolean enableQuadtree = true;
 	public Quadtree tree;
-	
 	public Quadtree subtree;
 	public Quadtree water;
+	
+	public boolean enableQuadtree = true;
+	public boolean enableWater = false;
 	
 	public Terrain(GL2 gl, int length, int i)
 	{	
@@ -167,7 +168,7 @@ public class Terrain
 		
 		tree.setHeights(1000);
 		tree.updateBuffers();
-		tree.malleable = false;
+		tree.malleable = true;
 		
 		List<float[]> _vBuffer = new ArrayList<float[]>();
 		_vBuffer.add(new float[] {-40, 0,  40});
@@ -675,9 +676,11 @@ public class Terrain
 				
 				gl.glColor4f(0.75f, 0.75f, 0.75f, 0.20f);
 				
-				water.textured = false;
-//				water.render(gl);
-//				water.offsetHeights();
+				if(enableWater)
+				{
+					water.render(gl);
+					water.offsetHeights();
+				}
 				
 				gl.glDisable(GL2.GL_BLEND);
 				gl.glEnable(GL2.GL_LIGHTING);

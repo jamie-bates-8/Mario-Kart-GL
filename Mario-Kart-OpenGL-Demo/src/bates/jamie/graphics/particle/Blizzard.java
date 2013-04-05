@@ -36,6 +36,9 @@ public class Blizzard
 	
 	public float[] wind;
 	
+	public boolean enableSettling  = false;
+	public boolean enableSplashing = true; 
+	
 	public static final int PRECIPITATION_RATE = 10;
 	
 	public enum StormType
@@ -143,8 +146,8 @@ public class Blizzard
 				vBuffer.position(position);
 			}
 			
-			     if(type == StormType.SNOW && generator.nextBoolean() && flake.falling) settle(flake, i);
-			else if(type == StormType.RAIN && generator.nextFloat() < 0.0f) splash(flake);
+			     if(type == StormType.SNOW && enableSettling && generator.nextBoolean() && flake.falling) settle(flake, i);
+			else if(type == StormType.RAIN && enableSplashing && generator.nextFloat() < 0.1f) splash(flake);
 		}
 	}
 
@@ -154,12 +157,12 @@ public class Blizzard
 		Quadtree cell = tree.getCell(flake.c, tree.detail);
 		float h = cell != null ? cell.getHeight(flake.c) : Integer.MIN_VALUE;
 		
-		if(flake.c[1] <= h && flake.c[1] > -2)
+		if(flake.c[1] <= h + 1 && flake.c[1] > -2)
 		{
 			for(int j = 0; j < 10; j++)
 			{
-				float[] t = getRandomVector(1);
-				t[1] = Math.abs(t[1]);
+				float[] t = getRandomVector(0.25f);
+				t[1] = Math.abs(t[1] * 2);
 				scene.addParticle(new SplashParticle(flake.c, t, new float[] {1, 1, 1, generator.nextFloat() * 0.3f}));
 			}
 		}

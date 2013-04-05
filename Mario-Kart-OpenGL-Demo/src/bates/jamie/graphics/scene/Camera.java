@@ -82,6 +82,18 @@ public class Camera extends AnchorPoint
 		}
 	}
 	
+	public float[] to3DPoint(int x, int y, int width, int height)
+	{
+		float i = (float) x / width ;
+		float j = (float) y / height;
+		
+		float[] p = {0, 0, 0};
+		p[0] = 220 - i * 440;
+		p[2] = 220 - j * 440;
+		
+		return p;
+	}
+	
 	public boolean isDynamic()     { return mode == CameraMode.DYNAMIC_VIEW;   }
 	public boolean isAerial()      { return mode == CameraMode.BIRDS_EYE_VIEW; }
 	public boolean isFirstPerson() { return mode == CameraMode.DRIVERS_VIEW;   }

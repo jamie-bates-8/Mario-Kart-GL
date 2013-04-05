@@ -30,6 +30,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -158,6 +160,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_smooth;
 	private JCheckBoxMenuItem menuItem_secondary;
 	
+	private JMenu menu_terrain;
+	private JCheckBoxMenuItem menuItem_water;
+	
 	private JMenu menu_quadtree;
 	private JCheckBoxMenuItem menuItem_solid;
 	private JCheckBoxMenuItem menuItem_frame;
@@ -270,7 +275,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<ParticleGenerator> generators = new ArrayList<ParticleGenerator>();
 
 	
-	private boolean enableItems = false;
+	private boolean enableItems = true;
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
 	private List<Item> itemList = new ArrayList<Item>();
 	
@@ -305,11 +310,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private IntBuffer selectBuffer;
 	private static final int BUFFER_SIZE = 512;
 	
+	private boolean mousePressed = false;
+	
 	public float[] quadratic;
 	
 	public boolean enableLightning = false;
 	public Blizzard blizzard;
-	public int flakeLimit = 100000;
+	public int flakeLimit = 10000;
 	public boolean enableBlizzard = false;
 	
 	
@@ -536,6 +543,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_light.add(menuItem_secondary);
 		
 		menuBar.add(menu_light);
+		/**------------------**/
+		
+		/** Terrain Menu **/
+		menu_terrain = new JMenu("Terrain");
+		menu_terrain.setMnemonic(KeyEvent.VK_T);
+		
+		menuItem_water = new JCheckBoxMenuItem("Display Water");
+		menuItem_water.addItemListener(this);
+		menuItem_water.setMnemonic(KeyEvent.VK_W);
+		menuItem_water.setSelected(false);
+
+		menu_terrain.add(menuItem_water);
+		
+		menuBar.add(menu_terrain);
 		/**------------------**/
 		
 		/** Quadtree Menu **/
@@ -1004,6 +1025,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.currentTimeMillis();
 		
+		if(mousePressed) modifyTerrain();
+		
 		removeItems();
 		
 		Particle.removeParticles(particles);
@@ -1047,6 +1070,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		return System.currentTimeMillis() - start;
+	}
+
+	private void modifyTerrain()
+	{
+		Camera camera = cars.get(0).camera;
+		
+		Point point = MouseInfo.getPointerInfo().getLocation();
+		int x = (int) point.getX();
+		int y = (int) point.getY();
+		
+		if(camera.isAerial())
+		{
+			float[] p = camera.to3DPoint(x, y, canvasWidth, canvasHeight);
+			terrain.tree.createHill(p, 50, 0.5f);
+			
+			addItem(13, p, 0);
+		}
 	}
 
 	public void removeItems()
@@ -1846,7 +1886,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	
 	    	if(i > patches * 0.75)
 	    	{
-	    		p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, Quadtree.MAXIMUM_LOD).getHeight(p) : terrain.getHeight(p);
+	    		p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
 	    		foliage.add(new BillBoard(p, t));
 	    	}
 	    	else
@@ -1862,12 +1902,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    		
 		    		if(Math.abs(p0[0]) < 200 && Math.abs(p0[2]) < 200)
 		    		{
-		    			p0[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p0, Quadtree.MAXIMUM_LOD).getHeight(p0) : terrain.getHeight(p0);
+		    			p0[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p0, terrain.tree.detail).getHeight(p0) : terrain.getHeight(p0);
 		    			foliage.add(new BillBoard(p0, t));
 		    		}
 		    	}
 	    	}
 	    }
+	}
+	
+	public void updateFoliage()
+	{
+		for(BillBoard board : foliage)
+		{
+			float[] p = board.sphere.c;
+			board.sphere.c[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
+		}
 	}
 
 	public void printDataToFile(String file, String[] headers, long[][] data) //TODO Complete file format
@@ -1983,7 +2032,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				break;
 			}	
 			case KeyEvent.VK_EQUALS       :
-			case KeyEvent.VK_MINUS        :
+			case KeyEvent.VK_MINUS        : terrain.keyPressed(e); updateFoliage(); break;
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
 			case KeyEvent.VK_QUOTE        :
@@ -2045,9 +2094,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		selectX = e.getX();
 		selectY = e.getY();
+		
+		mousePressed = true;
 	}
 
-	public void mouseReleased(MouseEvent e) {}
+	public void mouseReleased(MouseEvent e) { mousePressed = false; }
 
 	public void itemStateChanged(ItemEvent ie)
 	{
@@ -2061,6 +2112,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_normalize  )) normalize                 = selected;
 		else if(source.equals(menuItem_smooth     )) light.smooth              = selected;
 		else if(source.equals(menuItem_secondary  )) light.secondary           = selected;
+		else if(source.equals(menuItem_water      )) terrain.enableWater       = selected;    
 		else if(source.equals(menuItem_solid      )) Quadtree.solid            = selected;
 		else if(source.equals(menuItem_frame      )) Quadtree.frame            = selected;
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse = selected;

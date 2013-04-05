@@ -17,7 +17,7 @@ public class SplashParticle extends Particle
 	
 	public SplashParticle(float[] c, float[] t, float[] color)
 	{
-		super(c, t, 0, 12);
+		super(c, t, 0, 6);
 		
 		this.color = color;
 	}
