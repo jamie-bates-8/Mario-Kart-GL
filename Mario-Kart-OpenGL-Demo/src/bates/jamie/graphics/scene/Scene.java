@@ -30,7 +30,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -129,6 +128,9 @@ import com.jogamp.opengl.util.texture.TextureIO;
  */
 public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener, ItemListener
 {
+	public JFrame frame;
+	public GLCanvas canvas;
+	
 	private Console console;
 	private JTextField consoleInput;
 	
@@ -310,7 +312,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private IntBuffer selectBuffer;
 	private static final int BUFFER_SIZE = 512;
 	
-	private boolean mousePressed = false;
+	public boolean mousePressed  = false;
+	public boolean enableRetical = true;
+	public float retical = 50;
 	
 	public float[] quadratic;
 	
@@ -335,14 +339,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
-		JFrame frame = new JFrame();
+		frame = new JFrame();
 		
 		GLCapabilities capabilities = new GLCapabilities(GLProfile.getDefault());
 		capabilities.setStencilBits(8);
 		capabilities.setDoubleBuffered(true);
 		capabilities.setSampleBuffers(true);
 		
-		GLCanvas canvas = new GLCanvas(capabilities);
+		canvas = new GLCanvas(capabilities);
 		canvas.setPreferredSize(new Dimension(canvasWidth, canvasHeight));
 		canvas.addGLEventListener(this);
 		canvas.addKeyListener(this);
@@ -974,6 +978,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		canvasHeight = height;
 		canvasWidth = width;
 		
+		cars.get(0).camera.setDimensions(width, height);
+		
 		final float ratio = (float) width / (float) height;
 		
 		gl.glViewport(0, 0, width, height);
@@ -1076,16 +1082,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		Camera camera = cars.get(0).camera;
 		
-		Point point = MouseInfo.getPointerInfo().getLocation();
+		Point point = canvas.getMousePosition();
 		int x = (int) point.getX();
 		int y = (int) point.getY();
 		
 		if(camera.isAerial())
 		{
 			float[] p = camera.to3DPoint(x, y, canvasWidth, canvasHeight);
-			terrain.tree.createHill(p, 50, 0.5f);
-			
-			addItem(13, p, 0);
+			float r = camera.getRadius(retical, canvasHeight);
+			terrain.tree.createHill(p, r, 0.5f);
 		}
 	}
 
@@ -2082,7 +2087,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return new KeyEvent(consoleInput, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
 	}
 	
-	public void mouseWheelMoved(MouseWheelEvent e) {}
+	public void mouseWheelMoved(MouseWheelEvent e)
+	{
+		Camera camera = cars.get(0).camera;
+		
+		if(camera.isAerial())
+		{
+			retical += e.getWheelRotation() * 3;
+			if(retical < 1) retical = 1;
+		}
+		else if(camera.isDynamic()) camera.zoom(e.getWheelRotation());
+	}
 
 	public void mouseClicked(MouseEvent e) {}
 

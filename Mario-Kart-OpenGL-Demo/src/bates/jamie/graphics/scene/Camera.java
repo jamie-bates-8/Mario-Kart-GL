@@ -1,4 +1,5 @@
 package bates.jamie.graphics.scene;
+
 import static bates.jamie.graphics.util.Vector.multiply;
 import static bates.jamie.graphics.util.Vector.subtract;
 
@@ -15,6 +16,9 @@ public class Camera extends AnchorPoint
 	private CameraMode mode = CameraMode.DYNAMIC_VIEW;
 	
 	private float zoom = 0.75f;
+	
+	private int width  = 860;
+	private int height = 640;
 	
 	private boolean rearview = false;
 	
@@ -42,10 +46,12 @@ public class Camera extends AnchorPoint
 			}
 			//Focus the camera on the centre of the track from a bird’s eye view
 			case BIRDS_EYE_VIEW:
-			{
+			{		
+				float ratio = (float) width / height;
+				
 				gl.glMatrixMode(GL_PROJECTION);
 				gl.glLoadIdentity();
-				gl.glOrtho(-220, 220, -220, 220, 1, 200);
+				gl.glOrtho(-220 * ratio, 220 * ratio, -220, 220, 1, 200);
 				glu.gluLookAt(0, 150, 0,
 					          0, 0, 0,
 					          0, 0, 1);
@@ -87,11 +93,20 @@ public class Camera extends AnchorPoint
 		float i = (float) x / width ;
 		float j = (float) y / height;
 		
+		float ratio = (float) width / height;
+		
 		float[] p = {0, 0, 0};
-		p[0] = 220 - i * 440;
+		p[0] = 220 * ratio - i * 440 * ratio;
 		p[2] = 220 - j * 440;
 		
 		return p;
+	}
+	
+	public float getRadius(float retical, int scale)
+	{
+		float r = retical / scale;
+		
+		return r * 440;
 	}
 	
 	public boolean isDynamic()     { return mode == CameraMode.DYNAMIC_VIEW;   }
@@ -117,5 +132,19 @@ public class Camera extends AnchorPoint
 		{
 			return values()[(mode.ordinal() + 1) % values().length];
 		}
+	}
+
+	public void setDimensions(int width, int height)
+	{
+		this.width  = width ;
+		this.height = height;
+	}
+	
+	public void zoom(int increments)
+	{
+		zoom += increments * 0.05;
+		
+		if(zoom < 0.25) zoom = 0.25f;
+		if(zoom > 2.00) zoom = 2.00f;
 	}
 }

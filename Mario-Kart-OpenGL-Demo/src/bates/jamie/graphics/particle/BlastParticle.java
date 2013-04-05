@@ -164,6 +164,8 @@ public class BlastParticle extends Particle
 			gl.glDisableClientState(GL_COLOR_ARRAY);
 			
 			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+			
+			gl.glDisable(GL_POINT_SPRITE);
 		}
 		gl.glPopMatrix();
 	}

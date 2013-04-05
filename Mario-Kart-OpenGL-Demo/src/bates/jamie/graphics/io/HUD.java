@@ -1,20 +1,21 @@
 package bates.jamie.graphics.io;
 
 import static java.lang.Math.abs;
-
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toRadians;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
 import static javax.media.opengl.GL.GL_LINES;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.GL2.GL_QUADS;
-
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
 import java.awt.Color;
 import java.awt.Font;
-
+import java.awt.Point;
 import java.io.File;
 
 import javax.media.opengl.GL2;
@@ -106,6 +107,8 @@ public class HUD
 			roulette.cursed = car.isCursed();
 			if(roulette.isAlive()) roulette.render(gl);
 			
+			if(scene.enableRetical && car.camera.isAerial()) renderRetical(gl);
+			
 			renderText(car);
 			
 			switch(mode)
@@ -178,6 +181,54 @@ public class HUD
 		gl.glColor3f(1, 1, 1);
 	}
 
+	private void renderRetical(GL2 gl)
+	{
+		Point point = scene.canvas.getMousePosition();
+		
+		if(point == null) return;
+		
+		double x = point.getX();
+		double y = point.getY();
+		
+		gl.glDisable(GL_TEXTURE_2D);
+		
+		float r = scene.retical; 
+		int v = (int) r;
+		
+		float[][] vertices = new float[v][3];
+		
+		for(int i = 0; i < v; i ++)
+		{
+			double theta = toRadians(i * (360.0 / v));
+			vertices[i] = new float[] {(float) (r * cos( theta)), 0, (float) (r * sin( theta))};
+			vertices[i] = Vector.add(vertices[i], new float[] {(float) x, 0, (float) y});
+		}
+		
+		if(scene.mousePressed)
+		{
+			float[] c = Vector.multiply(RGB.ORANGE, 1.0f / 255);
+			gl.glColor3f(c[0], c[1], c[2]);
+		}
+		else gl.glColor3f(0, 0, 0);
+		
+		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, new float[] {1, 0, 0}, 0);
+		gl.glPointSize(3);
+		
+		gl.glPushMatrix();
+		{		
+			gl.glBegin(GL2.GL_POINTS);
+			{
+				for(int i = 0; i < v; i ++)
+					gl.glVertex2f(vertices[i][0], vertices[i][2]);
+			}
+			gl.glEnd();
+		}
+		gl.glPopMatrix();
+		
+		gl.glEnable(GL_TEXTURE_2D);
+		gl.glColor3f(1, 1, 1);
+	}
+	
 	/**
 	 * This method renders text on the screen to describe the state of the scene
 	 * (FPS, number of world items, number of particles in the scene...) in
