@@ -74,6 +74,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -167,7 +168,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private JMenu menu_quadtree;
 	private JCheckBoxMenuItem menuItem_solid;
+	private JCheckBoxMenuItem menuItem_elevation;
 	private JCheckBoxMenuItem menuItem_frame;
+	private JMenuItem menuItem_height;
+	private JMenuItem menuItem_reset;
 	
 	private int canvasWidth = 860;
 	private int canvasHeight = 640;
@@ -203,7 +207,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{"Terrain", "Foliage", "Vehicles", "Items", "Particles", "Bounds", "HUD"};
 	
 	public static final String[] UPDATE_HEADERS =
-		{"Collision", "Deformation", "Buffers"};
+		{"Collision", "Weather", "Deformation", "Buffers"};
 	
 	public boolean enableCulling = false;
 	
@@ -567,18 +571,35 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_quadtree = new JMenu("Quadtree");
 		menu_quadtree.setMnemonic(KeyEvent.VK_Q);
 		
-		menuItem_solid = new JCheckBoxMenuItem("Fill Geometry");
+		menuItem_solid = new JCheckBoxMenuItem("Show Geometry");
 		menuItem_solid.addItemListener(this);
-		menuItem_solid.setMnemonic(KeyEvent.VK_F);
+		menuItem_solid.setMnemonic(KeyEvent.VK_G);
 		menuItem_solid.setSelected(Quadtree.solid);
+		
+		menuItem_elevation = new JCheckBoxMenuItem("Show Elevation");
+		menuItem_elevation.addItemListener(this);
+		menuItem_elevation.setMnemonic(KeyEvent.VK_E);
+		menuItem_elevation.setSelected(Quadtree.elevation);
 		
 		menuItem_frame = new JCheckBoxMenuItem("Show Wireframe");
 		menuItem_frame.addItemListener(this);
 		menuItem_frame.setMnemonic(KeyEvent.VK_W);
 		menuItem_frame.setSelected(Quadtree.frame);
 		
+		menuItem_height = new JMenuItem("Save Heights", KeyEvent.VK_H);
+		menuItem_height.addActionListener(this);
+		menuItem_height.setActionCommand("save_heights");
+		
+		menuItem_reset = new JMenuItem("Reset Heights", KeyEvent.VK_R);
+		menuItem_reset.addActionListener(this);
+		menuItem_reset.setActionCommand("reset_heights");
+		
 		menu_quadtree.add(menuItem_solid);
+		menu_quadtree.add(menuItem_elevation);
 		menu_quadtree.add(menuItem_frame);
+		menu_quadtree.addSeparator();
+		menu_quadtree.add(menuItem_height);
+		menu_quadtree.add(menuItem_reset);
 		
 		menuBar.add(menu_quadtree);
 		/**------------------**/
@@ -1052,7 +1073,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		for(Particle p : particles) p.update();
 		
-		if(enableBlizzard) blizzard.update();
+		updateTimes[frameIndex][1] = (enableBlizzard) ? blizzard.update() : 0;
 		
 		vehicleCollisions();
 		for(Car car : cars) car.update();
@@ -1082,15 +1103,22 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		Camera camera = cars.get(0).camera;
 		
-		Point point = canvas.getMousePosition();
-		int x = (int) point.getX();
-		int y = (int) point.getY();
-		
-		if(camera.isAerial())
+		if(camera.isAerial())	
 		{
+			Point point = canvas.getMousePosition();
+			if(point == null) return;
+		
+			int x = (int) point.getX();
+			int y = (int) point.getY();
+			
 			float[] p = camera.to3DPoint(x, y, canvasWidth, canvasHeight);
-			float r = camera.getRadius(retical, canvasHeight);
-			terrain.tree.createHill(p, r, 0.5f);
+			float   r = camera.getRadius(retical, canvasHeight);
+			float   h = (rightClick ? -0.1f : 0.1f);
+			
+			Quadtree cell = terrain.tree.getCell(p, Quadtree.MAXIMUM_LOD);
+			if(cell != null) cell.subdivide();
+			
+			terrain.tree.deform(p, r, h);
 		}
 	}
 
@@ -1346,7 +1374,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //			gl.glCallList(floorList);
 			
 			terrain.water.render(gl);
-			terrain.water.offsetHeights();
+			terrain.water.rippleSurface();
 		}	
 		gl.glPopMatrix();
 		
@@ -1944,6 +1972,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			out.write("\r\n\r\n ");
 			
+			for(int j = 0; j < headers.length; j++)
+			{
+				long sum = 0;
+				
+				for(int i = 0; i < data.length; i++) sum += data[i][j];
+				
+				sum /= data.length;
+				
+				out.write(String.format("%11.3f", sum / 1E6) + "\t");
+			}	
+			
+			out.write("\r\n\r\n ");
+			
 			for(int i = 0; i < data.length; i++)
 			{
 				for(int j = 0; j < headers.length; j++)
@@ -2070,13 +2111,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void actionPerformed(ActionEvent event)
 	{
-		     if(event.getActionCommand().equals("console"     )) console.parseCommand(consoleInput.getText());
-		else if(event.getActionCommand().equals("load_project")) console.parseCommand("profile project");
-		else if(event.getActionCommand().equals("load_game"   )) console.parseCommand("profile game");
-		else if(event.getActionCommand().equals("no_weather"  )) enableBlizzard = false;
-		else if(event.getActionCommand().equals("snow"        )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
-		else if(event.getActionCommand().equals("rain"        )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
-		else if(event.getActionCommand().equals("close"       )) System.exit(0);
+		     if(event.getActionCommand().equals("console"      )) console.parseCommand(consoleInput.getText());
+		else if(event.getActionCommand().equals("load_project" )) console.parseCommand("profile project");
+		else if(event.getActionCommand().equals("load_game"    )) console.parseCommand("profile game");
+		else if(event.getActionCommand().equals("no_weather"   )) enableBlizzard = false;
+		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
+		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
+		else if(event.getActionCommand().equals("save_heights" ))
+		{
+			Quadtree tree = terrain.tree;
+			tree.setHeights();
+			tree.setGradient(tree.gradient);
+		}
+		else if(event.getActionCommand().equals("reset_heights")) terrain.tree.resetHeights();
+		else if(event.getActionCommand().equals("close"        )) System.exit(0);
 	}
 	
 	public KeyEvent pressKey(char c)
@@ -2105,11 +2153,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void mouseExited (MouseEvent e) {}
 
+	public boolean rightClick;
+	
 	public void mousePressed(MouseEvent e)
 	{
 		selectX = e.getX();
 		selectY = e.getY();
 		
+		rightClick = SwingUtilities.isRightMouseButton(e);
 		mousePressed = true;
 	}
 
@@ -2129,6 +2180,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_secondary  )) light.secondary           = selected;
 		else if(source.equals(menuItem_water      )) terrain.enableWater       = selected;    
 		else if(source.equals(menuItem_solid      )) Quadtree.solid            = selected;
+		else if(source.equals(menuItem_elevation  )) Quadtree.elevation        = selected;  
 		else if(source.equals(menuItem_frame      )) Quadtree.frame            = selected;
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse = selected;
 	}

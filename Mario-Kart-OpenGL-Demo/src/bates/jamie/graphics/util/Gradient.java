@@ -58,6 +58,9 @@ public class Gradient
 	
 	public float[] interpolate(int location)
 	{
+		if(location > 100) location = 100;
+		if(location <   0) location =   0;
+		
 		int index = 0;
 		
 		while(stops.get(index + 1).location < location) index++;
@@ -87,7 +90,7 @@ public class Gradient
 	}
 	
 	public float[] interpolate(double location)
-	{
+	{	
 		return interpolate((int) (location * 100));
 	}
 	

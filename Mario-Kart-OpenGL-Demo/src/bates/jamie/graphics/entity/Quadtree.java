@@ -6,8 +6,10 @@ import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import javax.media.opengl.GL2;
 
@@ -28,6 +30,8 @@ public class Quadtree
 	
 	private static final float MAX_TROUGH = 1.00f;
 	private static final float MAX_RIPPLE = 0.25f;
+	
+	private static final float MAX_HEIGHT = 40.0f;
 	
 	public int detail = MAXIMUM_LOD;
 	public int lod;
@@ -52,12 +56,7 @@ public class Quadtree
 	List<Float> heights;
 	
 	int offset;
-	/*
-	 * TODO
-	 * 
-	 * Cannot switch dynamic from non-dynamic as buffers need to be reconstructed
-	 * Cannot load different LODs to vertex buffer (no visual change, only physics)
-	 */
+	// TODO Cannot switch dynamic from non-dynamic as buffers need to be reconstructed
 	public static final boolean DYNAMIC_BUFFERS = true;
 	
 	IntBuffer   iBuffer;
@@ -263,7 +262,7 @@ public class Quadtree
 	 * the less detailed cells until they reach this desired level.  
 	 */
 	public void repairCrack(int index)
-	{
+	{	
 		Quadtree[] cells = neighbourhood(index);
 		
 		int lod = 0;
@@ -720,7 +719,7 @@ public class Quadtree
 		}
 	}
 	
-	public void offsetHeights()
+	public void rippleSurface()
 	{
 		Random generator = new Random();
 		
@@ -735,8 +734,8 @@ public class Quadtree
 			
 			if(DYNAMIC_BUFFERS)
 			{
-				int position = cBuffer.position();
-				vBuffer.position(i * 3); vBuffer.put(vertex);
+				int position = vBuffer.position();
+				vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 				vBuffer.position(position);
 			}
 		}
@@ -763,7 +762,7 @@ public class Quadtree
 //				cBuffer.position(i * 3); cBuffer.put(color);
 //				cBuffer.position(position);
 				
-				vBuffer.position(i * 3); vBuffer.put(vertex);
+				vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 				vBuffer.position(position);
 			}
 		}
@@ -798,9 +797,9 @@ public class Quadtree
 				float peak = generator.nextFloat() * HILL_INC;
 				
 				// select random point within the boundaries of the quadtree
-				createHill(new float[] {_x + x, 0, _z + z}, radius, peak);
+				deformAll(new float[] {_x + x, 0, _z + z}, radius, peak);
 			}
-			else createHill(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
+			else deformAll(new float[] {_x + x, 0, _z + z}, 8, PEAK_INC);
 		}
 		
 		setHeights();
@@ -818,7 +817,7 @@ public class Quadtree
 			if(DYNAMIC_BUFFERS)
 			{
 				int position = vBuffer.position();
-				vBuffer.position(i * 3); vBuffer.put(vertex);
+				vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 				vBuffer.position(position);
 			}
 			
@@ -831,6 +830,74 @@ public class Quadtree
 		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
 	}
 	
+	public void resetHeights()
+	{
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] vertex = vertices.get(i);
+			vertex[1] = heights.get(i);
+			
+			colors.set(i, RGB.WHITE_3F);
+			
+			if(DYNAMIC_BUFFERS)
+			{
+				int position = vBuffer.position();
+				
+				vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
+				vBuffer.position(position);
+				
+				cBuffer.position(i * 3); cBuffer.put(RGB.WHITE_3F);
+				cBuffer.position(position);
+			}
+		}
+	}
+	
+	public Set<Integer> getIndices(float[][] vertices)
+	{
+		Quadtree region = getRegion(vertices);
+		
+		Set<Integer> _indices = new HashSet<Integer>();
+		region.getIndices( _indices);
+		
+		return _indices;
+	}
+	
+	public void getIndices(Set<Integer> _indices)
+	{
+		if(isLeaf())
+		{
+			_indices.add(indices[0]);
+			_indices.add(indices[1]);
+			_indices.add(indices[2]);
+			_indices.add(indices[3]);
+		}
+		else
+		{
+			north_west.getIndices(_indices);
+			north_east.getIndices(_indices);
+			south_west.getIndices(_indices);
+			south_east.getIndices(_indices);
+		}
+	}
+	
+	public Quadtree getRegion(float[][] vertices)
+	{
+		if(north_west != null && north_west.pointsInCell(vertices)) return north_west.getRegion(vertices);
+		if(north_east != null && north_east.pointsInCell(vertices)) return north_east.getRegion(vertices);
+		if(south_west != null && south_west.pointsInCell(vertices)) return south_west.getRegion(vertices);
+		if(south_east != null && south_east.pointsInCell(vertices)) return south_east.getRegion(vertices);
+		
+		return this;
+	}
+	
+	public boolean pointsInCell(float[][] vertices)
+	{
+		for(float[] vertex : vertices)
+			if(!pointInCell(vertex)) return false;
+		
+		return true;
+	}
+	
 	/**
 	 * This method creates a hill in the geometric surface stored by the quadtree
 	 * at the point <code>p</code>. The extent of the hill is determined by the
@@ -838,47 +905,117 @@ public class Quadtree
 	 * the argument <code>peak</code>. It should be noted that if <code>peak</code>
 	 * is negative, a depression is created instead of a hill.
 	 */
-	public void createHill(float[] p, float radius, float peak)
+	public long deformAll(float[] p, float radius, float peak)
 	{		
+		long start = System.nanoTime();
+		
 		for(int i = 0; i < vertices.size(); i++)
-		{	
-			float[] vertex = vertices.get(i);
+			deformVertex(i, p, radius, peak);
+		
+		return System.nanoTime() - start;
+	}
+	
+	public void deformVertex(int i, float[] p, float radius, float peak)
+	{
+		float[] vertex = vertices.get(i);
+		
+		float x = Math.abs(vertex[0] - p[0]); if(x > radius) return;
+		float z = Math.abs(vertex[2] - p[2]); if(z > radius) return;
+		
+		// calculate distance from vertex to centre of deformation
+		double d = Math.sqrt(x * x + z * z);
+		
+		if(d <= radius)
+		{
+			// ensure the deformation will not cause cracks
+			repairCrack(i);
+			// change in height is proportional to distance
+			vertex[1] += peak * (1 - (d / radius));
 			
-			float x = Math.abs(vertex[0] - p[0]);
-			float z = Math.abs(vertex[2] - p[2]);
+			if(vertex[1] < heights.get(i) - MAX_TROUGH)
+			   vertex[1] = heights.get(i) - MAX_TROUGH;
 			
-			// calculate distance from vertex to centre of deformation
-			double d = Math.sqrt(x * x + z * z);
+			if(vertex[1] > MAX_HEIGHT) vertex[1] = MAX_HEIGHT;
 			
-			if(d <= radius)
+			updateBuffers(i, vertex);
+		}
+	}
+
+	private void updateBuffers(int i, float[] vertex)
+	{
+		int position = vBuffer.position();
+		
+		if(DYNAMIC_BUFFERS && malleable)
+		{
+			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
+			vBuffer.position(position);
+		}
+		
+		if(vertex[1] < heights.get(i))
+		{
+			float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
+			colors.set(i, color);
+			
+			if(DYNAMIC_BUFFERS)
 			{
-				// ensure the deformation will not cause cracks
-				repairCrack(i);
-				// change in height is proportional to distance
-				vertex[1] += peak * (1 - (d / radius));
-				if(vertex[1] < heights.get(i) - MAX_TROUGH)
-				   vertex[1] = heights.get(i) - MAX_TROUGH;
-				
-				int position = vBuffer.position();
-				if(DYNAMIC_BUFFERS && malleable)
-				{
-					vBuffer.position(i * 3); vBuffer.put(vertex);
-					vBuffer.position(position);
-				}
-				
-				if(vertex[1] < heights.get(i))
-				{
-					float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
-					colors.set(i, color);
-					
-					if(DYNAMIC_BUFFERS)
-					{
-						cBuffer.position(i * 3); cBuffer.put(color);
-						cBuffer.position(position);
-					}
-				}
+				cBuffer.position(i * 3); cBuffer.put(color);
+				cBuffer.position(position);
 			}
 		}
+	}
+	
+	public Set<Integer> getIndices(float[] p, float radius)
+	{	
+		Set<Integer> indices = new HashSet<Integer>();
+		
+		float increment = (float) (root.getLength() / Math.pow(2, MAXIMUM_LOD));
+		int steps = (int) Math.ceil((2 * radius) / increment);
+		
+		float[] v = Vector.add(p, new float[] {-radius, 0, -radius});
+		
+		for(int i = 0; i <= steps; i++)
+		{
+			for(int j = 0; j <= steps; j++)
+			{
+				v[0] += increment;
+				
+				Quadtree cell = getCell(v, MAXIMUM_LOD);
+				if(cell == null) continue;
+				int[] _indices = cell.indices;
+				
+				indices.add(_indices[0]);
+				indices.add(_indices[1]);
+				indices.add(_indices[2]);
+				indices.add(_indices[3]);
+			}
+			
+			v[0] = p[0] - radius;
+			v[2] += increment;
+		}
+		
+		return indices;
+	}
+	
+	public long deform(float[] p, float radius, float peak)
+	{		
+		long start = System.nanoTime();
+		
+		int size = vertices.size();
+		
+		Set<Integer> indices = getIndices(p, radius);
+		
+		for(int i : indices)
+			deformVertex(i, p, radius, peak);
+		
+		while(vertices.size() - size > 0)
+		{
+			size = vertices.size();
+			
+			for(int i = size; i < vertices.size(); i++)
+				deformVertex(i, p, radius, peak);
+		}
+		
+		return System.nanoTime() - start;
 	}
 	
 	public void setGradient(Gradient gradient)
@@ -888,20 +1025,16 @@ public class Quadtree
 		for(int i = 0; i < vertices.size(); i++)
 		{	
 			float[] vertex = vertices.get(i);
+			float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
 				
-			if(vertex[1] < heights.get(i))
+			if(DYNAMIC_BUFFERS)
 			{
-				float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
-				
-				if(DYNAMIC_BUFFERS)
-				{
-					int position = cBuffer.position();
-					cBuffer.position(i * 3); cBuffer.put(color);
-					cBuffer.position(position);
-				}
-				
-				colors.set(i, color);
+				int position = cBuffer.position();
+				cBuffer.position(i * 3); cBuffer.put(color);
+				cBuffer.position(position);
 			}
+				
+			colors.set(i, color);
 		}
 		
 		updateBuffers();
@@ -983,6 +1116,7 @@ public class Quadtree
 	
 	public static boolean frame = true;
 	public static boolean solid = true;
+	public static boolean elevation = false;
 	
 	public int cellCount() { return indexCount / 4; }
 	
@@ -1065,6 +1199,77 @@ public class Quadtree
 		}
 		
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+	}
+	
+	public void renderElevation(GL2 gl)
+	{
+		gl.glDisable(GL2.GL_LIGHTING);
+		
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		
+		gl.glEnableClientState(GL_VERTEX_ARRAY);
+		gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
+		
+		FloatBuffer _colors = Buffers.newDirectFloatBuffer(colors.size() * 3);
+		
+		for(float[] vertex : vertices)
+		{
+			float[] color = gradient.interpolate(1 - (vertex[1] / MAX_HEIGHT));
+			_colors.put(color);
+		}
+		_colors.position(0);
+		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer.flip();
+			iBuffer.flip();
+		}
+		
+		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
+		gl.glColorPointer (3, GL2.GL_FLOAT, 0, _colors);
+		
+		gl.glDrawElements(GL2.GL_QUADS, indexCount, GL2.GL_UNSIGNED_INT, iBuffer);
+		
+		gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
+		gl.glDisableClientState(GL_VERTEX_ARRAY);
+		
+		if(DYNAMIC_BUFFERS)
+		{
+			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
+			iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
+		}
+		
+		gl.glEnable(GL_TEXTURE_2D);	
+	}
+	
+	public Set<Integer> selected = new HashSet<Integer>();
+	
+	public void renderSelected(GL2 gl)
+	{
+		gl.glDisable(GL2.GL_LIGHTING);
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 0, 0);
+
+		gl.glEnable(GL2.GL_BLEND);
+		gl.glEnable(GL2.GL_POINT_SMOOTH);
+		gl.glPointSize(10);
+		gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
+		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, new float[] {1, 0, 0}, 0);
+		
+		gl.glBegin(GL2.GL_POINTS);
+		
+		for(int i : selected)
+		{
+			float[] point = vertices.get(i);
+			gl.glVertex3f(point[0], point[1], point[2]);
+		}
+		gl.glEnd();
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glDisable(GL2.GL_POINT_SMOOTH);
+		
+		gl.glEnable(GL_TEXTURE_2D);	
 	}
 }
 

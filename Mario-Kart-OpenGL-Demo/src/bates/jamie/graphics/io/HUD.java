@@ -206,7 +206,8 @@ public class HUD
 		
 		if(scene.mousePressed)
 		{
-			float[] c = Vector.multiply(RGB.ORANGE, 1.0f / 255);
+			float[] c = (scene.rightClick) ? RGB.BLUE : RGB.ORANGE;
+			c = Vector.multiply(c, 1.0f / 255);
 			gl.glColor3f(c[0], c[1], c[2]);
 		}
 		else gl.glColor3f(0, 0, 0);
@@ -368,7 +369,7 @@ public class HUD
 		
 		int height = scene.getHeight();
 		
-		float[][] colors = {RGB.GREEN, RGB.BLUE, RGB.INDIGO};
+		float[][] colors = {RGB.GREEN, RGB.BLUE, RGB.INDIGO, RGB.VIOLET};
 		float[] color = {};
 		
 		gl.glBegin(GL_LINES);

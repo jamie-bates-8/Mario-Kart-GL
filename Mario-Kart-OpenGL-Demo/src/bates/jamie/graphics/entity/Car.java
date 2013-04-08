@@ -716,26 +716,27 @@ public class Car
 		for(int i = 0; i < 4; i++)
 		{
 			Quadtree cell = tree.getCell(vertices[i], lod);
-			float h = (cell != null) ? cell.getHeight(vertices[i]) : 0;
-			heights[i] = h;
+			heights[i] = (cell != null) ? cell.getHeight(vertices[i]) : 0;
+		}
+		
+		if(accelerating)
+		{
+			update = true;
 			
-			if(accelerating && abs(velocity) > acceleration && cell != null)
+			float ratio = abs(velocity / TOP_SPEED);
+			float k = ratio > 0.5 ? 0.5f : 1 - ratio;
+			      k = ratio < 0.1 ? 0.1f : k;
+			float depression = k * 0.05f;
+			
+			for(int i = 0; i < 4; i++)
 			{
-				update = true;
-				
 				tree.getCell(vertices[i], Quadtree.MAXIMUM_LOD).subdivide();
-				
-				float ratio = abs(velocity / TOP_SPEED);
-				float k = ratio > 0.5 ? 0.5f : 1 - ratio;
-				k = ratio < 0.1 ? 0.1f : k;
-				float depression = k * 0.05f;
-				
-				tree.createHill(vertices[i], 1.5f, -depression);
+				tree.deform(vertices[i], 1.5f, -depression);
 			}
 		}
 		
-		scene.updateTimes[scene.frameIndex][1] = System.nanoTime() - start;
-		scene.updateTimes[scene.frameIndex][2] = update ? tree.updateBuffers(tree.detail) : 0;
+		scene.updateTimes[scene.frameIndex][2] = System.nanoTime() - start;
+		scene.updateTimes[scene.frameIndex][3] = update ? tree.updateBuffers(tree.detail) : 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e[1];

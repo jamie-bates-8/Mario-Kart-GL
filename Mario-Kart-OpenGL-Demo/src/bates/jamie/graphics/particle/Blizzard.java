@@ -114,8 +114,10 @@ public class Blizzard
 		cBuffer = Buffers.newDirectFloatBuffer(flakeLimit * (type == StormType.SNOW ? 4 : 8));
 	}
 	
-	public void update()
+	public long update()
 	{
+		long start = System.nanoTime();
+		
 		vBuffer.limit(vBuffer.capacity());
 		cBuffer.limit(cBuffer.capacity());
 		
@@ -149,6 +151,8 @@ public class Blizzard
 			     if(type == StormType.SNOW && enableSettling && generator.nextBoolean() && flake.falling) settle(flake, i);
 			else if(type == StormType.RAIN && enableSplashing && generator.nextFloat() < 0.1f) splash(flake);
 		}
+		
+		return System.nanoTime() - start;
 	}
 
 	private void splash(WeatherParticle flake)
