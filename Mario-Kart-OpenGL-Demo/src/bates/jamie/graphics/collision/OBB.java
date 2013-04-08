@@ -23,12 +23,16 @@ public class OBB extends Bound
 {	
 	public static final float EPSILON = 0.00001f;
 	
+	// rotation matrix used to describe orientation of bound
 	public float[][] u = new float[3][3];
 	
+	// half-extents of bound in the form {width, height, depth}
 	public float[] e;
 	
+	// flags to determine whether collisions with certain faces should be considered 
 	public boolean[] validFaces = new boolean[6];
 	
+
 	public OBB(float c0, float c1, float c2,
 			   float u0, float u1, float u2,
 			   float e0, float e1, float e2)
@@ -47,6 +51,14 @@ public class OBB extends Bound
 		this.validFaces = validFaces;
 	}
 	
+	/**
+	 *
+	 *
+	 * @param c - the centre point of the bound
+	 * @param u - the {x, y, z} rotations of the OBB
+	 * @param e - the half-extents of the box, {half-width, half-height, half-depth}
+	 * @param v - flags to determine whether collisions with certain faces should be considered 
+	 */
 	public OBB(float[] c, float[] u, float[] e, boolean[] v)
 	{
 		setPosition(c);
@@ -54,7 +66,7 @@ public class OBB extends Bound
 		this.e = e;
 		validFaces = v;
 	}
-	
+
 	public boolean isValidCollision(float[] face)
 	{
 		float[][] faces = getAxisVectors(1);
@@ -383,6 +395,10 @@ public class OBB extends Bound
 		return q;
 	}
 	
+	/**
+	 * Return the index of the face with the normal passed as a parameter,
+	 * or an invalid index of -1 if no face has that normal. 
+	 */
 	public int getFaceIndex(float[] normal)
 	{
 		float[][] normals = getAxisVectors(1);
@@ -393,6 +409,11 @@ public class OBB extends Bound
 		return -1;
 	}
 	
+	/**
+	 * Returns the normals of each face of the OBB, multiplied by the parameter
+	 * <code>scale</code>. These normals can be used to render the local axes
+	 * of the bound.
+	 */
 	public float[][] getAxisVectors(float scale)
 	{
 		return new float[][]
@@ -515,6 +536,9 @@ public class OBB extends Bound
 		gl.glPopMatrix();
 	}
 	
+	/**
+	 * Returns a randomly calculated point that is within the bound.
+	 */
 	public float[] randomPointInside()
 	{
 		Random random = new Random();

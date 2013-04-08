@@ -674,6 +674,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		execution = Calendar.getInstance();
 		
 		GL2 gl = drawable.getGL().getGL2();
+		
 		glu = new GLUgl2();
 		glut = new GLUT();
 		
@@ -1049,7 +1050,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 
 	private long update()
-	{
+	{	
 		long start = System.currentTimeMillis();
 		
 		if(mousePressed) modifyTerrain();

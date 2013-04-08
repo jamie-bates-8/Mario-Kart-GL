@@ -19,14 +19,27 @@ public abstract class Bound
 	
 	public abstract List<float[]> getPixelMap();
 	
+	/**
+	 * Returns the normal of the bound's surface with reference to the point
+	 * <code>p</code>.
+	 */
 	public abstract float[] getFaceVector(float[] p);
 	
+	/**
+	 * Returns the closest point within the bound to the point <code>p</code>
+	 * passed as a parameter. If the point <code>p</code> is within the bound,
+	 * the point itself is returned.
+	 */
 	public abstract float[] closestPointToPoint(float[] p);
 	
 	public abstract boolean testSphere(Sphere s);
 	
 	public abstract boolean testOBB(OBB b);
 	
+	/**
+	 * Returns the maximum length from the centre of the bound to any other point
+	 * on the bound.
+	 */
 	public abstract float getMaximumExtent();
 	
 	public abstract float getHeight();
