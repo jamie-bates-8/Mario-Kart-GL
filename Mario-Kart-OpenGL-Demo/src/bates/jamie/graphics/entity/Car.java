@@ -622,6 +622,8 @@ public class Car
 			else graph.render(gl);
 		}
 		
+		gl.glColor3f(1, 1, 1);
+		
 		for(Item item : items)
 		{
 			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);

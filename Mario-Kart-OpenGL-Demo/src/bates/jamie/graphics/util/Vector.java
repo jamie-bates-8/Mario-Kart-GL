@@ -4,6 +4,8 @@ import static java.lang.Math.abs;
 import static java.lang.Math.acos;
 import static java.lang.Math.sqrt;
 
+import java.util.Collection;
+
 public class Vector
 {
 	public static final float EPSILON = 0.00001f;
@@ -130,6 +132,34 @@ public class Vector
 		float[] v3 = cross(v1, v2);
 		
 		return normalize(v3);
+	}
+	
+	public static float[] average(float[][] normals)
+	{
+		float[] n = {0, 0, 0};
+		
+		for(int i = 0; i < normals.length; i++)
+		{
+			n[0] += normals[i][0];
+			n[1] += normals[i][1];
+			n[2] += normals[i][2];
+		}
+		
+		return multiply(n, normals.length);
+	}
+	
+	public static float[] average(Collection<float[]> normals)
+	{
+		float[] n = {0, 0, 0};
+		
+		for(float[] normal : normals)
+		{
+			n[0] += normal[0];
+			n[1] += normal[1];
+			n[2] += normal[2];
+		}
+		
+		return multiply(n, normals.size());
 	}
 	
 	public static boolean equal(float[] u, float[] v)

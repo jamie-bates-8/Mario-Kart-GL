@@ -86,7 +86,7 @@ public class Terrain
 	public Quadtree subtree;
 	public Quadtree water;
 	
-	public boolean enableQuadtree = true;
+	public boolean enableQuadtree = false;
 	public boolean enableWater = false;
 	
 	public Terrain(GL2 gl, int length, int i)
@@ -555,7 +555,7 @@ public class Terrain
 			normals[i    ] = Vector.normal(vertices[i    ], vertices[i + 1], vertices[i + 3]);
 			normals[i + 1] = Vector.normal(vertices[i + 1], vertices[i    ], vertices[i + 2]);
 			normals[i + 2] = Vector.normal(vertices[i + 2], vertices[i + 1], vertices[i + 3]);
-			normals[i + 3] = Vector.normal(vertices[i + 3], vertices[i    ], vertices[i + 2]);
+			normals[i + 3] = Vector.normal(vertices[i + 3], vertices[i + 2], vertices[i    ]);
 		}
 		
 		return normals;
@@ -772,12 +772,15 @@ public class Terrain
 	public void renderMultiTexQuad(GL2 gl, int i)
 	{	
 		baseTexture.bind(gl);
+		
+		gl.glEnable(GL2.GL_LIGHTING);
 
 		gl.glBegin(GL2.GL_QUADS);
 		{
+			gl.glNormal3f(normals[i][0], normals[i][1], normals[i][2]);
+			
 			for(int j = i; j < i + 4; j++)
 			{
-				gl.glNormal3f(normals[j][0], normals[j][1], normals[j][2]);
 				gl.glTexCoord2f(texCoords[j][0], texCoords[j][1]);
 				gl.glVertex3f(vertices[j][0], vertices[j][1], vertices[j][2]);
 			}

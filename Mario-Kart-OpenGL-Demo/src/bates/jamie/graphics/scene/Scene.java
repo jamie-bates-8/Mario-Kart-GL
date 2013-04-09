@@ -66,6 +66,7 @@ import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.gl2.GLUgl2;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -129,6 +130,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
  */
 public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener, ItemListener
 {
+	public boolean enableNimbus = false;
+	
 	public JFrame frame;
 	public GLCanvas canvas;
 	
@@ -157,8 +160,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JRadioButtonMenuItem menuItem_none;
 	private JRadioButtonMenuItem menuItem_rain;
 	private JRadioButtonMenuItem menuItem_snow;
+	private JCheckBoxMenuItem menuItem_reflect;
 	
 	private JMenu menu_light;
+	private JMenuItem menuItem_ambience;
+	private JMenuItem menuItem_emission;
+	private JMenuItem menuItem_specular;
+	private JMenuItem menuItem_diffuse;
+	
 	private JCheckBoxMenuItem menuItem_normalize;
 	private JCheckBoxMenuItem menuItem_smooth;
 	private JCheckBoxMenuItem menuItem_secondary;
@@ -308,7 +317,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean multisample = true;
 	
 	public boolean testMode = false;
-	public boolean printVersion = false;
+	public boolean printVersion = true;
 	
 	public int selectX = -1;
 	public int selectY = -1;
@@ -331,15 +340,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public Scene()
 	{
 		try
-		{		
-			for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels())
+		{	
+			if(enableNimbus)
 			{
-		        if ("Nimbus".equals(info.getName()))
-		        {
-		            UIManager.setLookAndFeel(info.getClassName());
-		            break;
-		        }
+				for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels())
+				{
+			        if ("Nimbus".equals(info.getName()))
+			        {
+			            UIManager.setLookAndFeel(info.getClassName());
+			            break;
+			        }
+				}
 			}
+			else UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
@@ -527,12 +540,35 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menu_render.add(menu_effects);
 		
+		menuItem_reflect = new JCheckBoxMenuItem("Reflection");
+		menuItem_reflect.addItemListener(this);
+		menuItem_reflect.setMnemonic(KeyEvent.VK_R);
+		menuItem_reflect.setSelected(enableReflection);
+		
+		menu_render.add(menuItem_reflect);
+		
 		menuBar.add(menu_render);
 		/**-------------------**/
 		
 		/** Light Menu **/
 		menu_light = new JMenu("Light");
 		menu_light.setMnemonic(KeyEvent.VK_L);
+		
+		menuItem_ambience = new JMenuItem("Set Ambience", KeyEvent.VK_A);
+		menuItem_ambience.addActionListener(this);
+		menuItem_ambience.setActionCommand("set_ambience");
+		
+		menuItem_emission = new JMenuItem("Set Emission", KeyEvent.VK_E);
+		menuItem_emission.addActionListener(this);
+		menuItem_emission.setActionCommand("set_emission");
+		
+		menuItem_specular = new JMenuItem("Set Specular", KeyEvent.VK_C);
+		menuItem_specular.addActionListener(this);
+		menuItem_specular.setActionCommand("set_specular");
+		
+		menuItem_diffuse = new JMenuItem("Set Diffuse", KeyEvent.VK_D);
+		menuItem_diffuse.addActionListener(this);
+		menuItem_diffuse.setActionCommand("set_diffuse");
 		
 		menuItem_normalize = new JCheckBoxMenuItem("Normalize");
 		menuItem_normalize.addItemListener(this);
@@ -546,6 +582,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_secondary = new JCheckBoxMenuItem("Specular Texture");
 		menuItem_secondary.addItemListener(this);
 		
+		menu_light.add(menuItem_ambience);
+		menu_light.add(menuItem_emission);
+		menu_light.add(menuItem_specular);
+		menu_light.add(menuItem_diffuse);
+		menu_light.addSeparator();
 		menu_light.add(menuItem_normalize);
 		menu_light.add(menuItem_smooth);
 		menu_light.add(menuItem_secondary);
@@ -934,7 +975,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			else i--;
 			
-			if(displayLight) light.render(gl, glu);
+			if(displayLight && !moveLight) light.render(gl, glu);
 			
 			renderTimes[frameIndex][5] = renderBounds(gl);
 			renderTimes[frameIndex][6] = car.renderHUD(gl, glu);
@@ -1369,13 +1410,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-//			gl.glTranslatef(0, 0, 0);
-//			gl.glScalef(40.0f, 40.0f, 40.0f);
-//	
-//			gl.glCallList(floorList);
-			
-			terrain.water.render(gl);
-			terrain.water.rippleSurface();
+			gl.glTranslatef(0, 0, 0);
+			gl.glScalef(40.0f, 40.0f, 40.0f);
+	
+			gl.glCallList(floorList);
 		}	
 		gl.glPopMatrix();
 		
@@ -2125,6 +2163,46 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			tree.setGradient(tree.gradient);
 		}
 		else if(event.getActionCommand().equals("reset_heights")) terrain.tree.resetHeights();
+		else if(event.getActionCommand().equals("set_ambience" ))
+		{
+			float[] c = light.getAmbience();
+			Color ambience = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
+			Color color = JColorChooser.showDialog(frame, "Ambient Lighting Color", ambience);
+			
+			if(color == null) return;
+			
+			light.setAmbience(RGB.toRGBA(color));
+		}
+		else if(event.getActionCommand().equals("set_emission" ))
+		{
+			float[] c = light.getEmission();
+			Color emission = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
+			Color color = JColorChooser.showDialog(frame, "Emissive Material Color", emission);
+			
+			if(color == null) return;
+			
+			light.setEmission(RGB.toRGBA(color));
+		}
+		else if(event.getActionCommand().equals("set_specular" ))
+		{
+			float[] c = light.getSpecular();
+			Color specular = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
+			Color color = JColorChooser.showDialog(frame, "Specular Lighting Color", specular);
+			
+			if(color == null) return;
+			
+			light.setSpecular(RGB.toRGBA(color));
+		}
+		else if(event.getActionCommand().equals("set_diffuse" ))
+		{
+			float[] c = light.getDiffuse();
+			Color diffuse = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
+			Color color = JColorChooser.showDialog(frame, "Diffuse Lighting Color", diffuse);
+			
+			if(color == null) return;
+			
+			light.setDiffuse(RGB.toRGBA(color));
+		}
 		else if(event.getActionCommand().equals("close"        )) System.exit(0);
 	}
 	
@@ -2179,7 +2257,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_normalize  )) normalize                 = selected;
 		else if(source.equals(menuItem_smooth     )) light.smooth              = selected;
 		else if(source.equals(menuItem_secondary  )) light.secondary           = selected;
-		else if(source.equals(menuItem_water      )) terrain.enableWater       = selected;    
+		else if(source.equals(menuItem_water      )) terrain.enableWater       = selected;
+		else if(source.equals(menuItem_reflect    )) enableReflection          = selected;    
 		else if(source.equals(menuItem_solid      )) Quadtree.solid            = selected;
 		else if(source.equals(menuItem_elevation  )) Quadtree.elevation        = selected;  
 		else if(source.equals(menuItem_frame      )) Quadtree.frame            = selected;

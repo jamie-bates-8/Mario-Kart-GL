@@ -213,8 +213,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(      "light")) parseLight(cmd);
 		else if(_cmd.equalsIgnoreCase(    "display")) parseDisplay(cmd);
 		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();   
-		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat(); 
-		else if(_cmd.equalsIgnoreCase( "reflection")) scene.enableReflection = cmd.nextBoolean(); 
+		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(    "opacity")) scene.opacity = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(    "terrain"))
 		{
@@ -246,7 +245,18 @@ public class Console
 			
 			scene.light.setAmbience(new float[] {r, g, b, a});
 		}
-		else if(_cmd.equalsIgnoreCase("parallel")) scene.light.parallel = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase("emission"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			
+			float a = cmd.hasNextFloat() ? cmd.nextFloat() : 1.0f;
+			
+			scene.light.setEmission(new float[] {r, g, b, a});
+		}
+		else if(_cmd.equalsIgnoreCase("shininess")) scene.light.setShininess(cmd.nextInt());
+		else if(_cmd.equalsIgnoreCase( "parallel")) scene.light.parallel = cmd.nextBoolean();
 	}
 	
 	private void parseDisplay(Scanner cmd)

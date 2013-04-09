@@ -1,5 +1,6 @@
 package bates.jamie.graphics.util;
 
+import java.awt.Color;
 import java.awt.color.ColorSpace;
 
 public class RGB
@@ -47,6 +48,18 @@ public class RGB
 	    color = (color << 8) + blue;
 	    
 	    return color;
+	}
+	
+	public static float[] toRGBA(Color color)
+	{
+		float r = color.getRed();
+		float g = color.getGreen();
+		float b = color.getBlue();
+		float a = color.getAlpha();
+		
+		float[] _color = {r/255, g/255, b/255, a/255};
+	    
+	    return _color;
 	}
 	
 	public static int getRed(int color) { return (color >> 16) & 0xFF; }
