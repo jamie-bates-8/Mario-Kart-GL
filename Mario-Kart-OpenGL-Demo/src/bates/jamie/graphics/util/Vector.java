@@ -145,7 +145,7 @@ public class Vector
 			n[2] += normals[i][2];
 		}
 		
-		return multiply(n, normals.length);
+		return multiply(n, 1.0f / normals.length);
 	}
 	
 	public static float[] average(Collection<float[]> normals)
@@ -159,7 +159,7 @@ public class Vector
 			n[2] += normal[2];
 		}
 		
-		return multiply(n, normals.size());
+		return multiply(n, 1.0f / normals.size());
 	}
 	
 	public static boolean equal(float[] u, float[] v)

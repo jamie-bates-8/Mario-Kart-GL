@@ -199,8 +199,8 @@ public class Terrain
 		
 		water = new Quadtree(vBuffer_, tBuffer_, snow, 9, null);
 		
-		water.textured = false;
-		water.coloured = false;
+		water.enableTexture = false;
+		water.enableColoring = false;
 		water.offsetHeights(0.5f);
 		water.updateBuffers();
 	}
@@ -670,8 +670,11 @@ public class Terrain
 					else tree.render(gl);
 				}
 				if(Quadtree.frame) tree.renderWireframe(gl);
-				
+				if(Quadtree.vertexNormals)tree.renderVertexNormals(gl, 1);
 //				tree.renderSelected(gl);
+				
+				tree.enableColoring = false;
+				tree.enableTexture = false;
 				
 //				subtree.render(gl);
 				gl.glTranslatef(0, 1.5f, 0);

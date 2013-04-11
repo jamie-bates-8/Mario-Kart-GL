@@ -179,6 +179,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_solid;
 	private JCheckBoxMenuItem menuItem_elevation;
 	private JCheckBoxMenuItem menuItem_frame;
+	private JCheckBoxMenuItem menuItem_vnormals;
 	private JMenuItem menuItem_height;
 	private JMenuItem menuItem_reset;
 	
@@ -627,6 +628,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_frame.setMnemonic(KeyEvent.VK_W);
 		menuItem_frame.setSelected(Quadtree.frame);
 		
+		menuItem_vnormals = new JCheckBoxMenuItem("Show Vertex Normals");
+		menuItem_vnormals.addItemListener(this);
+		menuItem_vnormals.setMnemonic(KeyEvent.VK_V);
+		menuItem_vnormals.setSelected(Quadtree.vertexNormals);
+		
 		menuItem_height = new JMenuItem("Save Heights", KeyEvent.VK_H);
 		menuItem_height.addActionListener(this);
 		menuItem_height.setActionCommand("save_heights");
@@ -638,6 +644,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_quadtree.add(menuItem_solid);
 		menu_quadtree.add(menuItem_elevation);
 		menu_quadtree.add(menuItem_frame);
+		menu_quadtree.add(menuItem_vnormals);
 		menu_quadtree.addSeparator();
 		menu_quadtree.add(menuItem_height);
 		menu_quadtree.add(menuItem_reset);
@@ -1487,8 +1494,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			gl.glDisable(GL2.GL_LIGHTING);
-			light.useSpecular(gl, false);
+//			light.useSpecular(gl, false);
 			
 			terrain.render(gl, glut);
 			
@@ -2262,6 +2268,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_solid      )) Quadtree.solid            = selected;
 		else if(source.equals(menuItem_elevation  )) Quadtree.elevation        = selected;  
 		else if(source.equals(menuItem_frame      )) Quadtree.frame            = selected;
+		else if(source.equals(menuItem_vnormals   )) Quadtree.vertexNormals    = selected;     
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse = selected;
 	}
 }

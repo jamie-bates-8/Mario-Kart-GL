@@ -26,24 +26,34 @@ public class Light extends AnchorPoint
 	
 	private int id;
 	
-	private float[] ambience = {0.2f, 0.2f, 0.2f, 1.0f};
-	private float[] diffuse  = {0.7f, 0.7f, 0.7f, 1.0f};
+//	private float[] ambience = {0.2f, 0.2f, 0.2f, 1.0f};
+//	private float[] diffuse  = {0.7f, 0.7f, 0.7f, 1.0f};
+//	private float[] specular = {1.0f, 1.0f, 1.0f, 1.0f};
+	
+	private float[] ambience = {0.0f, 0.0f, 0.0f, 1.0f};
+	private float[] diffuse  = {1.0f, 1.0f, 1.0f, 1.0f};
+	private float[] specular = {1.0f, 1.0f, 1.0f, 1.0f};
+	
+	private float[] _ambience = {0.2f, 0.2f, 0.2f, 1.0f};
+	
+	private float[] _specular = {1.0f, 1.0f, 1.0f, 1.0f};
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
 
-	private float[] specular = {1.0f, 1.0f, 1.0f};
+	
 	private int shininess = 128;
 
 	public float[] direction = {0, -1, 0};
 
 	public boolean smooth    = true;
-	public boolean parallel  = false;
+	public boolean parallel  = true;
 	public boolean secondary = true;
 
 	public Light(GL2 gl)
 	{
 		id = count++;
 		
-		setPosition(new float[] {100, 200, 100});
+//		setPosition(new float[] {100, 200, 100});
+		setPosition(new float[] {1, 1, 0});
 
 		gl.glEnable(GL_LIGHTING);
 		gl.glEnable(getLight(id));
@@ -104,7 +114,7 @@ public class Light extends AnchorPoint
 		if(smooth) gl.glShadeModel(GL_SMOOTH);
 		else       gl.glShadeModel(GL_FLAT  );
 
-		gl.glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambience, 0);
+		gl.glLightModelfv(GL_LIGHT_MODEL_AMBIENT, _ambience, 0);
 		
 		if(secondary) gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SEPARATE_SPECULAR_COLOR);
 		else          gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SINGLE_COLOR);
@@ -123,7 +133,7 @@ public class Light extends AnchorPoint
 		float[] _p = {p[0], p[1], p[2], parallel ? 0 : 1};
 		gl.glLightfv(light, GL_POSITION, _p, 0);
 
-		gl.glMaterialfv(GL_FRONT, GL_SPECULAR,  specular, 0);
+		gl.glMaterialfv(GL_FRONT, GL_SPECULAR,  _specular, 0);
 		gl.glMateriali (GL_FRONT, GL_SHININESS, shininess  );
 		gl.glMaterialfv(GL_FRONT, GL_EMISSION,  emission, 0);
 	}
