@@ -11,6 +11,7 @@ public class Gradient
 	
 	public static final Gradient GRAYSCALE = new Gradient(RGB.WHITE_3F, RGB.GRAY);
 	public static final Gradient MUD = new Gradient(new float[][] {RGB.WHITE_3F, RGB.LIGHT_BROWN, RGB.DARK_BROWN}); 
+	public static final Gradient TROPICAL = new Gradient(new float[][] {RGB.WHITE_3F, RGB.BLUE, RGB.INDIGO}); 
 	
 	public Gradient(float[] color1, float[] color2)
 	{

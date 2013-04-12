@@ -138,11 +138,19 @@ public class Quadtree
 		this.vertices  = vertices;
 		this.indices   = new int[] {0, 1, 2, 3};
 		
+		texCoords = new ArrayList<float[]>();
+		
+		normals = new ArrayList<float[]>();
+		float[] normal = Vector.normal(vertices.get(0), vertices.get(1), vertices.get(3));
+		for(int i = 0; i < 4; i++) normals.add(normal);
+		
 		colors = new ArrayList<float[]>();
 		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
 		
 		heights = new ArrayList<Float>();
 		for(int i = 0; i < 4; i++) heights.add(vertices.get(i)[1]);
+		
+		if(DYNAMIC_BUFFERS) createBuffers();
 		
 		enableTexture = false;
 		
@@ -1010,13 +1018,53 @@ public class Quadtree
 		
 		if(DYNAMIC_BUFFERS)
 		{
-			float[] normal = getNormal(i);
-			normals.set(i, normal);
+			Set<Integer> indices = getSurface(i);
 			
-			nBuffer.position(i * 3); nBuffer.put(normal);
+			for(Integer index : indices)
+			{
+				float[] normal = getNormal(index);
+				normals.set(index, normal);
+			
+				nBuffer.position(index * 3); nBuffer.put(normal);
+			}
+			
 			nBuffer.position(position);
+		}	
+	}
+	
+	public Set<Integer> getSurface(int i)
+	{
+		Set<Integer> indices = new HashSet<Integer>();
+		
+		Quadtree[] cells = getAdjacent(i);
+		
+		for(Quadtree cell : cells)
+		{
+			if(cell != null)
+			{
+				indices.add(cell.indices[0]);
+				indices.add(cell.indices[1]);
+				indices.add(cell.indices[2]);
+				indices.add(cell.indices[3]);
+			}
 		}
 		
+		return indices;
+	}
+	
+	public void recalculateNormals()
+	{
+		int position = nBuffer.position();
+		
+		for(int i = 0; i < normals.size(); i++)
+		{	
+			float[] normal = getNormal(i);
+			
+			normals.set(i, normal);
+			nBuffer.position(i * 3); nBuffer.put(normal);
+		}
+		
+		nBuffer.position(position);
 	}
 	
 	public Set<Integer> getIndices(float[] p, float radius)

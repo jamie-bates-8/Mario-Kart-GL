@@ -164,7 +164,7 @@ public class Terrain
 		tBuffer.add(new float[] {32, 32});
 		tBuffer.add(new float[] { 0, 32});
 		
-		tree = new Quadtree(vBuffer, tBuffer, snow, 7, null);
+		tree = new Quadtree(vBuffer, tBuffer, sand, 7, null);
 		tree.setHeights(1000);
 		tree.updateBuffers();
 		tree.malleable = true;
@@ -197,10 +197,11 @@ public class Terrain
 		tBuffer_.add(new float[] {32, 32});
 		tBuffer_.add(new float[] { 0, 32});
 		
-		water = new Quadtree(vBuffer_, tBuffer_, snow, 9, null);
+		water = new Quadtree(vBuffer_, 9, null);
 		
-		water.enableTexture = false;
+		water.enableTexture  = false;
 		water.enableColoring = false;
+		water.enableShading  = false;
 		water.offsetHeights(0.5f);
 		water.updateBuffers();
 	}
@@ -672,9 +673,6 @@ public class Terrain
 				if(Quadtree.frame) tree.renderWireframe(gl);
 				if(Quadtree.vertexNormals)tree.renderVertexNormals(gl, 1);
 //				tree.renderSelected(gl);
-				
-				tree.enableColoring = false;
-				tree.enableTexture = false;
 				
 //				subtree.render(gl);
 				gl.glTranslatef(0, 1.5f, 0);

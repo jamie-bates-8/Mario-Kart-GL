@@ -176,10 +176,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_water;
 	
 	private JMenu menu_quadtree;
+	private JMenu menu_geometry;
 	private JCheckBoxMenuItem menuItem_solid;
-	private JCheckBoxMenuItem menuItem_elevation;
 	private JCheckBoxMenuItem menuItem_frame;
+	private JMenu menu_texture;
+	private JCheckBoxMenuItem menuItem_texturing;
+	private JMenu menu_coloring;
+	private JCheckBoxMenuItem menuItem_vcoloring;
+	private JMenu menu_normals;
+	private JCheckBoxMenuItem menuItem_shading;
+	private JMenuItem menuItem_recalculate;
 	private JCheckBoxMenuItem menuItem_vnormals;
+	private JMenu menu_heights;
+	private JCheckBoxMenuItem menuItem_elevation;
 	private JMenuItem menuItem_height;
 	private JMenuItem menuItem_reset;
 	
@@ -613,25 +622,69 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_quadtree = new JMenu("Quadtree");
 		menu_quadtree.setMnemonic(KeyEvent.VK_Q);
 		
+		menu_geometry = new JMenu("Geometry");
+		menu_geometry.setMnemonic(KeyEvent.VK_G);	
+		
 		menuItem_solid = new JCheckBoxMenuItem("Show Geometry");
 		menuItem_solid.addItemListener(this);
 		menuItem_solid.setMnemonic(KeyEvent.VK_G);
 		menuItem_solid.setSelected(Quadtree.solid);
-		
-		menuItem_elevation = new JCheckBoxMenuItem("Show Elevation");
-		menuItem_elevation.addItemListener(this);
-		menuItem_elevation.setMnemonic(KeyEvent.VK_E);
-		menuItem_elevation.setSelected(Quadtree.elevation);
 		
 		menuItem_frame = new JCheckBoxMenuItem("Show Wireframe");
 		menuItem_frame.addItemListener(this);
 		menuItem_frame.setMnemonic(KeyEvent.VK_W);
 		menuItem_frame.setSelected(Quadtree.frame);
 		
+		menu_geometry.add(menuItem_solid);
+		menu_geometry.add(menuItem_frame);
+		
+		menu_texture = new JMenu("Texture");
+		menu_texture.setMnemonic(KeyEvent.VK_T);
+		
+		menuItem_texturing = new JCheckBoxMenuItem("Enable Texture");
+		menuItem_texturing.addItemListener(this);
+		menuItem_texturing.setMnemonic(KeyEvent.VK_T);
+		
+		menu_texture.add(menuItem_texturing);
+		
+		menu_normals = new JMenu("Normals");
+		menu_normals.setMnemonic(KeyEvent.VK_N);
+		
+		menuItem_shading = new JCheckBoxMenuItem("Enable Shading");
+		menuItem_shading.addItemListener(this);
+		menuItem_shading.setMnemonic(KeyEvent.VK_S);
+		
 		menuItem_vnormals = new JCheckBoxMenuItem("Show Vertex Normals");
 		menuItem_vnormals.addItemListener(this);
 		menuItem_vnormals.setMnemonic(KeyEvent.VK_V);
 		menuItem_vnormals.setSelected(Quadtree.vertexNormals);
+		
+		menuItem_recalculate = new JMenuItem("Recalculate Normals", KeyEvent.VK_R);
+		menuItem_recalculate.addActionListener(this);
+		menuItem_recalculate.setActionCommand("recalc_norms");
+		
+		menu_normals.add(menuItem_vnormals);
+		menu_normals.addSeparator();
+		menu_normals.add(menuItem_shading);
+		menu_normals.addSeparator();
+		menu_normals.add(menuItem_recalculate);
+		
+		menu_coloring = new JMenu("Coloring");
+		menu_coloring.setMnemonic(KeyEvent.VK_C);
+		
+		menuItem_vcoloring = new JCheckBoxMenuItem("Color Vertices");
+		menuItem_vcoloring.addItemListener(this);
+		menuItem_vcoloring.setMnemonic(KeyEvent.VK_C);
+		
+		menu_coloring.add(menuItem_vcoloring);
+		
+		menu_heights = new JMenu("Heights");
+		menu_heights.setMnemonic(KeyEvent.VK_H);
+		
+		menuItem_elevation = new JCheckBoxMenuItem("Show Elevation");
+		menuItem_elevation.addItemListener(this);
+		menuItem_elevation.setMnemonic(KeyEvent.VK_E);
+		menuItem_elevation.setSelected(Quadtree.elevation);
 		
 		menuItem_height = new JMenuItem("Save Heights", KeyEvent.VK_H);
 		menuItem_height.addActionListener(this);
@@ -641,13 +694,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_reset.addActionListener(this);
 		menuItem_reset.setActionCommand("reset_heights");
 		
-		menu_quadtree.add(menuItem_solid);
-		menu_quadtree.add(menuItem_elevation);
-		menu_quadtree.add(menuItem_frame);
-		menu_quadtree.add(menuItem_vnormals);
-		menu_quadtree.addSeparator();
-		menu_quadtree.add(menuItem_height);
-		menu_quadtree.add(menuItem_reset);
+		menu_heights.add(menuItem_elevation);
+		menu_heights.addSeparator();
+		menu_heights.add(menuItem_height);
+		menu_heights.add(menuItem_reset);
+		
+		menu_quadtree.add(menu_geometry);
+		menu_quadtree.add(menu_texture);
+		menu_quadtree.add(menu_normals);
+		menu_quadtree.add(menu_coloring);
+		menu_quadtree.add(menu_heights);
 		
 		menuBar.add(menu_quadtree);
 		/**------------------**/
@@ -1494,7 +1550,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-//			light.useSpecular(gl, false);
+			light.useSpecular(gl, false);
 			
 			terrain.render(gl, glut);
 			
@@ -2162,6 +2218,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(event.getActionCommand().equals("no_weather"   )) enableBlizzard = false;
 		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
 		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
+		else if(event.getActionCommand().equals("recalc_norms" )) terrain.tree.recalculateNormals();
 		else if(event.getActionCommand().equals("save_heights" ))
 		{
 			Quadtree tree = terrain.tree;
@@ -2256,19 +2313,22 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Object source = ie.getItemSelectable();
 		boolean selected = (ie.getStateChange() == ItemEvent.SELECTED);
 		
-		     if(source.equals(menuItem_multisample)) multisample               = selected;
-		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic      = selected; 
-		else if(source.equals(menuItem_motionblur )) enableMotionBlur          = selected;
-		else if(source.equals(menuItem_fog        )) enableFog                 = selected;    
-		else if(source.equals(menuItem_normalize  )) normalize                 = selected;
-		else if(source.equals(menuItem_smooth     )) light.smooth              = selected;
-		else if(source.equals(menuItem_secondary  )) light.secondary           = selected;
-		else if(source.equals(menuItem_water      )) terrain.enableWater       = selected;
-		else if(source.equals(menuItem_reflect    )) enableReflection          = selected;    
-		else if(source.equals(menuItem_solid      )) Quadtree.solid            = selected;
-		else if(source.equals(menuItem_elevation  )) Quadtree.elevation        = selected;  
-		else if(source.equals(menuItem_frame      )) Quadtree.frame            = selected;
-		else if(source.equals(menuItem_vnormals   )) Quadtree.vertexNormals    = selected;     
-		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse = selected;
+		     if(source.equals(menuItem_multisample)) multisample                 = selected;
+		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic        = selected; 
+		else if(source.equals(menuItem_motionblur )) enableMotionBlur            = selected;
+		else if(source.equals(menuItem_fog        )) enableFog                   = selected;    
+		else if(source.equals(menuItem_normalize  )) normalize                   = selected;
+		else if(source.equals(menuItem_smooth     )) light.smooth                = selected;
+		else if(source.equals(menuItem_secondary  )) light.secondary             = selected;
+		else if(source.equals(menuItem_water      )) terrain.enableWater         = selected;
+		else if(source.equals(menuItem_reflect    )) enableReflection            = selected;    
+		else if(source.equals(menuItem_solid      )) Quadtree.solid              = selected;
+		else if(source.equals(menuItem_elevation  )) Quadtree.elevation          = selected;  
+		else if(source.equals(menuItem_frame      )) Quadtree.frame              = selected;
+		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected;    
+		else if(source.equals(menuItem_vnormals   )) Quadtree.vertexNormals      = selected; 
+		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading  = selected;
+		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;    
+		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse   = selected;
 	}
 }
