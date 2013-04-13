@@ -738,18 +738,18 @@ public class Car
 		}
 		
 		scene.updateTimes[scene.frameIndex][2] = System.nanoTime() - start;
-		scene.updateTimes[scene.frameIndex][3] = update ? tree.updateBuffers(tree.detail) : 0;
+		scene.updateTimes[scene.frameIndex][3] = 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e[1];
-		bound.c[1] = h;
+		bound.c[1] = h + 5.0f;
 		
 		return heights;
 	}
 	
 	public float[] getHeights(Terrain map)
 	{
-		if(map.enableQuadtree) return getHeights(map.tree, map.tree.detail);
+		if(map.enableQuadtree) return getHeights(map.road, map.road.detail);
 		
 		float[][] vertices = bound.getVertices();
 

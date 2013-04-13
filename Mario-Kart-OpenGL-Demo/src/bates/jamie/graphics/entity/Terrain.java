@@ -72,6 +72,7 @@ public class Terrain
 	public Texture grass;
 	public Texture sand;
 	public Texture snow;
+	public Texture cobble;
 	public Texture baseTexture;
 	
 	float[][] q = new float[16][3];
@@ -84,6 +85,7 @@ public class Terrain
 	
 	public Quadtree tree;
 	public Quadtree subtree;
+	public Quadtree road;
 	public Quadtree water;
 	
 	public boolean enableQuadtree = false;
@@ -151,59 +153,22 @@ public class Terrain
 	}
 	
 	public void generateQuadtree()
-	{
-		List<float[]> vBuffer = new ArrayList<float[]>();
-		vBuffer.add(new float[] {-210, 0,  210});
-		vBuffer.add(new float[] { 210, 0,  210});
-		vBuffer.add(new float[] { 210, 0, -210});
-		vBuffer.add(new float[] {-210, 0, -210});
-		
-		List<float[]> tBuffer = new ArrayList<float[]>();
-		tBuffer.add(new float[] { 0,  0});
-		tBuffer.add(new float[] {32,  0});
-		tBuffer.add(new float[] {32, 32});
-		tBuffer.add(new float[] { 0, 32});
-		
-		tree = new Quadtree(vBuffer, tBuffer, sand, 7, null);
+	{	
+		tree = new Quadtree(210, 32, sand, 7);
 		tree.setHeights(1000);
-		tree.updateBuffers();
 		tree.malleable = true;
 		
-		List<float[]> _vBuffer = new ArrayList<float[]>();
-		_vBuffer.add(new float[] {-40, 0,  40});
-		_vBuffer.add(new float[] { 40, 0,  40});
-		_vBuffer.add(new float[] { 40, 0, -40});
-		_vBuffer.add(new float[] {-40, 0, -40});
-		
-		List<float[]> _tBuffer = new ArrayList<float[]>();
-		_tBuffer.add(new float[] { 0,  0});
-		_tBuffer.add(new float[] { 8,  0});
-		_tBuffer.add(new float[] { 8,  8});
-		_tBuffer.add(new float[] { 0,  8});
-		
-		subtree = new Quadtree(_vBuffer, _tBuffer, sand, 6, null); 
+		subtree = new Quadtree(40, 8, sand, 6); 
 		subtree.setHeights(tree);
-		subtree.updateBuffers();
 		
-		List<float[]> vBuffer_ = new ArrayList<float[]>();
-		vBuffer_.add(new float[] {-210, 0,  210});
-		vBuffer_.add(new float[] { 210, 0,  210});
-		vBuffer_.add(new float[] { 210, 0, -210});
-		vBuffer_.add(new float[] {-210, 0, -210});
-		
-		List<float[]> tBuffer_ = new ArrayList<float[]>();
-		tBuffer_.add(new float[] { 0,  0});
-		tBuffer_.add(new float[] {32,  0});
-		tBuffer_.add(new float[] {32, 32});
-		tBuffer_.add(new float[] { 0, 32});
-		
-		water = new Quadtree(vBuffer_, 9, null);
-		
-		water.enableTexture  = false;
+		water = new Quadtree(210, 9);
 		water.enableColoring = false;
 		water.enableShading  = false;
 		water.offsetHeights(0.5f);
-		water.updateBuffers();
+		
+		road = new Quadtree(210, 32, cobble, 7);
+		road.malleable = false;
+		road.enableShading  = false;
 	}
 	
 	public void toModel()
@@ -369,9 +334,10 @@ public class Terrain
 	{
 		try
 		{
-			grass = TextureLoader.load(gl, "tex/grass.jpg");
-			sand  = TextureLoader.load(gl, "tex/sand.jpg");
-			snow  = TextureLoader.load(gl, "tex/snow.jpg");
+			grass  = TextureLoader.load(gl, "tex/grass.jpg");
+			sand   = TextureLoader.load(gl, "tex/sand.jpg");
+			snow   = TextureLoader.load(gl, "tex/snow.jpg");
+			cobble = TextureLoader.load(gl, "tex/cobbles.jpg");
 			
 			baseTexture = grass;
 		}
@@ -627,8 +593,8 @@ public class Terrain
 		{
 			case KeyEvent.VK_EQUALS       : tree.increaseDetail(); break;
 			case KeyEvent.VK_MINUS        : tree.decreaseDetail(); break;
-			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateBuffers(); break;
-			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); tree.updateBuffers(); break;
+			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; break;
+			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); break;
 			
 			case KeyEvent.VK_QUOTE      : water.decreaseDetail(); break;
 			case KeyEvent.VK_NUMBER_SIGN: water.increaseDetail(); break;
@@ -641,7 +607,7 @@ public class Terrain
 				break;
 			}
 			
-			case KeyEvent.VK_P:  tree.flatten(); tree.updateBuffers(tree.detail); break;
+			case KeyEvent.VK_P:  tree.flatten(); break;
 			
 			case KeyEvent.VK_J:
 			{
@@ -675,7 +641,9 @@ public class Terrain
 //				tree.renderSelected(gl);
 				
 //				subtree.render(gl);
-				gl.glTranslatef(0, 1.5f, 0);
+				gl.glTranslatef(0, 5.0f, 0);
+				
+				road.render(gl);
 				
 				gl.glDisable(GL2.GL_LIGHTING);
 				gl.glEnable(GL2.GL_BLEND);

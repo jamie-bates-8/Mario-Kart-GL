@@ -1218,10 +1218,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			float[] p = camera.to3DPoint(x, y, canvasWidth, canvasHeight);
 			float   r = camera.getRadius(retical, canvasHeight);
-			float   h = (rightClick ? -0.1f : 0.1f);
-			
-			Quadtree cell = terrain.tree.getCell(p, Quadtree.MAXIMUM_LOD);
-			if(cell != null) cell.subdivide();
+			float   h = (rightClick ? -0.5f : 0.5f);
 			
 			terrain.tree.deform(p, r, h);
 		}

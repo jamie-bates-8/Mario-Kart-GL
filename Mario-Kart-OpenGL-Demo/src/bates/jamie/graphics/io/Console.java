@@ -80,6 +80,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase("subdivide")) tree.subdivideAll();
 		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
 		else if(_cmd.equalsIgnoreCase(      "lod")) tree.detail = cmd.nextInt();
+		else if(_cmd.equalsIgnoreCase(  "texture")) tree.scaleTexture(cmd.nextFloat());
 	}
 	
 	private void parseWeather(Scanner cmd)
