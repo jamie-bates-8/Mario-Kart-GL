@@ -13,10 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.media.opengl.GL2;
@@ -158,30 +156,25 @@ public class Terrain
 	{	
 		Quadtree base = new Quadtree(210, 32, sand, 7);
 		base.setHeights(1000);
+		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		
 		tree = base;
 		
-		Quadtree soil = new Quadtree(40, 8, sand, 6); 
-		soil.setHeights(tree);
-		
 		
 		Quadtree pond = new Quadtree(210, 9);
-		
 		pond.enableShading  = false;
-		
 		pond.enableColoring = false;
 		pond.enableBlending = true;
-		
 		pond.offsetHeights(0.5f);
 		
 		
 		Quadtree road = new Quadtree(210, 32, cobble, 7);
-		
+		road.setHeights(1000);
 		road.malleable = false;
+		road.specular = new float[] {1, 1, 1, 1};
 		
 		
 		trees.put("Base", base);
-		trees.put("Soil", soil);
 		trees.put("Pond", pond);
 		trees.put("Road", road);
 		
@@ -614,11 +607,11 @@ public class Terrain
 		{
 			case KeyEvent.VK_EQUALS       : tree.increaseDetail(); break;
 			case KeyEvent.VK_MINUS        : tree.decreaseDetail(); break;
-			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; break;
+			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateIndices(tree.detail); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); break;
 			
-			case KeyEvent.VK_QUOTE      : trees.get("water").decreaseDetail(); break;
-			case KeyEvent.VK_NUMBER_SIGN: trees.get("water").increaseDetail(); break;
+			case KeyEvent.VK_QUOTE      : trees.get("Pond").decreaseDetail(); break;
+			case KeyEvent.VK_NUMBER_SIGN: trees.get("Pond").increaseDetail(); break;
 			
 			case KeyEvent.VK_COMMA : enableQuadtree = !enableQuadtree; break;
 			
@@ -652,18 +645,8 @@ public class Terrain
 		{
 			gl.glPushMatrix();
 			{
-				Set<Quadtree> puddles = new HashSet<Quadtree>();
-				
 				for(Quadtree surface : trees.values())
-				{
-					if(surface.enableBlending)
-					{
-						if(enableWater) puddles.add(surface);
-					}
-					else surface.render(gl);
-				}
-				
-				for(Quadtree puddle : puddles) puddle.renderAlpha(gl);
+					if(!surface.enableBlending) surface.render(gl);
 			}
 			gl.glPopMatrix();
 		}
@@ -674,13 +657,11 @@ public class Terrain
 				case 0: renderWireframe(gl, glut); break;
 				case 1: if(model != null)
 				{
-					gl.glDisable(GL2.GL_LIGHTING);
 					gl.glColor3f(1, 1, 1);
 					model.render(gl); break;
 				}
 				case 2:
 				{
-					gl.glEnable(GL2.GL_LIGHTING);
 					gl.glScalef(sx, sy, sz);
 					prerender(gl);
 					break;
@@ -692,6 +673,19 @@ public class Terrain
 					break;
 				}
 			}
+		}
+	}
+	
+	public void renderWater(GL2 gl)
+	{
+		if(enableQuadtree)
+		{
+			gl.glPushMatrix();
+			{		
+				for(Quadtree surface : trees.values())
+					if(surface.enableBlending) surface.renderAlpha(gl);
+			}
+			gl.glPopMatrix();
 		}
 	}
 

@@ -997,8 +997,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glClearColor(background[0], background[1], background[2], 1.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL2.GL_STENCIL_BUFFER_BIT);
 		
-		gl.glLoadIdentity();
 		gl.glMatrixMode(GL_MODELVIEW);
+		gl.glLoadIdentity();
 		
 		if(multisample) gl.glEnable(GL2.GL_MULTISAMPLE);
 		else gl.glDisable(GL2.GL_MULTISAMPLE);
@@ -1057,6 +1057,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			Particle.resetTexture();
 			
 			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+			
+			if(enableTerrain && terrain.enableWater) terrain.renderWater(gl);
 			
 			/*
 			 * The condition (i == 1) means that the frames stored in the accumulation
@@ -1583,12 +1585,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			light.useSpecular(gl, false);
-			
 			terrain.render(gl, glut);
-			
-			gl.glEnable(GL2.GL_LIGHTING);
-			light.useSpecular(gl, true);
 		}	
 		gl.glPopMatrix();
 			

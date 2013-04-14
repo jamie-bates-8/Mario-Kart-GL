@@ -762,7 +762,7 @@ public class Car
 			{
 				Quadtree cell = tree.getCell(vertices[i], tree.detail);
 				float h = (cell != null) ? cell.getHeight(vertices[i]) : 0;
-				if(h > max) { max = h; _trees[i] = tree; }
+				if(h > max && !tree.enableBlending) { max = h; _trees[i] = tree; }
 			}
 
 			heights[i] = max;

@@ -13,6 +13,7 @@ import java.util.Set;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vector;
@@ -32,9 +33,9 @@ public class Quadtree
 	
 	private static final float MAX_HEIGHT = 40.0f;
 	
+	public static final int MAXIMUM_LOD = 10;
 	public int detail = MAXIMUM_LOD;
 	public int lod;
-	public static final int MAXIMUM_LOD = 10;
 	
 	private static final float EPSILON = 0.0005f;
 	private static final float VECTOR_OFFSET = 0.005f;
@@ -54,6 +55,7 @@ public class Quadtree
 	List<float[]> colors;
 	
 	List<Float> heights;
+	public float height = 0;
 	
 	int offset;
 	
@@ -66,6 +68,7 @@ public class Quadtree
 	int indexCount;
 	
 	public Texture texture;
+	public Gradient gradient = Gradient.GRAYSCALE;
 	
 	public FallOff falloff = FallOff.SMOOTH;
 	public boolean malleable = true;
@@ -76,14 +79,16 @@ public class Quadtree
 	
 	public boolean enableColoring = true;
 	public boolean enableBlending = false;
+	public boolean enableSpecular = false;
+	
+	public float[] specular = {0, 0, 0, 1};
 	
 	public boolean frame = false;
 	public boolean solid = true;
 	public boolean vNormals = false;
 	
 	public boolean reliefMap = false;
-	
-	public Gradient gradient = Gradient.GRAYSCALE;
+
 	public float[] lineColor = RGB.WHITE_3F;
 	
 	/**
@@ -278,6 +283,8 @@ public class Quadtree
 	
 	public void translate(float[] vector)
 	{
+		if(enableBlending) height += vector[1];
+		
 		int position = vBuffer.position();
 		
 		for(int i = 0; i < vertices.size(); i++)
@@ -687,6 +694,7 @@ public class Quadtree
 		Quadtree[] cells = getAdjacent(index);
 		
 		List<float[]> normals = new ArrayList<float[]>();
+		
 		for(Quadtree cell : cells)
 			if(cell != null) normals.add(cell.getNormal());
 		
@@ -816,12 +824,11 @@ public class Quadtree
 		{
 			float[] vertex = vertices.get(i);
 			
-			     if(vertex[1] >  MAX_RIPPLE) heights.set(i,  MAX_RIPPLE);
-			else if(vertex[1] < -MAX_RIPPLE) heights.set(i, -MAX_RIPPLE);
+			     if(vertex[1] >  MAX_RIPPLE + height) heights.set(i,  MAX_RIPPLE + height);
+			else if(vertex[1] < -MAX_RIPPLE + height) heights.set(i, -MAX_RIPPLE + height);
 			
-			vertex[1] += (heights.get(i) > 0) ? -0.01f : 0.01f;
-			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
-			
+			vertex[1] += (heights.get(i) > height) ? -0.01f : 0.01f;
+			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);	
 		}
 		
 		vBuffer.position(position);
@@ -1311,6 +1318,8 @@ public class Quadtree
 	
 	public void renderGeometry(GL2 gl)
 	{
+		Light.globalSpecular(gl, specular);
+		
 		if(!enableShading) gl.glDisable(GL2.GL_LIGHTING);
 		
 		if(!enableTexture) gl.glDisable(GL2.GL_TEXTURE_2D);
@@ -1351,6 +1360,8 @@ public class Quadtree
 		
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_TEXTURE_2D);	
+		
+		Light.globalSpecular(gl, new float[] {1, 1, 1, 1});
 	}
 	
 	public void renderWireframe(GL2 gl)
