@@ -114,7 +114,7 @@ public class Console
 			float g = cmd.nextFloat();
 			float b = cmd.nextFloat();
 			
-			Quadtree.line_color = new float[] {r, g, b};
+			tree.lineColor = new float[] {r, g, b};
 		}
 	}
 	

@@ -54,6 +54,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.media.opengl.GL2;
@@ -65,20 +66,26 @@ import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.gl2.GLUgl2;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.BoundParser;
@@ -128,7 +135,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
  * track by the use of hotkeys. Users can also interact with the car model and 
  * manipulation the scene in a number of ways.
  */
-public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener, ItemListener
+public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener, ItemListener, ListSelectionListener
 {
 	public boolean enableNimbus = false;
 	
@@ -136,7 +143,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public GLCanvas canvas;
 	
 	private Console console;
-	private JTextField consoleInput;
+	private JTextField command;
 	
 	private JMenuBar menuBar;
 	
@@ -346,6 +353,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public int flakeLimit = 10000;
 	public boolean enableBlizzard = false;
 	
+	public JList<String> quadList;
+	public DefaultListModel<String> listModel;
+	
 	
 	public Scene()
 	{
@@ -409,20 +419,29 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		console = new Console(this);
 		
-		consoleInput = new JTextField();
-		consoleInput.addActionListener(this);
-		consoleInput.setActionCommand("console");
+		command = new JTextField();
+		command.addActionListener(this);
+		command.setActionCommand("console");
 		
-		consoleInput.setBackground(Color.DARK_GRAY);
-		consoleInput.setForeground(Color.LIGHT_GRAY);
-		consoleInput.setCaretColor(Color.WHITE);
+		command.setBackground(Color.DARK_GRAY);
+		command.setForeground(Color.LIGHT_GRAY);
+		command.setCaretColor(Color.WHITE);
+		
+		listModel = new DefaultListModel<String>();
+		
+		quadList = new JList<String>(listModel);
+		quadList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		quadList.addListSelectionListener(this);
+        
+		JScrollPane pane = new JScrollPane(quadList);
 		
 		Container content = frame.getContentPane();
 		
 		content.setLayout(new BorderLayout());
 		
-		content.add(canvas, BorderLayout.CENTER);
-		content.add(consoleInput, BorderLayout.SOUTH);
+		content.add(pane,    BorderLayout.EAST  );
+		content.add(canvas,  BorderLayout.CENTER);
+		content.add(command, BorderLayout.SOUTH );
 
 		frame.pack();
 		frame.setTitle("OpenGL Project Demo");
@@ -628,12 +647,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_solid = new JCheckBoxMenuItem("Show Geometry");
 		menuItem_solid.addItemListener(this);
 		menuItem_solid.setMnemonic(KeyEvent.VK_G);
-		menuItem_solid.setSelected(Quadtree.solid);
 		
 		menuItem_frame = new JCheckBoxMenuItem("Show Wireframe");
 		menuItem_frame.addItemListener(this);
 		menuItem_frame.setMnemonic(KeyEvent.VK_W);
-		menuItem_frame.setSelected(Quadtree.frame);
 		
 		menu_geometry.add(menuItem_solid);
 		menu_geometry.add(menuItem_frame);
@@ -657,7 +674,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_vnormals = new JCheckBoxMenuItem("Show Vertex Normals");
 		menuItem_vnormals.addItemListener(this);
 		menuItem_vnormals.setMnemonic(KeyEvent.VK_V);
-		menuItem_vnormals.setSelected(Quadtree.vertexNormals);
 		
 		menuItem_recalculate = new JMenuItem("Recalculate Normals", KeyEvent.VK_R);
 		menuItem_recalculate.addActionListener(this);
@@ -684,7 +700,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_elevation = new JCheckBoxMenuItem("Show Elevation");
 		menuItem_elevation.addItemListener(this);
 		menuItem_elevation.setMnemonic(KeyEvent.VK_E);
-		menuItem_elevation.setSelected(Quadtree.elevation);
 		
 		menuItem_height = new JMenuItem("Save Heights", KeyEvent.VK_H);
 		menuItem_height.addActionListener(this);
@@ -871,11 +886,32 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    generateTerrain(gl, DEFAULT_TERRAIN);
 	    
+	    setCheckBoxes();
+	    
+	    Set<String> trees = terrain.trees.keySet();
+	    
+	    for(String tree : trees)
+			listModel.addElement(tree);
+	    
 	    long setupEnd = System.currentTimeMillis();
 	    System.out.println("\nSetup Time: " + (setupEnd - setupStart) + " ms" + "\n");
 	    
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
+	}
+	
+	private void setCheckBoxes()
+	{
+		menuItem_solid.setSelected(terrain.tree.solid);
+		menuItem_frame.setSelected(terrain.tree.frame);
+		
+		menuItem_elevation.setSelected(terrain.tree.reliefMap);
+		menuItem_vnormals .setSelected(terrain.tree.vNormals );
+		
+		menuItem_shading.setSelected(terrain.tree.enableShading);
+		
+		menuItem_vcoloring.setSelected(terrain.tree.enableColoring);
+		menuItem_texturing.setSelected(terrain.tree.enableTexture );	
 	}
 
 	private void setupGenerators()
@@ -2185,7 +2221,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_P            : terrain.keyPressed(e); break; 
 			case KeyEvent.VK_COMMA        : terrain.keyPressed(e); generateFoliage(60, 10, 30); break;
 			
-			case KeyEvent.VK_SPACE: console.parseCommand(consoleInput.getText()); break;
+			case KeyEvent.VK_SPACE: console.parseCommand(command.getText()); break;
 	
 			default: for(Car car : cars) car.keyPressed(e); break;
 		}
@@ -2209,7 +2245,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void actionPerformed(ActionEvent event)
 	{
-		     if(event.getActionCommand().equals("console"      )) console.parseCommand(consoleInput.getText());
+		     if(event.getActionCommand().equals("console"      )) console.parseCommand(command.getText());
 		else if(event.getActionCommand().equals("load_project" )) console.parseCommand("profile project");
 		else if(event.getActionCommand().equals("load_game"    )) console.parseCommand("profile game");
 		else if(event.getActionCommand().equals("no_weather"   )) enableBlizzard = false;
@@ -2271,7 +2307,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long when = System.nanoTime();
 		int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
 		
-		return new KeyEvent(consoleInput, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
+		return new KeyEvent(command, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
 	}
 	
 	public void mouseWheelMoved(MouseWheelEvent e)
@@ -2319,13 +2355,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_secondary  )) light.secondary             = selected;
 		else if(source.equals(menuItem_water      )) terrain.enableWater         = selected;
 		else if(source.equals(menuItem_reflect    )) enableReflection            = selected;    
-		else if(source.equals(menuItem_solid      )) Quadtree.solid              = selected;
-		else if(source.equals(menuItem_elevation  )) Quadtree.elevation          = selected;  
-		else if(source.equals(menuItem_frame      )) Quadtree.frame              = selected;
+		else if(source.equals(menuItem_solid      )) terrain.tree.solid          = selected;
+		else if(source.equals(menuItem_elevation  )) terrain.tree.reliefMap      = selected;  
+		else if(source.equals(menuItem_frame      )) terrain.tree.frame          = selected;
 		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected;    
-		else if(source.equals(menuItem_vnormals   )) Quadtree.vertexNormals      = selected; 
+		else if(source.equals(menuItem_vnormals   )) terrain.tree.vNormals       = selected; 
 		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading  = selected;
 		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;    
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse   = selected;
+	}
+
+	public void valueChanged(ListSelectionEvent e)
+	{
+		int index = quadList.getSelectedIndex();
+		terrain.selectQuadtree(listModel.elementAt(index));
+		
+		setCheckBoxes();
 	}
 }

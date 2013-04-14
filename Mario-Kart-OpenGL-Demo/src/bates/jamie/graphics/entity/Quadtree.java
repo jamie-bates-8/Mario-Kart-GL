@@ -67,28 +67,24 @@ public class Quadtree
 	
 	public Texture texture;
 	
-	public enum FallOff
-	{
-		LINEAR,
-		SMOOTH;
-		
-		public static FallOff cycle(FallOff mode)
-		{
-			return values()[(mode.ordinal() + 1) % values().length];
-		}
-	}
-	
 	public FallOff falloff = FallOff.SMOOTH;
 	public boolean malleable = true;
 	
-	public boolean enableShading  = true;
-	public boolean smoothShading  = true;
-	public boolean enableTexture  = false;
-	public boolean enableColoring = true;
+	public boolean enableShading = true;
+	public boolean smoothShading = true;
+	public boolean enableTexture = true;
 	
+	public boolean enableColoring = true;
+	public boolean enableBlending = false;
+	
+	public boolean frame = false;
+	public boolean solid = true;
+	public boolean vNormals = false;
+	
+	public boolean reliefMap = false;
 	
 	public Gradient gradient = Gradient.GRAYSCALE;
-	public static float[] line_color = RGB.WHITE_3F;
+	public float[] lineColor = RGB.WHITE_3F;
 	
 	/**
 	 * This method constructs a Quadtree data structure that maintains an indexed
@@ -909,6 +905,22 @@ public class Quadtree
 		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
 	}
 	
+	public float[] getVerticalRange()
+	{
+		float min = vertices.get(0)[1];
+		float max = min;
+		
+		for(float[] vertex : vertices)
+		{
+			float h = vertex[1];
+			
+			if(h < min) min = h;
+			if(h > max) max = h; 
+		}
+		
+		return new float[] {min, max};
+	}
+	
 	public void resetHeights()
 	{
 		for(int i = 0; i < vertices.size(); i++)
@@ -1040,17 +1052,20 @@ public class Quadtree
 			cBuffer.position(position);
 		}
 		
-		Set<Integer> indices = getSurface(i);
-			
-		for(Integer index : indices)
+		if(malleable)
 		{
-			float[] normal = getNormal(index);
-			normals.set(index, normal);
+			Set<Integer> indices = getSurface(i);
+				
+			for(Integer index : indices)
+			{
+				float[] normal = getNormal(index);
+				normals.set(index, normal);
+				
+				nBuffer.position(index * 3); nBuffer.put(normal);
+			}
 			
-			nBuffer.position(index * 3); nBuffer.put(normal);
-		}	
-		
-		nBuffer.position(position);
+			nBuffer.position(position);
+		}
 	}
 	
 	public Set<Integer> getSurface(int i)
@@ -1262,15 +1277,39 @@ public class Quadtree
 		south_east = null;
 	}
 	
-	public static boolean frame = true;
-	public static boolean solid = true;
-	public static boolean elevation = false;
-	
 	public int cellCount() { return indexCount / 4; }
 	
 	public int vertexCount() { return vertices.size(); }
 	
 	public void render(GL2 gl)
+	{
+		if(solid)
+		{
+			if(reliefMap) renderElevation(gl);
+			else          renderGeometry(gl);
+		}
+		
+		if(frame   ) renderWireframe(gl);
+		if(vNormals) renderNormals(gl, true, 1);
+	}
+	
+	public void renderAlpha(GL2 gl)
+	{
+		gl.glDisable(GL2.GL_LIGHTING);
+		gl.glEnable(GL2.GL_BLEND);
+		
+		gl.glColor4f(0.75f, 0.75f, 0.75f, 0.20f);
+		
+		renderGeometry(gl);
+		rippleSurface();
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glEnable(GL2.GL_LIGHTING);
+		
+		gl.glColor4f(1, 1, 1, 1);
+	}
+	
+	public void renderGeometry(GL2 gl)
 	{
 		if(!enableShading) gl.glDisable(GL2.GL_LIGHTING);
 		
@@ -1310,17 +1349,20 @@ public class Quadtree
 		cBuffer.position(cBuffer.limit()); cBuffer.limit(cBuffer.capacity());
 		iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
 		
-		gl.glEnable(GL_TEXTURE_2D);	
+		gl.glEnable(GL2.GL_LIGHTING);
+		gl.glEnable(GL2.GL_TEXTURE_2D);	
 	}
 	
 	public void renderWireframe(GL2 gl)
 	{
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
-		gl.glTranslatef(0, 0.01f, 0);
+		gl.glTranslatef(0, EPSILON, 0);
 		
 		gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glColor3f(line_color[0], line_color[1], line_color[2]);
+		gl.glDisable(GL2.GL_LIGHTING);
+		
+		gl.glColor3f(lineColor[0], lineColor[1], lineColor[2]);
 		
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
 		
@@ -1334,7 +1376,9 @@ public class Quadtree
 		gl.glDisableClientState(GL_VERTEX_ARRAY);
 		
 		gl.glColor3f(1, 1, 1);
-		gl.glEnable(GL_TEXTURE_2D);	
+		
+		gl.glEnable(GL2.GL_TEXTURE_2D);	
+		gl.glEnable(GL2.GL_LIGHTING);
 		
 		vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
 		iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
@@ -1377,9 +1421,7 @@ public class Quadtree
 		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	
-	public static boolean vertexNormals = true;
-	
-	public void renderVertexNormals(GL2 gl, float scale)
+	public void renderNormals(GL2 gl, boolean smooth, float scale)
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
@@ -1440,6 +1482,17 @@ public class Quadtree
 		gl.glDisable(GL2.GL_POINT_SMOOTH);
 		
 		gl.glEnable(GL_TEXTURE_2D);	
+	}
+	
+	public enum FallOff
+	{
+		LINEAR,
+		SMOOTH;
+		
+		public static FallOff cycle(FallOff mode)
+		{
+			return values()[(mode.ordinal() + 1) % values().length];
+		}
 	}
 }
 

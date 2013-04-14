@@ -15,6 +15,7 @@ import static java.lang.Math.toDegrees;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -711,7 +712,6 @@ public class Car
 	public float[] getHeights(Quadtree tree, int lod)
 	{
 		float[][] vertices = bound.getVertices();
-		boolean update = false;
 		
 		long start = System.nanoTime();
 		
@@ -722,9 +722,7 @@ public class Car
 		}
 		
 		if(accelerating)
-		{
-			update = true;
-			
+		{	
 			float ratio = abs(velocity / TOP_SPEED);
 			float k = ratio > 0.5 ? 0.5f : 1 - ratio;
 			      k = ratio < 0.1 ? 0.1f : k;
@@ -732,7 +730,8 @@ public class Car
 			
 			for(int i = 0; i < 4; i++)
 			{
-				tree.getCell(vertices[i], Quadtree.MAXIMUM_LOD).subdivide();
+				Quadtree cell = tree.getCell(vertices[i], Quadtree.MAXIMUM_LOD);
+				if(cell != null) cell.subdivide();
 				tree.deform(vertices[i], 1.5f, -depression);
 			}
 		}
@@ -742,14 +741,61 @@ public class Car
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e[1];
-		bound.c[1] = h + 5.0f;
+		bound.c[1] = h;
+		
+		return heights;
+	}
+	
+	public float[] getHeights(Collection<Quadtree> trees)
+	{
+		float[][] vertices = bound.getVertices();
+		
+		long start = System.nanoTime();
+		
+		Quadtree[] _trees = new Quadtree[4];
+		
+		for(int i = 0; i < 4; i++)
+		{
+			float max = 0;
+			
+			for(Quadtree tree : trees)
+			{
+				Quadtree cell = tree.getCell(vertices[i], tree.detail);
+				float h = (cell != null) ? cell.getHeight(vertices[i]) : 0;
+				if(h > max) { max = h; _trees[i] = tree; }
+			}
+
+			heights[i] = max;
+		}
+		
+		if(accelerating)
+		{		
+			float ratio = abs(velocity / TOP_SPEED);
+			float k = ratio > 0.5 ? 0.5f : 1 - ratio;
+			      k = ratio < 0.1 ? 0.1f : k;
+			float depression = k * 0.05f;
+			
+			for(int i = 0; i < 4; i++)
+			{
+				Quadtree cell = _trees[i].getCell(vertices[i], Quadtree.MAXIMUM_LOD);
+				if(cell != null) cell.subdivide();
+				_trees[i].deform(vertices[i], 1.5f, -depression);
+			}
+		}
+		
+		scene.updateTimes[scene.frameIndex][2] = System.nanoTime() - start;
+		scene.updateTimes[scene.frameIndex][3] = 0;
+		
+		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
+		h += bound.e[1];
+		bound.c[1] = h;
 		
 		return heights;
 	}
 	
 	public float[] getHeights(Terrain map)
 	{
-		if(map.enableQuadtree) return getHeights(map.road, map.road.detail);
+		if(map.enableQuadtree) return getHeights(map.trees.values());
 		
 		float[][] vertices = bound.getVertices();
 

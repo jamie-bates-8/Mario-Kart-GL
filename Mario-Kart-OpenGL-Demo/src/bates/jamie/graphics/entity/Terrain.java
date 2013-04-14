@@ -12,8 +12,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.media.opengl.GL2;
@@ -73,6 +76,7 @@ public class Terrain
 	public Texture sand;
 	public Texture snow;
 	public Texture cobble;
+	
 	public Texture baseTexture;
 	
 	float[][] q = new float[16][3];
@@ -83,10 +87,8 @@ public class Terrain
 	
 	Model model;
 	
+	public HashMap<String, Quadtree> trees = new HashMap<String, Quadtree>();
 	public Quadtree tree;
-	public Quadtree subtree;
-	public Quadtree road;
-	public Quadtree water;
 	
 	public boolean enableQuadtree = false;
 	public boolean enableWater = false;
@@ -154,21 +156,40 @@ public class Terrain
 	
 	public void generateQuadtree()
 	{	
-		tree = new Quadtree(210, 32, sand, 7);
-		tree.setHeights(1000);
-		tree.malleable = true;
+		Quadtree base = new Quadtree(210, 32, sand, 7);
+		base.setHeights(1000);
 		
-		subtree = new Quadtree(40, 8, sand, 6); 
-		subtree.setHeights(tree);
+		tree = base;
 		
-		water = new Quadtree(210, 9);
-		water.enableColoring = false;
-		water.enableShading  = false;
-		water.offsetHeights(0.5f);
+		Quadtree soil = new Quadtree(40, 8, sand, 6); 
+		soil.setHeights(tree);
 		
-		road = new Quadtree(210, 32, cobble, 7);
+		
+		Quadtree pond = new Quadtree(210, 9);
+		
+		pond.enableShading  = false;
+		
+		pond.enableColoring = false;
+		pond.enableBlending = true;
+		
+		pond.offsetHeights(0.5f);
+		
+		
+		Quadtree road = new Quadtree(210, 32, cobble, 7);
+		
 		road.malleable = false;
-		road.enableShading  = false;
+		
+		
+		trees.put("Base", base);
+		trees.put("Soil", soil);
+		trees.put("Pond", pond);
+		trees.put("Road", road);
+		
+	}
+	
+	public void selectQuadtree(String key)
+	{
+		tree = trees.get(key);
 	}
 	
 	public void toModel()
@@ -184,7 +205,7 @@ public class Terrain
 		
 		for(int i = 0; i < indices.length; i++)
 		{
-			float[] vertex = vertices[i];
+			float[] vertex   = vertices[i];
 			float[] texCoord = texCoords[i];
 			
 			boolean equal = false;
@@ -596,8 +617,8 @@ public class Terrain
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); break;
 			
-			case KeyEvent.VK_QUOTE      : water.decreaseDetail(); break;
-			case KeyEvent.VK_NUMBER_SIGN: water.increaseDetail(); break;
+			case KeyEvent.VK_QUOTE      : trees.get("water").decreaseDetail(); break;
+			case KeyEvent.VK_NUMBER_SIGN: trees.get("water").increaseDetail(); break;
 			
 			case KeyEvent.VK_COMMA : enableQuadtree = !enableQuadtree; break;
 			
@@ -631,35 +652,18 @@ public class Terrain
 		{
 			gl.glPushMatrix();
 			{
-				if(Quadtree.solid)
+				Set<Quadtree> puddles = new HashSet<Quadtree>();
+				
+				for(Quadtree surface : trees.values())
 				{
-					if(Quadtree.elevation) tree.renderElevation(gl);
-					else tree.render(gl);
-				}
-				if(Quadtree.frame) tree.renderWireframe(gl);
-				if(Quadtree.vertexNormals)tree.renderVertexNormals(gl, 1);
-//				tree.renderSelected(gl);
-				
-//				subtree.render(gl);
-				gl.glTranslatef(0, 5.0f, 0);
-				
-				road.render(gl);
-				
-				gl.glDisable(GL2.GL_LIGHTING);
-				gl.glEnable(GL2.GL_BLEND);
-				
-				gl.glColor4f(0.75f, 0.75f, 0.75f, 0.20f);
-				
-				if(enableWater)
-				{
-					water.render(gl);
-					water.rippleSurface();
+					if(surface.enableBlending)
+					{
+						if(enableWater) puddles.add(surface);
+					}
+					else surface.render(gl);
 				}
 				
-				gl.glDisable(GL2.GL_BLEND);
-				gl.glEnable(GL2.GL_LIGHTING);
-				
-				gl.glColor4f(1, 1, 1, 1);
+				for(Quadtree puddle : puddles) puddle.renderAlpha(gl);
 			}
 			gl.glPopMatrix();
 		}
