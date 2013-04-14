@@ -109,8 +109,6 @@ public class HUD
 			
 			if(scene.enableRetical && car.camera.isAerial()) renderRetical(gl);
 			
-			renderDeform(gl);
-			
 			renderText(car);
 			
 			switch(mode)
@@ -174,55 +172,6 @@ public class HUD
 				gl.glVertex2f(-10,   0);
 				gl.glVertex2f(  0, 100);
 				gl.glVertex2f( 10,   0);
-			}
-			gl.glEnd();
-		}
-		gl.glPopMatrix();
-		
-		gl.glEnable(GL_TEXTURE_2D);
-		gl.glColor3f(1, 1, 1);
-	}
-	
-	private void renderDeform(GL2 gl)
-	{	
-		gl.glDisable(GL_TEXTURE_2D);
-		
-		float[][] vertices = new float[400][2];
-		
-		for(int i = 0; i < 400; i ++)
-		{
-			float w = 50 + i;
-			float d = (float) Math.abs(200 - i);
-			
-			float ratio = (float) (Math.cos((d / 200) * Math.PI));
-			float h = (float) (100 * (0.5 * (ratio + 1)));
-			
-			vertices[i][0] = 50 + i;
-			vertices[i][1] = scene.getHeight() - 100 - h;
-		}
-		
-		gl.glColor3f(0, 0, 0);
-		
-		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, new float[] {1, 0, 0}, 0);
-		gl.glPointSize(3);
-		
-		gl.glPushMatrix();
-		{		
-			gl.glBegin(GL2.GL_POINTS);
-			{
-				for(int i = 0; i < 400; i ++)
-					gl.glVertex2f(vertices[i][0], vertices[i][1]);
-			}
-			gl.glEnd();
-		}
-		gl.glPopMatrix();
-		
-		gl.glPushMatrix();
-		{		
-			gl.glBegin(GL2.GL_LINES);
-			{
-				gl.glVertex2f(50, scene.getHeight() - 100);
-				gl.glVertex2f(450, scene.getHeight() - 100);
 			}
 			gl.glEnd();
 		}

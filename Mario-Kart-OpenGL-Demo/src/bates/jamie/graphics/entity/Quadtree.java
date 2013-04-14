@@ -1,12 +1,10 @@
 package bates.jamie.graphics.entity;
 
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
-
 import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +18,6 @@ import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.common.nio.Buffers;
-
 import com.jogamp.opengl.util.texture.Texture;
 
 public class Quadtree
@@ -70,6 +67,18 @@ public class Quadtree
 	
 	public Texture texture;
 	
+	public enum FallOff
+	{
+		LINEAR,
+		SMOOTH;
+		
+		public static FallOff cycle(FallOff mode)
+		{
+			return values()[(mode.ordinal() + 1) % values().length];
+		}
+	}
+	
+	public FallOff falloff = FallOff.SMOOTH;
 	public boolean malleable = true;
 	
 	public boolean enableShading  = true;
@@ -279,7 +288,10 @@ public class Quadtree
 		{
 			float[] vertex = vertices.get(i);
 
-			vertex = Vector.add(vertex, vector);
+			vertex[0] += vector[0];
+			vertex[1] += vector[1];
+			vertex[2] += vector[2];
+			
 			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 			
 			heights.set(i, heights.get(i) + vector[1]);
@@ -802,6 +814,8 @@ public class Quadtree
 	{
 		Random generator = new Random();
 		
+		int position = vBuffer.position();
+		
 		for(int i = 0; i < vertices.size(); i++)
 		{
 			float[] vertex = vertices.get(i);
@@ -810,11 +824,11 @@ public class Quadtree
 			else if(vertex[1] < -MAX_RIPPLE) heights.set(i, -MAX_RIPPLE);
 			
 			vertex[1] += (heights.get(i) > 0) ? -0.01f : 0.01f;
-			
-			int position = vBuffer.position();
 			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
-			vBuffer.position(position);
+			
 		}
+		
+		vBuffer.position(position);
 	}
 	
 	public void offsetHeights(float trough)
@@ -991,10 +1005,12 @@ public class Quadtree
 		{
 			// ensure the deformation will not cause cracks
 			repairCrack(i);
-			// change in height is proportional to distance (linear)
-//			vertex[1] += peak * (1 - (d / radius));
 			
-			vertex[1] += peak * 0.5f * (Math.cos(d / radius * Math.PI) + 1);
+			switch(falloff)
+			{
+				case LINEAR: vertex[1] += peak * (1 - (d / radius)); break;
+				case SMOOTH: vertex[1] += peak * 0.5f * (Math.cos(d / radius * Math.PI) + 1); break;
+			}
 			
 			if(vertex[1] < heights.get(i) - MAX_TROUGH)
 			   vertex[1] = heights.get(i) - MAX_TROUGH;

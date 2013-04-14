@@ -81,6 +81,14 @@ public class Console
 		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
 		else if(_cmd.equalsIgnoreCase(      "lod")) tree.detail = cmd.nextInt();
 		else if(_cmd.equalsIgnoreCase(  "texture")) tree.scaleTexture(cmd.nextFloat());
+		else if(_cmd.equalsIgnoreCase("translate"))
+		{
+			float x = cmd.nextFloat();
+			float y = cmd.nextFloat();
+			float z = cmd.nextFloat();
+			
+			tree.translate(new float[] {x, y, z});
+		}
 	}
 	
 	private void parseWeather(Scanner cmd)
