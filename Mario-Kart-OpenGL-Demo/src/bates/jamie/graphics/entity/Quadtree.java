@@ -79,7 +79,6 @@ public class Quadtree
 	
 	public boolean enableColoring = true;
 	public boolean enableBlending = false;
-	public boolean enableSpecular = false;
 	
 	public float[] specular = {0, 0, 0, 1};
 	

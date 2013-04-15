@@ -186,8 +186,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_geometry;
 	private JCheckBoxMenuItem menuItem_solid;
 	private JCheckBoxMenuItem menuItem_frame;
-	private JMenu menu_texture;
+	private JMenu menu_material;
 	private JCheckBoxMenuItem menuItem_texturing;
+	private JCheckBoxMenuItem menuItem_malleable;
+	private JMenuItem menuItem_shininess;
 	private JMenu menu_coloring;
 	private JCheckBoxMenuItem menuItem_vcoloring;
 	private JMenu menu_normals;
@@ -655,14 +657,24 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_geometry.add(menuItem_solid);
 		menu_geometry.add(menuItem_frame);
 		
-		menu_texture = new JMenu("Texture");
-		menu_texture.setMnemonic(KeyEvent.VK_T);
+		menu_material = new JMenu("Material");
+		menu_material.setMnemonic(KeyEvent.VK_M);
 		
 		menuItem_texturing = new JCheckBoxMenuItem("Enable Texture");
 		menuItem_texturing.addItemListener(this);
 		menuItem_texturing.setMnemonic(KeyEvent.VK_T);
 		
-		menu_texture.add(menuItem_texturing);
+		menuItem_malleable = new JCheckBoxMenuItem("Malleable");
+		menuItem_malleable.addItemListener(this);
+		menuItem_malleable.setMnemonic(KeyEvent.VK_M);
+		
+		menuItem_shininess = new JMenuItem("Set Specular", KeyEvent.VK_S);
+		menuItem_shininess.addActionListener(this);
+		menuItem_shininess.setActionCommand("material_specular");
+		
+		menu_material.add(menuItem_texturing);
+		menu_material.add(menuItem_malleable);
+		menu_material.add(menuItem_shininess);
 		
 		menu_normals = new JMenu("Normals");
 		menu_normals.setMnemonic(KeyEvent.VK_N);
@@ -715,7 +727,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_heights.add(menuItem_reset);
 		
 		menu_quadtree.add(menu_geometry);
-		menu_quadtree.add(menu_texture);
+		menu_quadtree.add(menu_material);
 		menu_quadtree.add(menu_normals);
 		menu_quadtree.add(menu_coloring);
 		menu_quadtree.add(menu_heights);
@@ -911,7 +923,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_shading.setSelected(terrain.tree.enableShading);
 		
 		menuItem_vcoloring.setSelected(terrain.tree.enableColoring);
-		menuItem_texturing.setSelected(terrain.tree.enableTexture );	
+		menuItem_texturing.setSelected(terrain.tree.enableTexture );
+		menuItem_malleable.setSelected(terrain.tree.malleable     );
 	}
 
 	private void setupGenerators()
@@ -2189,27 +2202,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_8:  fort.displayModel = !fort.displayModel; break;
 			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
-			
-			case KeyEvent.VK_J:
-			{
-				terrain.keyPressed(e);
-				background = RGB.BLACK;
-				fogDensity = 0.01f;
-				fogColor = new float[] {0, 0, 0, 0};
-				displaySkybox = false;
-				break;
-			}
-			case KeyEvent.VK_K:
-			{
-				terrain.keyPressed(e);
-				background = RGB.SKY_BLUE;
-				fogDensity = 0.004f;
-				fogColor = new float[] {1, 1, 1, 1};
-				displaySkybox = true;
-				break;
-			}	
+
 			case KeyEvent.VK_EQUALS       :
 			case KeyEvent.VK_MINUS        : terrain.keyPressed(e); updateFoliage(); break;
+			case KeyEvent.VK_J            :
+			case KeyEvent.VK_K            :
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
 			case KeyEvent.VK_QUOTE        :
@@ -2239,6 +2236,45 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			default: break;
 		}
 	}
+
+	public KeyEvent pressKey(char c)
+	{
+		long when = System.nanoTime();
+		int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
+		
+		return new KeyEvent(command, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
+	}
+	
+	public void mouseWheelMoved(MouseWheelEvent e)
+	{
+		Camera camera = cars.get(0).camera;
+		
+		if(camera.isAerial())
+		{
+			retical += e.getWheelRotation() * 3;
+			if(retical < 1) retical = 1;
+		}
+		else if(camera.isDynamic()) camera.zoom(e.getWheelRotation());
+	}
+
+	public void mouseClicked(MouseEvent e) {}
+
+	public void mouseEntered(MouseEvent e) {}
+
+	public void mouseExited (MouseEvent e) {}
+
+	public boolean rightClick;
+	
+	public void mousePressed(MouseEvent e)
+	{
+		selectX = e.getX();
+		selectY = e.getY();
+		
+		rightClick = SwingUtilities.isRightMouseButton(e);
+		mousePressed = true;
+	}
+
+	public void mouseReleased(MouseEvent e) { mousePressed = false; }
 
 	public void actionPerformed(ActionEvent event)
 	{
@@ -2286,6 +2322,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			light.setSpecular(RGB.toRGBA(color));
 		}
+		else if(event.getActionCommand().equals("material_specular"))
+		{
+			float[] c = terrain.tree.specular;
+			Color specular = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
+			Color color = JColorChooser.showDialog(frame, "Specular Reflectivity", specular);
+			
+			if(color == null) return;
+			
+			terrain.tree.specular = RGB.toRGBA(color);
+		}
 		else if(event.getActionCommand().equals("set_diffuse" ))
 		{
 			float[] c = light.getDiffuse();
@@ -2298,45 +2344,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		else if(event.getActionCommand().equals("close"        )) System.exit(0);
 	}
-	
-	public KeyEvent pressKey(char c)
-	{
-		long when = System.nanoTime();
-		int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
-		
-		return new KeyEvent(command, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
-	}
-	
-	public void mouseWheelMoved(MouseWheelEvent e)
-	{
-		Camera camera = cars.get(0).camera;
-		
-		if(camera.isAerial())
-		{
-			retical += e.getWheelRotation() * 3;
-			if(retical < 1) retical = 1;
-		}
-		else if(camera.isDynamic()) camera.zoom(e.getWheelRotation());
-	}
-
-	public void mouseClicked(MouseEvent e) {}
-
-	public void mouseEntered(MouseEvent e) {}
-
-	public void mouseExited (MouseEvent e) {}
-
-	public boolean rightClick;
-	
-	public void mousePressed(MouseEvent e)
-	{
-		selectX = e.getX();
-		selectY = e.getY();
-		
-		rightClick = SwingUtilities.isRightMouseButton(e);
-		mousePressed = true;
-	}
-
-	public void mouseReleased(MouseEvent e) { mousePressed = false; }
 
 	public void itemStateChanged(ItemEvent ie)
 	{
@@ -2355,10 +2362,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_solid      )) terrain.tree.solid          = selected;
 		else if(source.equals(menuItem_elevation  )) terrain.tree.reliefMap      = selected;  
 		else if(source.equals(menuItem_frame      )) terrain.tree.frame          = selected;
-		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected;    
+		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected; 
+		else if(source.equals(menuItem_malleable  )) terrain.tree.malleable      = selected;     
 		else if(source.equals(menuItem_vnormals   )) terrain.tree.vNormals       = selected; 
 		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading  = selected;
-		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;    
+		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse   = selected;
 	}
 

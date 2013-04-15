@@ -70,10 +70,11 @@ public class Terrain
 	float[][] normals;
 	float[][] texCoords;
 	
-	public Texture grass;
-	public Texture sand;
-	public Texture snow;
-	public Texture cobble;
+	public List<Texture > textures  = new ArrayList<Texture >();
+	public List<Gradient> gradients = new ArrayList<Gradient>();
+	
+	public int  textureID = 0;
+	public int gradientID = 0;
 	
 	public Texture baseTexture;
 	
@@ -154,7 +155,11 @@ public class Terrain
 	
 	public void generateQuadtree()
 	{	
-		Quadtree base = new Quadtree(210, 32, sand, 7);
+		gradients.add(Gradient.MUD);
+		gradients.add(Gradient.GRAYSCALE);
+		
+		
+		Quadtree base = new Quadtree(210, 32, textures.get(1), 7);
 		base.setHeights(1000);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		
@@ -168,7 +173,7 @@ public class Terrain
 		pond.offsetHeights(0.5f);
 		
 		
-		Quadtree road = new Quadtree(210, 32, cobble, 7);
+		Quadtree road = new Quadtree(210, 32, textures.get(3), 7);
 		road.setHeights(1000);
 		road.malleable = false;
 		road.specular = new float[] {1, 1, 1, 1};
@@ -348,12 +353,12 @@ public class Terrain
 	{
 		try
 		{
-			grass  = TextureLoader.load(gl, "tex/grass.jpg");
-			sand   = TextureLoader.load(gl, "tex/sand.jpg");
-			snow   = TextureLoader.load(gl, "tex/snow.jpg");
-			cobble = TextureLoader.load(gl, "tex/cobbles.jpg");
+			textures.add(TextureLoader.load(gl, "tex/grass.jpg"  ));
+			textures.add(TextureLoader.load(gl, "tex/sand.jpg"   ));
+			textures.add(TextureLoader.load(gl, "tex/snow.jpg"   ));
+			textures.add(TextureLoader.load(gl, "tex/cobbles.jpg"));
 			
-			baseTexture = grass;
+			baseTexture = textures.get(0);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -617,7 +622,6 @@ public class Terrain
 			
 			case KeyEvent.VK_PERIOD:
 			{
-				
 				break;
 			}
 			
@@ -625,15 +629,17 @@ public class Terrain
 			
 			case KeyEvent.VK_J:
 			{
-				tree.texture = snow;
-				tree.setGradient(Gradient.GRAYSCALE);
+				textureID++;
+				textureID %= textures.size();
+				tree.texture = textures.get(textureID);
 				break;
 			}
 			
 			case KeyEvent.VK_K:
 			{
-				tree.texture = grass;
-				tree.setGradient(Gradient.MUD);
+				gradientID++;
+				gradientID %= gradients.size();
+				tree.setGradient(gradients.get(gradientID));
 				break;
 			}
 		}
