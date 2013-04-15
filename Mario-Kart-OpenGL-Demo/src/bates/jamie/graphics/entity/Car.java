@@ -811,6 +811,8 @@ public class Car
 		
 		return heights;
 	}
+	
+	// TODO Gravity causes car to pass through surfaces (example: bridges)
 
 	/**
 	 * This method calculates the height of the vehicles as determined by the OBB
@@ -835,7 +837,7 @@ public class Car
 
 			//calculate the height at the centre of the vehicle
 			float h = obb.closestPointOnPerimeter(getPosition())[1]
-					+ (bound.e[1] * 0.9f);
+					+ (bound.e[1] * 0.99f);
 			
 			if(h > bound.c[1])
 			{

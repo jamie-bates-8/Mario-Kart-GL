@@ -25,7 +25,7 @@ public abstract class Shell extends Item
 	
 	protected static int rimList = -1;
 	
-	protected static final float RADIUS = 2.0f;
+	protected static final float RADIUS = 1.5f;
 	
 	public boolean orbiting;
 	public float rotation;

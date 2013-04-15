@@ -912,6 +912,11 @@ public class Quadtree
 		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
 	}
 	
+	/**
+	 * Returns an array containing the minimum and maximum heights of this
+	 * Quadtree, in addition to the vertical heights between these two values
+	 * in the form {min, max, range}.
+	 */
 	public float[] getVerticalRange()
 	{
 		float min = vertices.get(0)[1];
@@ -925,7 +930,7 @@ public class Quadtree
 			if(h > max) max = h; 
 		}
 		
-		return new float[] {min, max};
+		return new float[] {min, max, max - min};
 	}
 	
 	public void resetHeights()
@@ -1403,14 +1408,16 @@ public class Quadtree
 		
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
-		gl.glEnableClientState(GL_VERTEX_ARRAY);
+		gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
 		gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
+		
+		float[] range = getVerticalRange();
 		
 		FloatBuffer _colors = Buffers.newDirectFloatBuffer(colors.size() * 3);
 		
 		for(float[] vertex : vertices)
 		{
-			float[] color = gradient.interpolate(1 - (vertex[1] / MAX_HEIGHT));
+			float[] color = gradient.interpolate(1 - ((vertex[1] - range[0]) / range[2]));
 			_colors.put(color);
 		}
 		_colors.position(0);
@@ -1423,8 +1430,8 @@ public class Quadtree
 		
 		gl.glDrawElements(GL2.GL_QUADS, indexCount, GL2.GL_UNSIGNED_INT, iBuffer);
 		
+		gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 		gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
-		gl.glDisableClientState(GL_VERTEX_ARRAY);
 		
 		vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
 		iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());

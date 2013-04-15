@@ -47,7 +47,7 @@ public class Banana extends Item
 		gradient.addStop(90, GREEN);
 	}
 	
-	public static final float RADIUS = 1.8f;
+	public static final float RADIUS = 1.6f;
 	
 	private int bananaID = 0;
 	

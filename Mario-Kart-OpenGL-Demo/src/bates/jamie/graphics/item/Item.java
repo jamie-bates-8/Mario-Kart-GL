@@ -298,7 +298,7 @@ public abstract class Item
 	
 	public float[] getHeights(Terrain map)
 	{
-		if(map.enableQuadtree) return getHeights(map.tree, map.tree.detail);
+		if(map.enableQuadtree) return getHeights(map.trees.values());
 		
 		float[][] vertices = getAxisVectors();
 
@@ -308,6 +308,13 @@ public abstract class Item
 			heights[i] = h;
 		}
 
+		setHeight();
+
+		return heights;
+	}
+	
+	private void setHeight()
+	{
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		
 		if(bound.c[1] - bound.getMaximumExtent() <= h)
@@ -318,7 +325,30 @@ public abstract class Item
 			falling = thrown = false;
 			fallRate = 0;
 		}
+	}
+	
+	public float[] getHeights(Collection<Quadtree> trees)
+	{
+		float[][] vertices = getAxisVectors();
+		
+		Quadtree[] _trees = new Quadtree[4];
+		
+		for(int i = 0; i < 4; i++)
+		{
+			float max = 0;
+			
+			for(Quadtree tree : trees)
+			{
+				Quadtree cell = tree.getCell(vertices[i], tree.detail);
+				float h = (cell != null) ? cell.getHeight(vertices[i]) : 0;
+				if(h > max && !tree.enableBlending) { max = h; _trees[i] = tree; }
+			}
 
+			heights[i] = max;
+		}
+		
+		setHeight();
+		
 		return heights;
 	}
 	
@@ -333,16 +363,7 @@ public abstract class Item
 			heights[i] = h;
 		}
 		
-		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		
-		if(bound.c[1] - bound.getMaximumExtent() <= h)
-		{
-			h += bound.getMaximumExtent();
-			bound.c[1] = h;
-			
-			falling = thrown = false;
-			fallRate = 0;
-		}
+		setHeight();
 		
 		return heights;
 	}
