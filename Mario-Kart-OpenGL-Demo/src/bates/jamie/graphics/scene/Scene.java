@@ -167,6 +167,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JRadioButtonMenuItem menuItem_none;
 	private JRadioButtonMenuItem menuItem_rain;
 	private JRadioButtonMenuItem menuItem_snow;
+	private JCheckBoxMenuItem menuItem_settle;
+	private JCheckBoxMenuItem menuItem_splash;
 	private JCheckBoxMenuItem menuItem_reflect;
 	
 	private JMenu menu_light;
@@ -177,6 +179,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private JCheckBoxMenuItem menuItem_normalize;
 	private JCheckBoxMenuItem menuItem_smooth;
+	private JCheckBoxMenuItem menuItem_local;
 	private JCheckBoxMenuItem menuItem_secondary;
 	
 	private JMenu menu_terrain;
@@ -330,8 +333,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableReflection = false;
 	public float opacity = 0.50f;
 	
-	private float ry = 0;
-	
 	public boolean smoothBound = false;
 	public boolean multisample = true;
 	
@@ -411,7 +412,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		});
 		
-		// ensure that menu items are not displayed  the GL canvas
+		// ensure that menu items are not displayed above the GL canvas
 		JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 		ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
 		
@@ -545,25 +546,35 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_none.setSelected(true);
 		menuItem_none.setMnemonic(KeyEvent.VK_N);
 		menuItem_none.setActionCommand("no_weather");
-		group_weather.add(menuItem_none);
 
 		menuItem_snow = new JRadioButtonMenuItem("Snow");
 		menuItem_snow.addActionListener(this);
 		menuItem_snow.setSelected(false);
 		menuItem_snow.setMnemonic(KeyEvent.VK_S);
 		menuItem_snow.setActionCommand("snow");
-		group_weather.add(menuItem_snow);
 		
 		menuItem_rain = new JRadioButtonMenuItem("Rain");
 		menuItem_rain.addActionListener(this);
 		menuItem_rain.setSelected(false);
 		menuItem_rain.setMnemonic(KeyEvent.VK_R);
 		menuItem_rain.setActionCommand("rain");
+		
+		group_weather.add(menuItem_none);
+		group_weather.add(menuItem_snow);
 		group_weather.add(menuItem_rain);
+		
+		menuItem_settle = new JCheckBoxMenuItem("Snow Settles");
+		menuItem_settle.addItemListener(this);
+		
+		menuItem_splash = new JCheckBoxMenuItem("Rain Splashes");
+		menuItem_splash.addItemListener(this);
 		
 		menu_weather.add(menuItem_none);
 		menu_weather.add(menuItem_snow);
 		menu_weather.add(menuItem_rain);
+		menu_weather.addSeparator();
+		menu_weather.add(menuItem_settle);
+		menu_weather.add(menuItem_splash);
 		
 		menu_effects.add(menuItem_motionblur);
 		menu_effects.add(menuItem_fog);
@@ -610,6 +621,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_smooth.addItemListener(this);
 		menuItem_smooth.setMnemonic(KeyEvent.VK_S);
 		
+		menuItem_local = new JCheckBoxMenuItem("Local Specularity");
+		menuItem_local.addItemListener(this);
+		menuItem_local.setMnemonic(KeyEvent.VK_L);
+		
 		menuItem_secondary = new JCheckBoxMenuItem("Specular Texture");
 		menuItem_secondary.addItemListener(this);
 		
@@ -620,6 +635,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_light.addSeparator();
 		menu_light.add(menuItem_normalize);
 		menu_light.add(menuItem_smooth);
+		menu_light.add(menuItem_local);
 		menu_light.add(menuItem_secondary);
 		
 		menuBar.add(menu_light);
@@ -1026,6 +1042,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		registerItems(gl);
 		
 		if(enableAnimation) update();
+		else cars.get(0).updateController();
 		
 		if(enableTerrain && !terrainCommand.equals(""))
 		{	
@@ -1071,6 +1088,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 			
+			gl.glDisable(GL2.GL_CLIP_PLANE2);
+			
 			if(enableTerrain && terrain.enableWater) terrain.renderWater(gl);
 			
 			/*
@@ -1105,6 +1124,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glFlush();
 		
+		if(mousePressed)
+		{
+			gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, 0, 
+                    0, canvasWidth, canvasHeight, 0);
+		}
+		
 		printErrors(gl);
 		
 //		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
@@ -1113,6 +1138,32 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //      gl.glDisable(GL2.GL_TEXTURE_GEN_Q);
 		
 		calculateFPS();
+	}
+	
+	public void select3DPoint(GL2 gl, GLU glu)
+	{
+		Point point = canvas.getMousePosition();
+		if(point == null) return;
+	
+		int w = (int) point.getX();
+		int h = (int) point.getY();
+		
+		int[] viewport = new int[4];
+		float[] modelview  = new float[16];
+		float[] projection = new float[16];
+
+		FloatBuffer p = FloatBuffer.allocate(3);
+		   
+		gl.glGetIntegerv(GL2.GL_VIEWPORT, viewport, 0);
+		gl.glGetFloatv  (GL2.GL_MODELVIEW_MATRIX, modelview, 0);
+		gl.glGetFloatv  (GL2.GL_PROJECTION_MATRIX, projection, 0);
+
+		glu.gluUnProject(w, canvasHeight - h, 0.95f,
+			Buffers.newDirectFloatBuffer(modelview ),
+			Buffers.newDirectFloatBuffer(projection),
+			Buffers.newDirectIntBuffer(viewport), p);
+		
+		addItem(8, new float[] {p.get(0), p.get(1), p.get(2)}, 0);
 	}
 
 	public void displayShadow(GL2 gl)
@@ -1399,12 +1450,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{		
-			ry++; ry %= 360;
 			
-			gl.glTranslatef(0, 30, 0);
-			gl.glRotatef(ry, 0, 1, 0);
-			
-			glut.glutSolidTeapot(3);
 		}
 		gl.glPopMatrix();
 		
@@ -1493,8 +1539,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		float[] p = light.getPosition();
 		light.setPosition(new float[] {p[0], -p[1], p[2]});
 		
+		if(enableTerrain)
+		{
+			gl.glEnable(GL2.GL_CLIP_PLANE1);
+			double equation[] = {0, -1, 0, 10};
+			gl.glClipPlane(GL2.GL_CLIP_PLANE1 , equation, 0);
+		}
+		
 		gl.glPushMatrix();
 		{
+			if(enableTerrain) gl.glTranslatef(0.0f, 20, 0.0f);
 			gl.glScalef(1.0f, -1.0f, 1.0f);
 			
 			renderWorld(gl);
@@ -1505,11 +1559,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		gl.glPopMatrix();
 		
-		renderFloor(gl);
+		gl.glDisable(GL2.GL_CLIP_PLANE1);
+		
+		if(!enableTerrain) renderFloor(gl);
 		
 		light.setPosition(p);
 		
 		gl.glColor3f(1, 1, 1);
+		
+		if(enableTerrain)
+		{
+			gl.glEnable(GL2.GL_CLIP_PLANE2);
+			double[] equation = {0, 1, 0, -10};
+			gl.glClipPlane(GL2.GL_CLIP_PLANE2 , equation, 0);
+		}
 	}
 
 	private void renderFloor(GL2 gl)
@@ -1741,6 +1804,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 		
 		gl.glDisable(GL_TEXTURE_2D);
+		gl.glDisable(GL2.GL_LIGHTING);
 		
 		if(testMode) test(gl);
 		
@@ -1749,10 +1813,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableClosestPoints)
 			for(Bound bound : bounds)
 				bound.displayClosestPtToPt(gl, glut, cars.get(0).getPosition(), smoothBound);
-		
-		if(enableOBBSolids)
-			for(Bound bound : bounds)
-				bound.displaySolid(gl, glut, RGB.toRGBAi(RGB.VIOLET, 0.1f));
 		
 		if(enableOBBVertices)
 		{
@@ -1795,6 +1855,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			for(OBB wall : fort.getBounds()) wall.displayAxes(gl, 20);
 		}
 		
+		if(enableOBBSolids)
+			for(Bound bound : bounds)
+				bound.displaySolid(gl, glut, RGB.toRGBAi(RGB.VIOLET, 0.1f));
+		
 		for(Car car : cars)
 			for(Item item : car.getItems())
 				item.renderBound(gl, glut);
@@ -1802,6 +1866,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		for(Item item : itemList) item.renderBound(gl, glut);
 		
 		gl.glEnable(GL_TEXTURE_2D);
+		gl.glEnable(GL2.GL_LIGHTING);
 		
 		return System.nanoTime() - start;
 	}
@@ -2168,7 +2233,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public void keyPressed(KeyEvent e)
 	{	
 		switch (e.getKeyCode())
-		{
+		{		
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			
 			case KeyEvent.VK_T:  enableTerrain = !enableTerrain; cars.get(0).friction = 1; break; //TODO Only includes player 1
@@ -2357,6 +2422,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_normalize  )) normalize                   = selected;
 		else if(source.equals(menuItem_smooth     )) light.smooth                = selected;
 		else if(source.equals(menuItem_secondary  )) light.secondary             = selected;
+		else if(source.equals(menuItem_local      )) light.local                 = selected;    
 		else if(source.equals(menuItem_water      )) terrain.enableWater         = selected;
 		else if(source.equals(menuItem_reflect    )) enableReflection            = selected;    
 		else if(source.equals(menuItem_solid      )) terrain.tree.solid          = selected;
@@ -2368,6 +2434,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading  = selected;
 		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse   = selected;
+		else if(source.equals(menuItem_settle     )) blizzard.enableSettling     = selected;
+		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing    = selected;
 	}
 
 	public void valueChanged(ListSelectionEvent e)

@@ -37,7 +37,7 @@ public class Quadtree
 	public int detail = MAXIMUM_LOD;
 	public int lod;
 	
-	private static final float EPSILON = 0.0005f;
+	private static final float EPSILON = 0.05f;
 	private static final float VECTOR_OFFSET = 0.005f;
 	
 	public Quadtree root;
@@ -55,7 +55,7 @@ public class Quadtree
 	List<float[]> colors;
 	
 	List<Float> heights;
-	public float height = 0;
+	public float height = 10;
 	
 	int offset;
 	
@@ -156,16 +156,16 @@ public class Quadtree
 		else subdivide(iterations);
 	}
 	
-	public Quadtree(float vScale, int iterations)
+	public Quadtree(float vScale, float height, int iterations)
 	{
 		root = this;
 		lod = 0;
 		
 		List<float[]> vertices = new ArrayList<float[]>();
-		vertices.add(new float[] {-vScale, 0,  vScale});
-		vertices.add(new float[] { vScale, 0,  vScale});
-		vertices.add(new float[] { vScale, 0, -vScale});
-		vertices.add(new float[] {-vScale, 0, -vScale});
+		vertices.add(new float[] {-vScale, height,  vScale});
+		vertices.add(new float[] { vScale, height,  vScale});
+		vertices.add(new float[] { vScale, height, -vScale});
+		vertices.add(new float[] {-vScale, height, -vScale});
 		
 		this.vertices  = vertices;
 		this.indices   = new int[] {0, 1, 2, 3};
@@ -1392,8 +1392,8 @@ public class Quadtree
 		
 		gl.glColor3f(1, 1, 1);
 		
-		gl.glEnable(GL2.GL_TEXTURE_2D);	
-		gl.glEnable(GL2.GL_LIGHTING);
+		gl.glEnable (GL2.GL_TEXTURE_2D);	
+		gl.glEnable (GL2.GL_LIGHTING);
 		
 		vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
 		iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
@@ -1468,6 +1468,7 @@ public class Quadtree
 		
 		gl.glColor3f(1, 1, 1);
 		
+		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	

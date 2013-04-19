@@ -3,20 +3,19 @@ package bates.jamie.graphics.particle;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_FLOAT;
 import static javax.media.opengl.GL.GL_POINTS;
-
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
-
-import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_COLOR_ARRAY;
+import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.entity.Quadtree;
+import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vector;
 
@@ -34,10 +33,12 @@ public class Blizzard
 	public FloatBuffer vBuffer;
 	public FloatBuffer cBuffer;
 	
+	Collection<Particle> droplets = new ArrayList<Particle>();
+	
 	public float[] wind;
 	
 	public boolean enableSettling  = false;
-	public boolean enableSplashing = true; 
+	public boolean enableSplashing = false; 
 	
 	public static final int PRECIPITATION_RATE = 10;
 	
@@ -157,26 +158,31 @@ public class Blizzard
 
 	private void splash(WeatherParticle flake)
 	{
-		Quadtree tree = scene.getTerrain().tree;
-		Quadtree cell = tree.getCell(flake.c, tree.detail);
-		float h = cell != null ? cell.getHeight(flake.c) : Integer.MIN_VALUE;
+		Terrain terrain = scene.getTerrain();
+		float h = terrain.getHeight(terrain.trees.values(), flake.c);
 		
-		if(flake.c[1] <= h + 1 && flake.c[1] > -2)
+		if(flake.c[1] <= h + 1 && flake.c[1] > h - 1)
 		{
 			for(int j = 0; j < 10; j++)
 			{
 				float[] t = getRandomVector(0.25f);
 				t[1] = Math.abs(t[1] * 2);
-				scene.addParticle(new SplashParticle(flake.c, t, new float[] {1, 1, 1, generator.nextFloat() * 0.3f}));
+				
+				SplashParticle drop = new SplashParticle(flake.c, t, new float[] {1, 1, 1, generator.nextFloat() * 0.3f});
+				droplets.add(drop);
 			}
+		}
+		else if(flake.c[1] < h - 1)
+		{
+			flake.c = getSource();
+			flake.t = type == StormType.SNOW ? getRandomVector(1) : getRandomVector(0.25f);
 		}
 	}
 
 	private void settle(WeatherParticle flake, int index)
 	{
-		Quadtree tree = scene.getTerrain().tree;
-		Quadtree cell = tree.getCell(flake.c, tree.detail);
-		float h = cell != null ? cell.getHeight(flake.c) : Integer.MIN_VALUE;
+		Terrain terrain = scene.getTerrain();
+		float h = terrain.getHeight(terrain.trees.values(), flake.c);
 		
 		if(flake.c[1] <= h)
 		{
@@ -321,6 +327,47 @@ public class Blizzard
 			
 			gl.glDisableClientState(GL_VERTEX_ARRAY);
 			gl.glDisableClientState(GL_COLOR_ARRAY);
+					
+			gl.glEnable(GL2.GL_TEXTURE_2D);
+		}
+		gl.glPopMatrix();
+		
+		if(!droplets.isEmpty()) renderDroplets(gl);
+	}
+
+	private void renderDroplets(GL2 gl)
+	{
+		gl.glPushMatrix();
+		{	
+			gl.glDisable(GL2.GL_TEXTURE_2D);
+						
+			gl.glEnableClientState(GL_VERTEX_ARRAY);
+			
+			gl.glDisable(GL_LIGHTING);
+			gl.glEnable(GL_BLEND);
+				
+			gl.glEnable(GL2.GL_POINT_SMOOTH);
+			gl.glPointSize(4);
+			gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
+			
+			gl.glColor4f(1, 1, 1, 0.2f);
+			
+			Particle.removeParticles(droplets);
+			
+			FloatBuffer vBuffer = Buffers.newDirectFloatBuffer(droplets.size() * 3);
+			for(Particle drop : droplets) { drop.update(); vBuffer.put(drop.c); }
+			
+			vBuffer.position(0);
+			
+			gl.glVertexPointer(3, GL_FLOAT, 0, vBuffer);
+			gl.glDrawArrays(GL2.GL_POINTS, 0, droplets.size());
+			
+			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
+			
+			gl.glDisable(GL_BLEND);
+			gl.glEnable(GL_LIGHTING);
+			
+			gl.glDisableClientState(GL_VERTEX_ARRAY);
 					
 			gl.glEnable(GL2.GL_TEXTURE_2D);
 		}

@@ -68,7 +68,7 @@ public class Camera extends AnchorPoint
 				
 				glu.gluLookAt(p[0], p[1], p[2],
 							  p[0] - 10, p[1], p[2],
-					          0, 1, 0);
+					          u[1][0], u[1][1], u[1][2]);
 				
 				break;
 			}
@@ -103,10 +103,8 @@ public class Camera extends AnchorPoint
 	}
 	
 	public float getRadius(float retical, int scale)
-	{
-		float r = retical / scale;
-		
-		return r * 440;
+	{	
+		return 440 * retical / scale;
 	}
 	
 	public boolean isDynamic()     { return mode == CameraMode.DYNAMIC_VIEW;   }

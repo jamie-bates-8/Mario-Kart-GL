@@ -15,7 +15,7 @@ public class AnchorPoint
 	private float[] c;
 	private static final float[] ORIGIN = {0, 10, 0};
 	
-	private float[][] u;
+	protected float[][] u;
 	private static final float[][] DEFAULT_ROTATION = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	private float rx, ry, rz;
 	

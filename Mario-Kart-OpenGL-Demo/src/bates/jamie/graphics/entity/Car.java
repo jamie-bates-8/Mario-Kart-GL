@@ -1048,7 +1048,7 @@ public class Car
 		updateController();
 	}
 	
-	private void updateController()
+	public void updateController()
 	{
 		if(!controller.isNull() && controller.isEnabled() && !camera.isFree())
 		{

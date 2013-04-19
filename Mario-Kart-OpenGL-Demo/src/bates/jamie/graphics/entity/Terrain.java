@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -24,7 +25,6 @@ import javax.swing.JLabel;
 
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.util.Gradient;
-import bates.jamie.graphics.util.MultiTexFace;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vector;
@@ -166,7 +166,7 @@ public class Terrain
 		tree = base;
 		
 		
-		Quadtree pond = new Quadtree(210, 9);
+		Quadtree pond = new Quadtree(210, 10, 9);
 		pond.enableShading  = false;
 		pond.enableColoring = false;
 		pond.enableBlending = true;
@@ -493,10 +493,22 @@ public class Terrain
 		return h * sy;
 	}
 	
-	public void createGeometry(int textureLength)
+	public float getHeight(Collection<Quadtree> trees, float[] p)
 	{
-		List<MultiTexFace> faces = new ArrayList<MultiTexFace>();
+		float max = 0;
 		
+		for(Quadtree tree : trees)
+		{
+			Quadtree cell = tree.getCell(p, tree.detail);
+			float h = (cell != null) ? cell.getHeight(p) : 0;
+			if(h > max && !tree.enableBlending) max = h;
+		}
+
+		return max;
+	}
+	
+	public void createGeometry(int textureLength)
+	{	
 		vertices  = createVertices();
 		normals   = createNormals(vertices);
 		texCoords = createTexCoords(vertices, textureLength);

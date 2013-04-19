@@ -22,9 +22,9 @@ import javax.media.opengl.glu.GLUquadric;
 
 public class Light extends AnchorPoint
 {
-	private static int count = 0;
+	public static int count = 0;
 	
-	private int id;
+	public int id;
 	
 	private float[] ambience = {0.2f, 0.2f, 0.2f, 1.0f};
 	private float[] diffuse  = {0.7f, 0.7f, 0.7f, 1.0f};
@@ -37,11 +37,12 @@ public class Light extends AnchorPoint
 
 	public boolean smooth    = true;
 	public boolean parallel  = false;
+	public boolean local     = false;
 	public boolean secondary = true;
 
 	public Light(GL2 gl)
 	{
-		id = count++;
+		id = count++; count %= 8;
 		
 		setPosition(new float[] {1, 1, 0});
 		setPosition(new float[] {200, 200, 200});
@@ -56,7 +57,7 @@ public class Light extends AnchorPoint
 		gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
 	}
 	
-	private static int getLight(int id)
+	public static int getLight(int id)
 	{
 		switch(id)
 		{
@@ -106,6 +107,7 @@ public class Light extends AnchorPoint
 		else       gl.glShadeModel(GL_FLAT  );
 
 		gl.glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambience, 0);
+		gl.glLightModeli (GL2.GL_LIGHT_MODEL_LOCAL_VIEWER, local ? GL2.GL_TRUE : GL2.GL_FALSE);
 		
 		if(secondary) gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SEPARATE_SPECULAR_COLOR);
 		else          gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SINGLE_COLOR);
