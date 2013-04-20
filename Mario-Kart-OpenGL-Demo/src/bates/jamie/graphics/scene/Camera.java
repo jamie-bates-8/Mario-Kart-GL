@@ -26,9 +26,11 @@ public class Camera extends AnchorPoint
 	
 	public CameraMode getMode() { return mode; }
 	
+	public void setRotation(float ry) { this.ry = ry; }
+	
 	public void setRearview(boolean mirror) { rearview = mirror; }
 	
-	public void setupView(GL2 gl, GLU glu, float[] p, float ry)
+	public void setupView(GL2 gl, GLU glu)
 	{
 		switch(mode)
 		{	
@@ -38,8 +40,8 @@ public class Camera extends AnchorPoint
 				gl.glTranslatef(0, -15.0f * zoom, -30.0f * zoom);
 				gl.glRotated(ry + (rearview ? 180 : 0), 0.0f, -1.0f, 0.0f);
 	
-				glu.gluLookAt(p[0], p[1], p[2],
-							  p[0] - 10, p[1], p[2],
+				glu.gluLookAt(c[0] +  0, c[1], c[2],
+							  c[0] - 10, c[1], c[2],
 							  0, 1, 0);
 
 				break;
@@ -66,18 +68,15 @@ public class Camera extends AnchorPoint
 				gl.glTranslatef(0, -3.0f, 0);
 				gl.glRotated(ry, 0.0f, -1.0f, 0.0f);
 				
-				glu.gluLookAt(p[0], p[1], p[2],
-							  p[0] - 10, p[1], p[2],
+				glu.gluLookAt(c[0] +  0, c[1], c[2],
+							  c[0] - 10, c[1], c[2],
 					          u[1][0], u[1][1], u[1][2]);
 				
 				break;
 			}
 			case FREE_LOOK_VIEW:
-			{
-				float[]   c = getPosition();
-				float[][] u = getRotationMatrix();
-				
-				p = subtract(c, multiply(u[0], 20));
+			{		
+				float[] p = subtract(c, multiply(u[0], 20));
 				
 				glu.gluLookAt(c[0], c[1], c[2],
 						      p[0], p[1], p[2],

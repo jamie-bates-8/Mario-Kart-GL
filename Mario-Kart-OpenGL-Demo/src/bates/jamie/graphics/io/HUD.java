@@ -253,12 +253,13 @@ public class HUD
 		renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
 		renderer.draw("LOD: "      + terrain.tree.detail,         40, y - 310);
 		renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
+		renderer.draw("Vertices: " + terrain.tree.vertexCount(),  40, y - 370);
 		
 		String weather = scene.enableBlizzard ? scene.blizzard.type.toString() : "Off";
 		if(scene.enableBlizzard)
 			weather += String.format(" (%d%%)", (scene.blizzard.flakes.size() * 100) / scene.blizzard.flakeLimit);
 		
-		renderer.draw("Weather: " + weather, 40, y - 370);
+		renderer.draw("Weather: " + weather, 40, y - 400);
 		
 		float[] p = car.getPosition();
 		

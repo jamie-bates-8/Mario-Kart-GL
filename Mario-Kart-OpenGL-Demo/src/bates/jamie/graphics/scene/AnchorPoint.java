@@ -12,12 +12,12 @@ import bates.jamie.graphics.util.Matrix;
 
 public class AnchorPoint
 {
-	private float[] c;
+	protected float[] c;
 	private static final float[] ORIGIN = {0, 10, 0};
 	
 	protected float[][] u;
 	private static final float[][] DEFAULT_ROTATION = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-	private float rx, ry, rz;
+	protected float rx, ry, rz;
 	
 	private float speed = 5.0f;
 	
@@ -75,7 +75,9 @@ public class AnchorPoint
 	
 	public void setPosition(float[] c) { this.c = c; }
 	
-	public float[][] getRotationMatrix() { return u; }
+	public float[][] getOrientation() { return u; }
+	
+	public void setOrientation(float[][] u) { this.u = u; }
 	
 	public void setRotation(float[] r)
 	{

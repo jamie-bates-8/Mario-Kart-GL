@@ -651,14 +651,11 @@ public class Quadtree
 		south_west = new Quadtree(root, lod + 1, new int[] {indices[0], south, centre, west}, enableTexture);
 		south_east = new Quadtree(root, lod + 1, new int[] {south, indices[1], east, centre}, enableTexture);
 		
-		if(enableShading)
-		{
-			float[] nNorth  = getNormal(north ); if(iNorth  == -1) { normals.add(nNorth ); nBuffer.put(nNorth ); };
-			float[] nEast   = getNormal(east  ); if(iEast   == -1) { normals.add(nEast  ); nBuffer.put(nEast  ); };
-			float[] nSouth  = getNormal(south ); if(iSouth  == -1) { normals.add(nSouth ); nBuffer.put(nSouth ); };
-			float[] nWest   = getNormal(west  ); if(iWest   == -1) { normals.add(nWest  ); nBuffer.put(nWest  ); };
-			float[] nCentre = getNormal(centre); if(iCentre == -1) { normals.add(nCentre); nBuffer.put(nCentre); };
-		}
+		float[] nNorth  = getNormal(north ); if(iNorth  == -1) { normals.add(nNorth ); nBuffer.put(nNorth ); };
+		float[] nEast   = getNormal(east  ); if(iEast   == -1) { normals.add(nEast  ); nBuffer.put(nEast  ); };
+		float[] nSouth  = getNormal(south ); if(iSouth  == -1) { normals.add(nSouth ); nBuffer.put(nSouth ); };
+		float[] nWest   = getNormal(west  ); if(iWest   == -1) { normals.add(nWest  ); nBuffer.put(nWest  ); };
+		float[] nCentre = getNormal(centre); if(iCentre == -1) { normals.add(nCentre); nBuffer.put(nCentre); };
 		
 		if(lod < root.detail)
 		{
@@ -688,6 +685,19 @@ public class Quadtree
 		return Vector.normal(p1, p2, p3);
 	}
 	
+	public float[] getTangent()
+	{
+		float[] p1 = vertices.get(indices[0]);
+		float[] p2 = vertices.get(indices[1]);
+		float[] p3 = vertices.get(indices[3]);
+		
+		float[] t1 = texCoords.get(indices[0]);
+		float[] t2 = texCoords.get(indices[1]);
+		float[] t3 = texCoords.get(indices[3]);
+		
+		return Vector.tangent(p1, p2, p3, t1, t2, t3);
+	}
+	
 	public float[] getNormal(int index)
 	{
 		Quadtree[] cells = getAdjacent(index);
@@ -698,6 +708,18 @@ public class Quadtree
 			if(cell != null) normals.add(cell.getNormal());
 		
 		return Vector.average(normals);
+	}
+	
+	public float[] getTangent(int index)
+	{
+		Quadtree[] cells = getAdjacent(index);
+		
+		List<float[]> tangents = new ArrayList<float[]>();
+		
+		for(Quadtree cell : cells)
+			if(cell != null) tangents.add(cell.getTangent());
+		
+		return Vector.normalize(Vector.average(tangents));
 	}
 	
 	public void increaseDetail()
@@ -1288,9 +1310,10 @@ public class Quadtree
 		south_east = null;
 	}
 	
-	public int cellCount() { return indexCount / 4; }
+	public int cellCount  () { return indexCount / 4;  }
 	
 	public int vertexCount() { return vertices.size(); }
+	public int normalCount() { return normals.size();  }
 	
 	public void render(GL2 gl)
 	{
@@ -1458,8 +1481,14 @@ public class Quadtree
 			float[] p1 = vertices.get(i);
 			float[] p2 = Vector.add(p1, Vector.multiply(normals.get(i), scale));
 			
+			float[] t1 = p1;
+			float[] t2 = Vector.add(t1, Vector.multiply(getTangent(i), scale));
+			
 			gl.glVertex3f(p1[0], p1[1], p1[2]);
 			gl.glVertex3f(p2[0], p2[1], p2[2]);
+			
+			gl.glVertex3f(t1[0], t1[1], t1[2]);
+			gl.glVertex3f(t2[0], t2[1], t2[2]);
 		}
 		gl.glEnd();
 		

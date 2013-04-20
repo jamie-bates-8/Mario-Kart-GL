@@ -636,8 +636,13 @@ public class Car
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 		
-		if(slipping) tag.render(gl, slipTrajectory);
-		else tag.render(gl, trajectory);
+		if(!camera.isFirstPerson())
+		{
+			float ry = slipping ? slipTrajectory : trajectory; 
+			if(camera.isFree()) ry = camera.getRotation()[1];
+			
+			tag.render(gl, ry);
+		}
 	}
 
 	private void updateColor()
@@ -1599,9 +1604,22 @@ public class Car
 		
 		switch(camera.getMode())
 		{	
-			case DYNAMIC_VIEW:	 if(slipping) _trajectory = slipTrajectory; break;
+			case DYNAMIC_VIEW:
+			{
+				camera.setPosition(getPosition());
+				if(slipping) _trajectory = slipTrajectory;
+				camera.setRotation(_trajectory);
+				break;
+			}
 			case BIRDS_EYE_VIEW: break;
-			case DRIVERS_VIEW:   displayModel = false; break;
+			case DRIVERS_VIEW:
+			{
+				camera.setPosition(getPosition());
+				camera.setRotation(_trajectory);
+				camera.setOrientation(bound.u);
+				displayModel = false;
+				break;
+			}
 			case FREE_LOOK_VIEW:
 			{	
 				if(scene.moveLight) scene.light.setPosition(camera.getPosition());
@@ -1612,7 +1630,7 @@ public class Car
 			default: break;	
 		}
 		
-		camera.setupView(gl, glu, getPosition(), _trajectory);
+		camera.setupView(gl, glu);
 	}
 	
 	public enum Motion

@@ -125,6 +125,27 @@ public class Vector
 		return w;
 	}
 	
+	public static float[] tangent(float[] p1, float[] p2, float[] p3,
+			                      float[] t1, float[] t2, float[] t3)
+	{
+		float[] q1 = subtract(p2, p1);
+		float[] q2 = subtract(p3, p1);
+        
+        float[] u1 = subtract(t2, t1);
+        float[] u2 = subtract(t3, t1);
+        
+        float r = 1.0F / (u1[0] * u2[1] - u2[0] * u1[1]);
+        
+        float[] tangent =
+        {
+        	(u2[1] * q1[0] - u1[1] * q2[0]) * r,
+        	(u2[1] * q1[1] - u1[1] * q2[1]) * r,
+            (u2[1] * q1[2] - u1[1] * q2[2]) * r
+        };
+		
+		return tangent;
+	}
+	
 	public static float[] normal(float[] p1, float[] p2, float[] p3)
 	{
 		float[] v1 = subtract(p2, p1);
@@ -134,32 +155,32 @@ public class Vector
 		return normalize(v3);
 	}
 	
-	public static float[] average(float[][] normals)
+	public static float[] average(float[][] vectors)
 	{
 		float[] n = {0, 0, 0};
 		
-		for(int i = 0; i < normals.length; i++)
+		for(int i = 0; i < vectors.length; i++)
 		{
-			n[0] += normals[i][0];
-			n[1] += normals[i][1];
-			n[2] += normals[i][2];
+			n[0] += vectors[i][0];
+			n[1] += vectors[i][1];
+			n[2] += vectors[i][2];
 		}
 		
-		return multiply(n, 1.0f / normals.length);
+		return multiply(n, 1.0f / vectors.length);
 	}
 	
-	public static float[] average(Collection<float[]> normals)
+	public static float[] average(Collection<float[]> vectors)
 	{
 		float[] n = {0, 0, 0};
 		
-		for(float[] normal : normals)
+		for(float[] normal : vectors)
 		{
 			n[0] += normal[0];
 			n[1] += normal[1];
 			n[2] += normal[2];
 		}
 		
-		return multiply(n, 1.0f / normals.size());
+		return multiply(n, 1.0f / vectors.size());
 	}
 	
 	public static boolean equal(float[] u, float[] v)
