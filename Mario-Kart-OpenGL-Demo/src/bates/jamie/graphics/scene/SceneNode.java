@@ -10,6 +10,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Renderer;
+import bates.jamie.graphics.util.Shader;
 
 
 public class SceneNode
@@ -60,10 +61,22 @@ public class SceneNode
 			{	
 				switch(renderMode)
 				{
-					case TEXTURE: model.render(gl); break;      
-					case COLOR  : model.render(gl); break;
+					case TEXTURE:
+					{
+						Shader shader = Scene.shaders.get("phong_texture");
+						shader.enable(gl); model.render(gl);
+						break;      
+					}
+					case COLOR  :
+					{
+						Shader shader = Scene.shaders.get("phong");
+						shader.enable(gl); model.render(gl);
+						break;
+					}
 					case GLASS  : model.renderGlass(gl, color); break;
 				}
+				
+				Shader.disable(gl);
 			}
 			else if(displayList != -1) gl.glCallList(displayList);
 			else

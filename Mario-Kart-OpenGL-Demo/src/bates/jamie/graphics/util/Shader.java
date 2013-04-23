@@ -9,8 +9,12 @@ import java.util.Scanner;
 
 import javax.media.opengl.GL2;
 
+import com.jogamp.opengl.util.glsl.ShaderUtil;
+
 public class Shader
 {
+	public static boolean enableShaders = true;
+	
 	public int shaderID;
 	 
 	public String[] vertSource;
@@ -19,22 +23,28 @@ public class Shader
 	public int vertProgram;
 	public int fragProgram;
 	
+	private boolean valid = false;
+	
 	public Shader(GL2 gl, String vShader, String fShader)
 	{	
-		attachPrograms(gl, vShader, fShader);
+		valid = attachPrograms(gl, vShader, fShader);
 	}
+	
+	public boolean isValid() { return valid; }
 
-	public void attachPrograms(GL2 gl, String vShader, String fShader)
+	public boolean attachPrograms(GL2 gl, String vShader, String fShader)
 	{
 		vertProgram = gl.glCreateShader(GL2.GL_VERTEX_SHADER  );
 		fragProgram = gl.glCreateShader(GL2.GL_FRAGMENT_SHADER);
 		
-		vertSource = parseSource(vShader);
+		vertSource = parseSource(vShader + ".vs");
+		if(vertSource == null) return false;
 	
 		gl.glShaderSource (vertProgram, 1, vertSource, null, 0);
 		gl.glCompileShader(vertProgram);
 	
-		fragSource = parseSource(fShader);
+		fragSource = parseSource(fShader + ".fs");
+		if(fragSource == null) return false;
 		
 		gl.glShaderSource (fragProgram, 1, fragSource, null, 0);
 		gl.glCompileShader(fragProgram);
@@ -42,19 +52,32 @@ public class Shader
 		int[] success = new int[1];
 		
 		gl.glGetShaderiv(vertProgram, GL2.GL_COMPILE_STATUS, success, 0);
-		if(success[0] != 1) System.err.println("Shader: " + vShader + ", cannot be compiled");
+		if(success[0] != 1)
+		{
+			System.err.println("Vertex Shader: " + vShader + ".vs, cannot be compiled");
+			return false;
+		}
 		
 		gl.glGetShaderiv(fragProgram, GL2.GL_COMPILE_STATUS, success, 0);
-		if(success[0] != 1) System.err.println("Shader: " + fShader + ", cannot be compiled");
+		if(success[0] != 1)
+		{
+			System.err.println("Fragment Shader: " + fShader + ".fs, cannot be compiled");
+			System.err.println(ShaderUtil.getShaderInfoLog(gl, fragProgram));
+			return false;
+		}
 	
 	    shaderID = gl.glCreateProgram();
+	    
+	    gl.glBindAttribLocation(shaderID, 1, "tangent");
 	    
 	    gl.glAttachShader(shaderID, vertProgram);
 	    gl.glAttachShader(shaderID, fragProgram);
 	    
 	    gl.glLinkProgram(shaderID);
+	    
+	    System.out.println(ShaderUtil.getProgramInfoLog(gl, shaderID));
 
-	    validate(gl);  
+	    return validate(gl);  
 	}
 	
 	/** 
@@ -62,15 +85,15 @@ public class Shader
      * Once activated, it will be used to render anything that is drawn until the
      * <code>disable</code> function is called.
      */
-    public int useShader(GL2 gl)
+    public int enable(GL2 gl)
     {
-        gl.glUseProgram(shaderID);
+        if(enableShaders) gl.glUseProgram(shaderID);
         return shaderID;
     }
 
-    public void disable(GL2 gl) { gl.glUseProgram(0); }
+    public static void disable(GL2 gl) { gl.glUseProgram(0); }
 
-	private void validate(GL2 gl)
+	private boolean validate(GL2 gl)
 	{
 		gl.glValidateProgram(shaderID);
         
@@ -85,14 +108,18 @@ public class Shader
             System.err.println("Shader linking error:");
             
             if(size > 0)
-            {
+            {  	
                 ByteBuffer byteBuffer = ByteBuffer.allocate(size);
                 gl.glGetProgramInfoLog(shaderID, size, intBuffer, byteBuffer);
                 
                 for (byte b : byteBuffer.array()) System.err.print((char) b);
             }
             else System.err.println("Unknown");
+            
+            return false;
         }
+        
+        return true;
 	}
 	
 	public String[] parseSource(String filename)

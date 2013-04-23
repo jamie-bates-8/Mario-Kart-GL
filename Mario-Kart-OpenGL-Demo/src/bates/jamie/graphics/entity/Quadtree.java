@@ -14,8 +14,10 @@ import java.util.Set;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Light;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.common.nio.Buffers;
@@ -68,6 +70,7 @@ public class Quadtree
 	int indexCount;
 	
 	public Texture texture;
+	public Texture bumpmap;
 	public Gradient gradient = Gradient.GRAYSCALE;
 	
 	public FallOff falloff = FallOff.SMOOTH;
@@ -76,6 +79,7 @@ public class Quadtree
 	public boolean enableShading = true;
 	public boolean smoothShading = true;
 	public boolean enableTexture = true;
+	public boolean enableBumpmap = true; 
 	
 	public boolean enableColoring = true;
 	public boolean enableBlending = false;
@@ -587,11 +591,11 @@ public class Quadtree
 		float _x_ = (_x + x_) / 2; // horizontal centre of cell
 		float _z_ = (_z + z_) / 2; // vertical centre of cell
 		
-		float[] vNorth  = {_x_, 0, _z }; vNorth [1] = getHeight(vNorth ); // north vertex
-		float[] vEast   = { x_, 0, _z_}; vEast  [1] = getHeight(vEast  );
-		float[] vSouth  = {_x_, 0,  z_}; vSouth [1] = getHeight(vSouth );
-		float[] vWest   = {_x , 0, _z_}; vWest  [1] = getHeight(vWest  );
-		float[] vCentre = {_x_, 0, _z_}; vCentre[1] = getHeight(vCentre);
+		float[] vNorth  = {_x_, 0, _z }; vNorth [1] = getHeight(vNorth,  !malleable); // north vertex
+		float[] vEast   = { x_, 0, _z_}; vEast  [1] = getHeight(vEast,   !malleable);
+		float[] vSouth  = {_x_, 0,  z_}; vSouth [1] = getHeight(vSouth,  !malleable);
+		float[] vWest   = {_x , 0, _z_}; vWest  [1] = getHeight(vWest,   !malleable);
+		float[] vCentre = {_x_, 0, _z_}; vCentre[1] = getHeight(vCentre, !malleable);
 		
 		int north, east, south, west, centre; // the indices of the 5 new vertices
 		north = east = south = west = centre = -1; // -1 means invalid
@@ -677,10 +681,17 @@ public class Quadtree
 	}
 	
 	public float[] getNormal()
-	{
+	{	
 		float[] p1 = vertices.get(indices[0]);
 		float[] p2 = vertices.get(indices[1]);
 		float[] p3 = vertices.get(indices[3]);
+		
+//		if(root.malleable)
+//		{
+//			p1[1] = heights.get(indices[0]);
+//			p2[1] = heights.get(indices[1]);
+//			p3[1] = heights.get(indices[2]);
+//		}
 		
 		return Vector.normal(p1, p2, p3);
 	}
@@ -789,8 +800,13 @@ public class Quadtree
 		return null;
 	}
 	
-	// perform bilinear interpolate to get the height of the quadtree at a point 'p'
 	public float getHeight(float[] p)
+	{
+		return getHeight(p, root.malleable);
+	}
+	
+	// perform bilinear interpolate to get the height of the quadtree at a point 'p'
+	public float getHeight(float[] p, boolean malleable)
 	{	
 		float x = p[0];
 		float z = p[2];
@@ -800,10 +816,10 @@ public class Quadtree
 		float x2 = vertices.get(indices[1])[0];
 		float z2 = vertices.get(indices[1])[2];
 		
-		float q11 = root.malleable ? vertices.get(indices[3])[1] : heights.get(indices[3]);
-		float q12 = root.malleable ? vertices.get(indices[0])[1] : heights.get(indices[0]);
-		float q21 = root.malleable ? vertices.get(indices[2])[1] : heights.get(indices[2]);
-		float q22 = root.malleable ? vertices.get(indices[1])[1] : heights.get(indices[1]);
+		float q11 = malleable ? vertices.get(indices[3])[1] : heights.get(indices[3]);
+		float q12 = malleable ? vertices.get(indices[0])[1] : heights.get(indices[0]);
+		float q21 = malleable ? vertices.get(indices[2])[1] : heights.get(indices[2]);
+		float q22 = malleable ? vertices.get(indices[1])[1] : heights.get(indices[1]);
 
 		float r1 = ((x2 - x) / (x2 - x1)) * q11 + ((x - x1) / (x2 - x1)) * q21;
 		float r2 = ((x2 - x) / (x2 - x1)) * q12 + ((x - x1) / (x2 - x1)) * q22;
@@ -918,7 +934,7 @@ public class Quadtree
 			float[] vertex = vertices.get(i);
 			
 			Quadtree cell = tree.getCell(vertex, getMaximumLOD());
-			vertex[1] = cell.getHeight(vertex);
+			vertex[1] = cell.getHeight(vertex, true);
 			
 			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 			
@@ -1070,7 +1086,7 @@ public class Quadtree
 	{
 		int position = vBuffer.position();
 		
-		if(malleable)
+		if(root.malleable)
 		{
 			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 			vBuffer.position(position);
@@ -1085,7 +1101,7 @@ public class Quadtree
 			cBuffer.position(position);
 		}
 		
-		if(malleable)
+		if(root.malleable)
 		{
 			Set<Integer> indices = getSurface(i);
 				
@@ -1319,12 +1335,28 @@ public class Quadtree
 	{
 		if(solid)
 		{
+			Shader shader = Scene.shaders.get("bump");
+			shader.enable(gl);
+			
+			if(enableBumpmap && Shader.enableShaders)
+			{
+				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+				gl.glUniform1i(texture, 0);
+				
+				int bumpmap = gl.glGetUniformLocation(shader.shaderID, "bumpmap");
+				gl.glUniform1i(bumpmap, 1);
+			}
+			
 			if(reliefMap) renderElevation(gl);
 			else          renderGeometry(gl);
+			
+			Shader.disable(gl);
 		}
 		
 		if(frame   ) renderWireframe(gl);
 		if(vNormals) renderNormals(gl, true, 1);
+		
+		if(selected != null && !selected.isEmpty()) renderSelected(gl);
 	}
 	
 	public void renderAlpha(GL2 gl)
@@ -1343,9 +1375,19 @@ public class Quadtree
 		gl.glColor4f(1, 1, 1, 1);
 	}
 	
+	FloatBuffer aBuffer;
+	
 	public void renderGeometry(GL2 gl)
 	{
 		Light.globalSpecular(gl, specular);
+		
+		if(Shader.enableShaders && enableBumpmap)
+		{
+			gl.glActiveTexture(GL2.GL_TEXTURE1);
+			gl.glEnable(GL2.GL_TEXTURE_2D);
+			bumpmap.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE0);
+		}
 		
 		if(!enableShading) gl.glDisable(GL2.GL_LIGHTING);
 		
@@ -1363,6 +1405,20 @@ public class Quadtree
 		tBuffer.flip();
 		iBuffer.flip();
 		
+		if(enableBumpmap) gl.glEnableVertexAttribArray(1);
+		
+		if(aBuffer == null && enableBumpmap)
+		{
+			aBuffer = Buffers.newDirectFloatBuffer(vertices.size() * 3);
+			for(int i = 0; i < vertices.size(); i++) aBuffer.put(getTangent(i));
+		}
+		
+		if(aBuffer != null && enableBumpmap && Shader.enableShaders)
+		{
+			aBuffer.position(0);
+			gl.glVertexAttribPointer(1, 3, GL2.GL_FLOAT, true, 0, aBuffer);
+		}
+		
 		gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vBuffer);
 		if(enableShading ) gl.glNormalPointer(   GL2.GL_FLOAT, 0, nBuffer);
 		if(enableColoring) gl.glColorPointer (3, GL2.GL_FLOAT, 0, cBuffer);
@@ -1379,6 +1435,8 @@ public class Quadtree
 		if(enableColoring) gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 		if(enableTexture ) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
+		if(enableBumpmap) gl.glDisableVertexAttribArray(1);
+		
 		vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
 		nBuffer.position(nBuffer.limit()); nBuffer.limit(nBuffer.capacity());
 		tBuffer.position(tBuffer.limit()); tBuffer.limit(tBuffer.capacity());
@@ -1386,7 +1444,14 @@ public class Quadtree
 		iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
 		
 		gl.glEnable(GL2.GL_LIGHTING);
-		gl.glEnable(GL2.GL_TEXTURE_2D);	
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		if(Shader.enableShaders && enableBumpmap)
+		{
+			gl.glActiveTexture(GL2.GL_TEXTURE1);
+			gl.glDisable(GL2.GL_TEXTURE_2D);
+			gl.glActiveTexture(GL2.GL_TEXTURE0);
+		}
 		
 		Light.globalSpecular(gl, new float[] {1, 1, 1, 1});
 	}
@@ -1481,14 +1546,8 @@ public class Quadtree
 			float[] p1 = vertices.get(i);
 			float[] p2 = Vector.add(p1, Vector.multiply(normals.get(i), scale));
 			
-			float[] t1 = p1;
-			float[] t2 = Vector.add(t1, Vector.multiply(getTangent(i), scale));
-			
 			gl.glVertex3f(p1[0], p1[1], p1[2]);
 			gl.glVertex3f(p2[0], p2[1], p2[2]);
-			
-			gl.glVertex3f(t1[0], t1[1], t1[2]);
-			gl.glVertex3f(t2[0], t2[1], t2[2]);
 		}
 		gl.glEnd();
 		
@@ -1521,8 +1580,9 @@ public class Quadtree
 		for(int i : selected)
 		{
 			float[] point = vertices.get(i);
-			gl.glVertex3f(point[0], point[1], point[2]);
+			gl.glVertex3f(point[0], point[1] + 5, point[2]);
 		}
+		
 		gl.glEnd();
 		
 		gl.glDisable(GL2.GL_BLEND);

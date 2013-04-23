@@ -12,6 +12,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class ItemRoulette
 {
+	private static final String ICON_DIRECTORY = "tex/items/icons/";
+	
 	private static final int ROTATIONS = 3;
 	private static final float ROTATION_SPEED = 5.0f;
 	
@@ -57,24 +59,24 @@ public class ItemRoulette
 		
 		try
 		{
-			greenShellIcon       = TextureIO.newTexture(new File("tex/greenShellIcon.jpg"), true);
-			tripleGreenShellIcon = TextureIO.newTexture(new File("tex/tripleGreenShellIcon.jpg"), true);
-			redShellIcon         = TextureIO.newTexture(new File("tex/redShellIcon.jpg"), true);
-			tripleRedShellIcon   = TextureIO.newTexture(new File("tex/tripleRedShellIcon.jpg"), true);
-			mushroomIcon         = TextureIO.newTexture(new File("tex/mushroomIcon.png"), true);
-			doubleMushroomIcon   = TextureIO.newTexture(new File("tex/doubleMushroomIcon.jpg"), true);
-			tripleMushroomIcon   = TextureIO.newTexture(new File("tex/tripleMushroomIcon.jpg"), true);
-			goldenMushroomIcon   = TextureIO.newTexture(new File("tex/goldenMushroomIcon.jpg"), true);
-			fakeItemBoxIcon      = TextureIO.newTexture(new File("tex/fakeItemBoxIcon.jpg"), true);
-			bananaIcon           = TextureIO.newTexture(new File("tex/bananaIcon.jpg"), true);
-			tripleBananaIcon     = TextureIO.newTexture(new File("tex/tripleBananaIcon.jpg"), true);
-			lightningBoltIcon    = TextureIO.newTexture(new File("tex/lightningBoltIcon.jpg"), true);
-			starIcon             = TextureIO.newTexture(new File("tex/starIcon.jpg"), true);
-			booIcon              = TextureIO.newTexture(new File("tex/booIcon.jpg"), true);
-			blueShellIcon        = TextureIO.newTexture(new File("tex/blueShellIcon.jpg"), true);
+			greenShellIcon       = TextureIO.newTexture(new File(ICON_DIRECTORY + "greenShellIcon.jpg"), true);
+			tripleGreenShellIcon = TextureIO.newTexture(new File(ICON_DIRECTORY + "tripleGreenShellIcon.jpg"), true);
+			redShellIcon         = TextureIO.newTexture(new File(ICON_DIRECTORY + "redShellIcon.jpg"), true);
+			tripleRedShellIcon   = TextureIO.newTexture(new File(ICON_DIRECTORY + "tripleRedShellIcon.jpg"), true);
+			mushroomIcon         = TextureIO.newTexture(new File(ICON_DIRECTORY + "mushroomIcon.png"), true);
+			doubleMushroomIcon   = TextureIO.newTexture(new File(ICON_DIRECTORY + "doubleMushroomIcon.jpg"), true);
+			tripleMushroomIcon   = TextureIO.newTexture(new File(ICON_DIRECTORY + "tripleMushroomIcon.jpg"), true);
+			goldenMushroomIcon   = TextureIO.newTexture(new File(ICON_DIRECTORY + "goldenMushroomIcon.jpg"), true);
+			fakeItemBoxIcon      = TextureIO.newTexture(new File(ICON_DIRECTORY + "fakeItemBoxIcon.jpg"), true);
+			bananaIcon           = TextureIO.newTexture(new File(ICON_DIRECTORY + "/bananaIcon.jpg"), true);
+			tripleBananaIcon     = TextureIO.newTexture(new File(ICON_DIRECTORY + "tripleBananaIcon.jpg"), true);
+			lightningBoltIcon    = TextureIO.newTexture(new File(ICON_DIRECTORY + "lightningBoltIcon.jpg"), true);
+			starIcon             = TextureIO.newTexture(new File(ICON_DIRECTORY + "starIcon.jpg"), true);
+			booIcon              = TextureIO.newTexture(new File(ICON_DIRECTORY + "booIcon.jpg"), true);
+			blueShellIcon        = TextureIO.newTexture(new File(ICON_DIRECTORY + "blueShellIcon.jpg"), true);
 			
-			rouletteBorder       = TextureIO.newTexture(new File("tex/rouletteBorder.png"), true);
-			noItemIcon           = TextureIO.newTexture(new File("tex/noItemIcon.png"), true);
+			rouletteBorder       = TextureIO.newTexture(new File("tex/items/rouletteBorder.png"), true);
+			noItemIcon           = TextureIO.newTexture(new File("tex/items/noItemIcon.png"), true);
 		}
 		catch (IOException e) { e.printStackTrace(); }
 		

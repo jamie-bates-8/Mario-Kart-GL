@@ -783,7 +783,7 @@ public class Car
 			for(int i = 0; i < 4; i++)
 			{
 				Quadtree cell = _trees[i].getCell(vertices[i], Quadtree.MAXIMUM_LOD);
-				if(cell != null) cell.subdivide();
+//				if(cell != null) cell.subdivide();
 				_trees[i].deform(vertices[i], 1.5f, -depression);
 			}
 		}

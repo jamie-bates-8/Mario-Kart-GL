@@ -19,6 +19,7 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -39,7 +40,7 @@ public class Banana extends Item
 	
 	static
 	{
-		try { face = TextureIO.newTexture(new File("tex/bananaFace.png"), true); }
+		try { face = TextureIO.newTexture(new File("tex/items/bananaFace.png"), true); }
 		catch (Exception e) { e.printStackTrace(); }
 		
 		gradient = new Gradient(YELLOW, BROWN);
@@ -94,7 +95,11 @@ public class Banana extends Item
 			if(thrown) gl.glRotatef(trajectory, 0, 1, 0);
 			else gl.glMultMatrixf(getRotationMatrix(u), 0);
 			
+			Scene.shaders.get("phong").enable(gl);
+			
 			gl.glCallList(bananaList);
+			
+			Shader.disable(gl);
 			
 			gl.glPushMatrix();
 			{

@@ -34,6 +34,8 @@ import com.jogamp.opengl.util.texture.Texture;
 
 public class Terrain
 {
+	private static final String BUMP_MAPS = "tex/bump_maps/";
+	
 	private static final float WORLD_LENGTH = 420;
 	
 	private static final float PEAK_INC = 0.15f;
@@ -61,7 +63,7 @@ public class Terrain
 	private boolean createLightMap = false;
 	
 	public int terrainList;
-	public int renderMode = 1;
+	public int renderMode = 3;
 	
 	public float[][] heights;
 	public int length;
@@ -71,9 +73,11 @@ public class Terrain
 	float[][] texCoords;
 	
 	public List<Texture > textures  = new ArrayList<Texture >();
+	public List<Texture > bumpmaps  = new ArrayList<Texture >();
 	public List<Gradient> gradients = new ArrayList<Gradient>();
 	
 	public int  textureID = 0;
+	public int  bumpmapID = 0;
 	public int gradientID = 0;
 	
 	public Texture baseTexture;
@@ -89,7 +93,7 @@ public class Terrain
 	public HashMap<String, Quadtree> trees = new HashMap<String, Quadtree>();
 	public Quadtree tree;
 	
-	public boolean enableQuadtree = false;
+	public boolean enableQuadtree = true;
 	public boolean enableWater = false;
 	
 	public Terrain(GL2 gl, int length, int i)
@@ -121,34 +125,31 @@ public class Terrain
 		
 		System.out.println("Terrain:\n{");
 		
-		if(!enableQuadtree)
-		{
-			long start = System.nanoTime();
+		long start = System.nanoTime();
 			
-			setHeights(length, i);
+		setHeights(length, i);
 			
-			long end = System.nanoTime();
+		long end = System.nanoTime();
 			
-			System.out.printf("\tDeformation: %.3f ms\n", (end - start) / 1E6);
+		System.out.printf("\tDeformation: %.3f ms\n", (end - start) / 1E6);
 			
-			this.length = length;
+		this.length = length;
 			
-			sx = sz = WORLD_LENGTH / length;
+		sx = sz = WORLD_LENGTH / length;
 			
-			if(createLightMap) createLightMap();
+		if(createLightMap) createLightMap();
 			
-			start = System.currentTimeMillis();
+		start = System.currentTimeMillis();
 			
-			createGeometry(TEXTURE_LENGTH);
+		createGeometry(TEXTURE_LENGTH);
 			
-			end = System.currentTimeMillis();
+		end = System.currentTimeMillis();
 			
-			System.out.println("\tGeometry: " + (System.currentTimeMillis() - start) + " ms\n}");
+		System.out.println("\tGeometry: " + (System.currentTimeMillis() - start) + " ms\n}");
 			
-			displayList(gl);
+		displayList(gl);
 			
-			toModel();
-		}
+		toModel();
 		
 		generateQuadtree();
 	}
@@ -160,6 +161,7 @@ public class Terrain
 		
 		
 		Quadtree base = new Quadtree(210, 32, textures.get(1), 7);
+		base.bumpmap = bumpmaps.get(0);
 		base.setHeights(1000);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		
@@ -168,12 +170,14 @@ public class Terrain
 		
 		Quadtree pond = new Quadtree(210, 10, 9);
 		pond.enableShading  = false;
+		pond.enableBumpmap  = false;
 		pond.enableColoring = false;
 		pond.enableBlending = true;
 		pond.offsetHeights(0.5f);
 		
 		
 		Quadtree road = new Quadtree(210, 32, textures.get(3), 7);
+		road.bumpmap = bumpmaps.get(0);
 		road.setHeights(1000);
 		road.malleable = false;
 		road.specular = new float[] {1, 1, 1, 1};
@@ -359,6 +363,16 @@ public class Terrain
 			textures.add(TextureLoader.load(gl, "tex/cobbles.jpg"));
 			
 			baseTexture = textures.get(0);
+			
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "brick.gif"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "bubble.jpg" ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cobble.gif" ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cracked.png"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grass.jpg"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grid.png"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "ground.png" ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"  ));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -647,6 +661,14 @@ public class Terrain
 				break;
 			}
 			
+			case KeyEvent.VK_SLASH:
+			{
+				bumpmapID++;
+				bumpmapID %= bumpmaps.size();
+				tree.bumpmap = bumpmaps.get(bumpmapID);
+				break;
+			}
+			
 			case KeyEvent.VK_K:
 			{
 				gradientID++;
@@ -662,9 +684,9 @@ public class Terrain
 		if(enableQuadtree)
 		{
 			gl.glPushMatrix();
-			{
+			{	
 				for(Quadtree surface : trees.values())
-					if(!surface.enableBlending) surface.render(gl);
+					if(!surface.enableBlending) surface.render(gl);	
 			}
 			gl.glPopMatrix();
 		}

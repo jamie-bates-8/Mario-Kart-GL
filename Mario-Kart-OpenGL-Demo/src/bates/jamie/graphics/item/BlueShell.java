@@ -18,6 +18,7 @@ import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -90,6 +91,8 @@ public class BlueShell extends Shell
 	{
 		if(!dead)
 		{
+			Scene.shaders.get("phong_texture").enable(gl);
+			
 			gl.glPushMatrix();
 			{
 				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
@@ -101,6 +104,8 @@ public class BlueShell extends Shell
 				gl.glCallList(spikeList);
 			}
 			gl.glPopMatrix();
+			
+			Shader.disable(gl);
 		}
 		else if(!blast.isEmpty()) BlastParticle.renderList(gl, blast);
 	}

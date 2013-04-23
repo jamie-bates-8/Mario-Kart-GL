@@ -33,7 +33,7 @@ public class ItemBox
 	
 	static
 	{
-		try { questionMark = TextureIO.newTexture(new File("tex/questionMark.png"), true); }
+		try { questionMark = TextureIO.newTexture(new File("tex/items/questionMark.png"), true); }
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	

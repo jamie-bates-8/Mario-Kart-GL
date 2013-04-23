@@ -11,6 +11,7 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -76,6 +77,8 @@ public class GreenShell extends Shell
 	
 	public void render(GL2 gl, float trajectory)
 	{
+		Scene.shaders.get("phong_texture").enable(gl);
+		
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
@@ -86,6 +89,8 @@ public class GreenShell extends Shell
 			gl.glCallList(rimList);
 		}
 		gl.glPopMatrix();
+		
+		Shader.disable(gl);
 	}
 	
 	@Override

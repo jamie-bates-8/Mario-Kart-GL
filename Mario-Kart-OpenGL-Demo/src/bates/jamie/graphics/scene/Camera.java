@@ -21,6 +21,7 @@ public class Camera extends AnchorPoint
 	private int height = 640;
 	
 	private boolean rearview = false;
+	public  boolean shaking  = true;
 	
 	public Camera() {}
 	
@@ -68,9 +69,11 @@ public class Camera extends AnchorPoint
 				gl.glTranslatef(0, -3.0f, 0);
 				gl.glRotated(ry, 0.0f, -1.0f, 0.0f);
 				
+				float[] v = shaking ? u[1] : new float[] {0, 1, 0};
+				
 				glu.gluLookAt(c[0] +  0, c[1], c[2],
 							  c[0] - 10, c[1], c[2],
-					          u[1][0], u[1][1], u[1][2]);
+					          v[0], v[1], v[2]);
 				
 				break;
 			}

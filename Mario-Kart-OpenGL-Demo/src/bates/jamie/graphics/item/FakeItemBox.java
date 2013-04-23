@@ -1,4 +1,5 @@
 package bates.jamie.graphics.item;
+
 import static bates.jamie.graphics.util.Renderer.displayPartiallyTexturedObject;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
@@ -38,7 +39,7 @@ public class FakeItemBox extends Item
 	
 	static
 	{
-		try { questionMark = TextureIO.newTexture(new File("tex/fakeQuestionMark.png"), true); }
+		try { questionMark = TextureIO.newTexture(new File("tex/items/fakeQuestionMark.png"), true); }
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
