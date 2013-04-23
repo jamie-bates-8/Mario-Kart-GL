@@ -161,7 +161,7 @@ public class Terrain
 		
 		
 		Quadtree base = new Quadtree(210, 32, textures.get(1), 7);
-		base.bumpmap = bumpmaps.get(0);
+		base.bumpmap = bumpmaps.get(6);
 		base.setHeights(1000);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		
@@ -364,15 +364,16 @@ public class Terrain
 			
 			baseTexture = textures.get(0);
 			
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "brick.gif"  ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "bubble.jpg" ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cobble.gif" ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cracked.png"));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grass.jpg"  ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grid.png"   ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "ground.png" ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"   ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "brick.gif"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "bubble.jpg"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cobble.gif"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cracked.png" ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grass.jpg"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grid.png"    ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "ground.png"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"    ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "caustics.png"));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}

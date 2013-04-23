@@ -55,6 +55,7 @@ public class Quadtree
 	List<float[]> normals;
 	List<float[]> texCoords;
 	List<float[]> colors;
+	List<float[]> tangents;
 	
 	List<Float> heights;
 	public float height = 10;
@@ -66,6 +67,7 @@ public class Quadtree
 	FloatBuffer nBuffer;
 	FloatBuffer tBuffer;
 	FloatBuffer cBuffer;
+	FloatBuffer aBuffer;
 	
 	int indexCount;
 	
@@ -88,7 +90,8 @@ public class Quadtree
 	
 	public boolean frame = false;
 	public boolean solid = true;
-	public boolean vNormals = false;
+	public boolean vNormals  = false;
+	public boolean vTangents = false;
 	
 	public boolean reliefMap = false;
 
@@ -117,12 +120,14 @@ public class Quadtree
 		normals   = root.normals;
 		texCoords = root.texCoords;
 		colors    = root.colors;
+		tangents  = root.tangents;
 		
 		vBuffer = root.vBuffer;
 		nBuffer = root.nBuffer;
 		tBuffer = root.tBuffer;
 		cBuffer = root.cBuffer;
 		iBuffer = root.iBuffer;
+		aBuffer = root.aBuffer;
 		
 		this.indices = indices;
 		
@@ -149,6 +154,7 @@ public class Quadtree
 		this.indices   = new int[] {0, 1, 2, 3};
 		
 		texCoords = new ArrayList<float[]>();
+		tangents  = new ArrayList<float[]>();
 		
 		createLists(vertices);
 		createBuffers();
@@ -175,6 +181,7 @@ public class Quadtree
 		this.indices   = new int[] {0, 1, 2, 3};
 		
 		texCoords = new ArrayList<float[]>();
+		tangents  = new ArrayList<float[]>();
 		
 		createLists(vertices);
 		createBuffers();
@@ -213,7 +220,7 @@ public class Quadtree
 		this.vertices  = vertices;
 		this.texCoords = texCoords;
 		
-		createLists(vertices);
+		createLists(vertices, texCoords);
 		createBuffers();
 		
 		this.texture = texture;
@@ -257,7 +264,7 @@ public class Quadtree
 		this.vertices  = vertices;
 		this.texCoords = texCoords;
 		
-		createLists(vertices);
+		createLists(vertices, texCoords);
 		createBuffers();
 		
 		this.texture = texture;
@@ -269,6 +276,25 @@ public class Quadtree
 		System.out.printf("\tVertices   : %7d\n", vertexCount());
 		System.out.printf("\tCells      : %7d\n", cellCount());
 		System.out.println("}");
+	}
+	
+	private void createLists(List<float[]> plane, List<float[]> scale)
+	{
+		normals = new ArrayList<float[]>();
+		float[] normal = Vector.normal(plane.get(0), plane.get(1), plane.get(3));
+		for(int i = 0; i < 4; i++) normals.add(normal);
+		
+		tangents = new ArrayList<float[]>();
+		float[] tangent = Vector.tangent(
+			plane.get(0), plane.get(1), plane.get(3),
+			scale.get(0), scale.get(1), scale.get(3));
+		for(int i = 0; i < 4; i++) tangents.add(tangent);
+		
+		colors = new ArrayList<float[]>();
+		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
+		
+		heights = new ArrayList<Float>();
+		for(int i = 0; i < 4; i++) heights.add(plane.get(i)[1]);
 	}
 
 	private void createLists(List<float[]> vertices)
@@ -464,6 +490,9 @@ public class Quadtree
 		cBuffer = Buffers.newDirectFloatBuffer(capacity * 3);
 		for(float[] color : colors) cBuffer.put(color);
 		
+		aBuffer = Buffers.newDirectFloatBuffer(capacity * 3);
+		for(float[] tangent : tangents) aBuffer.put(tangent);
+		
 		iBuffer = Buffers.newDirectIntBuffer(getCellCapacity() * 4);
 		for(int index : indices) iBuffer.put(index);
 		
@@ -551,20 +580,6 @@ public class Quadtree
 		return ((x >= _x) && (x <= x_) && (z >= _z) && (z <= z_)); 
 	}
 	
-	public void deallocateBuffers()
-	{
-		vBuffer = null;
-		nBuffer = null;
-		tBuffer = null;
-		cBuffer = null;
-		iBuffer = null;
-		
-		if(north_west != null) north_west.deallocateBuffers();
-		if(north_east != null) north_east.deallocateBuffers();
-		if(south_west != null) south_west.deallocateBuffers();
-		if(south_east != null) south_east.deallocateBuffers();
-	}
-	
 	/**
 	 * This method splits the cell into four by halving it across both the horizontal
 	 * and vertical centres. This is accomplished by extending the quadtree hierarchy
@@ -582,6 +597,7 @@ public class Quadtree
 		nBuffer.limit(nBuffer.capacity());
 		tBuffer.limit(tBuffer.capacity());
 		cBuffer.limit(cBuffer.capacity());
+		aBuffer.limit(aBuffer.capacity());
 		
 		float _x = vertices.get(indices[3])[0];
 		float _z = vertices.get(indices[3])[2];
@@ -660,6 +676,15 @@ public class Quadtree
 		float[] nSouth  = getNormal(south ); if(iSouth  == -1) { normals.add(nSouth ); nBuffer.put(nSouth ); };
 		float[] nWest   = getNormal(west  ); if(iWest   == -1) { normals.add(nWest  ); nBuffer.put(nWest  ); };
 		float[] nCentre = getNormal(centre); if(iCentre == -1) { normals.add(nCentre); nBuffer.put(nCentre); };
+		
+		if(enableTexture)
+		{
+			float[] aNorth  = getTangent(north ); if(iNorth  == -1) { tangents.add(aNorth ); aBuffer.put(aNorth ); };
+			float[] aEast   = getTangent(east  ); if(iEast   == -1) { tangents.add(aEast  ); aBuffer.put(aEast  ); };
+			float[] aSouth  = getTangent(south ); if(iSouth  == -1) { tangents.add(aSouth ); aBuffer.put(aSouth ); };
+			float[] aWest   = getTangent(west  ); if(iWest   == -1) { tangents.add(aWest  ); aBuffer.put(aWest  ); };
+			float[] aCentre = getTangent(centre); if(iCentre == -1) { tangents.add(aCentre); aBuffer.put(aCentre); };
+		}
 		
 		if(lod < root.detail)
 		{
@@ -881,12 +906,8 @@ public class Quadtree
 			float depression = -generator.nextFloat() * trough;
 			
 			vertex[1] += depression * (generator.nextBoolean() ? 1 : -1);
-//			float[] color = gradient.interpolate((heights.get(i) - vertex[1]) / MAX_TROUGH);
-//			colors.set(i, color);
 			
-			int position = cBuffer.position();
-//			cBuffer.position(i * 3); cBuffer.put(color);
-//			cBuffer.position(position);
+			int position = vBuffer.position();
 				
 			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 			vBuffer.position(position);
@@ -1109,11 +1130,15 @@ public class Quadtree
 			{
 				float[] normal = getNormal(index);
 				normals.set(index, normal);
-				
 				nBuffer.position(index * 3); nBuffer.put(normal);
+				
+				float[] tangent = getTangent(index);
+				tangents.set(index, tangent);
+				aBuffer.position(index * 3); aBuffer.put(tangent);
 			}
 			
 			nBuffer.position(position);
+			aBuffer.position(position);
 		}
 	}
 	
@@ -1150,6 +1175,21 @@ public class Quadtree
 		}
 		
 		nBuffer.position(position);
+	}
+	
+	public void recalculateTangents()
+	{
+		int position = aBuffer.position();
+		
+		for(int i = 0; i < tangents.size(); i++)
+		{	
+			float[] tangent = getTangent(i);
+			
+			tangents.set(i, tangent);
+			aBuffer.position(i * 3); aBuffer.put(tangent);
+		}
+		
+		aBuffer.position(position);
 	}
 	
 	public Set<Integer> getIndices(float[] p, float radius)
@@ -1335,14 +1375,14 @@ public class Quadtree
 	{
 		if(solid)
 		{
-			Shader shader = Scene.shaders.get("bump");
+			Shader shader = enableBumpmap ? Scene.shaders.get("bump") : Scene.shaders.get("phong_texture");
 			shader.enable(gl);
+			
+			int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+			gl.glUniform1i(texture, 0);
 			
 			if(enableBumpmap && Shader.enableShaders)
 			{
-				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-				gl.glUniform1i(texture, 0);
-				
 				int bumpmap = gl.glGetUniformLocation(shader.shaderID, "bumpmap");
 				gl.glUniform1i(bumpmap, 1);
 			}
@@ -1353,8 +1393,9 @@ public class Quadtree
 			Shader.disable(gl);
 		}
 		
-		if(frame   ) renderWireframe(gl);
-		if(vNormals) renderNormals(gl, true, 1);
+		if(frame    ) renderWireframe(gl);
+		if(vNormals ) renderNormals  (gl, true, 1);
+		if(vTangents) renderTangents (gl, true, 1);
 		
 		if(selected != null && !selected.isEmpty()) renderSelected(gl);
 	}
@@ -1374,8 +1415,6 @@ public class Quadtree
 		
 		gl.glColor4f(1, 1, 1, 1);
 	}
-	
-	FloatBuffer aBuffer;
 	
 	public void renderGeometry(GL2 gl)
 	{
@@ -1399,23 +1438,23 @@ public class Quadtree
 		if(enableColoring) gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		if(enableTexture ) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
+		if(enableBumpmap) gl.glEnableVertexAttribArray(1);
+		
+		if(aBuffer == null && enableBumpmap)
+		{
+			aBuffer = Buffers.newDirectFloatBuffer(getVertexCapacity() * 3);
+			for(int i = 0; i < vertices.size(); i++) aBuffer.put(getTangent(i));
+		}
+		
 		vBuffer.flip(); // read data from start of buffer
 		nBuffer.flip();
 		cBuffer.flip();
 		tBuffer.flip();
 		iBuffer.flip();
+		aBuffer.flip();
 		
-		if(enableBumpmap) gl.glEnableVertexAttribArray(1);
-		
-		if(aBuffer == null && enableBumpmap)
+		if(enableBumpmap && Shader.enableShaders)
 		{
-			aBuffer = Buffers.newDirectFloatBuffer(vertices.size() * 3);
-			for(int i = 0; i < vertices.size(); i++) aBuffer.put(getTangent(i));
-		}
-		
-		if(aBuffer != null && enableBumpmap && Shader.enableShaders)
-		{
-			aBuffer.position(0);
 			gl.glVertexAttribPointer(1, 3, GL2.GL_FLOAT, true, 0, aBuffer);
 		}
 		
@@ -1442,6 +1481,7 @@ public class Quadtree
 		tBuffer.position(tBuffer.limit()); tBuffer.limit(tBuffer.capacity());
 		cBuffer.position(cBuffer.limit()); cBuffer.limit(cBuffer.capacity());
 		iBuffer.position(iBuffer.limit()); iBuffer.limit(iBuffer.capacity());
+		aBuffer.position(aBuffer.limit()); aBuffer.limit(aBuffer.capacity());
 		
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
@@ -1532,7 +1572,6 @@ public class Quadtree
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
 		float[] c = RGB.BLUE;
-		
 		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
 
 		gl.glEnable(GL2.GL_BLEND);
@@ -1545,6 +1584,39 @@ public class Quadtree
 		{
 			float[] p1 = vertices.get(i);
 			float[] p2 = Vector.add(p1, Vector.multiply(normals.get(i), scale));
+			
+			gl.glVertex3f(p1[0], p1[1], p1[2]);
+			gl.glVertex3f(p2[0], p2[1], p2[2]);
+		}
+		gl.glEnd();
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glDisable(GL2.GL_POINT_SMOOTH);
+		
+		gl.glColor3f(1, 1, 1);
+		
+		gl.glEnable(GL2.GL_LIGHTING);
+		gl.glEnable(GL_TEXTURE_2D);	
+	}
+	
+	public void renderTangents(GL2 gl, boolean smooth, float scale)
+	{
+		gl.glDisable(GL2.GL_LIGHTING);
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		
+		float[] c = RGB.GREEN;
+		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
+
+		gl.glEnable(GL2.GL_BLEND);
+		gl.glEnable(GL2.GL_LINE_SMOOTH);
+		gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
+		
+		gl.glBegin(GL2.GL_LINES);
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] p1 = vertices.get(i);
+			float[] p2 = Vector.add(p1, Vector.multiply(tangents.get(i), scale));
 			
 			gl.glVertex3f(p1[0], p1[1], p1[2]);
 			gl.glVertex3f(p2[0], p2[1], p2[2]);

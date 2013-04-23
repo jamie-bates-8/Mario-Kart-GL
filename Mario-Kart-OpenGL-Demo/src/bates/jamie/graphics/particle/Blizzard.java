@@ -38,7 +38,7 @@ public class Blizzard
 	public float[] wind;
 	
 	public boolean enableSettling  = false;
-	public boolean enableSplashing = false; 
+	public boolean enableSplashing = true; 
 	
 	public static final int PRECIPITATION_RATE = 10;
 	

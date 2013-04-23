@@ -202,13 +202,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_material;
 	private JCheckBoxMenuItem menuItem_texturing;
 	private JCheckBoxMenuItem menuItem_malleable;
+	private JCheckBoxMenuItem menuItem_bumpmaps;
 	private JMenuItem menuItem_shininess;
 	private JMenu menu_coloring;
 	private JCheckBoxMenuItem menuItem_vcoloring;
 	private JMenu menu_normals;
 	private JCheckBoxMenuItem menuItem_shading;
+	private JMenuItem menuItem_tangent;
 	private JMenuItem menuItem_recalculate;
 	private JCheckBoxMenuItem menuItem_vnormals;
+	private JCheckBoxMenuItem menuItem_vtangents;
 	private JMenu menu_heights;
 	private JCheckBoxMenuItem menuItem_elevation;
 	private JMenuItem menuItem_height;
@@ -726,6 +729,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_texturing.addItemListener(this);
 		menuItem_texturing.setMnemonic(KeyEvent.VK_T);
 		
+		menuItem_bumpmaps = new JCheckBoxMenuItem("Bump Mapping");
+		menuItem_bumpmaps.addItemListener(this);
+		menuItem_bumpmaps.setMnemonic(KeyEvent.VK_B);
+		
 		menuItem_malleable = new JCheckBoxMenuItem("Malleable");
 		menuItem_malleable.addItemListener(this);
 		menuItem_malleable.setMnemonic(KeyEvent.VK_M);
@@ -735,6 +742,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_shininess.setActionCommand("material_specular");
 		
 		menu_material.add(menuItem_texturing);
+		menu_material.add(menuItem_bumpmaps );
 		menu_material.add(menuItem_malleable);
 		menu_material.add(menuItem_shininess);
 		
@@ -749,15 +757,24 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_vnormals.addItemListener(this);
 		menuItem_vnormals.setMnemonic(KeyEvent.VK_V);
 		
+		menuItem_vtangents = new JCheckBoxMenuItem("Show Vertex Tangents");
+		menuItem_vtangents.addItemListener(this);
+		
 		menuItem_recalculate = new JMenuItem("Recalculate Normals", KeyEvent.VK_R);
 		menuItem_recalculate.addActionListener(this);
 		menuItem_recalculate.setActionCommand("recalc_norms");
 		
-		menu_normals.add(menuItem_vnormals);
+		menuItem_tangent = new JMenuItem("Recalculate Tangents", KeyEvent.VK_T);
+		menuItem_tangent.addActionListener(this);
+		menuItem_tangent.setActionCommand("recalc_tangs");
+		
+		menu_normals.add(menuItem_vnormals );
+		menu_normals.add(menuItem_vtangents);
 		menu_normals.addSeparator();
 		menu_normals.add(menuItem_shading);
 		menu_normals.addSeparator();
 		menu_normals.add(menuItem_recalculate);
+		menu_normals.add(menuItem_tangent);
 		
 		menu_coloring = new JMenu("Coloring");
 		menu_coloring.setMnemonic(KeyEvent.VK_C);
@@ -982,11 +999,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menuItem_elevation.setSelected(terrain.tree.reliefMap);
 		menuItem_vnormals .setSelected(terrain.tree.vNormals );
+		menuItem_vtangents.setSelected(terrain.tree.vTangents);
 		
 		menuItem_shading.setSelected(terrain.tree.enableShading);
 		
 		menuItem_vcoloring.setSelected(terrain.tree.enableColoring);
 		menuItem_texturing.setSelected(terrain.tree.enableTexture );
+		menuItem_bumpmaps .setSelected(terrain.tree.enableBumpmap );
 		menuItem_malleable.setSelected(terrain.tree.malleable     );
 	}
 
@@ -2413,6 +2432,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
 		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
 		else if(event.getActionCommand().equals("recalc_norms" )) terrain.tree.recalculateNormals();
+		else if(event.getActionCommand().equals("recalc_tangs" )) terrain.tree.recalculateTangents();    
 		else if(event.getActionCommand().equals("save_heights" ))
 		{
 			Quadtree tree = terrain.tree;
@@ -2501,9 +2521,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_solid      )) terrain.tree.solid          = selected;
 		else if(source.equals(menuItem_elevation  )) terrain.tree.reliefMap      = selected;  
 		else if(source.equals(menuItem_frame      )) terrain.tree.frame          = selected;
-		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected; 
+		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected;
+		else if(source.equals(menuItem_bumpmaps   )) terrain.tree.enableBumpmap  = selected;     
 		else if(source.equals(menuItem_malleable  )) terrain.tree.malleable      = selected;     
 		else if(source.equals(menuItem_vnormals   )) terrain.tree.vNormals       = selected; 
+		else if(source.equals(menuItem_vtangents  )) terrain.tree.vTangents      = selected;     
 		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading  = selected;
 		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse   = selected;
