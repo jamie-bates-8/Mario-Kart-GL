@@ -58,7 +58,7 @@ public class Quadtree
 	List<float[]> tangents;
 	
 	List<Float> heights;
-	public float height = 10;
+	public float height = 5;
 	
 	int offset;
 	
@@ -75,8 +75,9 @@ public class Quadtree
 	public Texture bumpmap;
 	public Gradient gradient = Gradient.GRAYSCALE;
 	
-	public FallOff falloff = FallOff.SMOOTH;
-	public boolean malleable = true;
+	public FallOff falloff    = FallOff.SMOOTH;
+	public float   elasticity = 1.0f;
+	public boolean malleable  = true;
 	
 	public boolean enableShading = true;
 	public boolean smoothShading = true;
@@ -170,6 +171,8 @@ public class Quadtree
 	{
 		root = this;
 		lod = 0;
+		
+		this.height = height;
 		
 		List<float[]> vertices = new ArrayList<float[]>();
 		vertices.add(new float[] {-vScale, height,  vScale});
@@ -1075,6 +1078,9 @@ public class Quadtree
 	
 	public void deformVertex(int i, float[] p, float radius, float peak)
 	{
+		if(elasticity < 0) elasticity = 0;
+		peak *= elasticity;
+		
 		float[] vertex = vertices.get(i);
 		
 		float x = Math.abs(vertex[0] - p[0]); if(x > radius) return;
@@ -1082,6 +1088,8 @@ public class Quadtree
 		
 		// calculate distance from vertex to centre of deformation
 		double d = Math.sqrt(x * x + z * z);
+		
+		Random generator = new Random();
 		
 		if(d <= radius)
 		{
@@ -1092,6 +1100,7 @@ public class Quadtree
 			{
 				case LINEAR: vertex[1] += peak * (1 - (d / radius)); break;
 				case SMOOTH: vertex[1] += peak * 0.5f * (Math.cos(d / radius * Math.PI) + 1); break;
+				case RANDOM: vertex[1] += peak * (-0.30f + generator.nextFloat()); break;
 			}
 			
 			if(vertex[1] < heights.get(i) - MAX_TROUGH)
@@ -1248,7 +1257,8 @@ public class Quadtree
 	
 	public void setGradient(Gradient gradient)
 	{
-		this.gradient = gradient;
+		if(gradient != null) this.gradient = gradient;
+		else gradient = this.gradient;
 		
 		int position = cBuffer.position();
 		
@@ -1666,7 +1676,8 @@ public class Quadtree
 	public enum FallOff
 	{
 		LINEAR,
-		SMOOTH;
+		SMOOTH,
+		RANDOM;
 		
 		public static FallOff cycle(FallOff mode)
 		{

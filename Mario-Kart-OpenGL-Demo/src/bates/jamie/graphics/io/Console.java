@@ -34,23 +34,31 @@ public class Console
 
 		Scanner cmd = new Scanner(command);
 		
-		String _cmd = cmd.next();
-
-		     if(_cmd.equalsIgnoreCase(      "add")) parseAdd(cmd);
-		else if(_cmd.equalsIgnoreCase(   "delete")) parseDelete(cmd);
-		else if(_cmd.equalsIgnoreCase(   "player")) parsePlayer(cmd);
-		else if(_cmd.equalsIgnoreCase(    "scene")) parseScene(cmd);
-		else if(_cmd.equalsIgnoreCase("collision")) parseCollision(cmd);
-		else if(_cmd.equalsIgnoreCase(    "bound")) parseBound(cmd);
-		else if(_cmd.equalsIgnoreCase(  "profile")) parseProfile(cmd);
-		else if(_cmd.equalsIgnoreCase(    "press")) parsePress(cmd);
-		else if(_cmd.equalsIgnoreCase(     "item")) parseItem(cmd);
-		else if(_cmd.equalsIgnoreCase(  "texture")) parseTexture(cmd); 
-		else if(_cmd.equalsIgnoreCase(  "terrain")) parseTerrain(cmd);
-		else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd);
-		else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd);
-		else if(_cmd.equalsIgnoreCase(   "export")) parseExport(cmd);
-		else if(_cmd.equalsIgnoreCase(  "weather")) parseWeather(cmd);
+		try
+		{
+			String _cmd = cmd.next();
+	
+			     if(_cmd.equalsIgnoreCase(      "add")) parseAdd(cmd);
+			else if(_cmd.equalsIgnoreCase(   "delete")) parseDelete(cmd);
+			else if(_cmd.equalsIgnoreCase(   "player")) parsePlayer(cmd);
+			else if(_cmd.equalsIgnoreCase(    "scene")) parseScene(cmd);
+			else if(_cmd.equalsIgnoreCase("collision")) parseCollision(cmd);
+			else if(_cmd.equalsIgnoreCase(    "bound")) parseBound(cmd);
+			else if(_cmd.equalsIgnoreCase(  "profile")) parseProfile(cmd);
+			else if(_cmd.equalsIgnoreCase(    "press")) parsePress(cmd);
+			else if(_cmd.equalsIgnoreCase(     "item")) parseItem(cmd);
+			else if(_cmd.equalsIgnoreCase(  "texture")) parseTexture(cmd); 
+			else if(_cmd.equalsIgnoreCase(  "terrain")) parseTerrain(cmd);
+			else if(_cmd.equalsIgnoreCase( "particle")) parseParticle(cmd);
+			else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd);
+			else if(_cmd.equalsIgnoreCase(   "export")) parseExport(cmd);
+			else if(_cmd.equalsIgnoreCase(  "weather")) parseWeather(cmd);
+			else if(_cmd.equalsIgnoreCase(   "shadow")) parseShadow(cmd);    
+		}
+		catch(Exception e)
+		{
+			scene.getCars().get(0).getHUD().broadcast("Invalid Command");
+		}
 
 		cmd.close();
 	}
@@ -76,12 +84,13 @@ public class Console
 		String _cmd = cmd.next();
 		Quadtree tree = scene.getTerrain().tree;
 		
-		     if(_cmd.equalsIgnoreCase("wireframe")) parseWireframe(cmd);
-		else if(_cmd.equalsIgnoreCase("subdivide")) tree.subdivideAll();
-		else if(_cmd.equalsIgnoreCase( "decimate")) tree.decimateAll(); 
-		else if(_cmd.equalsIgnoreCase(      "lod")) tree.detail = cmd.nextInt();
-		else if(_cmd.equalsIgnoreCase(  "texture")) tree.scaleTexture(cmd.nextFloat());
-		else if(_cmd.equalsIgnoreCase("translate"))
+		     if(_cmd.equalsIgnoreCase( "wireframe")) parseWireframe(cmd);
+		else if(_cmd.equalsIgnoreCase( "subdivide")) tree.subdivideAll();
+		else if(_cmd.equalsIgnoreCase(  "decimate")) tree.decimateAll(); 
+		else if(_cmd.equalsIgnoreCase(       "lod")) tree.detail = cmd.nextInt();
+		else if(_cmd.equalsIgnoreCase(   "texture")) tree.scaleTexture(cmd.nextFloat());
+		else if(_cmd.equalsIgnoreCase("elasticity")) tree.elasticity = cmd.nextFloat();
+		else if(_cmd.equalsIgnoreCase( "translate"))
 		{
 			float x = cmd.nextFloat();
 			float y = cmd.nextFloat();
@@ -101,6 +110,13 @@ public class Console
 			scene.flakeLimit = limit;
 			if(scene.blizzard != null) scene.blizzard.setLimit(limit);
 		}
+	}
+	
+	private void parseShadow(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		if(_cmd.equalsIgnoreCase("offset")) scene.shadowOffset = cmd.nextFloat();
 	}
 	
 	private void parseWireframe(Scanner cmd)

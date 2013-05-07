@@ -124,7 +124,7 @@ public class HUD
 		
 		gl.glColor3f(1.0f, 1.0f, 1.0f);
 		
-		ortho2DEnd(gl, glu);
+		ortho2DEnd(gl);
 		
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 		
@@ -250,10 +250,14 @@ public class HUD
 		
 		renderer.draw("Items: "    + scene.getItems().size(),     40, y - 220);
 		renderer.draw("Particle: " + scene.getParticles().size(), 40, y - 250);
-		renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
-		renderer.draw("LOD: "      + terrain.tree.detail,         40, y - 310);
-		renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
-		renderer.draw("Vertices: " + terrain.tree.vertexCount(),  40, y - 370);
+		
+		if(scene.enableTerrain)
+		{
+			renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
+			renderer.draw("LOD: "      + terrain.tree.detail,         40, y - 310);
+			renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
+			renderer.draw("Vertices: " + terrain.tree.vertexCount(),  40, y - 370);
+		}
 		
 		String weather = scene.enableBlizzard ? scene.blizzard.type.toString() : "Off";
 		if(scene.enableBlizzard)
@@ -468,20 +472,10 @@ public class HUD
 	 * Switches the matrix mode from Projection to Model View, allowing 3D models
 	 * to be rendered normally in the virtual environment.
 	 */
-	private void ortho2DEnd(GL2 gl, GLU glu)
+	private void ortho2DEnd(GL2 gl)
 	{
-		int width  = scene.getWidth();
-		int height = scene.getHeight();
+		scene.resetView(gl);
 		
-		float ratio = (float) width / (float) height;
-		gl.glViewport(0, 0, width, height);
-		
-		gl.glMatrixMode(GL_PROJECTION);
-		gl.glLoadIdentity();
-		glu.gluPerspective(scene.fov, ratio, 1.0, 1000.0);
-		
-		gl.glMatrixMode(GL_MODELVIEW);
-		gl.glLoadIdentity();
 		gl.glEnable(GL_DEPTH_TEST);
 	}
 

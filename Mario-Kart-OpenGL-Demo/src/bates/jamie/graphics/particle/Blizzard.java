@@ -40,7 +40,7 @@ public class Blizzard
 	public boolean enableSettling  = false;
 	public boolean enableSplashing = true; 
 	
-	public static final int PRECIPITATION_RATE = 10;
+	public static final int PRECIPITATION_RATE = 20;
 	
 	public enum StormType
 	{
@@ -259,6 +259,22 @@ public class Blizzard
 		}
 	}
 	
+	public void remove(float[][] vertices)
+	{
+		switch(type)
+		{
+			case RAIN:
+			{
+				
+				
+				break;
+			}
+			case SNOW: break;
+		}
+	}
+	
+	
+	
 	public void renderSnow(GL2 gl)
 	{
 		gl.glPushMatrix();
@@ -332,6 +348,8 @@ public class Blizzard
 		}
 		gl.glPopMatrix();
 		
+		Particle.removeParticles(droplets);
+		
 		if(!droplets.isEmpty()) renderDroplets(gl);
 	}
 
@@ -352,8 +370,6 @@ public class Blizzard
 			
 			gl.glColor4f(1, 1, 1, 0.2f);
 			
-			Particle.removeParticles(droplets);
-			
 			FloatBuffer vBuffer = Buffers.newDirectFloatBuffer(droplets.size() * 3);
 			for(Particle drop : droplets) { drop.update(); vBuffer.put(drop.c); }
 			
@@ -361,8 +377,6 @@ public class Blizzard
 			
 			gl.glVertexPointer(3, GL_FLOAT, 0, vBuffer);
 			gl.glDrawArrays(GL2.GL_POINTS, 0, droplets.size());
-			
-			vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
 			
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);

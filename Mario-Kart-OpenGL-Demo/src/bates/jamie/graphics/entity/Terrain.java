@@ -168,7 +168,7 @@ public class Terrain
 		tree = base;
 		
 		
-		Quadtree pond = new Quadtree(210, 10, 9);
+		Quadtree pond = new Quadtree(210, 5, 9);
 		pond.enableShading  = false;
 		pond.enableBumpmap  = false;
 		pond.enableColoring = false;
@@ -255,6 +255,31 @@ public class Terrain
 		createGeometry(TEXTURE_LENGTH);
 		
 		displayList(gl);
+	}
+
+	private void loadTextures(GL2 gl)
+	{
+		try
+		{
+			textures.add(TextureLoader.load(gl, "tex/grass.jpg"  ));
+			textures.add(TextureLoader.load(gl, "tex/sand.jpg"   ));
+			textures.add(TextureLoader.load(gl, "tex/snow.jpg"   ));
+			textures.add(TextureLoader.load(gl, "tex/cobbles.jpg"));
+			
+			baseTexture = textures.get(0);
+			
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "brick.gif"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "bubble.jpg"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cobble.gif"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cracked.png" ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grass.jpg"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grid.png"    ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "ground.png"  ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"    ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "caustics.png"));
+		}
+		catch (Exception e) { e.printStackTrace(); }
 	}
 
 	/**
@@ -351,31 +376,6 @@ public class Terrain
 			this.length = width; //TODO works with square images only
 		}
 		catch (IOException e) { e.printStackTrace(); }
-	}
-
-	private void loadTextures(GL2 gl)
-	{
-		try
-		{
-			textures.add(TextureLoader.load(gl, "tex/grass.jpg"  ));
-			textures.add(TextureLoader.load(gl, "tex/sand.jpg"   ));
-			textures.add(TextureLoader.load(gl, "tex/snow.jpg"   ));
-			textures.add(TextureLoader.load(gl, "tex/cobbles.jpg"));
-			
-			baseTexture = textures.get(0);
-			
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "brick.gif"   ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "bubble.jpg"  ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cobble.gif"  ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "cracked.png" ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grass.jpg"   ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "grid.png"    ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "ground.png"  ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"    ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"   ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "caustics.png"));
-		}
-		catch (Exception e) { e.printStackTrace(); }
 	}
 
 	private void displayList(GL2 gl)
@@ -646,13 +646,6 @@ public class Terrain
 			case KeyEvent.VK_NUMBER_SIGN: trees.get("Pond").increaseDetail(); break;
 			
 			case KeyEvent.VK_COMMA : enableQuadtree = !enableQuadtree; break;
-			
-			case KeyEvent.VK_PERIOD:
-			{
-				break;
-			}
-			
-			case KeyEvent.VK_P:  tree.flatten(); break;
 			
 			case KeyEvent.VK_J:
 			{

@@ -90,6 +90,7 @@ public class BlockFort
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList);
 		}	
 		gl.glPopMatrix();
@@ -101,6 +102,7 @@ public class BlockFort
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 1);
 
 		}	
@@ -113,6 +115,7 @@ public class BlockFort
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 2);
 		}	
 		gl.glPopMatrix();
@@ -124,6 +127,7 @@ public class BlockFort
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 3);
 		}	
 		gl.glPopMatrix();

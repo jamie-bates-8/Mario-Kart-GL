@@ -27,6 +27,14 @@ public class Matrix
 		{0, 0, 0, 1}
 	};
 	
+	public static final float[][] BIAS_MATRIX =
+		{
+			{.5f,   0,   0, .5f},
+			{  0, .5f,   0, .5f},
+			{  0,   0, .5f, .5f},
+			{  0,   0,   0,   1}
+		};
+	
 	public static float[][] multiply(float[][] a, float[][] b)
 	{
 		int rows = a.length;
@@ -49,16 +57,50 @@ public class Matrix
 		return c;
 	}
 	
-	public static void scale(float[][] m, float scale)
+	public static void scale(float[][] m, float x, float y, float z)
 	{
-		for(int i = 0; i < 4; i++)
-			for(int j = 0; j < 4; j++)
-				m[i][j] *= scale;
+		m[0][0] += x; m[1][1] *= y; m[2][2] *= z; 
 	}
 	
-	public static void translateMatrix44(float[][] m, float x, float y, float z)
+	public static void scale(float[] m, float x, float y, float z)
+	{
+		m[0] *= x; m[5] *= y; m[10] *= z; 
+	}
+	
+	public static void translate(float[][] m, float x, float y, float z)
 	{
 		m[0][3] += x; m[1][3] += y; m[2][3] += z;
+	}
+	
+	public static void translate(float[] m, float x, float y, float z)
+	{
+		m[12] += x; m[13] += y; m[14] += z;
+	}
+	
+	public static void transpose(float[] dst, float[] src)
+	{                              
+		for (int j = 0; j < 4; j++)          
+		{                                    
+		    for (int i = 0; i < 4; i++)      
+		    {                                
+		        dst[(j * 4) + i] = src[(i * 4) + j]; 
+		    }                               
+		}                                    
+	}
+			
+	private static float cell(float[] src, int row, int col) { return src[(col << 2) + row]; }
+
+	// Multiply two 4x4 matricies
+	public static void multiply(float[] product, float[] a, float[] b)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			float ai0 = cell(a,i,0),  ai1 = cell(a,i,1),  ai2 = cell(a,i,2),  ai3 = cell(a,i,3);
+			product[(0 << 2) + i] = ai0 * cell(b,0,0) + ai1 * cell(b,1,0) + ai2 * cell(b,2,0) + ai3 * cell(b,3,0);
+			product[(1 << 2) + i] = ai0 * cell(b,0,1) + ai1 * cell(b,1,1) + ai2 * cell(b,2,1) + ai3 * cell(b,3,1);
+			product[(2 << 2) + i] = ai0 * cell(b,0,2) + ai1 * cell(b,1,2) + ai2 * cell(b,2,2) + ai3 * cell(b,3,2);
+			product[(3 << 2) + i] = ai0 * cell(b,0,3) + ai1 * cell(b,1,3) + ai2 * cell(b,2,3) + ai3 * cell(b,3,3);
+		}
 	}
 	
 	public static float[] multiply(float[] a, float[][] b)
@@ -196,6 +238,10 @@ public class Matrix
 		return R;
 	}
 	
+	/**
+	 * This method converts a 4x4 row-major Matrix into a 16 value column-major
+	 * Vector that matches OpenGL's internal format 
+	 */
 	public static float[] toVector(float[][] m)
 	{
 		float[] R = new float[16];
@@ -207,6 +253,35 @@ public class Matrix
 		return R;
 	}
 	
+	public static void main(String[] args)
+	{
+		float[][] M =
+		{
+			{ 0,  1,  2,  3},
+			{ 4,  5,  6,  7},
+			{ 8,  9, 10, 11},
+			{12, 13, 14, 15}
+		};
+		
+		System.out.println(print(M, 0));
+		
+		float[] m = toVector(M);
+		float[] t = toVector(transpose(M));
+		
+		M = toMatrix(m);
+		float[][] T = toMatrix(t);
+		
+		System.out.println(Vector.print(m, 0));
+		System.out.println(Vector.print(t, 0));
+		System.out.println();
+		System.out.println(print(M, 0));
+		System.out.println(print(T, 0));
+	}
+	
+	/**
+	 * This method converts a 16 value column-major Vector that matches OpenGL's
+	 * internal format into a 4x4 row-major Matrix.
+	 */
 	public static float[][] toMatrix(float[] m)
 	{
 		float[][] R = new float[4][4];
@@ -222,6 +297,23 @@ public class Matrix
 	{
 		float det = getDeterminant(A);
 		return (1 - EPSILON < det && det < 1 + EPSILON);
+	}
+	
+	public static String print(float[][] M, int precision)
+	{
+		String mat = "";
+		
+		for(int i = 0; i < M.length; i++)
+		{
+			mat += "[";
+			
+			for(int j = 0; j < M[0].length - 1; j++)
+				mat += String.format("%." + precision + "f, ", M[i][j]);
+			    mat += String.format("%." + precision + "f] ", M[i][M[0].length - 1]);
+			    mat += "\n";
+		}
+		
+		return mat;
 	}
 	
 	public static float sinf(double a) { return (float) sin(a); }

@@ -45,7 +45,7 @@ public class Light extends AnchorPoint
 		id = count++; count %= 8;
 		
 		setPosition(new float[] {1, 1, 0});
-		setPosition(new float[] {200, 200, 200});
+		setPosition(new float[] {250, 250, 250});
 
 		gl.glEnable(GL_LIGHTING);
 		gl.glEnable(getLight(id));

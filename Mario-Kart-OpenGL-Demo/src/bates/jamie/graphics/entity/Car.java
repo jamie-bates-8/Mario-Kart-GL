@@ -115,7 +115,7 @@ public class Car
 	/** Motion Fields **/
 	public float velocity = 0;
 	public static final float TOP_SPEED = 1.2f;
-	public float acceleration = 0.006f;
+	public float acceleration = 0.012f;
 	public boolean accelerating = false;
 	public boolean reversing = false;
 	public boolean invertReverse = false;
@@ -1165,8 +1165,8 @@ public class Car
 	 */
 	public void accelerate()
 	{
-		if(reversing) velocity += (velocity < -TOP_SPEED) ? acceleration : -acceleration;
-		else velocity += (velocity < TOP_SPEED) ? acceleration : -acceleration;
+		if(reversing) velocity += (velocity < -TOP_SPEED) ? acceleration : (velocity > 0 ? -acceleration * 2 : -acceleration);
+		else velocity += (velocity < TOP_SPEED) ? (velocity < 0 ? acceleration * 2 : acceleration) : -acceleration;
 	}
 
 	/**
