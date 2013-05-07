@@ -340,7 +340,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableBlur = true;
 	
 	
-	public boolean enableTerrain = false;
+	public boolean enableTerrain = true;
 	
 	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
@@ -998,7 +998,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile game");
+	    console.parseCommand("profile project");
 	    
 	    if(enableTerrain)
 	    {
