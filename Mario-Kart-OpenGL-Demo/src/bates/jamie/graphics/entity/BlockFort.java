@@ -3,6 +3,7 @@ package bates.jamie.graphics.entity;
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
 import static bates.jamie.graphics.util.Renderer.displayWireframeObject;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -10,8 +11,11 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.collision.BoundParser;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.scene.OBJParser;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 
 import com.jogamp.opengl.util.texture.Texture;
@@ -84,10 +88,23 @@ public class BlockFort
 		
 		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
+		Shader shader = null;
+		if(Shader.enableShaders) shader = Scene.shaders.get("shadow");
+		
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(90, 30, 90);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
+			
+			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			Matrix.translate(model, 90, 30, 90);
+			Matrix.scale    (model, 30, 30, 30);
+			
+			if(Scene.enableShadow)
+			{
+				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
@@ -100,6 +117,18 @@ public class BlockFort
 			gl.glTranslatef(-90, 30, 90);
 			gl.glRotatef(-90, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
+			
+			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			Matrix.translate(model, 90, 30, 90);
+			float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
+			Matrix.multiply(model, model, rotation);
+			Matrix.scale    (model, 30, 30, 30);
+			
+			if(Scene.enableShadow)
+			{
+				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
@@ -113,6 +142,18 @@ public class BlockFort
 			gl.glTranslatef(-90, 30, -90);
 			gl.glRotatef(-180, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
+			
+			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			Matrix.translate(model, -90, 30, -90);
+			float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
+			Matrix.multiply(model, model, rotation);
+			Matrix.scale    (model, 30, 30, 30);
+			
+			if(Scene.enableShadow)
+			{
+				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
@@ -125,6 +166,18 @@ public class BlockFort
 			gl.glTranslatef(90, 30, -90);
 			gl.glRotatef(-270, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
+			
+			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			Matrix.translate(model, 90, 30, -90);
+			float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
+			Matrix.multiply(model, model, rotation);
+			Matrix.scale    (model, 30, 30, 30);
+			
+			if(Scene.enableShadow)
+			{
+				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});

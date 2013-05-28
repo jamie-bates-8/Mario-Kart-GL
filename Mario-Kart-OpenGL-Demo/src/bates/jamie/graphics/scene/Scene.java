@@ -340,7 +340,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableBlur = true;
 	
 	
-	public boolean enableTerrain = true;
+	public boolean enableTerrain = false;
 	
 	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
@@ -998,7 +998,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile project");
+	    console.parseCommand("profile game");
 	    
 	    if(enableTerrain)
 	    {
@@ -1070,15 +1070,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private void loadShaders(GL2 gl)
 	{
-		Shader phong = new Shader(gl, "phong", "phong");
+		Shader phong        = new Shader(gl, "phong", "phong");
 		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
-		Shader bump = new Shader(gl, "bump", "bump");
-		Shader shadow = new Shader(gl, "shadow", "shadow");
+		Shader bump         = new Shader(gl, "bump", "bump");
+		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		
-		if(phong.isValid()) shaders.put("phong", phong);
+		if(       phong.isValid()) shaders.put("phong", phong);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
-		if(bump.isValid()) shaders.put("bump", bump);
-		if(shadow.isValid()) shaders.put("shadow", shadow);
+		if(        bump.isValid()) shaders.put("bump", bump);
+		if(      shadow.isValid()) shaders.put("shadow", shadow);
 	}
 
 	private void loadParticles()
@@ -1161,7 +1161,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			setupViewport(gl, index);
 			car.setupCamera(gl, glu);
 			
-			if(enableShadow) ambientPass(gl);
+			if(enableShadow && !Shader.enableShaders) ambientPass(gl);
 			
 			light.setup(gl, headlight);
 				
@@ -1186,6 +1186,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 			gl.glDisable(GL2.GL_TEXTURE_GEN_R);
 			gl.glDisable(GL2.GL_TEXTURE_GEN_Q);
+			
+			if(enableShadow) disableShadow(gl);
+			
+			if(enableItemBoxes)
+		    {
+				for(ItemBox box : itemBoxes)
+					if(!box.isDead()) box.render(gl, car.trajectory);
+		    }
 			
 			renderTimes[frameIndex][4] = renderParticles(gl, car);
 			Particle.resetTexture();
@@ -1226,7 +1234,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableBlur && _i != boostCounter) gl.glAccum(GL_LOAD, 1.0f);
 		boostCounter = _i;
 	}
-	
+
 	public boolean printErrors = true;
 	
 	public void select3DPoint(GL2 gl, GLU glu)
@@ -1673,7 +1681,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
+		if(enableShadow ) disableShadow(gl);
 		if(displaySkybox) renderSkybox(gl);
+		if(enableShadow ) enableShadow(gl);
 		
 		Shader shader = null;
 		
@@ -1692,6 +1702,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				gl.glTranslatef(0, 0, 0);
 				gl.glScalef(40.0f, 40.0f, 40.0f);
+				
+				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+				Matrix.scale(model, 40, 40, 40);
+				
+				if(enableShadow)
+				{
+					int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+					gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				}
 	
 				gl.glCallList(floorList);
 			}	
@@ -1704,6 +1723,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderObstacles(gl);
 		
+		if(enableShadow) disableShadow(gl);
 		Shader.disable(gl);
 			
 		if(displaySkybox)
@@ -1787,11 +1807,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		renderTimes[frameIndex][2] = renderVehicles(gl, car);
 	
-		if(enableItemBoxes)
-	    {
-			for(ItemBox box : itemBoxes)
-				if(!box.isDead()) box.render(gl, car.trajectory);
-	    }
+//		if(enableItemBoxes)
+//	    {
+//			for(ItemBox box : itemBoxes)
+//				if(!box.isDead()) box.render(gl, car.trajectory);
+//	    }
 		
 		renderTimes[frameIndex][3] = renderItems(gl, car);
 	}
@@ -1966,7 +1986,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public float shadowRadius = 300.0f;
 	public float shadowOffset = 2.0f;
 	private int shadowTexture;
-	public boolean enableShadow = false;
+	public static boolean enableShadow = true;
 	public boolean displayShadowMap = false;
 	
 	public void setupShadow(GL2 gl)
@@ -2034,9 +2054,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    renderItems(gl, cars.get(0));
 	    renderObstacles(gl);
 	    
+	    enableShadow(gl);
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
-	    gl.glEnable(GL2.GL_TEXTURE_2D);
-	    gl.glBindTexture(GL2.GL_TEXTURE_2D, shadowTexture);
 
 	    // Copy depth values into depth texture
 	    gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, 0, 0, canvasWidth, canvasHeight, 0);
@@ -2056,7 +2075,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 	Matrix.transpose(shadowMatrix, tempMatrix);
 
 	 	gl.glMatrixMode(GL2.GL_TEXTURE);
-	 	gl.glLoadMatrixf(shadowMatrix, 0);
+	 	
+	 	double[] bias =
+	 	{	
+			0.5, 0.0, 0.0, 0.0, 
+			0.0, 0.5, 0.0, 0.0,
+			0.0, 0.0, 0.5, 0.0,
+			0.5, 0.5, 0.5, 1.0
+		};
+			
+		gl.glLoadIdentity();	
+		gl.glLoadMatrixd(bias, 0);
+			
+		// concatating all matrices into one.
+		gl.glMultMatrixf(projection, 0);
+		gl.glMultMatrixf(modelview , 0);
+	 	
+//		gl.glLoadMatrixf(shadowMatrix, 0);
 	 	gl.glActiveTexture(GL2.GL_TEXTURE0); 
 	 	
 	    resetView(gl);
@@ -2136,9 +2171,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void displayShadow(GL2 gl)
 	{
+		enableShadow(gl);
+		
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glEnable(GL2.GL_TEXTURE_2D);
-		gl.glBindTexture(GL2.GL_TEXTURE_2D, shadowTexture);
 		
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_COMPARE_R_TO_TEXTURE);
@@ -2154,6 +2189,22 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glTexGenfv(GL2.GL_T, GL2.GL_EYE_PLANE, shadowMatrix,  4); 
 		gl.glTexGenfv(GL2.GL_R, GL2.GL_EYE_PLANE, shadowMatrix,  8);
 		gl.glTexGenfv(GL2.GL_Q, GL2.GL_EYE_PLANE, shadowMatrix, 12);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
+	}
+
+	private void disableShadow(GL2 gl)
+	{
+		gl.glActiveTexture(GL2.GL_TEXTURE2);
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
+	}
+
+	private void enableShadow(GL2 gl)
+	{
+		gl.glActiveTexture(GL2.GL_TEXTURE2);
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, shadowTexture);
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}

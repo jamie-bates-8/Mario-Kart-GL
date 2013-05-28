@@ -1,3 +1,4 @@
+uniform mat4 ModelMatrix;
 varying vec4 shadowCoord;
 
 void main()
@@ -11,8 +12,11 @@ void main()
 	float diffuse = max(0.0, dot(normal, VP));
 	diffuse = diffuse + 0.25;
 	
-	vec4 texCoord = gl_ModelViewMatrix * (gl_TextureMatrix[2] * gl_Vertex);
-	shadowCoord = texCoord / texCoord.w;
+	//vec4 texCoord = gl_TextureMatrix[2] * (gl_ModelViewMatrix * gl_Vertex);
+	vec4 texCoord = gl_TextureMatrix[2] * (ModelMatrix * gl_Vertex);
+	//vec4 texCoord = gl_TextureMatrix[2] * gl_Vertex;
+	//shadowCoord = texCoord / texCoord.w;
+	shadowCoord = texCoord;
 	
 	gl_FrontColor = vec4(diffuse * gl_Color.rgb, gl_Color.a);
 	gl_Position = ftransform();
