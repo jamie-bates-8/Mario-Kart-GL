@@ -88,20 +88,19 @@ public class BlockFort
 		
 		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
-		Shader shader = null;
-		if(Shader.enableShaders) shader = Scene.shaders.get("shadow");
+		Shader shader = Shader.enableShaders ? Scene.shaders.get("phong_shadow") : null;
 		
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(90, 30, 90);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-			Matrix.translate(model, 90, 30, 90);
-			Matrix.scale    (model, 30, 30, 30);
-			
-			if(Scene.enableShadow)
+			if(shader != null && Scene.enableShadow)
 			{
+				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+				Matrix.translate(model, 90, 30, 90);
+				Matrix.scale    (model, 30, 30, 30);
+				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
 			}
@@ -118,14 +117,14 @@ public class BlockFort
 			gl.glRotatef(-90, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-			Matrix.translate(model, 90, 30, 90);
-			float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
-			Matrix.multiply(model, model, rotation);
-			Matrix.scale    (model, 30, 30, 30);
-			
-			if(Scene.enableShadow)
+			if(shader != null && Scene.enableShadow)
 			{
+				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+				Matrix.translate(model, 90, 30, 90);
+				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
+				Matrix.multiply(model, model, rotation);
+				Matrix.scale(model, 30, 30, 30);
+				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
 			}
@@ -143,14 +142,14 @@ public class BlockFort
 			gl.glRotatef(-180, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-			Matrix.translate(model, -90, 30, -90);
-			float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
-			Matrix.multiply(model, model, rotation);
-			Matrix.scale    (model, 30, 30, 30);
-			
-			if(Scene.enableShadow)
+			if(shader != null && Scene.enableShadow)
 			{
+				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+				Matrix.translate(model, -90, 30, -90);
+				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
+				Matrix.multiply(model, model, rotation);
+				Matrix.scale(model, 30, 30, 30);
+				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
 			}
@@ -167,14 +166,14 @@ public class BlockFort
 			gl.glRotatef(-270, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-			Matrix.translate(model, 90, 30, -90);
-			float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
-			Matrix.multiply(model, model, rotation);
-			Matrix.scale    (model, 30, 30, 30);
-			
-			if(Scene.enableShadow)
+			if(shader != null && Scene.enableShadow)
 			{
+				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+				Matrix.translate(model, 90, 30, -90);
+				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
+				Matrix.multiply(model, model, rotation);
+				Matrix.scale(model, 30, 30, 30);
+				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
 			}
