@@ -103,6 +103,7 @@ public class BlockFort
 				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);

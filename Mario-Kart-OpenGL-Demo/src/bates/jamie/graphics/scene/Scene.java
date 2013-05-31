@@ -345,7 +345,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableBlur = true;
 	
 	
-	public boolean enableTerrain = false;
+	public boolean enableTerrain = true;
 	
 	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
@@ -939,7 +939,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    System.out.println("Line Width Granularity: " + size[2] + "\n");
 	}
 
-	private void printErrors(GL2 gl)
+	public void printErrors(GL2 gl)
 	{
 		int error = gl.glGetError();
 		
@@ -1178,10 +1178,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		renderTime = System.currentTimeMillis();
-		
+
 		if(displayShadowMap) displayShadowMap(gl);
 		else render(gl);
-		
+
 		gl.glFlush();
 		
 		if(printErrors) printErrors(gl);
@@ -1190,7 +1190,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //			0, canvasWidth, canvasHeight, 0);
 		
 		calculateFPS();
-		
+
 		if(enableShadow) updateShadows(gl);
 	}
 
@@ -1736,23 +1736,30 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader shader = null;
 		
-		if(enableShadow)
+		if(Shader.enableShaders)
 		{
-			shader = Scene.shaders.get("phong_shadow");
-			shader.enable(gl);
-			
-			int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-			gl.glUniform1i(texture, 0);
-			int shadow = gl.glGetUniformLocation(shader.shaderID, "shadowMap");
-			gl.glUniform1i(shadow, 2);
-		}
-		else
-		{
-			shader = Scene.shaders.get("phong_texture");
-			shader.enable(gl);
-			
-			int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-			gl.glUniform1i(texture, 0);
+			if(enableShadow)
+			{
+				shader = Scene.shaders.get("phong_shadow");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+					
+					int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+					gl.glUniform1i(texture, 0);
+					int shadow = gl.glGetUniformLocation(shader.shaderID, "shadowMap");
+					gl.glUniform1i(shadow, 2);
+				}
+			}
+			else
+			{
+				shader = Scene.shaders.get("phong_texture");
+				shader.enable(gl);
+				
+				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+				gl.glUniform1i(texture, 0);
+			}
 		}
 		
 		if(!enableReflection && !enableTerrain && !testMode)
@@ -1762,7 +1769,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				gl.glTranslatef(0, 0, 0);
 				gl.glScalef(40.0f, 40.0f, 40.0f);
 				
-				if(enableShadow)
+				if(enableShadow && shader != null)
 				{
 					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 					Matrix.scale(model, 40, 40, 40);
@@ -1778,7 +1785,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
 		
-		if(enableShadow) shader.enable(gl);
+		if(enableShadow && shader != null) shader.enable(gl);
 		
 		renderObstacles(gl);
 		
@@ -1821,13 +1828,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private long renderTerrain(GL2 gl)
 	{
 		long start = System.nanoTime();
-		
+
 		gl.glPushMatrix();
 		{	
 			terrain.render(gl, glut);
 		}	
 		gl.glPopMatrix();
-			
+
 		if(!terrain.enableQuadtree)
 		{
 			gl.glPushMatrix();
@@ -1850,9 +1857,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private long renderObstacles(GL2 gl)
 	{	
 		long start = System.nanoTime();
-		
+
 		fort.render(gl);
-		
+
 		return System.nanoTime() - start;
 	}
 
@@ -2115,7 +2122,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    glu.gluLookAt(p[0], p[1], p[2], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 	    
 	    gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, modelview, 0);
-	    
+
 	    gl.glViewport(0, 0, canvasWidth, canvasHeight);
 	    
 	    if(enableBuffer)
@@ -2130,9 +2137,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    }
 
 	    depthMode(gl, true);
-
-	    renderItems(gl, cars.get(0));
-	    renderObstacles(gl);
+	    
+	    renderItems(gl, cars.get(0)); 
+	    renderObstacles(gl); 
 	    
 	    enableShadow(gl);
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
@@ -2141,7 +2148,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    if(!enableBuffer) gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, 0, 0, canvasWidth, canvasHeight, 0);
 
 	    depthMode(gl, false);
-	    
+
 	    gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
 
 	    gl.glMatrixMode(GL2.GL_TEXTURE);
@@ -2159,7 +2166,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		 	Matrix.transpose(shadowMatrix, tempMatrix);
 		 	gl.glLoadMatrixf(shadowMatrix, 0);
 	    }
-	 	
+
 	 	double[] bias =
 	 	{	
 			0.5, 0.0, 0.0, 0.0, 
@@ -2176,7 +2183,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glMultMatrixf(modelview , 0);
 	 	
 	 	gl.glActiveTexture(GL2.GL_TEXTURE0); 
-	 	
+
 	    resetView(gl);
 	}
 	
@@ -2191,8 +2198,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		int[] texID = new int[1];
 	    gl.glGenTextures(1, texID, 0);
 	    shadowTexture = texID[0];
-	    
-	    System.out.println(shadowTexture);
 	    
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
 		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);

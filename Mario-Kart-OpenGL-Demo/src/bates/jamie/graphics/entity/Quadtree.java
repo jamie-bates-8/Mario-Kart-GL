@@ -1388,8 +1388,11 @@ public class Quadtree
 			Shader shader = enableBumpmap ? Scene.shaders.get("bump") : Scene.shaders.get("phong_texture");
 			shader.enable(gl);
 			
-			int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-			gl.glUniform1i(texture, 0);
+			if(Shader.enableShaders && shader != null)
+			{
+				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+				gl.glUniform1i(texture, 0);
+			}
 			
 			if(enableBumpmap && Shader.enableShaders)
 			{
