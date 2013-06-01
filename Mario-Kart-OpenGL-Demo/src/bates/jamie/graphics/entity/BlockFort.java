@@ -90,7 +90,7 @@ public class BlockFort
 		
 		Shader shader = Shader.enableShaders ? Scene.shaders.get("phong_shadow") : null;
 		
-		gl.glPushMatrix();
+		gl.glPushMatrix(); // Green Fort
 		{
 			gl.glTranslatef(90, 30, 90);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
@@ -112,8 +112,8 @@ public class BlockFort
 		}	
 		gl.glPopMatrix();
 
-		gl.glPushMatrix();
-		{
+		gl.glPushMatrix(); // BLue Fort TODO shadows incorrect
+		{	
 			gl.glTranslatef(-90, 30, 90);
 			gl.glRotatef(-90, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
@@ -121,10 +121,10 @@ public class BlockFort
 			if(shader != null && Scene.enableShadow)
 			{
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-				Matrix.translate(model, 90, 30, 90);
+				Matrix.translate(model, -90, 30, 90);
+				Matrix.scale(model, 30, 30, 30);
 				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
 				Matrix.multiply(model, model, rotation);
-				Matrix.scale(model, 30, 30, 30);
 				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
@@ -133,11 +133,10 @@ public class BlockFort
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 1);
-
 		}	
 		gl.glPopMatrix();
 
-		gl.glPushMatrix();
+		gl.glPushMatrix(); // Red Fort
 		{
 			gl.glTranslatef(-90, 30, -90);
 			gl.glRotatef(-180, 0, 1, 0);
@@ -161,8 +160,8 @@ public class BlockFort
 		}	
 		gl.glPopMatrix();
 
-		gl.glPushMatrix();
-		{
+		gl.glPushMatrix(); // Yellow Fort TODO shadows incorrect
+		{	
 			gl.glTranslatef(90, 30, -90);
 			gl.glRotatef(-270, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
@@ -171,9 +170,9 @@ public class BlockFort
 			{
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 				Matrix.translate(model, 90, 30, -90);
+				Matrix.scale(model, 30, 30, 30);
 				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
 				Matrix.multiply(model, model, rotation);
-				Matrix.scale(model, 30, 30, 30);
 				
 				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
 				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);

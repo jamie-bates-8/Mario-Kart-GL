@@ -115,6 +115,7 @@ import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.StarParticle;
+import bates.jamie.graphics.scene.ShadowManipulator.ShadowQuality;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
@@ -297,6 +298,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean moveLight = false;
 	public boolean headlight = false;
 	public boolean displayLight = true;
+	
+	
+	/** Shadow Fields **/
+	public ShadowManipulator manipulator;
 	
 	
 	/** Fog Fields **/
@@ -1002,6 +1007,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    menuItem_smooth.setSelected(light.smooth);
 	    menuItem_secondary.setSelected(light.secondary);
 	    
+	    manipulator = new ShadowManipulator(this, light);
+	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
@@ -1035,7 +1042,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    fort = new BlockFort(gl);
 	    
-	    if(enableShadow) setupShadow(gl);
+	    if(enableShadow) manipulator.setup(gl);
 	    
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
@@ -1179,7 +1186,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 
-		if(displayShadowMap) displayShadowMap(gl);
+		if(shadowMap) manipulator.displayMap(gl);
 		else render(gl);
 
 		gl.glFlush();
@@ -1191,7 +1198,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		calculateFPS();
 
-		if(enableShadow) updateShadows(gl);
+		if(enableShadow) manipulator.update(gl);
 	}
 
 	private void render(GL2 gl)
@@ -1222,11 +1229,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			if(enableShadow && Shader.enableShaders)
 			{
-				displayShadow(gl);
+				manipulator.displayShadow(gl);
 				
 				if(resetShadow)
 				{
-					setupShadow(gl);
+					manipulator.setup(gl);
 					resetShadow = false;
 				}
 			}
@@ -1236,13 +1243,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			renderWorld(gl);
 			render3DModels(gl, car);
 			
-			if(enableShadow) disableShadow(gl);
-			
-			if(enableItemBoxes)
-		    {
-				for(ItemBox box : itemBoxes)
-					if(!box.isDead()) box.render(gl, car.trajectory);
-		    }
+			if(enableShadow) manipulator.disable(gl);
 			
 			renderTimes[frameIndex][4] = renderParticles(gl, car);
 			Particle.resetTexture();
@@ -1730,9 +1731,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
-		if(enableShadow ) disableShadow(gl);
+		if(enableShadow ) manipulator.disable(gl);
 		if(displaySkybox) renderSkybox(gl);
-		if(enableShadow ) enableShadow(gl);
+		if(enableShadow ) manipulator.enable(gl);
 		
 		Shader shader = null;
 		
@@ -1789,7 +1790,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderObstacles(gl);
 		
-		disableShadow(gl);
+		manipulator.disable(gl);
 		Shader.disable(gl);
 			
 		if(displaySkybox)
@@ -1854,7 +1855,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * world. Obstacle may be rendered using colored and/or textured geometry,
 	 * or simply as wireframes if obstacle wireframes are enabled for debugging.
 	 */
-	private long renderObstacles(GL2 gl)
+	public long renderObstacles(GL2 gl)
 	{	
 		long start = System.nanoTime();
 
@@ -1873,16 +1874,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		renderTimes[frameIndex][2] = renderVehicles(gl, car);
 	
-//		if(enableItemBoxes)
-//	    {
-//			for(ItemBox box : itemBoxes)
-//				if(!box.isDead()) box.render(gl, car.trajectory);
-//	    }
+		if(enableItemBoxes)
+	    {
+			for(ItemBox box : itemBoxes)
+				if(!box.isDead()) box.render(gl, car.trajectory);
+	    }
 		
 		renderTimes[frameIndex][3] = renderItems(gl, car);
 	}
 
-	private long renderVehicles(GL2 gl, Car car)
+	public long renderVehicles(GL2 gl, Car car)
 	{
 		long start = System.nanoTime();
 		
@@ -1903,7 +1904,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	private long renderItems(GL2 gl, Car car)
+	public long renderItems(GL2 gl, Car car)
 	{
 		long start = System.nanoTime();
 		
@@ -2048,190 +2049,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 	}
 	
-	private float[] shadowMatrix = new float[16];
-	public float shadowRadius = 300.0f;
-	public float shadowOffset = 2.0f;
-	private int shadowTexture;
 	public static boolean enableShadow = true;
-	public boolean displayShadowMap = false;
-	private int shadowBuffer; // Hold ID of the framebuffer for light POV rendering
-	private int shadowQuality = 12;
-	private boolean enableBuffer = true;
-	private boolean resetShadow = false;
-	
-	public void setupShadow(GL2 gl)
-	{
-		if(enableBuffer) createShadowBuffer(gl);
-		else createShadowTexture(gl);
-	    
-	    updateShadows(gl);
-	}
-
-	private void createShadowTexture(GL2 gl)
-	{
-		int[] id = new int[1];
-		gl.glGenTextures(1, id, 0);
-		shadowTexture = id[0];
-
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_DEPTH_TEXTURE_MODE, GL2.GL_INTENSITY);
-		
-		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		gl.glTexGeni(GL2.GL_Q, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-	}
-	
-	public void updateShadows(GL2 gl)
-	{
-	    float distance, near, fov;
-	    
-	    float[] modelview  = new float[16];
-	    float[] projection = new float[16];
-	    
-	    float radius = shadowRadius; // based on objects in scene
-
-	    float[] p = light.getPosition();
-	    
-	    // Euclidian distance from light source to origin
-	    distance = (float) Math.sqrt(p[0] * p[0] +  p[1] * p[1] + p[2] * p[2]);
-
-	    near = distance - radius;
-	    // Keep the scene filling the depth texture
-	    fov = (float) Math.toDegrees(2.0f * Math.atan(radius / distance));
-
-	    gl.glMatrixMode(GL_PROJECTION);
-	    gl.glLoadIdentity();
-	    glu.gluPerspective(fov, 1.0f, near, near + (2.0f * radius));
-	    
-	    gl.glGetFloatv(GL2.GL_PROJECTION_MATRIX, projection, 0);
-	    
-	    // Switch to light's point of view
-	    gl.glMatrixMode(GL_MODELVIEW);
-	    gl.glLoadIdentity();
-	    glu.gluLookAt(p[0], p[1], p[2], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-	    
-	    gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, modelview, 0);
-
-	    gl.glViewport(0, 0, canvasWidth, canvasHeight);
-	    
-	    if(enableBuffer)
-	    {
-	    	gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer); //Rendering offscreen
-	    	
-	    	// In the case we render the shadow map to a higher resolution, the viewport must be modified accordingly.
-	    	gl.glViewport(0, 0, canvasWidth * shadowQuality, canvasHeight * shadowQuality);
-	    	
-	    	// Clear previous frame values
-	    	gl.glClear(GL2.GL_DEPTH_BUFFER_BIT);
-	    }
-
-	    depthMode(gl, true);
-	    
-	    renderItems(gl, cars.get(0)); 
-	    renderObstacles(gl); 
-	    
-	    enableShadow(gl);
-	    gl.glActiveTexture(GL2.GL_TEXTURE2);
-
-	    // Copy depth values into depth texture
-	    if(!enableBuffer) gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, 0, 0, canvasWidth, canvasHeight, 0);
-
-	    depthMode(gl, false);
-
-	    gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
-
-	    gl.glMatrixMode(GL2.GL_TEXTURE);
-	    
-	    if(!Shader.enableShaders)
-	    {
-		    // Set up texture matrix for shadow map projection,
-		 	float[] tempMatrix = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-		 	Matrix.translate(tempMatrix, 0.5f, 0.5f, 0.5f);
-		 	Matrix.scale    (tempMatrix, 0.5f, 0.5f, 0.5f);
-		 	
-		 	Matrix.multiply(shadowMatrix, tempMatrix, projection);
-		 	Matrix.multiply(tempMatrix, shadowMatrix, modelview );
-		 	// transpose to get the s, t, r, and q rows for plane equations
-		 	Matrix.transpose(shadowMatrix, tempMatrix);
-		 	gl.glLoadMatrixf(shadowMatrix, 0);
-	    }
-
-	 	double[] bias =
-	 	{	
-			0.5, 0.0, 0.0, 0.0, 
-			0.0, 0.5, 0.0, 0.0,
-			0.0, 0.0, 0.5, 0.0,
-			0.5, 0.5, 0.5, 1.0
-		};
-			
-		gl.glLoadIdentity();	
-		gl.glLoadMatrixd(bias, 0);
-			
-		// concatating all matrices into one.
-		gl.glMultMatrixf(projection, 0);
-		gl.glMultMatrixf(modelview , 0);
-	 	
-	 	gl.glActiveTexture(GL2.GL_TEXTURE0); 
-
-	    resetView(gl);
-	}
-	
-	void createShadowBuffer(GL2 gl)
-	{
-		int shadowWidth  = canvasWidth  * shadowQuality;
-		int shadowHeight = canvasHeight * shadowQuality;
-
-		int bufferStatus = 0;
-
-		// Try to use a texture depth component
-		int[] texID = new int[1];
-	    gl.glGenTextures(1, texID, 0);
-	    shadowTexture = texID[0];
-	    
-	    gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
-
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
-
-		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL2.GL_DEPTH_COMPONENT, GL2.GL_UNSIGNED_BYTE, null);
-		gl.glBindTexture(GL_TEXTURE_2D, 0);
-
-		// create a framebuffer object
-		int[] fboID = new int[1];
-		gl.glGenFramebuffers(1, fboID, 0);
-		shadowBuffer = fboID[0];
-		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer);
-
-		// Instruct openGL that we won't bind a color texture with the currently bound FBO
-		gl.glDrawBuffer(GL2.GL_NONE);
-		gl.glReadBuffer(GL2.GL_NONE);
-
-		// attach the texture to FBO depth attachment point
-		gl.glFramebufferTexture2D(GL2.GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexture, 0);
-
-		// check FBO status
-		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
-		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("Frame Buffer failure!");
-
-		// switch back to window-system-provided framebuffer
-		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
-	}
+	public boolean shadowMap   = false;
+	public boolean resetShadow = false;
 
 	public void resetView(GL2 gl)
 	{
@@ -2243,127 +2063,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glLoadIdentity();
 	    gl.glViewport(0, 0, canvasWidth, canvasHeight);
 	}
-
-	private void depthMode(GL2 gl, boolean enable)
-	{
-		if(enable) // Only need depth values
-		{
-			// Clear the depth buffer only
-		    gl.glClear(GL_DEPTH_BUFFER_BIT);
-		    
-		    gl.glShadeModel(GL2.GL_FLAT);
-		    
-		    gl.glDisable(GL2.GL_LIGHTING      );
-		    gl.glDisable(GL2.GL_COLOR_MATERIAL);
-		    gl.glDisable(GL2.GL_NORMALIZE     );
-		    
-		    gl.glColorMask(false, false, false, false);
-		    
-		    gl.glEnable(GL2.GL_CULL_FACE);
-		    gl.glCullFace(GL2.GL_FRONT);
-	
-		    // Overcome imprecision
-		    gl.glPolygonOffset(shadowOffset, 1.0f);
-		    gl.glEnable(GL2.GL_POLYGON_OFFSET_FILL);
-		}
-		else // Restore normal drawing state
-		{ 
-		    gl.glShadeModel(GL2.GL_SMOOTH);
-		    
-		    gl.glEnable(GL2.GL_LIGHTING      );
-		    gl.glEnable(GL2.GL_COLOR_MATERIAL);
-		    gl.glEnable(GL2.GL_NORMALIZE     );
-		    
-		    gl.glColorMask(true, true, true, true);
-		    
-		    gl.glDisable(GL2.GL_CULL_FACE);
-		    gl.glCullFace(GL2.GL_BACK);
-		    
-		    gl.glDisable(GL2.GL_POLYGON_OFFSET_FILL);
-		}
-	}
-	
-	public void displayShadow(GL2 gl)
-	{
-		enableShadow(gl);
-		
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_COMPARE_R_TO_TEXTURE);
-		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_FUNC, GL2.GL_LEQUAL);
-
-		// Set up the eye plane for projecting the shadow map on the scene
-		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_Q);
-		
-		gl.glTexGenfv(GL2.GL_S, GL2.GL_EYE_PLANE, shadowMatrix,  0); 
-		gl.glTexGenfv(GL2.GL_T, GL2.GL_EYE_PLANE, shadowMatrix,  4); 
-		gl.glTexGenfv(GL2.GL_R, GL2.GL_EYE_PLANE, shadowMatrix,  8);
-		gl.glTexGenfv(GL2.GL_Q, GL2.GL_EYE_PLANE, shadowMatrix, 12);
-		
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-	}
-
-	private void disableShadow(GL2 gl)
-	{
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-	}
-
-	private void enableShadow(GL2 gl)
-	{
-		// fixed-functionality shadows no longer supported
-		if(Shader.enableShaders)
-		{
-			gl.glActiveTexture(GL2.GL_TEXTURE2);
-			gl.glEnable(GL2.GL_TEXTURE_2D);
-			gl.glBindTexture(GL2.GL_TEXTURE_2D, shadowTexture);
-			
-			gl.glActiveTexture(GL2.GL_TEXTURE0);
-		}
-	}
-	
-	public void displayShadowMap(GL2 gl)
-    {
-        gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
-        gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
-        
-        gl.glMatrixMode(GL2.GL_TEXTURE);
-        gl.glPushMatrix();
-        {
-	        gl.glLoadIdentity();
-	           
-	        gl.glEnable(GL_TEXTURE_2D);
-	        gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
-	        gl.glDisable(GL2.GL_LIGHTING);
-	        
-	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_REPLACE);
-	        gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_NONE);
-	        // Show the shadow map at its actual size relative to window
-	        gl.glBegin(GL2.GL_QUADS);
-	        {
-	            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(-1.0f, -1.0f);
-	            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f( 1.0f, -1.0f);
-	            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f( 1.0f,  1.0f);
-	            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(-1.0f,  1.0f);
-	        }
-	        gl.glEnd();
-	        
-	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-	        gl.glEnable(GL2.GL_LIGHTING);
-        }
-        gl.glPopMatrix();
-		
-		float ratio = canvasWidth / canvasHeight;
-        
-        gl.glMatrixMode(GL_PROJECTION);
-        glu.gluPerspective(this.fov, ratio, 1.0f, far);
-        gl.glMatrixMode(GL_MODELVIEW);
-    }
 
 	/**
 	 * This method calculates the frames per second (FPS) of the application by
@@ -2656,9 +2355,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //			case KeyEvent.VK_U:  spawnItemsInOBB(0, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 //			case KeyEvent.VK_BACK_SLASH: testMode = !testMode; break;
-			case KeyEvent.VK_BACK_SLASH: displayShadowMap = !displayShadowMap; break;
-			case KeyEvent.VK_U: shadowRadius -= 10; System.out.println(shadowRadius); break;
-			case KeyEvent.VK_I: shadowRadius += 10; System.out.println(shadowRadius); break;
+			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
+			case KeyEvent.VK_U: manipulator.shadowRadius -= 10; break;
+			case KeyEvent.VK_I: manipulator.shadowRadius += 10; break;
 			case KeyEvent.VK_P: enableShadow = !enableShadow; break;
 			
 			case KeyEvent.VK_L        : printDataToFile(null, RENDER_HEADERS, renderTimes); break;
@@ -2767,13 +2466,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		     if(event.getActionCommand().equals("console"      )) console.parseCommand(command.getText());
 		else if(event.getActionCommand().equals("load_project" )) console.parseCommand("profile project");
 		else if(event.getActionCommand().equals("load_game"    )) console.parseCommand("profile game");
+		     
 		else if(event.getActionCommand().equals("no_weather"   )) enableBlizzard = false;
+		     
 		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
 		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
-		else if(event.getActionCommand().equals("shadow_low"   )) { enableBuffer = false;                     resetShadow = true; }
-		else if(event.getActionCommand().equals("shadow_medium")) { enableBuffer =  true; shadowQuality =  4; resetShadow = true; }
-		else if(event.getActionCommand().equals("shadow_high"  )) { enableBuffer =  true; shadowQuality =  8; resetShadow = true; }
-		else if(event.getActionCommand().equals("shadow_best"  )) { enableBuffer =  true; shadowQuality = 12; resetShadow = true; }
+		     
+		else if(event.getActionCommand().equals("shadow_low"   )) { manipulator.setQuality(ShadowQuality.LOW);  resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_medium")) { manipulator.setQuality(ShadowQuality.MED);  resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_high"  )) { manipulator.setQuality(ShadowQuality.HIGH); resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_best"  )) { manipulator.setQuality(ShadowQuality.BEST); resetShadow = true; }
+		     
 		else if(event.getActionCommand().equals("recalc_norms" )) terrain.tree.recalculateNormals();
 		else if(event.getActionCommand().equals("recalc_tangs" )) terrain.tree.recalculateTangents();    
 		else if(event.getActionCommand().equals("save_heights" ))
