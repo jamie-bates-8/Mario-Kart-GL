@@ -95,7 +95,9 @@ public class Banana extends Item
 			if(thrown) gl.glRotatef(trajectory, 0, 1, 0);
 			else gl.glMultMatrixf(getRotationMatrix(u), 0);
 			
-			Scene.shaders.get("phong").enable(gl);
+			
+			Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+			if(shader != null) shader.enable(gl);
 			
 			gl.glCallList(bananaList);
 			

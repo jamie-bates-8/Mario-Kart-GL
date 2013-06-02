@@ -1388,13 +1388,13 @@ public class Quadtree
 			Shader shader = enableBumpmap ? Scene.shaders.get("bump") : Scene.shaders.get("phong_texture");
 			shader.enable(gl);
 			
-			if(Shader.enableShaders && shader != null)
+			if(Shader.enabled && shader != null)
 			{
 				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
 				gl.glUniform1i(texture, 0);
 			}
 			
-			if(enableBumpmap && Shader.enableShaders)
+			if(enableBumpmap && Shader.enabled)
 			{
 				int bumpmap = gl.glGetUniformLocation(shader.shaderID, "bumpmap");
 				gl.glUniform1i(bumpmap, 1);
@@ -1433,7 +1433,7 @@ public class Quadtree
 	{
 		Light.globalSpecular(gl, specular);
 		
-		if(Shader.enableShaders && enableBumpmap)
+		if(Shader.enabled && enableBumpmap)
 		{
 			gl.glActiveTexture(GL2.GL_TEXTURE1);
 			gl.glEnable(GL2.GL_TEXTURE_2D);
@@ -1466,7 +1466,7 @@ public class Quadtree
 		iBuffer.flip();
 		aBuffer.flip();
 		
-		if(enableBumpmap && Shader.enableShaders)
+		if(enableBumpmap && Shader.enabled)
 		{
 			gl.glVertexAttribPointer(1, 3, GL2.GL_FLOAT, true, 0, aBuffer);
 		}
@@ -1499,7 +1499,7 @@ public class Quadtree
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		if(Shader.enableShaders && enableBumpmap)
+		if(Shader.enabled && enableBumpmap)
 		{
 			gl.glActiveTexture(GL2.GL_TEXTURE1);
 			gl.glDisable(GL2.GL_TEXTURE_2D);

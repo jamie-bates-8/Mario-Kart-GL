@@ -88,7 +88,7 @@ public class BlockFort
 		
 		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
-		Shader shader = Shader.enableShaders ? Scene.shaders.get("phong_shadow") : null;
+		Shader shader = Shader.enabled ? Scene.shaders.get("phong_shadow") : null;
 		
 		gl.glPushMatrix(); // Green Fort
 		{

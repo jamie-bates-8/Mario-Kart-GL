@@ -150,7 +150,7 @@ public class ShadowManipulator
 
 	    gl.glMatrixMode(GL2.GL_TEXTURE);
 	    
-	    if(!Shader.enableShaders)
+	    if(!Shader.enabled)
 	    {
 		    // Set up texture matrix for shadow map projection,
 		 	float[] tempMatrix = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
@@ -303,7 +303,7 @@ public class ShadowManipulator
 	public void enable(GL2 gl)
 	{
 		// fixed-functionality shadows no longer supported
-		if(Shader.enableShaders)
+		if(Shader.enabled)
 		{
 			gl.glActiveTexture(GL2.GL_TEXTURE2);
 			gl.glEnable(GL2.GL_TEXTURE_2D);

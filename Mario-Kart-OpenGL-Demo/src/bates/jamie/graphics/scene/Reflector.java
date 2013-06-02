@@ -13,6 +13,7 @@ public class Reflector
 	private int renderBuffer;
 	
 	private int mapSize = 640; // based on canvas height
+	private int maxSize;
 	
 	public Reflector(Scene scene)
 	{
@@ -21,6 +22,11 @@ public class Reflector
 	
 	public void setup(GL2 gl)
 	{
+		int[] sizes = new int[2];
+		gl.glGetIntegerv(GL2.GL_MAX_CUBE_MAP_TEXTURE_SIZE, sizes, 0);
+	    gl.glGetIntegerv(GL2.GL_MAX_RENDERBUFFER_SIZE    , sizes, 1);
+	    maxSize = (sizes[1] > sizes[0]) ? sizes[0] : sizes[1];
+		
 		createTexture(gl);
 		createBuffer (gl);
 	}
@@ -159,6 +165,23 @@ public class Reflector
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 
 			scene.renderObstacles(gl);
+		}
+	}
+	
+	public void changeSize(GL2 gl)
+	{
+		int size = mapSize;
+		// environment map is limited by max supported renderbuffer size
+		mapSize = maxSize;
+
+		if (size != mapSize)
+		{
+			gl.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT32, mapSize, mapSize);
+
+			int j = GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+			
+			for (int i = j; i < j + 6; i++)
+				gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
 		}
 	}
 }

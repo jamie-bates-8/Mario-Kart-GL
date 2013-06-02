@@ -552,7 +552,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_shaders = new JCheckBoxMenuItem("Enable Shaders");
 		menuItem_shaders.addItemListener(this);
 		menuItem_shaders.setMnemonic(KeyEvent.VK_S);
-		menuItem_shaders.setSelected(Shader.enableShaders);
+		menuItem_shaders.setSelected(Shader.enabled);
 		
 		menu_render.add(menuItem_shaders);
 		
@@ -1227,7 +1227,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				light.setPosition(vectors[0]);
 			}
 			
-			if(enableShadow && Shader.enableShaders)
+			if(enableShadow && Shader.enabled)
 			{
 				manipulator.displayShadow(gl);
 				
@@ -1737,7 +1737,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader shader = null;
 		
-		if(Shader.enableShaders)
+		if(Shader.enabled)
 		{
 			if(enableShadow)
 			{
@@ -2588,7 +2588,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking  = selected;
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling     = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing    = selected;
-		else if(source.equals(menuItem_shaders    )) Shader.enableShaders        = selected;  
+		else if(source.equals(menuItem_shaders    )) Shader.enabled        = selected;  
 		else if(source.equals(menuItem_shadows    )) enableShadow                = selected;      
 	}
 

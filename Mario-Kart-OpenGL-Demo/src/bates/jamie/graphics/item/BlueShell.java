@@ -91,7 +91,8 @@ public class BlueShell extends Shell
 	{
 		if(!dead)
 		{
-			Scene.shaders.get("phong_texture").enable(gl);
+			Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+			if(shader != null) shader.enable(gl);
 			
 			gl.glPushMatrix();
 			{

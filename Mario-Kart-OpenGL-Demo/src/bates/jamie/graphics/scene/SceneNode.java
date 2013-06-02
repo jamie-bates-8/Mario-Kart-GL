@@ -63,14 +63,14 @@ public class SceneNode
 				{
 					case TEXTURE:
 					{
-						Shader shader = Scene.shaders.get("phong_texture");
-						shader.enable(gl); model.render(gl);
+						Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+						if(shader != null) shader.enable(gl); model.render(gl);
 						break;      
 					}
 					case COLOR  :
 					{
-						Shader shader = Scene.shaders.get("phong");
-						shader.enable(gl); model.render(gl);
+						Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+						if(shader != null) shader.enable(gl); model.render(gl);
 						break;
 					}
 					case GLASS  : model.renderGlass(gl, color); break;

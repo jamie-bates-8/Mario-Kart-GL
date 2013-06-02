@@ -13,7 +13,7 @@ import com.jogamp.opengl.util.glsl.ShaderUtil;
 
 public class Shader
 {
-	public static boolean enableShaders = true;
+	public static boolean enabled = true;
 	
 	public int shaderID;
 	 
@@ -87,7 +87,7 @@ public class Shader
      */
     public int enable(GL2 gl)
     {
-        if(enableShaders) gl.glUseProgram(shaderID);
+        if(enabled) gl.glUseProgram(shaderID);
         return shaderID;
     }
 
