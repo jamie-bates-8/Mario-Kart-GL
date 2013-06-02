@@ -214,7 +214,7 @@ public class ShadowManipulator
 		shadowBuffer = fboID[0];
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer);
 
-		// Instruct openGL that we won't bind a color texture with the currently bound FBO
+		// Instruct OpenGL that we won't bind a color texture with the currently bound FBO
 		gl.glDrawBuffer(GL2.GL_NONE);
 		gl.glReadBuffer(GL2.GL_NONE);
 

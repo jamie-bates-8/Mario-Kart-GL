@@ -116,7 +116,7 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-		if(_cmd.equalsIgnoreCase("offset")) scene.shadowOffset = cmd.nextFloat();
+		if(_cmd.equalsIgnoreCase("offset")) scene.manipulator.shadowOffset = cmd.nextFloat();
 	}
 	
 	private void parseWireframe(Scanner cmd)
