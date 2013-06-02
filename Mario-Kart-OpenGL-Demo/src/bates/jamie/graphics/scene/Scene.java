@@ -232,12 +232,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private int canvasWidth  = 860;
 	private int canvasHeight = 640;
 	
-	public static final int FPS = 60;
+	public static final int FPS     = 60;
 	public static final int MIN_FPS = 30;
 	
 	private final FPSAnimator animator;
 	
-	public float fov = 100.0f;
+	public float fov = 90.0f;
 	
 	private GLU glu;
 	private GLUT glut;
@@ -282,7 +282,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private int floorList;
 	
 	private List<Car> cars = new ArrayList<Car>();
-	public boolean enableQuality = false;
+	public boolean enableQuality = true;
 	
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
 	public static final float GLOBAL_RADIUS = 300;
@@ -302,7 +302,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	/** Shadow Fields **/
 	public ShadowManipulator manipulator;
-	
+	public static boolean enableShadow = true;
+	public boolean shadowMap   = false;
+	public boolean resetShadow = false;
 	
 	/** Fog Fields **/
 	public boolean enableFog = true;
@@ -316,7 +318,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
     
     /** Environment Fields **/
     public boolean displaySkybox = true;
-	
+    public Reflector reflector;
+	public boolean sphereMap = false;
 	
 	/** Collision Detection Fields **/	
 	private boolean enableOBBAxes       = false;
@@ -1009,6 +1012,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    manipulator = new ShadowManipulator(this, light);
 	    
+	    reflector = new Reflector(this);
+	    reflector.setup(gl);
+	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
@@ -1129,12 +1135,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader bump         = new Shader(gl, "bump", "bump");
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
+		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
 		
 		if(       phong.isValid()) shaders.put("phong", phong);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
+		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
 	}
 
 	private void loadParticles()
@@ -1185,16 +1193,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		renderTime = System.currentTimeMillis();
-
-		if(shadowMap) manipulator.displayMap(gl);
+		
+		reflector.update(gl, cars.get(0).getPosition());
+		
+		     if(sphereMap) reflector.displayMap(gl);
+		else if(shadowMap) manipulator.displayMap(gl);
 		else render(gl);
 
 		gl.glFlush();
 		
 		if(printErrors) printErrors(gl);
-		
-//		gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, 0, 
-//			0, canvasWidth, canvasHeight, 0);
 		
 		calculateFPS();
 
@@ -1227,6 +1235,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				light.setPosition(vectors[0]);
 			}
 			
+//			reflector.enable(gl);
+//			
+//			gl.glPushMatrix();
+//			{
+//				gl.glTranslatef(0, 30, 0);
+//				gl.glScalef(3, 3, 3);
+//				
+//				gl.glColor3f(1.0f, 1.0f, 1.0f);
+//				Renderer.displayColoredObject(gl, Car.car_faces, new float[] {1.0f, 1.0f, 1.0f});
+//				gl.glColor3f(1.0f, 1.0f, 1.0f);
+//			}
+//			gl.glPopMatrix();
+//			
+//			reflector.disable(gl);
+			
 			if(enableShadow && Shader.enabled)
 			{
 				manipulator.displayShadow(gl);
@@ -1237,7 +1260,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					resetShadow = false;
 				}
 			}
-		
+
 			if(enableReflection) displayReflection(gl, car);
 			
 			renderWorld(gl);
@@ -1702,7 +1725,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	private void renderFloor(GL2 gl)
+	public void renderFloor(GL2 gl)
 	{
 		gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
 		
@@ -1756,10 +1779,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			else
 			{
 				shader = Scene.shaders.get("phong_texture");
-				shader.enable(gl);
 				
-				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-				gl.glUniform1i(texture, 0);
+				if(shader != null)
+				{
+					shader.enable(gl);
+					
+					int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+					gl.glUniform1i(texture, 0);
+				}
 			}
 		}
 		
@@ -1793,24 +1820,26 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		manipulator.disable(gl);
 		Shader.disable(gl);
 			
-		if(displaySkybox)
-		{
-			Texture[] textures = {cobble, brickWallTop, brickWall};
-		    	 
-			gl.glPushMatrix();
-			{
-				displayTexturedCuboid(gl,        0, 45,  206.25f, 202.5f, 45,  3.75f,  0, textures);
-				displayTexturedCuboid(gl,        0, 45, -206.25f, 202.5f, 45,  3.75f,  0, textures);
-		    	displayTexturedCuboid(gl,  206.25f, 45,        0, 202.5f, 45,  3.75f, 90, textures);
-		    	displayTexturedCuboid(gl, -206.25f, 45,        0, 202.5f, 45,  3.75f, 90, textures);
-			}
-			gl.glPopMatrix();
-		}
+		if(displaySkybox) renderWalls(gl);
 		
 		return System.nanoTime() - start;
 	}
 
-	private void renderSkybox(GL2 gl)
+	public void renderWalls(GL2 gl)
+	{
+		Texture[] textures = {cobble, brickWallTop, brickWall};
+			 
+		gl.glPushMatrix();
+		{
+			displayTexturedCuboid(gl,        0, 45,  206.25f, 202.5f, 45,  3.75f,  0, textures);
+			displayTexturedCuboid(gl,        0, 45, -206.25f, 202.5f, 45,  3.75f,  0, textures);
+			displayTexturedCuboid(gl,  206.25f, 45,        0, 202.5f, 45,  3.75f, 90, textures);
+			displayTexturedCuboid(gl, -206.25f, 45,        0, 202.5f, 45,  3.75f, 90, textures);
+		}
+		gl.glPopMatrix();
+	}
+
+	public void renderSkybox(GL2 gl)
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		
@@ -2048,10 +2077,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		
 	}
-	
-	public static boolean enableShadow = true;
-	public boolean shadowMap   = false;
-	public boolean resetShadow = false;
 
 	public void resetView(GL2 gl)
 	{
@@ -2358,7 +2383,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
 			case KeyEvent.VK_U: manipulator.shadowRadius -= 10; break;
 			case KeyEvent.VK_I: manipulator.shadowRadius += 10; break;
-			case KeyEvent.VK_P: enableShadow = !enableShadow; break;
+			case KeyEvent.VK_P: sphereMap = !sphereMap; break;
 			
 			case KeyEvent.VK_L        : printDataToFile(null, RENDER_HEADERS, renderTimes); break;
 			case KeyEvent.VK_SEMICOLON: printDataToFile(null, UPDATE_HEADERS, updateTimes); break;

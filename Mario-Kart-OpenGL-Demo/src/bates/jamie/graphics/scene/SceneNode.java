@@ -23,9 +23,9 @@ public class SceneNode
 	
 	private float[] color = {1, 1, 1};
 	
-	private float[] t;
-	private float[] r;
-	private float[] s;
+	private float[] t; // translation
+	private float[] r; // rotation
+	private float[] s; // scale
 	
 	private float[] orientation;
 	
@@ -33,6 +33,7 @@ public class SceneNode
 	private RenderMode renderMode;
 	
 	private Material material;
+	private Reflector reflector;
 	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
@@ -64,14 +65,42 @@ public class SceneNode
 					case TEXTURE:
 					{
 						Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
-						if(shader != null) shader.enable(gl); model.render(gl);
-						break;      
+						if(shader != null)
+						{
+							shader.enable(gl);
+							
+							int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
+							gl.glUniform1i(texture, 0);
+						}
+						
+						model.render(gl); break;      
 					}
 					case COLOR  :
 					{
 						Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
 						if(shader != null) shader.enable(gl); model.render(gl);
 						break;
+					}
+					case REFLECT:
+					{
+						Shader shader = Shader.enabled ? Scene.shaders.get("phong_cube") : null;
+						if(shader != null)
+						{
+							shader.enable(gl);
+							
+							int texture = gl.glGetUniformLocation(shader.shaderID, "cubeMap");
+							gl.glUniform1i(texture, 0);
+							int shininess = gl.glGetUniformLocation(shader.shaderID, "shininess");
+							gl.glUniform1f(shininess, 0.75f);
+						}
+						
+						if(reflector != null) reflector.enable(gl);
+						{
+							model.render(gl);
+						}
+						if(reflector != null) reflector.disable(gl);
+						
+						break;      
 					}
 					case GLASS  : model.renderGlass(gl, color); break;
 				}
@@ -84,6 +113,7 @@ public class SceneNode
 				switch(renderMode)
 				{
 					case TEXTURE: Renderer.displayTexturedObject(gl, geometry);        break;
+					case REFLECT:
 					case COLOR  : Renderer.displayColoredObject (gl, geometry, color); break;
 					case GLASS  : Renderer.displayGlassObject   (gl, geometry, color); break;
 				}
@@ -218,15 +248,13 @@ public class SceneNode
 
 	public void setOrientation(float[] orientation) { this.orientation = orientation; }
 
-	public Material getMaterial()
-	{
-		return material;
-	}
+	public Material getMaterial() { return material; }
 
-	public void setMaterial(Material material)
-	{
-		this.material = material;
-	}
+	public void setMaterial(Material material) { this.material = material; }
+	
+	public Reflector getReflector() { return reflector; }
+	
+	public void setReflector(Reflector reflector) { this.reflector = reflector; }
 
 	public enum MatrixOrder
 	{
@@ -243,6 +271,7 @@ public class SceneNode
 	{
 		TEXTURE,
 		COLOR,
+		REFLECT,
 		GLASS;
 	}
 }

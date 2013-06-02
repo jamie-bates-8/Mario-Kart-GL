@@ -87,6 +87,14 @@ public class Matrix
 		    }                               
 		}                                    
 	}
+	
+	public static void getNormalMatrix(float[] dst, float[] src)
+	{
+		dst[ 0] = src[0]; dst[ 1] = src[4]; dst[ 2] = src[ 8]; dst[ 3] = 0;
+	    dst[ 4] = src[1]; dst[ 5] = src[5]; dst[ 6] = src[ 9]; dst[ 7] = 0;
+	    dst[ 8] = src[2]; dst[ 9] = src[6]; dst[10] = src[10]; dst[11] = 0;
+	    dst[12] =      0; dst[13] =      0; dst[14] =       0; dst[15] = 1;
+	}
 			
 	private static float cell(float[] src, int row, int col) { return src[(col << 2) + row]; }
 

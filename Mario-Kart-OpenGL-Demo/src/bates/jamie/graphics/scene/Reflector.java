@@ -1,13 +1,19 @@
 package bates.jamie.graphics.scene;
 
+import java.nio.ByteBuffer;
+
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
+
+import bates.jamie.graphics.util.Matrix;
+import bates.jamie.graphics.util.Vector;
 
 public class Reflector
 {
 	private Scene scene;
 	
 	private int textureID;
+	private int mappingID;
 	
 	private int frameBuffer;
 	private int renderBuffer;
@@ -53,17 +59,16 @@ public class Reflector
 
 	private void createTexture(GL2 gl)
 	{
-		int[] texID = new int[1];
-	    gl.glGenTextures(1, texID, 0);
+		int[] texID = new int[2];
+	    gl.glGenTextures(2, texID, 0);
 	    textureID = texID[0];
+	    mappingID = texID[1];
 	    gl.glBindTexture(GL2.GL_TEXTURE_CUBE_MAP, textureID);
-	    
-	    gl.glTexParameteri(GL2.GL_TEXTURE_CUBE_MAP, GL2.GL_GENERATE_MIPMAP, 1);
 	    
 	    gl.glTexParameteri(GL2.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
 	    gl.glTexParameteri(GL2.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
 	    
-	    gl.glTexParameteri(GL2.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+	    gl.glTexParameteri(GL2.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR);
 	    gl.glTexParameteri(GL2.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 	    
 	    gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
@@ -74,10 +79,63 @@ public class Reflector
 	    int j = GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 		
 		for (int i = j; i < j + 6; i++)
-	        gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
+	        gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
+		
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, mappingID);
+		
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_GENERATE_MIPMAP, 1);
+	    
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
+	    
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 	}
 	
-	public void update(GL2 gl)
+	public void enable(GL2 gl)
+	{
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		gl.glEnable (GL2.GL_TEXTURE_CUBE_MAP);
+		gl.glEnable (GL2.GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		
+		gl.glBindTexture(GL2.GL_TEXTURE_CUBE_MAP, textureID);
+		
+		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
+		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
+		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
+
+		/* We need to put the eye-space reflection vector back into world space
+		 * by multiplying by the transpose of the view matrix.
+		 */
+		float[] normalMatrix = new float[16];
+		gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, normalMatrix, 0);
+		Matrix.getNormalMatrix(normalMatrix, normalMatrix);
+		
+		gl.glMatrixMode(GL2.GL_TEXTURE);
+		gl.glPushMatrix();
+		gl.glLoadMatrixf(normalMatrix, 0);
+			
+		gl.glMatrixMode(GL2.GL_MODELVIEW);
+	}
+	
+	public void disable(GL2 gl)
+	{
+		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP);
+		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		
+		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
+		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
+		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
+		
+		gl.glMatrixMode(GL2.GL_TEXTURE);
+		gl.glPopMatrix();
+		
+		gl.glMatrixMode(GL2.GL_MODELVIEW);
+		
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+	}
+	
+	public void update(GL2 gl, float[] p)
 	{
 		GLUgl2 glu = new GLUgl2();
 		
@@ -94,70 +152,30 @@ public class Reflector
 		{
 			gl.glMatrixMode(GL2.GL_MODELVIEW);
 			gl.glLoadIdentity();
+			
+			float[] q = new float[3];
+			
+			switch(i)
+			{
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X: q = Vector.add(p, new float[] {+1,  0,  0}); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: q = Vector.add(p, new float[] {-1,  0,  0}); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: q = Vector.add(p, new float[] { 0, +1,  0}); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: q = Vector.add(p, new float[] { 0, -1,  0}); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z: q = Vector.add(p, new float[] { 0,  0, +1}); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: q = Vector.add(p, new float[] { 0,  0, -1}); break;
+					
+				default: assert(false); break;
+			}
 
 			switch(i)
 			{
 				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X:
-				{
-					glu.gluLookAt
-					(
-						 0.0f,  0.0f,  0.0f, 
-						 1.0f,  0.0f,  0.0f,
-						 0.0f, -1.0f,  0.0f
-				    );
-					break;
-				}
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
-				{
-					glu.gluLookAt
-					(
-						 0.0f,  0.0f,  0.0f, 
-						-1.0f,  0.0f,  0.0f,
-						 0.0f, -1.0f,  0.0f
-					);
-					break;
-				}
-				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
-				{
-					glu.gluLookAt
-					(
-						 0.0f,  0.0f,  0.0f, 
-						 0.0f,  1.0f,  0.0f,
-						 0.0f,  0.0f,  1.0f
-					);
-					break;
-				}
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
-				{
-					glu.gluLookAt
-					(
-						 0.0f,  0.0f,  0.0f, 
-						 0.0f, -1.0f,  0.0f,
-						 0.0f,  0.0f, -1.0f
-					);
-					break;
-				}
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: 
 				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
-				{
-					glu.gluLookAt
-					(
-						 0.0f,  0.0f,  0.0f, 
-						 0.0f,  0.0f,  1.0f,
-						 0.0f, -1.0f,  0.0f
-					);
-					break;
-				}
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
-				{
-					glu.gluLookAt
-					(
-						 0.0f,  0.0f,  0.0f, 
-						 0.0f,  0.0f, -1.0f,
-						 0.0f, -1.0f,  0.0f
-					);
-					break;
-				}
-				
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: glu.gluLookAt(p[0], p[1], p[2], q[0], q[1], q[2], 0.0f, -1.0f,  0.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: glu.gluLookAt(p[0], p[1], p[2], q[0], q[1], q[2], 0.0f,  0.0f,  1.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: glu.gluLookAt(p[0], p[1], p[2], q[0], q[1], q[2], 0.0f,  0.0f, -1.0f); break;
+
 				default: assert(false); break;
 			}
 
@@ -165,7 +183,77 @@ public class Reflector
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 
 			scene.renderObstacles(gl);
+			scene.renderSkybox(gl);
+			scene.renderWalls(gl);
+			scene.renderFloor(gl);
 		}
+		
+		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+		scene.resetView(gl);
+	}
+	
+	public void displayMap(GL2 gl)
+	{
+		// Display environment map for debugging purposes
+		gl.glMatrixMode(GL2.GL_PROJECTION);
+		gl.glPushMatrix();
+		gl.glLoadIdentity();
+		
+		gl.glMatrixMode(GL2.GL_MODELVIEW);
+		gl.glPushMatrix();
+		gl.glLoadIdentity();
+
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, mappingID);
+		gl.glDisable(GL2.GL_LIGHTING);
+
+		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+		ByteBuffer texels = ByteBuffer.allocate(mapSize * mapSize * 4);
+
+		int j = GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+		
+		for (int i = j; i < j + 6; i++)
+		{
+			// Grab the cubemap face
+			gl.glGetTexImage(i, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, texels);
+			gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, texels);
+
+			gl.glPushMatrix();
+
+			// position the cube face for display
+			switch (i)
+			{
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X: gl.glTranslatef(+0.25f,  0.0f, 0.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: gl.glTranslatef(-0.75f,  0.0f, 0.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: gl.glTranslatef(-0.25f, -0.5f, 0.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: gl.glTranslatef(-0.25f, +0.5f, 0.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z: gl.glTranslatef(-0.25f,  0.0f, 0.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: gl.glTranslatef(+0.75f,  0.0f, 0.0f); break;
+				
+				default: assert(false); break;
+			}
+
+			gl.glScalef(0.25f, 0.25f, 0.25f);
+
+			gl.glBegin(GL2.GL_QUADS);
+			{
+				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(-1.0f, -1.0f);
+				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(+1.0f, -1.0f);
+				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(+1.0f, +1.0f);
+				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(-1.0f, +1.0f);
+			}
+			gl.glEnd();
+
+			gl.glPopMatrix();
+		}
+
+		gl.glEnable(GL2.GL_LIGHTING);
+
+		gl.glPopMatrix();
+		gl.glMatrixMode(GL2.GL_PROJECTION);
+		gl.glPopMatrix();
+		gl.glMatrixMode(GL2.GL_MODELVIEW);
 	}
 	
 	public void changeSize(GL2 gl)

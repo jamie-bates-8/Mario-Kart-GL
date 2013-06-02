@@ -268,7 +268,7 @@ public class Car
 		body.setTranslation(bound.c);
 		body.setOrientation(getRotationMatrix(bound.u));
 		body.setScale(new float[] {scale, scale, scale});
-		body.setRenderMode(SceneNode.RenderMode.COLOR);
+		body.setRenderMode(SceneNode.RenderMode.REFLECT);
 		
 		SceneNode headlights = new SceneNode(null, carList, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
