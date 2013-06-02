@@ -240,6 +240,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();   
 		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(    "opacity")) scene.opacity = cmd.nextFloat();
+		else if(_cmd.equalsIgnoreCase(  "reflector")) scene.reflector.reflectivity = cmd.nextFloat();    
 		else if(_cmd.equalsIgnoreCase(    "terrain"))
 		{
 			scene.enableTerrain = cmd.nextBoolean();

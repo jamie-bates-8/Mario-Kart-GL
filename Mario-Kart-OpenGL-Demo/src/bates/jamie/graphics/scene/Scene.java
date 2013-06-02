@@ -163,8 +163,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_camera;
 	private JCheckBoxMenuItem menuItem_shaking;
 	
-	private JMenu menu_control;
+	private JMenu menu_vehicle;
 	private JCheckBoxMenuItem menuItem_reverse;
+	private JMenu menu_car_material;
+	private JMenuItem menuItem_car_color;
+	private JCheckBoxMenuItem menuItem_cubemap;
 	
 	private JMenu menu_render;
 	private JCheckBoxMenuItem menuItem_shaders;
@@ -535,17 +538,35 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		/**----------------**/
 		
 		/** Controls Menu **/
-		menu_control = new JMenu("Vehicle");
-		menu_control.setMnemonic(KeyEvent.VK_V);
+		menu_vehicle = new JMenu("Vehicle");
+		menu_vehicle.setMnemonic(KeyEvent.VK_V);
 		
 		menuItem_reverse = new JCheckBoxMenuItem("Invert Reverse");
 		menuItem_reverse.addItemListener(this);
 		menuItem_reverse.setMnemonic(KeyEvent.VK_I);
 		menuItem_reverse.setSelected(false);
 		
-		menu_control.add(menuItem_reverse);
+		menu_vehicle.add(menuItem_reverse);
+		menu_vehicle.addSeparator();
 		
-		menuBar.add(menu_control);
+		menu_car_material = new JMenu("Material");
+		menu_car_material.setMnemonic(KeyEvent.VK_M); 
+		
+		menu_vehicle.add(menu_car_material);
+		
+		menuItem_car_color = new JMenuItem("Body Color", KeyEvent.VK_B);
+		menuItem_car_color.addActionListener(this);
+		menuItem_car_color.setActionCommand("car_color");
+		
+		menuItem_cubemap = new JCheckBoxMenuItem("Enable Chrome");
+		menuItem_cubemap.addItemListener(this);
+		menuItem_cubemap.setMnemonic(KeyEvent.VK_C);
+		menuItem_cubemap.setSelected(false);
+		
+		menu_car_material.add(menuItem_car_color);
+		menu_car_material.add(menuItem_cubemap);
+		
+		menuBar.add(menu_vehicle);
 		/**----------------**/
 		
 		/** Render Menu **/
@@ -1012,7 +1033,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    manipulator = new ShadowManipulator(this, light);
 	    
-	    reflector = new Reflector(this);
+	    reflector = new Reflector(this, 0.75f);
 	    reflector.setup(gl);
 	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1234,21 +1255,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				light.direction = vectors[1];
 				light.setPosition(vectors[0]);
 			}
-			
-//			reflector.enable(gl);
-//			
-//			gl.glPushMatrix();
-//			{
-//				gl.glTranslatef(0, 30, 0);
-//				gl.glScalef(3, 3, 3);
-//				
-//				gl.glColor3f(1.0f, 1.0f, 1.0f);
-//				Renderer.displayColoredObject(gl, Car.car_faces, new float[] {1.0f, 1.0f, 1.0f});
-//				gl.glColor3f(1.0f, 1.0f, 1.0f);
-//			}
-//			gl.glPopMatrix();
-//			
-//			reflector.disable(gl);
 			
 			if(enableShadow && Shader.enabled)
 			{
@@ -2581,6 +2587,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			background = RGB.toRGBA(color);
 		}
+		else if(event.getActionCommand().equals("car_color"))
+		{
+			float[] c = cars.get(0).getColor();
+			Color car = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
+			Color color = JColorChooser.showDialog(frame, "Body Color", car);
+			
+			if(color == null) return;
+			
+			cars.get(0).setColor(RGB.toRGBA(color));
+		}
 		else if(event.getActionCommand().equals("close"        )) System.exit(0);
 	}
 
@@ -2613,8 +2629,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking  = selected;
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling     = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing    = selected;
-		else if(source.equals(menuItem_shaders    )) Shader.enabled        = selected;  
-		else if(source.equals(menuItem_shadows    )) enableShadow                = selected;      
+		else if(source.equals(menuItem_shaders    )) Shader.enabled              = selected;  
+		else if(source.equals(menuItem_shadows    )) enableShadow                = selected; 
+		else if(source.equals(menuItem_cubemap    ))
+		{
+			cars.get(0).enableChrome = selected;
+			cars.get(0).resetGraph();
+		}
 	}
 
 	public void valueChanged(ListSelectionEvent e)

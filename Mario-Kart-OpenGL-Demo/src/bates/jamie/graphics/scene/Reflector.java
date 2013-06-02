@@ -21,9 +21,12 @@ public class Reflector
 	private int mapSize = 640; // based on canvas height
 	private int maxSize;
 	
-	public Reflector(Scene scene)
+	public float reflectivity;
+	
+	public Reflector(Scene scene, float reflectivity)
 	{
 		this.scene = scene;
+		this.reflectivity = reflectivity;
 	}
 	
 	public void setup(GL2 gl)
@@ -32,6 +35,11 @@ public class Reflector
 		gl.glGetIntegerv(GL2.GL_MAX_CUBE_MAP_TEXTURE_SIZE, sizes, 0);
 	    gl.glGetIntegerv(GL2.GL_MAX_RENDERBUFFER_SIZE    , sizes, 1);
 	    maxSize = (sizes[1] > sizes[0]) ? sizes[0] : sizes[1];
+	    
+	    System.out.println("Reflector\n{");
+	    System.out.println("\tMax Cube Map Texture Size: " + sizes[0]);
+	    System.out.println("\tMax Render Buffer Size: " + sizes[1]);
+	    System.out.println("}\n");
 		
 		createTexture(gl);
 		createBuffer (gl);

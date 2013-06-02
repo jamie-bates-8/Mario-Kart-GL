@@ -91,7 +91,7 @@ public class SceneNode
 							int texture = gl.glGetUniformLocation(shader.shaderID, "cubeMap");
 							gl.glUniform1i(texture, 0);
 							int shininess = gl.glGetUniformLocation(shader.shaderID, "shininess");
-							gl.glUniform1f(shininess, 0.75f);
+							gl.glUniform1f(shininess, reflector.reflectivity);
 						}
 						
 						if(reflector != null) reflector.enable(gl);

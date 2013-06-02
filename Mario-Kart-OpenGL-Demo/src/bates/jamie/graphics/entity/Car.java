@@ -254,9 +254,10 @@ public class Car
 	    
 	    anchor = new AnchorPoint();
 	    
-	    setupHighGraph();
-	    if(scene.enableQuality) setupLowGraph();
+	    resetGraph();
 	}
+	
+	public boolean enableChrome = true;
 	
 	public void setupHighGraph()
 	{
@@ -268,7 +269,13 @@ public class Car
 		body.setTranslation(bound.c);
 		body.setOrientation(getRotationMatrix(bound.u));
 		body.setScale(new float[] {scale, scale, scale});
-		body.setRenderMode(SceneNode.RenderMode.REFLECT);
+		
+		if(enableChrome)
+		{
+			body.setRenderMode(SceneNode.RenderMode.REFLECT);
+			body.setReflector(scene.reflector);
+		}
+		else body.setRenderMode(SceneNode.RenderMode.COLOR);
 		
 		SceneNode headlights = new SceneNode(null, carList, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
@@ -598,6 +605,20 @@ public class Car
 	public void setPosition(float[] c) { bound.setPosition(c); }
 	
 	public float[] getPosition() { return bound.getPosition(); }
+	
+	public float[] getColor() { return color; }
+	
+	public void setColor(float[] color)
+	{
+		this.color = color;
+		resetGraph();
+	}
+	
+	public void resetGraph()
+	{
+		setupHighGraph();
+	    if(scene.enableQuality) setupLowGraph();
+	}
 
 	public void render(GL2 gl)
 	{
