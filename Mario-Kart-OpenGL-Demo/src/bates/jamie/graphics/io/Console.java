@@ -432,6 +432,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase( "acceleration")) player.acceleration = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(          "HUD")) parseHUD(cmd, player);
 		else if(_cmd.equalsIgnoreCase(       "smooth")) player.smooth = cmd.nextBoolean();
+		else if(_cmd.equalsIgnoreCase(      "opacity")) player.opacity = cmd.nextFloat();    
 		else if(_cmd.equalsIgnoreCase(     "position"))
 		{
 			float x = cmd.nextFloat();

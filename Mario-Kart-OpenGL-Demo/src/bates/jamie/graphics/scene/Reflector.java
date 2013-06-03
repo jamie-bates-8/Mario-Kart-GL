@@ -149,7 +149,7 @@ public class Reflector
 		
 		gl.glMatrixMode(GL2.GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(90.0f, 1.0f, 1.0f, 400.0f);
+		glu.gluPerspective(90.0f, 1.0f, 1.0f, 1000.0f);
 		gl.glViewport(0, 0, mapSize, mapSize);
 
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBuffer);
@@ -193,7 +193,7 @@ public class Reflector
 			scene.renderObstacles(gl);
 			scene.renderSkybox(gl);
 			scene.renderWalls(gl);
-			scene.renderFloor(gl);
+			scene.renderFloor(gl, false);
 		}
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);

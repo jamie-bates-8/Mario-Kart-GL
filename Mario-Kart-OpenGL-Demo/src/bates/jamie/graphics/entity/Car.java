@@ -50,6 +50,7 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.Shader;
 
 /* TODO
  * 
@@ -187,7 +188,7 @@ public class Car
 	private boolean invisible = false;
 	private int booDuration = 0;
 	private float booColor = 0.5f;
-	private float fadeIncrement = 0.0125f;
+	private float fadeIncrement = 0.01f;
 	
 	public int itemDuration = 0;
 	
@@ -619,6 +620,9 @@ public class Car
 		setupHighGraph();
 	    if(scene.enableQuality) setupLowGraph();
 	}
+	
+	public boolean enableAberration = true;
+	public float opacity = 0.25f;
 
 	public void render(GL2 gl)
 	{
@@ -639,7 +643,25 @@ public class Car
 		{	
 			SceneGraph graph = high_quality ? high_graph : low_graph;
 			
-			if(invisible) graph.renderGhost(gl, booColor);
+			if(invisible)
+			{
+				String name = enableAberration ? "aberration" : "ghost";
+				Shader shader = Shader.enabled ? Scene.shaders.get(name) : null;
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+					
+					float fade = opacity + (1 - opacity) * (booColor * 2);
+					
+					int opacity = gl.glGetUniformLocation(shader.shaderID, "opacity");
+					gl.glUniform1f(opacity, fade);
+					
+					Shader.disable(gl);
+				}
+				
+				graph.renderGhost(gl, booColor, shader);
+			}
 			else if(starPower) graph.renderColor(gl, _color);
 			else graph.render(gl);
 		}

@@ -124,29 +124,52 @@ public class SceneNode
 		gl.glPopMatrix();
 	}
 	
-	public void renderGhost(GL2 gl, float fade)
+	public void renderGhost(GL2 gl, float fade, Shader shader)
 	{
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
 			
-			if(model != null)
+			if(Shader.enabled && shader != null)
 			{
-				gl.glColor3f(fade, fade, fade);
+				shader.enable(gl);
+						
+				int texture = gl.glGetUniformLocation(shader.shaderID, "cubeMap");
+				gl.glUniform1i(texture, 0);
 				
 				gl.glDisable(GL_LIGHTING);
-				gl.glEnable(GL_BLEND);
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+				gl.glEnable (GL_BLEND   );
+//				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 				
-				model.render(gl);
+				if(model != null) model.render(gl);
+				else Renderer.displayColoredObject(gl, geometry, fade);
 				
-				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-				gl.glDisable(GL_BLEND);
-				gl.glEnable(GL_LIGHTING);
+				gl.glEnable (GL_LIGHTING);
+				gl.glDisable(GL_BLEND   );
+//				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			}
-			else Renderer.displayTransparentObject(gl, geometry, fade);
+			else
+			{
+				if(model != null)
+				{
+					gl.glColor3f(fade, fade, fade);
+						
+					gl.glDisable(GL_LIGHTING);
+					gl.glEnable(GL_BLEND);
+					gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+						
+					model.render(gl);
+						
+					gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+					gl.glDisable(GL_BLEND);
+					gl.glEnable(GL_LIGHTING);
+				}
+				else Renderer.displayTransparentObject(gl, geometry, fade);
+			}
 			
-			for(SceneNode child : children) child.renderGhost(gl, fade);
+			Shader.disable(gl);
+			
+			for(SceneNode child : children) child.renderGhost(gl, fade, shader);
 		}
 		gl.glPopMatrix();
 	}

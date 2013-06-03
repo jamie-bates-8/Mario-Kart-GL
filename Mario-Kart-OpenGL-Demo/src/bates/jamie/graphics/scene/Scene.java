@@ -176,6 +176,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_anisotropic;
 	private JMenu menu_effects;
 	private JCheckBoxMenuItem menuItem_motionblur;
+	private JCheckBoxMenuItem menuItem_aberration;
 	private JCheckBoxMenuItem menuItem_reflect;
 	private JMenu menu_shadows;
 	private JCheckBoxMenuItem menuItem_shadows;
@@ -561,7 +562,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_cubemap = new JCheckBoxMenuItem("Enable Chrome");
 		menuItem_cubemap.addItemListener(this);
 		menuItem_cubemap.setMnemonic(KeyEvent.VK_C);
-		menuItem_cubemap.setSelected(false);
 		
 		menu_car_material.add(menuItem_car_color);
 		menu_car_material.add(menuItem_cubemap);
@@ -606,7 +606,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_motionblur.setMnemonic(KeyEvent.VK_B);
 		menuItem_motionblur.setSelected(enableBlur);
 		
+		menuItem_aberration = new JCheckBoxMenuItem("Chromatic Aberration");
+		menuItem_aberration.addItemListener(this);
+		menuItem_aberration.setMnemonic(KeyEvent.VK_A);
+		
 		menu_effects.add(menuItem_motionblur);
+		menu_effects.add(menuItem_aberration);
 		
 		menu_render.add(menu_effects);
 		
@@ -1116,6 +1121,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_texturing.setSelected(terrain.tree.enableTexture );
 		menuItem_bumpmaps .setSelected(terrain.tree.enableBumpmap );
 		menuItem_malleable.setSelected(terrain.tree.malleable     );
+		
+		menuItem_cubemap.setSelected(true);
+		menuItem_aberration.setSelected(true);
 	}
 
 	private void setupGenerators()
@@ -1157,6 +1165,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
+		Shader aberration   = new Shader(gl, "aberration", "aberration");
+		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		
 		if(       phong.isValid()) shaders.put("phong", phong);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
@@ -1164,6 +1174,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
 		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
+		if(  aberration.isValid()) shaders.put("aberration", aberration);
+		if(       ghost.isValid()) shaders.put("ghost", ghost);
 	}
 
 	private void loadParticles()
@@ -1717,7 +1729,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glDisable(GL2.GL_CLIP_PLANE1);
 		
-		if(!enableTerrain) renderFloor(gl);
+		if(!enableTerrain) renderFloor(gl, true);
 		
 		light.setPosition(p);
 		
@@ -1731,24 +1743,50 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	public void renderFloor(GL2 gl)
+	public void renderFloor(GL2 gl, boolean reflect)
 	{
-		gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
 		
-		gl.glDisable(GL2.GL_LIGHTING);
-		gl.glEnable(GL2.GL_BLEND);
-		
-		gl.glPushMatrix();
+		if(reflect)
 		{
-			gl.glTranslatef(0, 0, 0);
-			gl.glScalef(40.0f, 40.0f, 40.0f);
-	
-			gl.glCallList(floorList);
-		}	
-		gl.glPopMatrix();
+			gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
+			
+			gl.glDisable(GL2.GL_LIGHTING);
+			gl.glEnable(GL2.GL_BLEND);
+			
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(0, 0, 0);
+				gl.glScalef(40.0f, 40.0f, 40.0f);
 		
-		gl.glDisable(GL2.GL_BLEND);
-		gl.glEnable(GL2.GL_LIGHTING);
+				gl.glCallList(floorList);
+			}	
+			gl.glPopMatrix();
+			
+			gl.glDisable(GL2.GL_BLEND);
+			gl.glEnable(GL2.GL_LIGHTING);
+		}
+		else
+		{
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(0, 0, 0);
+				gl.glScalef(40.0f, 40.0f, 40.0f);
+				
+				Shader shader = Scene.shaders.get("phong_shadow");
+				
+				if(enableShadow && shader != null)
+				{
+					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+					Matrix.scale(model, 40, 40, 40);
+					
+					int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+					gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				}
+	
+				gl.glCallList(floorList);
+			}	
+			gl.glPopMatrix();
+		}
 	}
 
 	/**
@@ -1796,26 +1834,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		}
 		
-		if(!enableReflection && !enableTerrain && !testMode)
-		{
-			gl.glPushMatrix();
-			{
-				gl.glTranslatef(0, 0, 0);
-				gl.glScalef(40.0f, 40.0f, 40.0f);
-				
-				if(enableShadow && shader != null)
-				{
-					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-					Matrix.scale(model, 40, 40, 40);
-					
-					int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-					gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
-				}
-	
-				gl.glCallList(floorList);
-			}	
-			gl.glPopMatrix();
-		}
+		if(!enableReflection && !enableTerrain && !testMode) renderFloor(gl, false);
 		
 		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
 		
@@ -1907,7 +1926,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 */
 	private void render3DModels(GL2 gl, Car car)
 	{	
-		renderTimes[frameIndex][2] = renderVehicles(gl, car);
+		renderTimes[frameIndex][2] = renderVehicles(gl, car, false);
 	
 		if(enableItemBoxes)
 	    {
@@ -1918,11 +1937,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		renderTimes[frameIndex][3] = renderItems(gl, car);
 	}
 
-	public long renderVehicles(GL2 gl, Car car)
+	public long renderVehicles(GL2 gl, Car car, boolean shadow)
 	{
 		long start = System.nanoTime();
 		
-		car.render(gl);
+		if(!shadow || !car.isInvisible()) car.render(gl);
 	
 		for(Car c : cars)
 		{
@@ -1931,7 +1950,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				boolean visibility = c.displayModel;
 				
 				c.displayModel = true;
-				c.render(gl);
+				if(!shadow || !car.isInvisible()) c.render(gl);
 				c.displayModel = visibility;
 			}
 		}
@@ -2605,32 +2624,33 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Object source = ie.getItemSelectable();
 		boolean selected = (ie.getStateChange() == ItemEvent.SELECTED);
 		
-		     if(source.equals(menuItem_multisample)) multisample                 = selected;
-		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic        = selected; 
-		else if(source.equals(menuItem_motionblur )) enableBlur                  = selected;
-		else if(source.equals(menuItem_fog        )) enableFog                   = selected;    
-		else if(source.equals(menuItem_normalize  )) normalize                   = selected;
-		else if(source.equals(menuItem_smooth     )) light.smooth                = selected;
-		else if(source.equals(menuItem_secondary  )) light.secondary             = selected;
-		else if(source.equals(menuItem_local      )) light.local                 = selected;    
-		else if(source.equals(menuItem_water      )) terrain.enableWater         = selected;
-		else if(source.equals(menuItem_reflect    )) enableReflection            = selected;    
-		else if(source.equals(menuItem_solid      )) terrain.tree.solid          = selected;
-		else if(source.equals(menuItem_elevation  )) terrain.tree.reliefMap      = selected;  
-		else if(source.equals(menuItem_frame      )) terrain.tree.frame          = selected;
-		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture  = selected;
-		else if(source.equals(menuItem_bumpmaps   )) terrain.tree.enableBumpmap  = selected;     
-		else if(source.equals(menuItem_malleable  )) terrain.tree.malleable      = selected;     
-		else if(source.equals(menuItem_vnormals   )) terrain.tree.vNormals       = selected; 
-		else if(source.equals(menuItem_vtangents  )) terrain.tree.vTangents      = selected;     
-		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading  = selected;
-		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring = selected;
-		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse   = selected;
-		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking  = selected;
-		else if(source.equals(menuItem_settle     )) blizzard.enableSettling     = selected;
-		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing    = selected;
-		else if(source.equals(menuItem_shaders    )) Shader.enabled              = selected;  
-		else if(source.equals(menuItem_shadows    )) enableShadow                = selected; 
+		     if(source.equals(menuItem_multisample)) multisample                  = selected;
+		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic         = selected; 
+		else if(source.equals(menuItem_motionblur )) enableBlur                   = selected;
+		else if(source.equals(menuItem_fog        )) enableFog                    = selected;    
+		else if(source.equals(menuItem_normalize  )) normalize                    = selected;
+		else if(source.equals(menuItem_smooth     )) light.smooth                 = selected;
+		else if(source.equals(menuItem_secondary  )) light.secondary              = selected;
+		else if(source.equals(menuItem_local      )) light.local                  = selected;    
+		else if(source.equals(menuItem_water      )) terrain.enableWater          = selected;
+		else if(source.equals(menuItem_reflect    )) enableReflection             = selected;    
+		else if(source.equals(menuItem_solid      )) terrain.tree.solid           = selected;
+		else if(source.equals(menuItem_elevation  )) terrain.tree.reliefMap       = selected;  
+		else if(source.equals(menuItem_frame      )) terrain.tree.frame           = selected;
+		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture   = selected;
+		else if(source.equals(menuItem_bumpmaps   )) terrain.tree.enableBumpmap   = selected;     
+		else if(source.equals(menuItem_malleable  )) terrain.tree.malleable       = selected;     
+		else if(source.equals(menuItem_vnormals   )) terrain.tree.vNormals        = selected; 
+		else if(source.equals(menuItem_vtangents  )) terrain.tree.vTangents       = selected;     
+		else if(source.equals(menuItem_shading    )) terrain.tree.enableShading   = selected;
+		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring  = selected;
+		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse    = selected;
+		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking   = selected;
+		else if(source.equals(menuItem_settle     )) blizzard.enableSettling      = selected;
+		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing     = selected;
+		else if(source.equals(menuItem_shaders    )) Shader.enabled               = selected;  
+		else if(source.equals(menuItem_shadows    )) enableShadow                 = selected; 
+		else if(source.equals(menuItem_aberration )) cars.get(0).enableAberration = selected;     
 		else if(source.equals(menuItem_cubemap    ))
 		{
 			cars.get(0).enableChrome = selected;

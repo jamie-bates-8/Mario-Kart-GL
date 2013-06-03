@@ -134,7 +134,7 @@ public class ShadowManipulator
 
 	    depthMode(gl, true);
 	    
-	    scene.renderVehicles (gl, scene.getCars().get(0));
+	    scene.renderVehicles (gl, scene.getCars().get(0), true);
 	    scene.renderItems    (gl, scene.getCars().get(0)); 
 	    scene.renderObstacles(gl); 
 	    
