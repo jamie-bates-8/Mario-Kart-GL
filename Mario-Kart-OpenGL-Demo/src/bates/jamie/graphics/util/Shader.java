@@ -148,9 +148,15 @@ public class Shader
 		}
 	}
 
-	public void addSampler(GL2 gl, String sampler, int unit)
+	public void setSampler(GL2 gl, String sampler, int unit)
 	{
 		int samplerID = gl.glGetUniformLocation(shaderID, sampler);
 		gl.glUniform1i(samplerID, unit);
+	}
+	
+	public void setUniform(GL2 gl, String uniform, float value)
+	{
+		int uniformID = gl.glGetUniformLocation(shaderID, uniform);
+		gl.glUniform1f(uniformID, value);
 	}
 }

@@ -1808,8 +1808,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				{
 					manipulator.enable(gl);
 					shader.enable(gl);
-					shader.addSampler(gl, "texture"  , 0);
-					shader.addSampler(gl, "shadowMap", 2);
+					shader.setSampler(gl, "texture"  , 0);
+					shader.setSampler(gl, "shadowMap", 2);
 				}
 			}
 			else
@@ -1819,7 +1819,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				if(shader != null)
 				{
 					shader.enable(gl);
-					shader.addSampler(gl, "texture", 0);
+					shader.setSampler(gl, "texture", 0);
 				}
 			}
 		}

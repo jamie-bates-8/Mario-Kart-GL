@@ -68,11 +68,8 @@ public class SceneNode
 						if(shader != null)
 						{
 							shader.enable(gl);
-							
-							int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-							gl.glUniform1i(texture, 0);
+							shader.setSampler(gl, "texture", 0);
 						}
-						
 						model.render(gl); break;      
 					}
 					case COLOR  :
@@ -87,11 +84,8 @@ public class SceneNode
 						if(shader != null)
 						{
 							shader.enable(gl);
-							
-							int texture = gl.glGetUniformLocation(shader.shaderID, "cubeMap");
-							gl.glUniform1i(texture, 0);
-							int shininess = gl.glGetUniformLocation(shader.shaderID, "shininess");
-							gl.glUniform1f(shininess, reflector.reflectivity);
+							shader.setSampler(gl, "cubeMap", 0);
+							shader.setUniform(gl, "shininess", reflector.reflectivity);
 						}
 						
 						if(reflector != null) reflector.enable(gl);
@@ -133,10 +127,8 @@ public class SceneNode
 			if(Shader.enabled && shader != null)
 			{
 				shader.enable(gl);
-						
-				int texture = gl.glGetUniformLocation(shader.shaderID, "cubeMap");
-				gl.glUniform1i(texture, 0);
-				
+				shader.setSampler(gl, "cubeMap", 0);
+				// this is a bit sketchy since a Reflector is not enabled directly
 				gl.glDisable(GL_LIGHTING);
 				gl.glEnable (GL_BLEND   );
 				

@@ -651,12 +651,8 @@ public class Car
 				if(shader != null)
 				{
 					shader.enable(gl);
-					
 					float fade = opacity + (1 - opacity) * (booColor * 2);
-					
-					int opacity = gl.glGetUniformLocation(shader.shaderID, "opacity");
-					gl.glUniform1f(opacity, fade);
-					
+					shader.setUniform(gl, "opacity", fade);
 					Shader.disable(gl);
 				}
 
