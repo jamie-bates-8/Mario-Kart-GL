@@ -659,7 +659,7 @@ public class Car
 					
 					Shader.disable(gl);
 				}
-				
+
 				graph.renderGhost(gl, booColor, shader);
 			}
 			else if(starPower) graph.renderColor(gl, _color);
@@ -679,7 +679,7 @@ public class Car
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 		
-		if(!camera.isFirstPerson())
+		if(displayTag && !camera.isFirstPerson())
 		{
 			float ry = slipping ? slipTrajectory : trajectory; 
 			if(camera.isFree()) ry = camera.getRotation()[1];
@@ -687,6 +687,8 @@ public class Car
 			tag.render(gl, ry);
 		}
 	}
+	
+	public boolean displayTag = true;
 
 	private void updateColor()
 	{

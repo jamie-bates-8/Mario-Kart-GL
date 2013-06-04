@@ -147,4 +147,10 @@ public class Shader
 			return null;
 		}
 	}
+
+	public void addSampler(GL2 gl, String sampler, int unit)
+	{
+		int samplerID = gl.glGetUniformLocation(shaderID, sampler);
+		gl.glUniform1i(samplerID, unit);
+	}
 }

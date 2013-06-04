@@ -139,14 +139,14 @@ public class SceneNode
 				
 				gl.glDisable(GL_LIGHTING);
 				gl.glEnable (GL_BLEND   );
-//				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 				
 				if(model != null) model.render(gl);
 				else Renderer.displayColoredObject(gl, geometry, fade);
 				
 				gl.glEnable (GL_LIGHTING);
 				gl.glDisable(GL_BLEND   );
-//				gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+				
+				Shader.disable(gl);
 			}
 			else
 			{
@@ -166,8 +166,6 @@ public class SceneNode
 				}
 				else Renderer.displayTransparentObject(gl, geometry, fade);
 			}
-			
-			Shader.disable(gl);
 			
 			for(SceneNode child : children) child.renderGhost(gl, fade, shader);
 		}

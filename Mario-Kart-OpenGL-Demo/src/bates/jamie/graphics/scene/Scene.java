@@ -1227,6 +1227,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
+		manipulator.disable(gl);
 		reflector.update(gl, cars.get(0).getPosition());
 		
 		     if(sphereMap) reflector.displayMap(gl);
@@ -1272,7 +1273,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				manipulator.displayShadow(gl);
 				
-				if(resetShadow)
+				if(resetShadow) // required if shadow quality is altered
 				{
 					manipulator.setup(gl);
 					resetShadow = false;
@@ -1696,13 +1697,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void displayReflection(GL2 gl, Car car)
 	{
-		/*
-		 * TODO
-		 * 
-		 * Weather effects may not be working correctly with reflection
-		 * Clip plane 1 should be at water height
-		 * translate(0, 20, 0) should be 2 times water height? 
-		 */
+		// TODO Weather effects may not be working correctly with reflection
 		
 		float[] p = light.getPosition();
 		light.setPosition(new float[] {p[0], -p[1], p[2]});
@@ -1744,8 +1739,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 
 	public void renderFloor(GL2 gl, boolean reflect)
-	{
-		
+	{	
 		if(reflect)
 		{
 			gl.glColor4f(0.75f, 0.75f, 0.75f, opacity);
@@ -1798,9 +1792,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
+		// prevents shadow texture unit from being active
 		if(enableShadow ) manipulator.disable(gl);
 		if(displaySkybox) renderSkybox(gl);
-		if(enableShadow ) manipulator.enable(gl);
 		
 		Shader shader = null;
 		
@@ -1812,12 +1806,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 				if(shader != null)
 				{
+					manipulator.enable(gl);
 					shader.enable(gl);
-					
-					int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-					gl.glUniform1i(texture, 0);
-					int shadow = gl.glGetUniformLocation(shader.shaderID, "shadowMap");
-					gl.glUniform1i(shadow, 2);
+					shader.addSampler(gl, "texture"  , 0);
+					shader.addSampler(gl, "shadowMap", 2);
 				}
 			}
 			else
@@ -1827,18 +1819,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				if(shader != null)
 				{
 					shader.enable(gl);
-					
-					int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-					gl.glUniform1i(texture, 0);
+					shader.addSampler(gl, "texture", 0);
 				}
 			}
 		}
 		
-		if(!enableReflection && !enableTerrain && !testMode) renderFloor(gl, false);
-		
 		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
-		
-		if(enableShadow && shader != null) shader.enable(gl);
+		else if(!enableReflection) renderFloor(gl, false);
 		
 		renderObstacles(gl);
 		
@@ -1941,7 +1928,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
-		if(!shadow || !car.isInvisible()) car.render(gl);
+		if(!shadow || !car.isInvisible())
+		{
+			boolean tag = car.displayTag;
+			if(shadow) car.displayTag = false;
+			car.render(gl);
+			car.displayTag = tag;
+		}
 	
 		for(Car c : cars)
 		{
@@ -1950,7 +1943,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				boolean visibility = c.displayModel;
 				
 				c.displayModel = true;
-				if(!shadow || !car.isInvisible()) c.render(gl);
+				
+				if(!shadow || !car.isInvisible())
+				{
+					boolean tag = car.displayTag;
+					if(shadow || car.isInvisible()) car.displayTag = false;
+					car.render(gl);
+					car.displayTag = tag;
+				}
 				c.displayModel = visibility;
 			}
 		}

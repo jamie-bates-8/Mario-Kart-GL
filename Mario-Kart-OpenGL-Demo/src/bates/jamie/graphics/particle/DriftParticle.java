@@ -36,8 +36,8 @@ public class DriftParticle extends Particle
 			gl.glRotatef((flat) ? -90 : 0, 1, 0, 0);
 			gl.glRotatef(rotation, 0, 0, 1);
 			
-			if(miniature) gl.glScalef(0.75f, 2.5f, 0.75f);
-			else gl.glScalef(1.5f, 5.0f, 1.5f);
+			if(miniature) gl.glScalef(0.4f, 1.5f, 0.4f);
+			else gl.glScalef(0.8f, 3.0f, 0.8f);
 			gl.glTranslatef(0, 0.2f, 0);
 			
 			gl.glDepthMask(false);
