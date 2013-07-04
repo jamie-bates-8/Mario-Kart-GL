@@ -45,8 +45,6 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,8 +97,10 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
+import bates.jamie.graphics.entity.Water;
 import bates.jamie.graphics.io.Console;
 import bates.jamie.graphics.io.GamePad;
+import bates.jamie.graphics.io.ModelSelecter;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
 import bates.jamie.graphics.item.FakeItemBox;
@@ -124,7 +124,6 @@ import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 
-import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
@@ -235,6 +234,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private int canvasWidth  = 860;
 	private int canvasHeight = 640;
+	
+	public float far = 1000.0f;
 	
 	public static final int FPS     = 60;
 	public static final int MIN_FPS = 30;
@@ -374,12 +375,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public boolean testMode = false;
 	public boolean printVersion = true;
+	public boolean printErrors = false;
 	
-	public int selectX = -1;
-	public int selectY = -1;
-	public int selected = 0;
-	private IntBuffer selectBuffer;
-	private static final int BUFFER_SIZE = 512;
+	public ModelSelecter selecter;
 	
 	public boolean mousePressed  = false;
 	public boolean enableRetical = true;
@@ -394,9 +392,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public JList<String> quadList;
 	public DefaultListModel<String> listModel;
+
+	private Water water;
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
-	
 	
 	public Scene()
 	{
@@ -1078,6 +1077,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
+	    selecter = new ModelSelecter(this, glu);
+	    
+	    water = new Water(this);
+	    water.createTextures(gl);
+	    
 	    frameTimes  = new long[240];
 	    renderTimes = new long[240][RENDER_HEADERS.length];
 	    updateTimes = new long[240][UPDATE_HEADERS.length];
@@ -1159,6 +1163,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private void loadShaders(GL2 gl)
 	{
+		// load and compile shaders from file
 		Shader phong        = new Shader(gl, "phong", "phong");
 		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
 		Shader bump         = new Shader(gl, "bump", "bump");
@@ -1167,7 +1172,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
+		Shader water        = new Shader(gl, "water", "water");
 		
+		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(        bump.isValid()) shaders.put("bump", bump);
@@ -1176,6 +1183,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
+		if(       water.isValid()) shaders.put("water", water);
 	}
 
 	private void loadParticles()
@@ -1227,11 +1235,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
-		manipulator.disable(gl);
+		manipulator.disable(gl); // prevent reflections from being darkened by shadow
 		reflector.update(gl, cars.get(0).getPosition());
 		
 		     if(sphereMap) reflector.displayMap(gl);
-		else if(shadowMap) manipulator.displayMap(gl);
+		else if(shadowMap) manipulator.displayMap(gl, water.reflectTexture);
 		else render(gl);
 
 		gl.glFlush();
@@ -1250,7 +1258,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		int i = orderRender(order);
 		int _i = i; //temporary variable _i used to store the boost count this frame
 		
-		if(selectX != -1) selectModel(gl);
+		if(mousePressed) selecter.selectModel(gl);
 
 		for(int index : order)
 		{
@@ -1281,6 +1289,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 
 			if(enableReflection) displayReflection(gl, car);
+			
+			renderWater(gl, car);
 			
 			renderWorld(gl);
 			render3DModels(gl, car);
@@ -1326,36 +1336,47 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableBlur && _i != boostCounter) gl.glAccum(GL_LOAD, 1.0f);
 		boostCounter = _i;
 	}
-
-	public boolean printErrors = true;
 	
-	public void select3DPoint(GL2 gl, GLU glu)
+	public void renderWater(GL2 gl, Car car)
 	{
-		Point point = canvas.getMousePosition();
-		if(point == null) return;
-	
-		int w = (int) point.getX();
-		int h = (int) point.getY();
-		
-		int[] viewport = new int[4];
-		float[] modelview  = new float[16];
-		float[] projection = new float[16];
+//		gl.glEnable(GL2.GL_CLIP_PLANE1);
+//		double equation[] = {0, -1, 0, 10}; // primitives above water are clipped
+//		gl.glClipPlane(GL2.GL_CLIP_PLANE1, equation, 0);
 
-		FloatBuffer p = FloatBuffer.allocate(3);
-		   
-		gl.glGetIntegerv(GL2.GL_VIEWPORT, viewport, 0);
-		gl.glGetFloatv  (GL2.GL_MODELVIEW_MATRIX, modelview, 0);
-		gl.glGetFloatv  (GL2.GL_PROJECTION_MATRIX, projection, 0);
+		gl.glPushMatrix();
+		{
+//			gl.glTranslatef(0.0f, 10, 0.0f);
+			gl.glScalef(1.0f, -1.0f, 1.0f); // render environment upside down
 
-		glu.gluUnProject(w, canvasHeight - h, 0.95f,
-			Buffers.newDirectFloatBuffer(modelview ),
-			Buffers.newDirectFloatBuffer(projection),
-			Buffers.newDirectIntBuffer(viewport), p);
+			renderWorld(gl);
+			render3DModels(gl, car);
+		}
+		gl.glPopMatrix();
+
+		gl.glDisable(GL2.GL_CLIP_PLANE1);
+		water.setReflection(gl);
+//		gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, 0, 0, getWidth(), getHeight(), 0);
+		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//		gl.glEnable(GL2.GL_CLIP_PLANE2);
+//		equation = new double[]{0, 1, 0, -10}; // primitives below water are clipped
+//		gl.glClipPlane(GL2.GL_CLIP_PLANE2, equation, 0);
+
+		gl.glPushMatrix();
+		{
+			renderWorld(gl);
+			render3DModels(gl, car);
+		}
+		gl.glPopMatrix();
+
+		gl.glDisable(GL2.GL_CLIP_PLANE2);
+		water.setRefraction(gl);
+		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		gl.glColor3f(1, 1, 1);
 		
-		addItem(8, new float[] {p.get(0), p.get(1), p.get(2)}, 0);
+		water.render(gl, car.getPosition());
 	}
-	
-	public float far = 1000.0f;
 	
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
 	{
@@ -1446,7 +1467,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 			
 		vehicleCollisions();
-		for(Car car : cars) car.update();
+		for(Car car : cars)
+		{
+			car.update();
+			if(outOfBounds(car.getPosition())) car.reset();
+		}
 		
 		if(enableTerrain)
 		{			
@@ -1601,75 +1626,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		return i;
 	}
-
-	//TODO does not work in bird's eye view
-	private void selectModel(GL2 gl)
-	{
-		startPicking(gl);
-		
-		gl.glPushName(1);
-		
-		gl.glPushMatrix();
-		{		
-			
-		}
-		gl.glPopMatrix();
-		
-		gl.glPopName();
-		
-		endPicking(gl);
-	}
-	
-	private void startPicking(GL2 gl)
-	{
-		selectBuffer = Buffers.newDirectIntBuffer(BUFFER_SIZE);
-		gl.glSelectBuffer(BUFFER_SIZE, selectBuffer);
-		
-		gl.glRenderMode(GL2.GL_SELECT);
-		
-		gl.glInitNames();
-		
-		gl.glMatrixMode(GL_PROJECTION);
-		
-		gl.glPushMatrix();
-		{
-			gl.glLoadIdentity();
-			
-			int[] viewport = new int[4];
-			gl.glGetIntegerv(GL2.GL_VIEWPORT, viewport, 0);
-			
-			glu.gluPickMatrix(selectX, viewport[3] - selectY, 5, 5, viewport, 0);
-			
-			float aspect = (float) viewport[2] / (float) viewport[3];
-			
-			glu.gluPerspective(fov, aspect, 1.0, far);
-			cars.get(0).setupCamera(gl, glu);
-			
-			gl.glMatrixMode(GL_MODELVIEW);
-		}
-	}
-
-	private void endPicking(GL2 gl)
-	{
-		gl.glMatrixMode(GL_PROJECTION);
-		gl.glPopMatrix();
-		
-		gl.glMatrixMode(GL_MODELVIEW);
-		gl.glFlush();
-		
-		int hits = gl.glRenderMode(GL2.GL_RENDER);
-		
-		selectX = selectY = -1;
-		
-		getSelection(gl, hits);
-	}
-
-	private void getSelection(GL2 gl, int hits)
-	{
-		selected++;
-		
-		
-	}
 	
 	/**
 	 * This method minimises the viewport to create a split-screen effect.
@@ -1705,14 +1661,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableTerrain)
 		{
 			gl.glEnable(GL2.GL_CLIP_PLANE1);
-			double equation[] = {0, -1, 0, 10};
+			double equation[] = {0, -1, 0, 10}; // primitives above water are clipped
 			gl.glClipPlane(GL2.GL_CLIP_PLANE1 , equation, 0);
 		}
 		
 		gl.glPushMatrix();
 		{
 			if(enableTerrain) gl.glTranslatef(0.0f, 20, 0.0f);
-			gl.glScalef(1.0f, -1.0f, 1.0f);
+			gl.glScalef(1.0f, -1.0f, 1.0f); // render environment upside down
 			
 			renderWorld(gl);
 			render3DModels(gl, car);
@@ -1732,6 +1688,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableTerrain)
 		{
+			/*
+			 * For the plane equation, the first three components represent a vector/axis
+			 * and the fourth component is a translation along this vector.
+			 */
 			gl.glEnable(GL2.GL_CLIP_PLANE2);
 			double[] equation = {0, 1, 0, -10};
 			gl.glClipPlane(GL2.GL_CLIP_PLANE2 , equation, 0);
@@ -1825,7 +1785,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
-		else if(!enableReflection) renderFloor(gl, false);
+//		else if(!enableReflection) renderFloor(gl, false);
 		
 		renderObstacles(gl);
 		
@@ -2404,10 +2364,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //			case KeyEvent.VK_I:  spawnItemsInSphere(8, 10, new float[] {0, 100, 0}, 50); break;
 //			case KeyEvent.VK_U:  spawnItemsInOBB(0, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
-//			case KeyEvent.VK_BACK_SLASH: testMode = !testMode; break;
 			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
-			case KeyEvent.VK_U: manipulator.shadowRadius -= 10; break;
-			case KeyEvent.VK_I: manipulator.shadowRadius += 10; break;
+//			case KeyEvent.VK_U: manipulator.shadowRadius -= 10; break;
+//			case KeyEvent.VK_I: manipulator.shadowRadius += 10; break;
 			case KeyEvent.VK_P: sphereMap = !sphereMap; break;
 			
 			case KeyEvent.VK_L        : printDataToFile(null, RENDER_HEADERS, renderTimes); break;
@@ -2435,10 +2394,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_8:  fort.displayModel = !fort.displayModel; break;
 			case KeyEvent.VK_0:  displaySkybox = !displaySkybox; break;
 
+			case KeyEvent.VK_PERIOD       :
 			case KeyEvent.VK_EQUALS       :
 			case KeyEvent.VK_MINUS        : terrain.keyPressed(e); updateFoliage(); break;
 			case KeyEvent.VK_J            :
 			case KeyEvent.VK_K            :
+			case KeyEvent.VK_I            :
+			case KeyEvent.VK_U            : // TODO temporary for demonstration
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
 			case KeyEvent.VK_QUOTE        :
@@ -2498,8 +2460,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void mousePressed(MouseEvent e)
 	{
-		selectX = e.getX();
-		selectY = e.getY();
+		selecter.setSelection(e.getX(), e.getY());
 		
 		rightClick = SwingUtilities.isRightMouseButton(e);
 		mousePressed = true;
@@ -2527,8 +2488,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(event.getActionCommand().equals("shadow_high"  )) { manipulator.setQuality(ShadowQuality.HIGH); resetShadow = true; }
 		else if(event.getActionCommand().equals("shadow_best"  )) { manipulator.setQuality(ShadowQuality.BEST); resetShadow = true; }
 		     
-		else if(event.getActionCommand().equals("recalc_norms" )) terrain.tree.recalculateNormals();
-		else if(event.getActionCommand().equals("recalc_tangs" )) terrain.tree.recalculateTangents();    
+		else if(event.getActionCommand().equals("recalc_norms" )) terrain.tree.resetNormals();
+		else if(event.getActionCommand().equals("recalc_tangs" )) terrain.tree.resetTangent();    
 		else if(event.getActionCommand().equals("save_heights" ))
 		{
 			Quadtree tree = terrain.tree;

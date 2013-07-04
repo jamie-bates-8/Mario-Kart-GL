@@ -1617,6 +1617,8 @@ public class Car
 			{
 				case  5: camera.increaseSensitivity(); break;
 				case  7: camera.decreaseSensitivity(); break;
+				
+				case  6: camera.setSpeed(15); break;
 			}
 		}
 		
@@ -1628,14 +1630,24 @@ public class Car
 	
 	public void buttonReleased(int e)
 	{
-		switch(e)
+		if(!camera.isFree())
 		{
-			case  4: if(hasItem()) releaseItem(); break; 
-			case  5:
-			case  7: accelerating = false; reversing = false; break;
-			case  6: camera.setRearview(false); break;
-			case  9:
-			case 10: miniTurbo(); break;
+			switch(e)
+			{
+				case  4: if(hasItem()) releaseItem(); break; 
+				case  5:
+				case  7: accelerating = false; reversing = false; break;
+				case  6: camera.setRearview(false); break;
+				case  9:
+				case 10: miniTurbo(); break;
+			}
+		}
+		else
+		{
+			switch(e)
+			{
+				case  6: camera.setSpeed(5); break;
+			}
 		}
 	}
 	

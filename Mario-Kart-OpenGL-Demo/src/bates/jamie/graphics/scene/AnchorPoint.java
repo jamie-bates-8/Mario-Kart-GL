@@ -90,6 +90,8 @@ public class AnchorPoint
 	
 	public float[] getRotation() { return new float[] {rx, ry, rz}; }
 	
+	public void setSpeed(float speed) { this.speed = speed; }
+	
 	public void keyPressed(KeyEvent e)
 	{
 		switch(e.getKeyCode())
@@ -111,8 +113,8 @@ public class AnchorPoint
 	
 	public void update(GamePad controller)
 	{
-		float x  = controller.getXAxis();
-		float y  = controller.getYAxis();
+		float x  = controller.getXAxis() * speed;
+		float y  = controller.getYAxis() * speed;
 		float rx = controller.getXRotation();
 		float ry = controller.getYRotation();
 		

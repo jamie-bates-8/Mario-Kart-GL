@@ -1171,7 +1171,7 @@ public class Quadtree
 		return indices;
 	}
 	
-	public void recalculateNormals()
+	public void resetNormals()
 	{
 		int position = nBuffer.position();
 		
@@ -1186,7 +1186,7 @@ public class Quadtree
 		nBuffer.position(position);
 	}
 	
-	public void recalculateTangents()
+	public void resetTangent()
 	{
 		int position = aBuffer.position();
 		
@@ -1356,7 +1356,7 @@ public class Quadtree
 	
 	public void decimateAll()
 	{
-		if(isLeaf()) return;
+		if(isLeaf()) return; // cannot decimate (remove children from) a leaf node
 		
 		if(north_west.isLeaf() && north_east.isLeaf() && south_west.isLeaf() && south_east.isLeaf()) decimate();
 		else
@@ -1368,12 +1368,41 @@ public class Quadtree
 		}
 	}
 	
+	public void decimateAll(int lod)
+	{
+		if(isLeaf()) return; // cannot decimate (remove children from) a leaf node
+		
+		if(!north_west.isLeaf()) north_west.decimateAll(lod);
+		if(!north_east.isLeaf()) north_east.decimateAll(lod);
+		if(!south_west.isLeaf()) south_west.decimateAll(lod);
+		if(!south_east.isLeaf()) south_east.decimateAll(lod);
+		
+		if(this.lod >= lod) decimate();
+	}
+	
 	public void decimate()
 	{
 		north_west = null;
 		north_east = null;
 		south_west = null;
 		south_east = null;
+	}
+	
+	/**
+	 * This method is a soft reset that can be used to remove deformations from
+	 * a quadtree; this includes decimating the surface to the level of detail
+	 * passed as a parameter and resetting vertices to their original heights.
+	 * 
+	 * This allows the quadtree to be reset in order to increase performance
+	 * without having to restart the application.
+	 */
+	public void reset(int lod)
+	{
+		decimateAll(lod); updateIndices(lod);
+		
+		resetNormals();  
+		resetTangent(); // decimate does not remove unused normals/tangents
+		resetHeights();
 	}
 	
 	public int cellCount  () { return indexCount / 4;  }
@@ -1685,6 +1714,36 @@ public class Quadtree
 		public static FallOff cycle(FallOff mode)
 		{
 			return values()[(mode.ordinal() + 1) % values().length];
+		}
+	}
+	
+	public enum Material
+	{
+		SOFT_MUD,
+		WET_SAND;
+	}
+	
+	public void setMaterial(Material material, Texture bumpmap)
+	{
+		this.bumpmap = bumpmap;
+		
+		switch(material)
+		{
+			case SOFT_MUD:
+			{
+				specular = new float[] {0.3f, 0.3f, 0.3f, 1};
+				elasticity = 1;
+				
+				break;
+			}
+			case WET_SAND:
+			{
+				specular = new float[] {1.0f, 1.0f, 1.0f, 1};
+				elasticity = 8;
+				
+				break;
+			}
+			default: break;
 		}
 	}
 }

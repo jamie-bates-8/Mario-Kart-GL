@@ -313,7 +313,7 @@ public class ShadowManipulator
 		}
 	}
 	
-	public void displayMap(GL2 gl)
+	public void displayMap(GL2 gl, int texture)
     {
         gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
         gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
@@ -324,7 +324,7 @@ public class ShadowManipulator
 	        gl.glLoadIdentity();
 	           
 	        gl.glEnable(GL_TEXTURE_2D);
-	        gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
+	        gl.glBindTexture(GL_TEXTURE_2D, texture);
 	        gl.glDisable(GL2.GL_LIGHTING);
 	        
 	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_REPLACE);

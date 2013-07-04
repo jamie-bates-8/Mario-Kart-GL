@@ -23,6 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import bates.jamie.graphics.entity.Quadtree.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
@@ -162,7 +163,7 @@ public class Terrain
 		
 		Quadtree base = new Quadtree(210, 32, textures.get(1), 7);
 		base.bumpmap = bumpmaps.get(6);
-		base.setHeights(1000);
+		base.setHeights(100);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		
 		tree = base;
@@ -178,7 +179,7 @@ public class Terrain
 		
 		Quadtree road = new Quadtree(210, 32, textures.get(3), 7);
 		road.bumpmap = bumpmaps.get(0);
-		road.setHeights(1000);
+		road.setHeights(100);
 		road.malleable = false;
 		road.specular = new float[] {1, 1, 1, 1};
 		
@@ -633,6 +634,12 @@ public class Terrain
 		return new float[] {s, t};
 	}
 	
+	public void resetQuadtrees()
+	{
+		for(Quadtree tree : trees.values())
+			if(!tree.enableBlending) tree.reset(7);
+	}
+	
 	public void keyPressed(KeyEvent e)
 	{
 		switch(e.getKeyCode())
@@ -641,6 +648,11 @@ public class Terrain
 			case KeyEvent.VK_MINUS        : tree.decreaseDetail(); break;
 			case KeyEvent.VK_OPEN_BRACKET : tree.decimateAll() ; tree.updateIndices(tree.detail); break;
 			case KeyEvent.VK_CLOSE_BRACKET: tree.subdivideAll(); break;
+			
+			case KeyEvent.VK_I: tree.setMaterial(Material.WET_SAND, bumpmaps.get(3)); break;
+			case KeyEvent.VK_U: tree.setMaterial(Material.SOFT_MUD, bumpmaps.get(6)); break;
+			
+			case KeyEvent.VK_PERIOD: resetQuadtrees(); break;
 			
 			case KeyEvent.VK_QUOTE      : trees.get("Pond").decreaseDetail(); break;
 			case KeyEvent.VK_NUMBER_SIGN: trees.get("Pond").increaseDetail(); break;

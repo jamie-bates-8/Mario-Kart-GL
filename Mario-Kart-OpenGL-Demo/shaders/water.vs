@@ -16,9 +16,9 @@ void main()
 	B   = cross(gl_Normal, Tangent.xyz);
 	N   = gl_Normal; 
 
-    worldPos = vec3(ModelMatrix*gl_Vertex);
+    worldPos = vec3(ModelMatrix * gl_Vertex);
     fragPos = ftransform();
     viewPos = pos - gl_ModelViewMatrixInverse[3].xyz;
-    gl_Position = ftransform();
-    timer = gl_Color.r*2.0;
+    gl_Position = fragPos;
+    timer = gl_Color.r * 2.0;
 }

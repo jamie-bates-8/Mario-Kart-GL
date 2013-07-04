@@ -26,10 +26,6 @@ void main(void)
 	v.y = dot(light, b); // binormal
 	v.z = dot(light, n); // normal
 	
-	//v.x = dot(gl_LightSource[0].position, t); // tangent
-	//v.y = dot(gl_LightSource[0].position, b); // binormal
-	//v.z = dot(gl_LightSource[0].position, n); // normal
-	
 	lightDir = normalize(v);
 	
 	v.x = dot(eyeDir, t);
