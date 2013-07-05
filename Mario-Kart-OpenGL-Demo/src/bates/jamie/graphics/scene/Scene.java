@@ -1088,7 +1088,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile game");
+	    console.parseCommand("profile project");
 	    
 	    if(enableTerrain)
 	    {
@@ -1290,7 +1290,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 			if(enableReflection) displayReflection(gl, car);
 			
-			renderWater(gl, car);
+//			renderWater(gl, car);
 			
 			renderWorld(gl);
 			render3DModels(gl, car);
@@ -1339,13 +1339,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void renderWater(GL2 gl, Car car)
 	{
-//		gl.glEnable(GL2.GL_CLIP_PLANE1);
-//		double equation[] = {0, -1, 0, 10}; // primitives above water are clipped
-//		gl.glClipPlane(GL2.GL_CLIP_PLANE1, equation, 0);
+		gl.glEnable(GL2.GL_CLIP_PLANE1);
+		double equation[] = {0, -1, 0, 0}; // primitives above water are clipped
+		gl.glClipPlane(GL2.GL_CLIP_PLANE1, equation, 0);
 
 		gl.glPushMatrix();
 		{
-//			gl.glTranslatef(0.0f, 10, 0.0f);
 			gl.glScalef(1.0f, -1.0f, 1.0f); // render environment upside down
 
 			renderWorld(gl);
@@ -1355,12 +1354,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		gl.glDisable(GL2.GL_CLIP_PLANE1);
 		water.setReflection(gl);
-//		gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, 0, 0, getWidth(), getHeight(), 0);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//		gl.glEnable(GL2.GL_CLIP_PLANE2);
-//		equation = new double[]{0, 1, 0, -10}; // primitives below water are clipped
-//		gl.glClipPlane(GL2.GL_CLIP_PLANE2, equation, 0);
+		gl.glEnable(GL2.GL_CLIP_PLANE2);
+		equation = new double[]{0, 1, 0, -0}; // primitives below water are clipped
+		gl.glClipPlane(GL2.GL_CLIP_PLANE2, equation, 0);
 
 		gl.glPushMatrix();
 		{

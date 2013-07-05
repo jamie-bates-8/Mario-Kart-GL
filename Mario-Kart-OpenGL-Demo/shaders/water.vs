@@ -12,9 +12,9 @@ void main()
 {
 	vec3 pos = vec3(gl_Vertex);
 	
-	T   = Tangent.xyz;
-	B   = cross(gl_Normal, Tangent.xyz);
-	N   = gl_Normal; 
+	T = Tangent.xyz;
+	B = cross(gl_Normal, Tangent.xyz);
+	N = gl_Normal; 
 
     worldPos = vec3(ModelMatrix * gl_Vertex);
     fragPos = ftransform();

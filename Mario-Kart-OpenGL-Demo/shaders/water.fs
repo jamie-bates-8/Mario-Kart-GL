@@ -69,7 +69,7 @@ float fresnel_dielectric(vec3 Incoming, vec3 Normal, float eta)
 
 void main()
 {
-    vec2 fragCoord = (fragPos.xz / fragPos.w) * 0.5 + 0.5;
+    vec2 fragCoord = (fragPos.xy / fragPos.w) * 0.5 + 0.5;
     fragCoord = clamp(fragCoord, 0.002, 0.998);
 
 	//normal map
@@ -95,6 +95,9 @@ void main()
 	vec3 normal = normalize(normal0 * bWaves.x + normal1 * bWaves.y +
                             normal2 * mWaves.x + normal3 * mWaves.y +
 						    normal4 * sWaves.x + normal5 * sWaves.y);
+						    
+	normal.x = -normal.x; //in case you need to invert Red channel
+    normal.y = -normal.y; //in case you need to invert Green channel
    
     vec3 nVec = tangentSpace(normal * bump); //converting normals to tangent space    
     vec3 vVec = normalize(viewPos);
@@ -125,7 +128,7 @@ void main()
     distortFade.t  = clamp(fragCoord.t * fade, 0.0, 1.0);
     distortFade.t -= clamp(1.0 - (1.0 - fragCoord.t) * fade, 0.0, 1.0); 
     
-    vec3 reflection = texture2D(reflectionSampler, fragCoord + (nVec.st * reflBump * distortFade)).rgb;
+    vec3 reflection = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade)).rgb;
     
     vec3 luminosity = vec3(0.30, 0.59, 0.11);
 	float reflectivity = pow(dot(luminosity, reflection.rgb * 2.0), 3.0);
@@ -173,6 +176,6 @@ void main()
     color = (cameraPos.y < 0.0) ? mix(clamp(refraction * 1.5, 0.0, 1.0), reflection, fresnel) : color;   
     color = (cameraPos.y < 0.0) ? mix(color, watercolor * darkness, clamp(fog / waterext, 0.0, 1.0)) : color;
 
-    gl_FragColor = vec4(vec3(color + (specColor * specular)), 1.0);
- 
+    //gl_FragColor = vec4(vec3(color + (specColor * specular)), 1.0);
+    gl_FragColor = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
 }

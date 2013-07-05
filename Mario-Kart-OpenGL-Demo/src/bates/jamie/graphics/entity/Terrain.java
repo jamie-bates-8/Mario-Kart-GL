@@ -163,7 +163,7 @@ public class Terrain
 		
 		Quadtree base = new Quadtree(210, 32, textures.get(1), 7);
 		base.bumpmap = bumpmaps.get(6);
-		base.setHeights(100);
+		base.setHeights(1000);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		
 		tree = base;
@@ -179,7 +179,7 @@ public class Terrain
 		
 		Quadtree road = new Quadtree(210, 32, textures.get(3), 7);
 		road.bumpmap = bumpmaps.get(0);
-		road.setHeights(100);
+		road.setHeights(1000);
 		road.malleable = false;
 		road.specular = new float[] {1, 1, 1, 1};
 		

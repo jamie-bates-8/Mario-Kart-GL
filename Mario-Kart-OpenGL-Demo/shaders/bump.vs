@@ -33,6 +33,8 @@ void main(void)
 	v.z = dot(eyeDir, n);
 	
 	eyeDir = normalize(v);
+	
+	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
 
     // Copy the primary color
     gl_FrontColor = gl_Color;
