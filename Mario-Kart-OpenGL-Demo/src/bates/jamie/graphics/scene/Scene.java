@@ -1088,7 +1088,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile project");
+	    console.parseCommand("profile game");
 	    
 	    if(enableTerrain)
 	    {
@@ -1173,6 +1173,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader water        = new Shader(gl, "water", "water");
+		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
@@ -1184,6 +1185,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
 		if(       water.isValid()) shaders.put("water", water);
+		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
 	}
 
 	private void loadParticles()
@@ -1290,7 +1292,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 			if(enableReflection) displayReflection(gl, car);
 			
-//			renderWater(gl, car);
+			renderWater(gl, car);
 			
 			renderWorld(gl);
 			render3DModels(gl, car);
@@ -1356,9 +1358,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		water.setReflection(gl);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		gl.glEnable(GL2.GL_CLIP_PLANE2);
-		equation = new double[]{0, 1, 0, -0}; // primitives below water are clipped
-		gl.glClipPlane(GL2.GL_CLIP_PLANE2, equation, 0);
+//		gl.glEnable(GL2.GL_CLIP_PLANE2);
+//		equation = new double[]{0, 1, 0, -0}; // primitives below water are clipped
+//		gl.glClipPlane(GL2.GL_CLIP_PLANE2, equation, 0);
 
 		gl.glPushMatrix();
 		{
@@ -1813,6 +1815,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		
+		Shader shader = shaders.get("clear_sky");
+		
+		if(Shader.enabled && shader != null) shader.enable(gl);
+		
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(0, 0, 0);
@@ -1821,6 +1827,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			gl.glCallList(environmentList);
 		}	
 		gl.glPopMatrix();
+		
+		Shader.disable(gl);
 		
 		gl.glEnable(GL2.GL_LIGHTING);
 	}

@@ -58,8 +58,8 @@ float fresnel_dielectric(vec3 Incoming, vec3 Normal, float eta)
     if(g > 0.0)
     {
         g = sqrt(g);
-        float A =(g - c) / (g + c);
-        float B =(c * (g + c) - 1.0) / (c * (g - c) + 1.0);
+        float A  = (g - c) / (g + c);
+        float B  = (c * (g + c) - 1.0) / (c * (g - c) + 1.0);
         result = 0.5 * A * A * (1.0 + B * B);
     }
     else result = 1.0;  /* TIR (no refracted component) */
@@ -138,12 +138,12 @@ void main()
     float specular = pow(max(dot(R, lVec), 0.0), sunSpec) * reflectivity;
     vec3 specColor = mix(vec3(1.0, 0.5, 0.2), vec3(1.0, 1.0, 1.0), clamp(1.0 - exp(-(sunPos.y * 2.0) * sunext), 0.0, 1.0));
 
-    vec2 rcoord = reflect(vVec, nVec).st;
+    vec2 rcoord = reflect(vVec, nVec).xz;
     vec3 refraction = vec3(0.0);
     
-    refraction.r = texture2D(refractionSampler, (fragCoord - (nVec.st * refrBump * distortFade)) * 1.0).r;
-    refraction.g = texture2D(refractionSampler, (fragCoord - (nVec.st * refrBump * distortFade)) * 1.0 - (rcoord * aberration)).g;
-    refraction.b = texture2D(refractionSampler, (fragCoord - (nVec.st * refrBump * distortFade)) * 1.0 - (rcoord * aberration * 2.0)).b;
+    refraction.r = texture2D(refractionSampler, (fragCoord - (nVec.xz * refrBump * distortFade)) * 1.0).r;
+    refraction.g = texture2D(refractionSampler, (fragCoord - (nVec.xz * refrBump * distortFade)) * 1.0 - (rcoord * aberration)).g;
+    refraction.b = texture2D(refractionSampler, (fragCoord - (nVec.xz * refrBump * distortFade)) * 1.0 - (rcoord * aberration * 2.0)).b;
     
     //fresnel term
     float ior = 1.33;

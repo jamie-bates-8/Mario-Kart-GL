@@ -802,7 +802,7 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			float max = 0;
+			float max = Integer.MIN_VALUE;
 			
 			for(Quadtree tree : trees)
 			{
