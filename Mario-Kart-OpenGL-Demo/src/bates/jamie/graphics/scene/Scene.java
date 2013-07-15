@@ -218,6 +218,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_texturing;
 	private JCheckBoxMenuItem menuItem_malleable;
 	private JCheckBoxMenuItem menuItem_bumpmaps;
+	private JCheckBoxMenuItem menuItem_caustics;
 	private JMenuItem menuItem_shininess;
 	private JMenu menu_coloring;
 	private JCheckBoxMenuItem menuItem_vcoloring;
@@ -235,7 +236,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private int canvasWidth  = 860;
 	private int canvasHeight = 640;
 	
-	public float far = 1000.0f;
+	public float far = 2000.0f;
 	
 	public static final int FPS     = 60;
 	public static final int MIN_FPS = 30;
@@ -249,7 +250,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public float[] background = RGB.SKY_BLUE;
 	
-	private boolean enableAnimation = true;
+	public static boolean enableAnimation = true;
 	private boolean normalize = true;
 	
 	private Calendar execution;
@@ -837,6 +838,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_bumpmaps.addItemListener(this);
 		menuItem_bumpmaps.setMnemonic(KeyEvent.VK_B);
 		
+		menuItem_caustics = new JCheckBoxMenuItem("Water Caustics");
+		menuItem_caustics.addItemListener(this);
+		menuItem_caustics.setMnemonic(KeyEvent.VK_C);
+		
 		menuItem_malleable = new JCheckBoxMenuItem("Malleable");
 		menuItem_malleable.addItemListener(this);
 		menuItem_malleable.setMnemonic(KeyEvent.VK_M);
@@ -847,6 +852,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menu_material.add(menuItem_texturing);
 		menu_material.add(menuItem_bumpmaps );
+		menu_material.add(menuItem_caustics );
 		menu_material.add(menuItem_malleable);
 		menu_material.add(menuItem_shininess);
 		
@@ -1088,7 +1094,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile game");
+	    console.parseCommand("profile project");
 	    
 	    if(enableTerrain)
 	    {
@@ -1124,6 +1130,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_vcoloring.setSelected(terrain.tree.enableColoring);
 		menuItem_texturing.setSelected(terrain.tree.enableTexture );
 		menuItem_bumpmaps .setSelected(terrain.tree.enableBumpmap );
+		menuItem_caustics .setSelected(terrain.tree.enableCaustic );
 		menuItem_malleable.setSelected(terrain.tree.malleable     );
 		
 		menuItem_cubemap.setSelected(true);
@@ -1173,6 +1180,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader water        = new Shader(gl, "water", "water");
+		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics");
+		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics");
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
@@ -1185,6 +1194,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
 		if(       water.isValid()) shaders.put("water", water);
+		if(    caustics.isValid()) shaders.put("water_caustics", caustics);
+		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
 		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
 	}
 
@@ -1297,6 +1308,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			renderWorld(gl);
 			render3DModels(gl, car);
 			
+			water.setRefraction(gl);
+			water.render(gl, car.getPosition());
+			
 			if(enableShadow) manipulator.disable(gl);
 			
 			renderTimes[frameIndex][4] = renderParticles(gl, car);
@@ -1357,25 +1371,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glDisable(GL2.GL_CLIP_PLANE1);
 		water.setReflection(gl);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-//		gl.glEnable(GL2.GL_CLIP_PLANE2);
-//		equation = new double[]{0, 1, 0, -0}; // primitives below water are clipped
-//		gl.glClipPlane(GL2.GL_CLIP_PLANE2, equation, 0);
-
-		gl.glPushMatrix();
-		{
-			renderWorld(gl);
-			render3DModels(gl, car);
-		}
-		gl.glPopMatrix();
-
-		gl.glDisable(GL2.GL_CLIP_PLANE2);
-		water.setRefraction(gl);
-		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		gl.glColor3f(1, 1, 1);
-		
-		water.render(gl, car.getPosition());
 	}
 	
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
@@ -1754,7 +1749,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		// prevents shadow texture unit from being active
 		if(enableShadow ) manipulator.disable(gl);
-		if(displaySkybox) renderSkybox(gl);
+		if(displaySkybox || Shader.enabled) renderSkybox(gl);
 		
 		Shader shader = null;
 		
@@ -1821,10 +1816,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(0, 0, 0);
-			gl.glScalef(40.0f, 40.0f, 40.0f);
-	
-			gl.glCallList(environmentList);
+			if(Shader.enabled)
+			{
+				glut.glutSolidSphere(800, 32, 32);
+			}
+			else
+			{
+				gl.glTranslatef(0, 0, 0);
+				gl.glScalef(40.0f, 40.0f, 40.0f);
+				
+				gl.glCallList(environmentList);
+			}
 		}	
 		gl.glPopMatrix();
 		
@@ -1833,13 +1835,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glEnable(GL2.GL_LIGHTING);
 	}
 
-	private long renderTerrain(GL2 gl)
+	public long renderTerrain(GL2 gl)
 	{
 		long start = System.nanoTime();
 
 		gl.glPushMatrix();
 		{	
-			terrain.render(gl, glut);
+			terrain.render(gl, glut, cars.get(0).getPosition());
 		}	
 		gl.glPopMatrix();
 
@@ -2605,7 +2607,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_elevation  )) terrain.tree.reliefMap       = selected;  
 		else if(source.equals(menuItem_frame      )) terrain.tree.frame           = selected;
 		else if(source.equals(menuItem_texturing  )) terrain.tree.enableTexture   = selected;
-		else if(source.equals(menuItem_bumpmaps   )) terrain.tree.enableBumpmap   = selected;     
+		else if(source.equals(menuItem_bumpmaps   )) terrain.tree.enableBumpmap   = selected;
+		else if(source.equals(menuItem_caustics   )) terrain.tree.enableCaustic   = selected;   
 		else if(source.equals(menuItem_malleable  )) terrain.tree.malleable       = selected;     
 		else if(source.equals(menuItem_vnormals   )) terrain.tree.vNormals        = selected; 
 		else if(source.equals(menuItem_vtangents  )) terrain.tree.vTangents       = selected;     

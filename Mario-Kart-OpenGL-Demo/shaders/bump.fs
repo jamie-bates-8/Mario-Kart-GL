@@ -10,32 +10,30 @@ varying vec3 eyeDir;
 
 void main(void)
 {
-    vec3 N = texture2D(bumpmap, gl_TexCoord[0].st).rgb;
-    // map texel from [0,1] to [-1,1]
-    N *= 2.0;
-    N -= 1.0;
+    vec3 normal = texture2D(bumpmap, gl_TexCoord[0].st).rgb;
+    normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]
 
-    // calculate diffuse lighting
-    float diff = max(0.0, dot(normalize(N), normalize(lightDir)));
-    
-     // Multiply intensity by diffuse color, force alpha to 1.0
-    vec4 vFragColor = diff * gl_LightSource[0].diffuse;
 
-    // Add in ambient light
-    vFragColor += gl_LightSource[0].ambient;
-	
-	vFragColor *= texture2D(texture, gl_TexCoord[0].st);
+    // Diffuse Lighting
+    float diffuse = max(0.0, dot(normalize(normal), normalize(lightDir)));
+    vec4 color = diffuse * gl_LightSource[0].diffuse;
+
+
+    // Ambient Light
+    color += gl_LightSource[0].ambient;
+	color *= texture2D(texture, gl_TexCoord[0].st);
+
 
     // Specular Light
-	vec3 vReflection = normalize(reflect(normalize(lightDir), normalize(N)));
-    float spec = max(0.0, dot(normalize(eyeDir), vReflection));
-    if(diff != 0)
+	vec3 vReflection = normalize(reflect(normalize(lightDir), normalize(normal)));
+    float specular = max(0.0, dot(normalize(eyeDir), vReflection));
+    if(diffuse != 0)
 	{
-        float fSpec = pow(spec, 128.0);
-        vFragColor.rgb += gl_LightSource[0].specular * fSpec;
+        specular = pow(specular, 128.0);
+        color.rgb += gl_LightSource[0].specular * specular;
     }
 	
-	vFragColor.rgb *= gl_Color.rgb;
 	
-	gl_FragColor = vFragColor;
+	color.rgb *= gl_Color.rgb;
+	gl_FragColor = color;
 }

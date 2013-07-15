@@ -1,8 +1,8 @@
 
-attribute vec4 Tangent;
+attribute vec4 tangent;
 
 varying vec4 fragPos;
-varying vec3 T, B, N; //tangent binormal normal
+varying vec3 T, B, N; // tangent binormal normal
 varying vec3 viewPos, worldPos;
 varying float timer;
 
@@ -12,8 +12,8 @@ void main()
 {
 	vec3 pos = vec3(gl_Vertex);
 	
-	T = Tangent.xyz;
-	B = cross(gl_Normal, Tangent.xyz);
+	T = tangent.xyz;
+	B = cross(gl_Normal, tangent.xyz);
 	N = gl_Normal; 
 
     worldPos = vec3(ModelMatrix * gl_Vertex);

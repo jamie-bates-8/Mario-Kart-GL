@@ -329,6 +329,7 @@ public class ShadowManipulator
 	        
 	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_REPLACE);
 	        gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_NONE);
+	        
 	        // Show the shadow map at its actual size relative to window
 	        gl.glBegin(GL2.GL_QUADS);
 	        {

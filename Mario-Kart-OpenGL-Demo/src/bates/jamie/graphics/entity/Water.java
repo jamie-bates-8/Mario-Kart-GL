@@ -20,8 +20,7 @@ public class Water
 	private Scene scene;
 	
 	private float timer = 0;
-	private float increment = 0.1f;
-	private boolean increasing = true;
+	private float increment = 0.05f;
 	
 	public Water(Scene scene)
 	{
@@ -40,8 +39,7 @@ public class Water
 		reflectTexture = id[0];
 		refractTexture = id[1];
 
-		perturbTexture = TextureLoader.load(gl, BUMP_MAPS + "caustics.png");
-//		perturbTexture = TextureLoader.load(gl, BUMP_MAPS + "brick.gif");
+		perturbTexture = TextureLoader.load(gl, BUMP_MAPS + "water.png");
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		
@@ -117,16 +115,16 @@ public class Water
 			int position = gl.glGetUniformLocation(shader.shaderID, "cameraPos");
 			gl.glUniform3f(position, p[0], p[1], p[2]);
 			
-			gl.glBindAttribLocation(shader.shaderID, 1, "Tangent");
+			gl.glBindAttribLocation(shader.shaderID, 1, "tangent");
 			
 			gl.glBegin(GL2.GL_QUADS);
 			{
-				float size = 220;
+				float size = 500;
 				
 				gl.glVertexAttrib3f(1, 0, 0, 1);
 				gl.glNormal3f(0, 1, 0);
 				
-				gl.glVertex3f(+size, 0, +size); 
+				gl.glVertex3f(+size, 0, +size);
 				gl.glVertex3f(+size, 0, -size);
 				gl.glVertex3f(-size, 0, -size);
 				gl.glVertex3f(-size, 0, +size);
@@ -135,10 +133,7 @@ public class Water
 			
 			Shader.disable(gl);
 			
-			timer += increasing ? increment : -increment;
-			
-//			if(timer >= 10) increasing = false;
-			if(timer <= 0) increasing = true;
+			if(Scene.enableAnimation) timer += increment;
 			
 			gl.glColor4f(1, 1, 1, 1);
 			

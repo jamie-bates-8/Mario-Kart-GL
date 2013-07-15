@@ -17,7 +17,7 @@ public class TextureLoader
 		{
 			texture = TextureIO.newTexture(new File(filename), true);
 			
-			if(anistropic) texture.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+//			if(anistropic) texture.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			texture.setTexParameterf(gl, GL2.GL_TEXTURE_MIN_FILTER, filter);
 			texture.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 		}
@@ -34,7 +34,7 @@ public class TextureLoader
 		{
 			texture = TextureIO.newTexture(new File(filename), true);
 			
-//			texture.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+			texture.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			texture.setTexParameterf(gl, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
 			texture.setTexParameterf(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 			texture.setTexParameterf(gl, GL2.GL_TEXTURE_WRAP_S, GL2.GL_REPEAT);

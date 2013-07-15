@@ -69,7 +69,7 @@ float fresnel_dielectric(vec3 Incoming, vec3 Normal, float eta)
 
 void main()
 {
-    vec2 fragCoord = (fragPos.xy / fragPos.w) * 0.5 + 0.5;
+    vec2 fragCoord = (fragPos.st / fragPos.q) * 0.5 + 0.5;
     fragCoord = clamp(fragCoord, 0.002, 0.998);
 
 	//normal map
@@ -77,27 +77,22 @@ void main()
 
   	nCoord = worldPos.xz * (scale * 0.05) + windDir * timer * (windSpeed * 0.04);
 	vec3 normal0 = 2.0 * texture2D(normalSampler, nCoord + vec2(-timer * 0.015, -timer * 0.005)).rgb - 1.0;
-	nCoord = worldPos.xz * (scale * 0.1) + windDir * timer * (windSpeed * 0.08) - (normal0.xz / normal0.yy) * choppy;
+	nCoord = worldPos.xz * (scale * 0.1) + windDir * timer * (windSpeed * 0.08) - (normal0.xy / normal0.z) * choppy;
 	vec3 normal1 = 2.0 * texture2D(normalSampler, nCoord + vec2(+timer * 0.020, +timer * 0.015)).rgb - 1.0;
  
- 	nCoord = worldPos.xz * (scale * 0.25) + windDir * timer * (windSpeed * 0.07) - (normal1.xz / normal1.yy) * choppy;
+ 	nCoord = worldPos.xz * (scale * 0.25) + windDir * timer * (windSpeed * 0.07) - (normal1.xy / normal1.z) * choppy;
 	vec3 normal2 = 2.0 * texture2D(normalSampler, nCoord + vec2(-timer * 0.04, -timer * 0.03)).rgb - 1.0;
-	nCoord = worldPos.xz * (scale * 0.5) + windDir * timer * (windSpeed * 0.09) - (normal2.xz / normal2.y) * choppy;
+	nCoord = worldPos.xz * (scale * 0.5) + windDir * timer * (windSpeed * 0.09) - (normal2.xy / normal2.z) * choppy;
 	vec3 normal3 = 2.0 * texture2D(normalSampler, nCoord + vec2(+timer * 0.03, +timer * 0.04)).rgb - 1.0;
   
-  	nCoord = worldPos.xz * (scale * 1.0) + windDir * timer * (windSpeed * 0.4) - (normal3.xz / normal3.yy) * choppy;
+  	nCoord = worldPos.xz * (scale * 1.0) + windDir * timer * (windSpeed * 0.4) - (normal3.xy / normal3.yz) * choppy;
 	vec3 normal4 = 2.0 * texture2D(normalSampler, nCoord + vec2(-timer * 0.02, +timer * 0.1)).rgb - 1.0;  
-    nCoord = worldPos.xz * (scale * 2.0) + windDir * timer * (windSpeed * 0.7) - (normal4.xz / normal4.yy) * choppy;
+    nCoord = worldPos.xz * (scale * 2.0) + windDir * timer * (windSpeed * 0.7) - (normal4.xy / normal4.yz) * choppy;
     vec3 normal5 = 2.0 * texture2D(normalSampler, nCoord + vec2(+timer * 0.1, -timer * 0.06)).rgb - 1.0;
 
-	
-	
 	vec3 normal = normalize(normal0 * bWaves.x + normal1 * bWaves.y +
                             normal2 * mWaves.x + normal3 * mWaves.y +
 						    normal4 * sWaves.x + normal5 * sWaves.y);
-						    
-	normal.x = -normal.x; //in case you need to invert Red channel
-    normal.y = -normal.y; //in case you need to invert Green channel
    
     vec3 nVec = tangentSpace(normal * bump); //converting normals to tangent space    
     vec3 vVec = normalize(viewPos);
@@ -107,6 +102,7 @@ void main()
 	vec3 lNormal = normalize(normal0 * bWaves.x * 0.5 + normal1 * bWaves.y * 0.5 +
                              normal2 * mWaves.x * 0.2 + normal3 * mWaves.y * 0.2 +
 						     normal4 * sWaves.x * 0.1 + normal5 * sWaves.y * 0.1);
+						     
     lNormal = tangentSpace(lNormal * bump);
     vec3 pNormal = tangentSpace(vec3(0.0));
     
@@ -122,10 +118,12 @@ void main()
     
     //texture edge bleed removal
     float fade = 12.0;
+    
     vec2 distortFade = vec2(0.0);
+    
     distortFade.s  = clamp(fragCoord.s * fade, 0.0, 1.0);
-    distortFade.s -= clamp(1.0 - (1.0 - fragCoord.s) * fade, 0.0, 1.0);
     distortFade.t  = clamp(fragCoord.t * fade, 0.0, 1.0);
+    distortFade.s -= clamp(1.0 - (1.0 - fragCoord.s) * fade, 0.0, 1.0);
     distortFade.t -= clamp(1.0 - (1.0 - fragCoord.t) * fade, 0.0, 1.0); 
     
     vec3 reflection = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade)).rgb;
@@ -173,9 +171,9 @@ void main()
     fresnel = clamp(fresnel, 0.0, 1.0);
         
     vec3 color = mix(mix(refraction, scatterColor, lightScatter), reflection, fresnel);
-    color = (cameraPos.y < 0.0) ? mix(clamp(refraction * 1.5, 0.0, 1.0), reflection, fresnel) : color;   
-    color = (cameraPos.y < 0.0) ? mix(color, watercolor * darkness, clamp(fog / waterext, 0.0, 1.0)) : color;
+    //color = (cameraPos.y < 0.0) ? mix(clamp(refraction * 1.5, 0.0, 1.0), reflection, fresnel) : color;   
+    //color = (cameraPos.y < 0.0) ? mix(color, watercolor * darkness, clamp(fog / waterext, 0.0, 1.0)) : color;
 
-    //gl_FragColor = vec4(vec3(color + (specColor * specular)), 1.0);
-    gl_FragColor = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
+    gl_FragColor = vec4(vec3(color + (specColor * specular)), 1.0);
+    //gl_FragColor = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
 }

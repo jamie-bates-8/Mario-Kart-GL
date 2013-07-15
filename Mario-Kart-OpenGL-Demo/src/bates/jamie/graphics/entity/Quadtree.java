@@ -6,6 +6,7 @@ import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -16,6 +17,7 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Gradient;
+import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vector;
@@ -25,7 +27,7 @@ import com.jogamp.opengl.util.texture.Texture;
 
 public class Quadtree
 {
-	private static final float HILL_INC = 2.0f;
+	private static final float HILL_INC = 2.5f;
 	
 	private static final float MIN_RADIUS = 10;
 	private static final float MAX_RADIUS = 60;
@@ -73,6 +75,7 @@ public class Quadtree
 	
 	public Texture texture;
 	public Texture bumpmap;
+	public Texture caustic;
 	public Gradient gradient = Gradient.GRAYSCALE;
 	
 	public FallOff falloff    = FallOff.SMOOTH;
@@ -83,6 +86,7 @@ public class Quadtree
 	public boolean smoothShading = true;
 	public boolean enableTexture = true;
 	public boolean enableBumpmap = true; 
+	public boolean enableCaustic = true;
 	
 	public boolean enableColoring = true;
 	public boolean enableBlending = false;
@@ -239,7 +243,7 @@ public class Quadtree
 		System.out.println("}");
 	}
 	
-	public Quadtree(float vScale, float tScale, Texture texture, int iterations)
+	public Quadtree(float vScale, float tScale, float height, Texture texture, int iterations)
 	{	
 		long start = System.nanoTime();
 		
@@ -253,10 +257,10 @@ public class Quadtree
 		this.indices = new int[] {0, 1, 2, 3};
 		
 		List<float[]> vertices = new ArrayList<float[]>();
-		vertices.add(new float[] {-vScale, 0,  vScale});
-		vertices.add(new float[] { vScale, 0,  vScale});
-		vertices.add(new float[] { vScale, 0, -vScale});
-		vertices.add(new float[] {-vScale, 0, -vScale});
+		vertices.add(new float[] {-vScale, height,  vScale});
+		vertices.add(new float[] { vScale, height,  vScale});
+		vertices.add(new float[] { vScale, height, -vScale});
+		vertices.add(new float[] {-vScale, height, -vScale});
 		
 		List<float[]> texCoords = new ArrayList<float[]>();
 		texCoords.add(new float[] {     0,      0});
@@ -923,7 +927,7 @@ public class Quadtree
 	 * This method executes a hill-raising algorithm for a number of iterations
 	 * to deform the geometric surface stored by the quadtree.
 	 */
-	public void setHeights(int iterations)
+	public void setHeights(int iterations, float scale)
 	{
 		Random generator = new Random();
 		
@@ -940,7 +944,7 @@ public class Quadtree
 			z = (int) (generator.nextDouble() * length);
 
 			float radius = MIN_RADIUS + generator.nextFloat() * (MAX_RADIUS - MIN_RADIUS);
-			float peak = generator.nextFloat() * HILL_INC;
+			float peak = generator.nextFloat() * HILL_INC * scale;
 				
 			// select random point within the boundaries of the quadtree
 			deformAll(new float[] {_x + x, 0, _z + z}, radius, peak);
@@ -1410,23 +1414,38 @@ public class Quadtree
 	public int vertexCount() { return vertices.size(); }
 	public int normalCount() { return normals.size();  }
 	
-	public void render(GL2 gl)
+	private static float timer = 1.0f;
+	
+	public void render(GL2 gl, float[] p)
 	{
 		if(solid)
 		{
-			Shader shader = enableBumpmap ? Scene.shaders.get("bump") : Scene.shaders.get("phong_texture");
+			Shader shader = null;
+			
+			if(enableCaustic)
+				 shader = enableBumpmap ? Scene.shaders.get("bump_caustics") : Scene.shaders.get("water_caustics");
+			else shader = enableBumpmap ? Scene.shaders.get("bump") : Scene.shaders.get("phong_texture");
+			
 			shader.enable(gl);
 			
-			if(Shader.enabled && shader != null)
+			if(Shader.enabled && shader != null) shader.setSampler(gl, "texture", 0);
+			
+			if(enableBumpmap && Shader.enabled && shader != null)
 			{
-				int texture = gl.glGetUniformLocation(shader.shaderID, "texture");
-				gl.glUniform1i(texture, 0);
+				shader.setSampler(gl, "bumpmap", 1);
 			}
 			
-			if(enableBumpmap && Shader.enabled)
+			if(enableCaustic && Shader.enabled && shader != null)
 			{
-				int bumpmap = gl.glGetUniformLocation(shader.shaderID, "bumpmap");
-				gl.glUniform1i(bumpmap, 1);
+				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+				
+				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
+				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				
+				shader.setUniform(gl, "timer", timer);
+				if(Scene.enableAnimation) timer += 0.05;
+				
+				shader.setSampler(gl, "normalMap", 2);
 			}
 			
 			if(reliefMap) renderElevation(gl);
@@ -1462,11 +1481,10 @@ public class Quadtree
 	{
 		Light.globalSpecular(gl, specular);
 		
-		if(Shader.enabled && enableBumpmap)
+		if(Shader.enabled)
 		{
-			gl.glActiveTexture(GL2.GL_TEXTURE1);
-			gl.glEnable(GL2.GL_TEXTURE_2D);
-			bumpmap.bind(gl);
+			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); bumpmap.bind(gl); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glEnable(GL2.GL_TEXTURE_2D); caustic.bind(gl); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
@@ -1480,9 +1498,9 @@ public class Quadtree
 		if(enableColoring) gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 		if(enableTexture ) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
-		if(enableBumpmap) gl.glEnableVertexAttribArray(1);
+		if(enableBumpmap || enableCaustic) gl.glEnableVertexAttribArray(1);
 		
-		if(aBuffer == null && enableBumpmap)
+		if(aBuffer == null && (enableBumpmap || enableCaustic))
 		{
 			aBuffer = Buffers.newDirectFloatBuffer(getVertexCapacity() * 3);
 			for(int i = 0; i < vertices.size(); i++) aBuffer.put(getTangent(i));
@@ -1495,7 +1513,7 @@ public class Quadtree
 		iBuffer.flip();
 		aBuffer.flip();
 		
-		if(enableBumpmap && Shader.enabled)
+		if((enableBumpmap || enableCaustic) && Shader.enabled)
 		{
 			gl.glVertexAttribPointer(1, 3, GL2.GL_FLOAT, true, 0, aBuffer);
 		}
@@ -1516,7 +1534,7 @@ public class Quadtree
 		if(enableColoring) gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 		if(enableTexture ) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		
-		if(enableBumpmap) gl.glDisableVertexAttribArray(1);
+		if(enableBumpmap || enableCaustic) gl.glDisableVertexAttribArray(1);
 		
 		vBuffer.position(vBuffer.limit()); vBuffer.limit(vBuffer.capacity());
 		nBuffer.position(nBuffer.limit()); nBuffer.limit(nBuffer.capacity());
@@ -1528,10 +1546,10 @@ public class Quadtree
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		if(Shader.enabled && enableBumpmap)
+		if(Shader.enabled)
 		{
-			gl.glActiveTexture(GL2.GL_TEXTURE1);
-			gl.glDisable(GL2.GL_TEXTURE_2D);
+			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glDisable(GL2.GL_TEXTURE_2D); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
