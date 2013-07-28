@@ -151,6 +151,7 @@ public class Car
 	public boolean colliding = false;
 	public List<Bound> collisions = new ArrayList<Bound>();
 	public float[] heights = {0, 0, 0, 0};
+	public boolean enableDeform = false;
 	
 	
 	/** Particle Fields **/
@@ -767,7 +768,7 @@ public class Car
 			heights[i] = (cell != null) ? cell.getHeight(vertices[i]) : 0;
 		}
 		
-		if(accelerating)
+		if(accelerating && enableDeform)
 		{	
 			float ratio = abs(velocity / TOP_SPEED);
 			float k = ratio > 0.5 ? 0.5f : 1 - ratio;
@@ -814,7 +815,7 @@ public class Car
 			heights[i] = max;
 		}
 		
-		if(accelerating)
+		if(accelerating && enableDeform)
 		{		
 			float ratio = abs(velocity / TOP_SPEED);
 			float k = ratio > 0.5 ? 0.5f : 1 - ratio;

@@ -88,6 +88,8 @@ public class ShadowManipulator
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
+	public int getTexture() { return shadowTexture; }
+	
 	public void update(GL2 gl)
 	{
 		GLUgl2 glu = new GLUgl2();

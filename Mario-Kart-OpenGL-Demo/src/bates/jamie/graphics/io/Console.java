@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Scanner;
 
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.Item;
@@ -53,7 +54,8 @@ public class Console
 			else if(_cmd.equalsIgnoreCase( "quadtree")) parseQuadtree(cmd);
 			else if(_cmd.equalsIgnoreCase(   "export")) parseExport(cmd);
 			else if(_cmd.equalsIgnoreCase(  "weather")) parseWeather(cmd);
-			else if(_cmd.equalsIgnoreCase(   "shadow")) parseShadow(cmd);    
+			else if(_cmd.equalsIgnoreCase(   "shadow")) parseShadow(cmd);
+			else if(_cmd.equalsIgnoreCase(    "grass")) parseGrass(cmd); 
 		}
 		catch(Exception e)
 		{
@@ -61,6 +63,27 @@ public class Console
 		}
 
 		cmd.close();
+	}
+	
+	private void parseGrass(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		GrassPatch patch = scene.grassPatch;
+		
+		if(_cmd.equalsIgnoreCase("spread"))
+		{
+			patch.setSpread(cmd.nextFloat());
+			patch.update = true;
+		}
+		else if(_cmd.equalsIgnoreCase("origin"))
+		{
+			float x = cmd.nextFloat();
+			float y = cmd.nextFloat();
+			float z = cmd.nextFloat();
+			
+			patch.setOrigin(new float[] {x, y, z});
+			patch.update = true;
+		}
 	}
 	
 	private void parseExport(Scanner cmd)

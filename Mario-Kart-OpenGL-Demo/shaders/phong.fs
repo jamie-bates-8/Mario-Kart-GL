@@ -17,10 +17,10 @@ void main(void)
     // Specular Light
 	vec3 vReflection = normalize(reflect(-normalize(lightDir), normalize(vNormal)));
     float spec = max(0.0, dot(normalize(vNormal), vReflection));
-    if(diff != 0)
+    if(diff != 0.0)
 	{
         float fSpec = pow(spec, 128.0);
-        vFragColor.rgb += gl_LightSource[0].specular * fSpec;
+        vFragColor.rgb += gl_LightSource[0].specular.rgb * fSpec;
     }
 	
 	vFragColor.rgba *= gl_Color.rgba;

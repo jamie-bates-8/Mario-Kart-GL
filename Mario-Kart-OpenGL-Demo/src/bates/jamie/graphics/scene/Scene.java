@@ -94,6 +94,7 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
@@ -364,6 +365,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
 	public List<BillBoard> foliage;
+	public GrassPatch grassPatch;
 	
 	public String terrainCommand = "";
 	public static final String DEFAULT_TERRAIN = "128 1000 20 6 18 0.125 1.0";
@@ -960,22 +962,25 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    System.out.println("Maximum Anisotropy: " + anisotropy[0] + "\n");
 	    } 
 	    
-	    float[] size = new float[3];
+	    float[] data = new float[3];
 	    
-	    gl.glGetFloatv(GL2.GL_POINT_SIZE_RANGE, size, 0);
-	    gl.glGetFloatv(GL2.GL_POINT_SIZE_GRANULARITY, size, 2);
+	    gl.glGetFloatv(GL2.GL_POINT_SIZE_RANGE, data, 0);
+	    gl.glGetFloatv(GL2.GL_POINT_SIZE_GRANULARITY, data, 2);
 	    
-	    System.out.println("Point Size Range: " + size[0] + " -> " + size[1]);
-	    System.out.println("Point Size Granularity: " + size[2] + "\n");
+	    System.out.println("Point Size Range: " + data[0] + " -> " + data[1]);
+	    System.out.println("Point Size Granularity: " + data[2] + "\n");
 	    
-	    gl.glGetFloatv(GL2.GL_ALIASED_POINT_SIZE_RANGE, size, 0);
-	    System.out.println("Aliased Point Size Range: " + size[0] + " -> " + size[1] + "\n");
+	    gl.glGetFloatv(GL2.GL_ALIASED_POINT_SIZE_RANGE, data, 0);
+	    System.out.println("Aliased Point Size Range: " + data[0] + " -> " + data[1] + "\n");
 	    
-	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_RANGE, size, 0);
-	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_GRANULARITY, size, 2);
+	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_RANGE, data, 0);
+	    gl.glGetFloatv(GL2.GL_LINE_WIDTH_GRANULARITY, data, 2);
 	    
-	    System.out.println("Line Width Range: " + size[0] + " -> " + size[1]);
-	    System.out.println("Line Width Granularity: " + size[2] + "\n");
+	    System.out.println("Line Width Range: " + data[0] + " -> " + data[1]);
+	    System.out.println("Line Width Granularity: " + data[2] + "\n");
+	    
+	    gl.glGetFloatv(GL2.GL_MAX_VERTEX_UNIFORM_COMPONENTS, data, 0);
+	    System.out.println("Vertex Uniform Components: " + data[0] + "\n");
 	}
 
 	public void printErrors(GL2 gl)
@@ -1105,6 +1110,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    
 		    for(String tree : trees)
 				listModel.addElement(tree);
+		    
+		    grassPatch = new GrassPatch(gl, terrain.trees.get("Base"), ORIGIN, 128, 1.0f);
 	    }
 	    
 	    long setupEnd = System.currentTimeMillis();
@@ -1170,19 +1177,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private void loadShaders(GL2 gl)
 	{
+		HashMap<Integer, String> attributes = new HashMap<Integer, String>();
+		attributes.put(1, "tangent");
+		
 		// load and compile shaders from file
 		Shader phong        = new Shader(gl, "phong", "phong");
 		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
-		Shader bump         = new Shader(gl, "bump", "bump");
+		Shader bump         = new Shader(gl, "bump", "bump", attributes);
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
-		Shader water        = new Shader(gl, "water", "water");
-		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics");
-		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics");
+		Shader water        = new Shader(gl, "water", "water", attributes);
+		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", attributes);
+		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", attributes);
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
+		Shader grass        = new Shader(gl, "grass", "grass");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
@@ -1197,6 +1208,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(    caustics.isValid()) shaders.put("water_caustics", caustics);
 		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
 		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
+		if(       grass.isValid()) shaders.put("grass", grass);
 	}
 
 	private void loadParticles()
@@ -1237,7 +1249,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		registerItems(gl);
 		
-		if(enableAnimation) update();
+		if(enableAnimation) update(gl);
 		else cars.get(0).updateController();
 		
 		if(enableTerrain && !terrainCommand.equals(""))
@@ -1252,7 +1264,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		reflector.update(gl, cars.get(0).getPosition());
 		
 		     if(sphereMap) reflector.displayMap(gl);
-		else if(shadowMap) manipulator.displayMap(gl, water.reflectTexture);
+		else if(shadowMap) manipulator.displayMap(gl, /*manipulator.getTexture()*/ grassPatch.getHeightMap());
 		else render(gl);
 
 		gl.glFlush();
@@ -1263,6 +1275,41 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		if(enableShadow) manipulator.update(gl);
 	}
+	
+	public void displayMap(GL2 gl, int texture)
+    {
+        gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
+        gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
+        
+        gl.glMatrixMode(GL2.GL_TEXTURE);
+        gl.glPushMatrix();
+        {
+	        gl.glLoadIdentity();
+	           
+	        gl.glEnable(GL_TEXTURE_2D);
+	        gl.glBindTexture(GL_TEXTURE_2D, texture);
+	        gl.glDisable(GL2.GL_LIGHTING);
+	        
+	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_REPLACE);
+	        gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_NONE);
+	        
+	        // Show the shadow map at its actual size relative to window
+	        gl.glBegin(GL2.GL_QUADS);
+	        {
+	            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(-1.0f, -1.0f);
+	            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f( 1.0f, -1.0f);
+	            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f( 1.0f,  1.0f);
+	            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(-1.0f,  1.0f);
+	        }
+	        gl.glEnd();
+	        
+	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
+	        gl.glEnable(GL2.GL_LIGHTING);
+        }
+        gl.glPopMatrix();
+		
+        resetView(gl);
+    }
 
 	private void render(GL2 gl)
 	{
@@ -1303,13 +1350,22 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 			if(enableReflection) displayReflection(gl, car);
 			
-			renderWater(gl, car);
+			if(terrain != null && terrain.enableWater) renderWater(gl, car);
 			
 			renderWorld(gl);
 			render3DModels(gl, car);
 			
-			water.setRefraction(gl);
-			water.render(gl, car.getPosition());
+			if(terrain != null && terrain.enableWater) 
+			{
+				water.setRefraction(gl);
+				water.render(gl, car.getPosition());
+			}
+			
+			gl.glPushMatrix();
+			{
+				grassPatch.render(gl);
+			}
+			gl.glPopMatrix();
 			
 			if(enableShadow) manipulator.disable(gl);
 			
@@ -1319,8 +1375,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 			
 			gl.glDisable(GL2.GL_CLIP_PLANE2);
-			
-			if(enableTerrain && terrain.enableWater) terrain.renderWater(gl);
 			
 			/*
 			 * The condition (i == 1) means that the frames stored in the accumulation
@@ -1431,11 +1485,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	private long update()
+	private long update(GL2 gl)
 	{	
 		long start = System.currentTimeMillis();
 		
-		if(mousePressed) modifyTerrain();
+		if(mousePressed) modifyTerrain(gl);
 		
 		removeItems();
 		
@@ -1455,11 +1509,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		for(Particle p : particles) p.update();
 		
 		updateTimes[frameIndex][1] = (enableBlizzard) ? blizzard.update() : 0;
-		
-		if(enableBlizzard && blizzard != null && blizzard.type == StormType.RAIN)
-		{
-			terrain.trees.get("Pond").height += 0.001f;
-		}
 			
 		vehicleCollisions();
 		for(Car car : cars)
@@ -1489,7 +1538,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.currentTimeMillis() - start;
 	}
 
-	private void modifyTerrain()
+	private void modifyTerrain(GL2 gl)
 	{
 		Camera camera = cars.get(0).camera;
 		
@@ -1506,6 +1555,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			float   h = (rightClick ? -0.5f : 0.5f);
 			
 			terrain.tree.deform(p, r, h);
+			grassPatch.updateHeights(gl);
 		}
 	}
 
@@ -1728,8 +1778,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 					Matrix.scale(model, 40, 40, 40);
 					
-					int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-					gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+					shader.loadMatrix(gl, model);
 				}
 	
 				gl.glCallList(floorList);
@@ -1780,7 +1829,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
-//		else if(!enableReflection) renderFloor(gl, false);
+		else if(!enableReflection) renderFloor(gl, false);
 		
 		renderObstacles(gl);
 		
@@ -2364,7 +2413,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public void keyPressed(KeyEvent e)
 	{	
 		switch (e.getKeyCode())
-		{		
+		{
+			case KeyEvent.VK_ESCAPE: System.exit(0); break;
+			
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			
 			case KeyEvent.VK_T:  enableTerrain = !enableTerrain; for(Car car : cars) car.friction = 1; break;

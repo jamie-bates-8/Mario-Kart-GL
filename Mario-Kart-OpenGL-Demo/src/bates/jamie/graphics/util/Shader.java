@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Scanner;
 
 import javax.media.opengl.GL2;
@@ -20,6 +22,9 @@ public class Shader
 	public String[] vertSource;
 	public String[] fragSource;
 	
+	public String vertString;
+	public String fragString;
+	
 	public int vertProgram;
 	public int fragProgram;
 	
@@ -27,13 +32,21 @@ public class Shader
 	
 	public Shader(GL2 gl, String vShader, String fShader)
 	{	
-		valid = attachPrograms(gl, vShader, fShader);
+		valid = attachPrograms(gl, vShader, fShader, null);
+	}
+	
+	public Shader(GL2 gl, String vShader, String fShader, HashMap<Integer, String> attributes)
+	{	
+		valid = attachPrograms(gl, vShader, fShader, attributes);
 	}
 	
 	public boolean isValid() { return valid; }
 
-	public boolean attachPrograms(GL2 gl, String vShader, String fShader)
+	public boolean attachPrograms(GL2 gl, String vShader, String fShader, HashMap<Integer, String> attributes)
 	{
+		vertString = vShader;
+		fragString = fShader;
+		
 		vertProgram = gl.glCreateShader(GL2.GL_VERTEX_SHADER  );
 		fragProgram = gl.glCreateShader(GL2.GL_FRAGMENT_SHADER);
 		
@@ -55,6 +68,7 @@ public class Shader
 		if(success[0] != 1)
 		{
 			System.err.println("Vertex Shader: " + vShader + ".vs, cannot be compiled");
+			System.err.println(ShaderUtil.getShaderInfoLog(gl, vertProgram));
 			return false;
 		}
 		
@@ -68,14 +82,19 @@ public class Shader
 	
 	    shaderID = gl.glCreateProgram();
 	    
-	    gl.glBindAttribLocation(shaderID, 1, "tangent");
+	    if(attributes != null)
+	    	for(Entry<Integer, String> attr : attributes.entrySet())
+				gl.glBindAttribLocation(shaderID, attr.getKey(), attr.getValue());
 	    
 	    gl.glAttachShader(shaderID, vertProgram);
 	    gl.glAttachShader(shaderID, fragProgram);
 	    
 	    gl.glLinkProgram(shaderID);
 	    
-	    System.out.println(ShaderUtil.getProgramInfoLog(gl, shaderID));
+	    System.out.println("Shader Loader: " + vertString + ", " + fragString);
+	    
+	    String infoLog = ShaderUtil.getProgramInfoLog(gl, shaderID);
+	    System.out.print(infoLog.equals("") ? "" : "\n" + infoLog + "\n");
 
 	    return validate(gl);  
 	}
@@ -158,5 +177,31 @@ public class Shader
 	{
 		int uniformID = gl.glGetUniformLocation(shaderID, uniform);
 		gl.glUniform1f(uniformID, value);
+	}
+	
+	public void setUniform(GL2 gl, String uniform, int value)
+	{
+		int uniformID = gl.glGetUniformLocation(shaderID, uniform);
+		gl.glUniform1i(uniformID, value);
+	}
+	
+	public void setUniform(GL2 gl, String uniform, float[] vec)
+	{
+		int uniformID = gl.glGetUniformLocation(shaderID, uniform);
+		
+		switch(vec.length)
+		{
+			case 2: gl.glUniform2f(uniformID, vec[0], vec[1]); break;
+			case 3: gl.glUniform3f(uniformID, vec[0], vec[1], vec[2]); break;
+			case 4: gl.glUniform4f(uniformID, vec[0], vec[1], vec[2], vec[3]); break;
+			
+			default: return;
+		}
+	}
+	
+	public void loadMatrix(GL2 gl, float[] matrix)
+	{
+		int modelMatrix = gl.glGetUniformLocation(shaderID, "ModelMatrix");
+		gl.glUniformMatrix4fv(modelMatrix, 1, false, matrix, 0);
 	}
 }

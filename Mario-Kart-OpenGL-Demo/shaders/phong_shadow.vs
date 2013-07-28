@@ -22,7 +22,7 @@ void main(void)
     vec3 position3 = vec3(position4) / position4.w;
 
     // Get vector to light source
-    lightDir = normalize(gl_LightSource[0].position - position3);
+    lightDir = normalize(gl_LightSource[0].position.xyz - position3);
 	
 	gl_FrontColor = gl_Color;
 	

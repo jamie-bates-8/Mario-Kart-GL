@@ -14,39 +14,34 @@ const float epsilon = 0.01;
 
 float lookup(float x, float y)
 {
-	float depth = shadow2DProj(shadowMap, shadowCoord + vec4(x, y, 0, 0) * epsilon);
+	float depth = shadow2DProj(shadowMap, shadowCoord + vec4(x, y, 0, 0) * epsilon).z;
 	return depth != 1.0 ? 0.75 : 1.0;
 }
 
 void main(void)
 { 
-	vec4 color = vec4(1.0);
-	
+    // Dot product gives us diffuse intensity
+    float diff = max(0.0, dot(normalize(vNormal), normalize(lightDir)));
 
-	// Diffuse Light
-    float diffuse = max(0.0, dot(normalize(vNormal), normalize(lightDir)));
-    color = diffuse * gl_LightSource[0].diffuse;
-    color *= texture2D(texture, gl_TexCoord[0].st);
-    
+    // Multiply intensity by diffuse color, force alpha to 1.0
+    vec4 vFragColor = diff * gl_LightSource[0].diffuse;
 
-    // Ambient light
-    color += gl_LightSource[0].ambient;
+    // Add in ambient light
+    vFragColor += gl_LightSource[0].ambient;
 
+	vFragColor *= texture2D(texture, gl_TexCoord[0].st);
 
     // Specular Light
 	vec3 vReflection = normalize(reflect(-normalize(lightDir), normalize(vNormal)));
-    float specular = max(0.0, dot(normalize(vNormal), vReflection));
-    
-    if(diffuse != 0)
+    float spec = max(0.0, dot(normalize(vNormal), vReflection));
+    if(diff != 0.0)
 	{
-        specular = pow(specular, 128.0);
-        color.rgb += gl_LightSource[0].specular * specular;
+        float fSpec = pow(spec, 128.0);
+        vFragColor.rgb += gl_LightSource[0].specular.rgb * fSpec;
     }
-	
-	
-	color.rgb *= gl_Color.rgb;
-	
-	
-	float shade = lookup(0.0, 0.0);
-	gl_FragColor = vec4(shade * color.rgb, color.a);
+
+	vFragColor.rgb *= gl_Color.rgb;
+
+	float shadeFactor = lookup(0.0, 0.0);
+	gl_FragColor = vec4(shadeFactor * vFragColor.rgb, vFragColor.a);
 }

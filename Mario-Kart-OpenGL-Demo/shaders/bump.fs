@@ -27,10 +27,10 @@ void main(void)
     // Specular Light
 	vec3 vReflection = normalize(reflect(normalize(lightDir), normalize(normal)));
     float specular = max(0.0, dot(normalize(eyeDir), vReflection));
-    if(diffuse != 0)
+    if(diffuse != 0.0)
 	{
         specular = pow(specular, 128.0);
-        color.rgb += gl_LightSource[0].specular * specular;
+        color.rgb += gl_LightSource[0].specular.rgb * specular;
     }
 	
 	

@@ -18,7 +18,7 @@ void main()
     reflectDir = reflect(position3, vNormal);
 
     // Get vector to light source
-    lightDir = normalize(gl_LightSource[0].position - position3);
+    lightDir = normalize(gl_LightSource[0].position.rgb - position3);
 	
 	gl_FrontColor = gl_Color;
 }

@@ -161,34 +161,26 @@ public class Terrain
 		gradients.add(Gradient.GRAYSCALE);
 		
 		
-		Quadtree base = new Quadtree(210, 32, -15, textures.get(1), 7);
+		Quadtree base = new Quadtree(210, 32, -10, textures.get(1), 7);
 		base.bumpmap = bumpmaps.get(6);
 		base.caustic = bumpmaps.get(9);
-		base.setHeights(1000, 1.5f);
+		base.setHeights(1000, 1.25f);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
+		base.enableCaustic = false;
 		
 		tree = base;
 		
 		
-		Quadtree pond = new Quadtree(210, 5, 9);
-		pond.enableShading  = false;
-		pond.enableBumpmap  = false;
-		pond.enableColoring = false;
-		pond.enableBlending = true;
-		pond.offsetHeights(0.5f);
-		
-		
-		Quadtree road = new Quadtree(210, 32, -15, textures.get(3), 7);
-		road.bumpmap = bumpmaps.get(0);
-		road.caustic = bumpmaps.get(9);
-		road.setHeights(700, 0.75f);
-		road.malleable = false;
-		road.specular = new float[] {1, 1, 1, 1};
+//		Quadtree road = new Quadtree(210, 32, -15, textures.get(3), 7);
+//		road.bumpmap = bumpmaps.get(0);
+//		road.caustic = bumpmaps.get(9);
+//		road.setHeights(700, 0.75f);
+//		road.malleable = false;
+//		road.specular = new float[] {1, 1, 1, 1};
 		
 		
 		trees.put("Base", base);
-		trees.put("Pond", pond);
-		trees.put("Road", road);
+//		trees.put("Road", road);
 		
 	}
 	
@@ -722,19 +714,6 @@ public class Terrain
 					break;
 				}
 			}
-		}
-	}
-	
-	public void renderWater(GL2 gl)
-	{
-		if(enableQuadtree)
-		{
-			gl.glPushMatrix();
-			{		
-				for(Quadtree surface : trees.values())
-					if(surface.enableBlending) surface.renderAlpha(gl);
-			}
-			gl.glPopMatrix();
 		}
 	}
 

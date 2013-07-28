@@ -6,7 +6,6 @@ import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -33,7 +32,6 @@ public class Quadtree
 	private static final float MAX_RADIUS = 60;
 	
 	private static final float MAX_TROUGH = 1.00f;
-	private static final float MAX_RIPPLE = 0.25f;
 	
 	private static final float MAX_HEIGHT = 40.0f;
 	
@@ -60,7 +58,6 @@ public class Quadtree
 	List<float[]> tangents;
 	
 	List<Float> heights;
-	public float height = 5;
 	
 	int offset;
 	
@@ -175,8 +172,6 @@ public class Quadtree
 	{
 		root = this;
 		lod = 0;
-		
-		this.height = height;
 		
 		List<float[]> vertices = new ArrayList<float[]>();
 		vertices.add(new float[] {-vScale, height,  vScale});
@@ -319,8 +314,6 @@ public class Quadtree
 	
 	public void translate(float[] vector)
 	{
-		if(enableBlending) height += vector[1];
-		
 		int position = vBuffer.position();
 		
 		for(int i = 0; i < vertices.size(); i++)
@@ -882,46 +875,6 @@ public class Quadtree
 			south_east.getIndices(_indices, lod);
 		}
 	}
-	
-	public void rippleSurface()
-	{
-		Random generator = new Random();
-		
-		int position = vBuffer.position();
-		
-		for(int i = 0; i < vertices.size(); i++)
-		{
-			float[] vertex = vertices.get(i);
-			
-			     if(vertex[1] >  MAX_RIPPLE + height) heights.set(i,  MAX_RIPPLE + height);
-			else if(vertex[1] < -MAX_RIPPLE + height) heights.set(i, -MAX_RIPPLE + height);
-			
-			vertex[1] += (heights.get(i) > height) ? -0.01f : 0.01f;
-			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);	
-		}
-		
-		vBuffer.position(position);
-	}
-	
-	public void offsetHeights(float trough)
-	{
-		Random generator = new Random();
-		
-		for(int i = 0; i < vertices.size(); i++)
-		{
-			float[] vertex = vertices.get(i);
-			float depression = -generator.nextFloat() * trough;
-			
-			vertex[1] += depression * (generator.nextBoolean() ? 1 : -1);
-			
-			int position = vBuffer.position();
-				
-			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
-			vBuffer.position(position);
-		}
-		
-		setHeights();
-	}
 
 	/**
 	 * This method executes a hill-raising algorithm for a number of iterations
@@ -1437,15 +1390,11 @@ public class Quadtree
 			
 			if(enableCaustic && Shader.enabled && shader != null)
 			{
-				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-				
-				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
-				
+				shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 				shader.setUniform(gl, "timer", timer);
-				if(Scene.enableAnimation) timer += 0.05;
-				
 				shader.setSampler(gl, "normalMap", 2);
+				
+				if(Scene.enableAnimation) timer += 0.05;
 			}
 			
 			if(reliefMap) renderElevation(gl);
@@ -1469,7 +1418,6 @@ public class Quadtree
 		gl.glColor4f(0.75f, 0.75f, 0.75f, 0.20f);
 		
 		renderGeometry(gl);
-		rippleSurface();
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glEnable(GL2.GL_LIGHTING);

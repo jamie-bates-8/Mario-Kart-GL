@@ -2,16 +2,14 @@ package bates.jamie.graphics.entity;
 
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 
-import java.util.Arrays;
-
 import javax.media.opengl.GL2;
-
-import com.jogamp.opengl.util.texture.Texture;
 
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
+
+import com.jogamp.opengl.util.texture.Texture;
 
 public class Water
 {
@@ -104,18 +102,11 @@ public class Water
 			
 			shader.setSampler(gl, "reflectionSampler", 0);
 			shader.setSampler(gl, "refractionSampler", 1);
-
-			shader.setSampler(gl, "normalSampler", 2);
+			shader.setSampler(gl, "normalSampler"    , 2);
 			
-			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 			
-			int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-			gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
-			
-			int position = gl.glGetUniformLocation(shader.shaderID, "cameraPos");
-			gl.glUniform3f(position, p[0], p[1], p[2]);
-			
-			gl.glBindAttribLocation(shader.shaderID, 1, "tangent");
+			shader.setUniform(gl, "cameraPos", p);
 			
 			gl.glBegin(GL2.GL_QUADS);
 			{

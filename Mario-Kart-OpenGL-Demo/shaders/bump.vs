@@ -17,7 +17,7 @@ void main(void)
 	vec3 t = normalize(gl_NormalMatrix * tangent);
 	vec3 b = cross(n, t);
 	
-	vec3 light = gl_LightSource[0].position - gl_Vertex.xyz;
+	vec3 light = gl_LightSource[0].position.xyz - gl_Vertex.xyz;
 	
 	vec3 v;
 	

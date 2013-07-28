@@ -18,15 +18,15 @@ void main(void)
     
     // Look up environment map value in cube map
 	vec3 envColor = vec3(textureCube(cubeMap, reflectDir));
-	vFragColor = vec4(mix(envColor, vFragColor, shininess), 1.0);
+	vFragColor = vec4(mix(envColor, vFragColor.rgb, shininess), 1.0);
 
     // Specular Light
 	vec3 vReflection = normalize(reflect(-normalize(lightDir), normalize(vNormal)));
     float spec = max(0.0, dot(normalize(vNormal), vReflection));
-    if(diff != 0)
+    if(diff != 0.0)
 	{
         float fSpec = pow(spec, 128.0);
-        vFragColor.rgb += gl_LightSource[0].specular * fSpec;
+        vFragColor.rgb += gl_LightSource[0].specular.rgb * fSpec;
     }
 	
 	vFragColor.rgba *= gl_Color.rgba;

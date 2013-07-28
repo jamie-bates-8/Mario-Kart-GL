@@ -117,8 +117,8 @@ void main()
 
 	float depth = waterEyePos.y - worldPos.y; // water depth
 
-    float shorecut    = smoothstep(-0.001, 0, depth);
-    float shorewetcut = smoothstep(-0.200, 0, depth + 0.2);
+    float shorecut    = smoothstep(-0.001, 0.0, depth);
+    float shorewetcut = smoothstep(-0.200, 0.0, depth + 0.2);
     
     depth /= visibility;  
     depth = clamp(depth, 0.0, 1.0);
@@ -138,14 +138,14 @@ void main()
     causticdepth = 1.0 - clamp(causticdepth / visibility, 0.0, 1.0);
     causticdepth = clamp(causticdepth, 0.0, 1.0);
  
-    float causticR = 1 - perturb(normalMap, causticPos.xz, causticdepth).z;
+    float causticR = 1.0 - perturb(normalMap, causticPos.xz, causticdepth).z;
         
     vec3 caustics = clamp(pow(vec3(causticR) * 5.5, vec3(5.5 * causticdepth)), 0.0, 1.0) * NdotL * sunFade * causticdepth;
     
     if(causticFringe)
     {
-    	float causticG = 1 - perturb(normalMap, causticPos.xz + (1.0 - causticdepth) * aberration, causticdepth).z;
-    	float causticB = 1 - perturb(normalMap, causticPos.xz + (1.0 - causticdepth) * aberration * 2.0, causticdepth).z;
+    	float causticG = 1.0 - perturb(normalMap, causticPos.xz + (1.0 - causticdepth) * aberration, causticdepth).z;
+    	float causticB = 1.0 - perturb(normalMap, causticPos.xz + (1.0 - causticdepth) * aberration * 2.0, causticdepth).z;
     	caustics = clamp(pow(vec3(causticR, causticG, causticB) * 5.5, vec3(5.5 * causticdepth)), 0.0, 1.0) * NdotL * sunFade * causticdepth;
     }
     

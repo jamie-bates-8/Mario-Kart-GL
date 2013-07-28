@@ -101,8 +101,7 @@ public class BlockFort
 				Matrix.translate(model, 90, 30, 90);
 				Matrix.scale    (model, 30, 30, 30);
 				
-				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				shader.loadMatrix(gl, model);
 				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
 			}
 
@@ -126,8 +125,7 @@ public class BlockFort
 				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
 				Matrix.multiply(model, model, rotation);
 				
-				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				shader.loadMatrix(gl, model);
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
@@ -150,8 +148,7 @@ public class BlockFort
 				Matrix.multiply(model, model, rotation);
 				Matrix.scale(model, 30, 30, 30);
 				
-				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				shader.loadMatrix(gl, model);
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
@@ -174,8 +171,7 @@ public class BlockFort
 				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
 				Matrix.multiply(model, model, rotation);
 				
-				int modelMatrix = gl.glGetUniformLocation(shader.shaderID, "ModelMatrix");
-				gl.glUniformMatrix4fv(modelMatrix, 1, false, model, 0);
+				shader.loadMatrix(gl, model);
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
