@@ -265,6 +265,8 @@ public class HUD
 		
 		renderer.draw("Weather: " + weather, 40, y - 400);
 		
+		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), 40, y - 430);
+		
 		float[] p = car.getPosition();
 		
 		int x = scene.getWidth() - 200;

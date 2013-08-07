@@ -36,6 +36,8 @@ float sunSpec = 1000.0; //Sun specular hardness
 
 float scatterAmount = 3.0; //amount of sunlight scattering of waves
 vec3 scatterColor = vec3(0.0, 1.0, 0.95);// color of the sunlight scattering
+
+float bloomLimit = 1.0;
 //----------------
 
 vec3 tangentSpace(vec3 v)
@@ -174,6 +176,13 @@ void main()
     //color = (cameraPos.y < 0.0) ? mix(clamp(refraction * 1.5, 0.0, 1.0), reflection, fresnel) : color;   
     //color = (cameraPos.y < 0.0) ? mix(color, watercolor * darkness, clamp(fog / waterext, 0.0, 1.0)) : color;
 
-    gl_FragColor = vec4(vec3(color + (specColor * specular)), 1.0);
+	vec3 final = color + (specColor * specular);
+
+    gl_FragData[0] = vec4(final, 1.0);
     //gl_FragColor = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
+    
+    vec3 brightColor = max(final - vec3(bloomLimit), vec3(0.0));
+    float bright = dot(brightColor, vec3(1.0));
+    bright = smoothstep(0.0, 0.5, bright);
+    gl_FragData[1] = vec4(mix(vec3(0.0), final, bright), 1.0);
 }

@@ -177,6 +177,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_effects;
 	private JCheckBoxMenuItem menuItem_motionblur;
 	private JCheckBoxMenuItem menuItem_aberration;
+	private JCheckBoxMenuItem menuItem_bloom;
 	private JCheckBoxMenuItem menuItem_reflect;
 	private JMenu menu_shadows;
 	private JCheckBoxMenuItem menuItem_shadows;
@@ -396,7 +397,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public JList<String> quadList;
 	public DefaultListModel<String> listModel;
 
-	private Water water;
+	public Water water;
+	public BloomStrobe bloom;
+	
+	public boolean enableBloom = false;
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
 	
@@ -605,15 +609,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menuItem_motionblur = new JCheckBoxMenuItem("Motion Blur");
 		menuItem_motionblur.addItemListener(this);
-		menuItem_motionblur.setMnemonic(KeyEvent.VK_B);
+		menuItem_motionblur.setMnemonic(KeyEvent.VK_M);
 		menuItem_motionblur.setSelected(enableBlur);
 		
 		menuItem_aberration = new JCheckBoxMenuItem("Chromatic Aberration");
 		menuItem_aberration.addItemListener(this);
 		menuItem_aberration.setMnemonic(KeyEvent.VK_A);
 		
+		menuItem_bloom = new JCheckBoxMenuItem("HDR Bloom");
+		menuItem_bloom.addItemListener(this);
+		menuItem_bloom.setMnemonic(KeyEvent.VK_B);
+		
 		menu_effects.add(menuItem_motionblur);
 		menu_effects.add(menuItem_aberration);
+		menu_effects.add(menuItem_bloom);
 		
 		menu_render.add(menu_effects);
 		
@@ -948,9 +957,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    System.out.println("Multitexture Support: " + extensions.contains("GL_ARB_multitexture"));
 	    
-	    int[] textureUnits = new int[1];
+	    int[] textureUnits = new int[3];
 	    gl.glGetIntegerv(GL2.GL_MAX_TEXTURE_UNITS, textureUnits, 0);
-	    System.out.println("Number of Texture Units: " + textureUnits[0] + "\n");
+	    gl.glGetIntegerv(GL2.GL_MAX_TEXTURE_IMAGE_UNITS, textureUnits, 1);
+	    gl.glGetIntegerv(GL2.GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, textureUnits, 2);
+	    System.out.println("Number of Texture Units: " + textureUnits[0]);
+	    System.out.println("Number of Texture Image Units: " + textureUnits[1]);
+	    System.out.println("Number of Vertex Texture Image Units: " + textureUnits[2] + "\n");
 	    
 	    boolean anisotropic = gl.isExtensionAvailable("GL_EXT_texture_filter_anisotropic");
 	    System.out.println("Anisotropic Filtering Support: " + anisotropic);
@@ -1090,6 +1103,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    selecter = new ModelSelecter(this, glu);
 	    
+	    bloom = new BloomStrobe(gl, this);
+	    
 	    water = new Water(this);
 	    water.createTextures(gl);
 	    
@@ -1140,8 +1155,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_caustics .setSelected(terrain.tree.enableCaustic );
 		menuItem_malleable.setSelected(terrain.tree.malleable     );
 		
-		menuItem_cubemap.setSelected(true);
-		menuItem_aberration.setSelected(true);
+		Car car = cars.get(0);
+		
+		menuItem_cubemap.setSelected(car.enableChrome);
+		menuItem_aberration.setSelected(car.enableAberration);
+		menuItem_bloom.setSelected(enableBloom);
 	}
 
 	private void setupGenerators()
@@ -1195,6 +1213,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		Shader grass        = new Shader(gl, "grass", "grass");
 		
+		Shader ball         = new Shader(gl, "hdrball", "hdrball");
+		Shader gaussian     = new Shader(gl, "combine", "gaussian");
+		Shader combine      = new Shader(gl, "combine", "combine");
+		Shader show2D       = new Shader(gl, "combine", "show2d");
+		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
@@ -1209,6 +1232,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
 		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
 		if(       grass.isValid()) shaders.put("grass", grass);
+		
+		if(        ball.isValid()) shaders.put("ball", ball);
+		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
+		if(     combine.isValid()) shaders.put("combine", combine);
+		if(      show2D.isValid()) shaders.put("show2D", show2D);
 	}
 
 	private void loadParticles()
@@ -1232,7 +1260,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		GL2 gl = drawable.getGL().getGL2();
 		
 		gl.glClearDepth(1.0f);
-		gl.glClearColor(background[0], background[1], background[2], 1.0f);
+		gl.glClearColor(background[0], background[1], background[2], 0.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL2.GL_STENCIL_BUFFER_BIT);
 		
 		resetView(gl);
@@ -1264,7 +1292,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		reflector.update(gl, cars.get(0).getPosition());
 		
 		     if(sphereMap) reflector.displayMap(gl);
-		else if(shadowMap) manipulator.displayMap(gl, /*manipulator.getTexture()*/ grassPatch.getHeightMap());
+//		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
 		else render(gl);
 
 		gl.glFlush();
@@ -1276,10 +1304,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableShadow) manipulator.update(gl);
 	}
 	
-	public void displayMap(GL2 gl, int texture)
+	private int texture = 0;
+	
+	public void displayMap(GL2 gl, int texture, float x, float y, float w, float h)
     {
         gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
         gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
+        
+        gl.glEnable(GL2.GL_BLEND);
+        gl.glDisable(GL2.GL_DEPTH_TEST);
         
         gl.glMatrixMode(GL2.GL_TEXTURE);
         gl.glPushMatrix();
@@ -1296,10 +1329,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	        // Show the shadow map at its actual size relative to window
 	        gl.glBegin(GL2.GL_QUADS);
 	        {
-	            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(-1.0f, -1.0f);
-	            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f( 1.0f, -1.0f);
-	            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f( 1.0f,  1.0f);
-	            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(-1.0f,  1.0f);
+	            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(x + 0, y + 0);
+	            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(x + w, y + 0);
+	            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(x + w, y + h);
+	            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(x + 0, y + h);
 	        }
 	        gl.glEnd();
 	        
@@ -1307,12 +1340,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	        gl.glEnable(GL2.GL_LIGHTING);
         }
         gl.glPopMatrix();
+        
+        gl.glDisable(GL2.GL_BLEND);
+        gl.glEnable(GL2.GL_DEPTH_TEST);
 		
         resetView(gl);
     }
 
 	private void render(GL2 gl)
-	{
+	{	
 		int[] order = new int[cars.size()];
 		
 		int i = orderRender(order);
@@ -1347,25 +1383,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					resetShadow = false;
 				}
 			}
-
-			if(enableReflection) displayReflection(gl, car);
 			
-			if(terrain != null && terrain.enableWater) renderWater(gl, car);
-			
-			renderWorld(gl);
-			render3DModels(gl, car);
-			
-			if(terrain != null && terrain.enableWater) 
+			if(enableBloom) bloom.render(gl);
+			else
 			{
-				water.setRefraction(gl);
-				water.render(gl, car.getPosition());
+				if(enableReflection) displayReflection(gl, car);
+				
+				if(terrain != null && terrain.enableWater) renderWater(gl, car);
+				
+				renderWorld(gl);
+				render3DModels(gl, car);
+				
+				if(terrain != null && terrain.enableWater) 
+				{
+					water.setRefraction(gl);
+					water.render(gl, car.getPosition());
+				}
 			}
-			
-			gl.glPushMatrix();
-			{
-				grassPatch.render(gl);
-			}
-			gl.glPopMatrix();
 			
 			if(enableShadow) manipulator.disable(gl);
 			
@@ -1405,6 +1439,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		 * */
 		if(enableBlur && _i != boostCounter) gl.glAccum(GL_LOAD, 1.0f);
 		boostCounter = _i;
+		
+		if(shadowMap) displayMap(gl, bloom.getTexture(texture), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	
 	public void renderWater(GL2 gl, Car car)
@@ -1792,7 +1828,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * boundaries of the virtual environment. This consists of the skybox and
 	 * the terrain itself.
 	 */
-	private long renderWorld(GL2 gl)
+	public long renderWorld(GL2 gl)
 	{
 		long start = System.nanoTime();
 		
@@ -1928,7 +1964,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * objects that change position, rotation or state such as other vehicles, item
 	 * boxes and world items.
 	 */
-	private void render3DModels(GL2 gl, Car car)
+	public void render3DModels(GL2 gl, Car car)
 	{	
 		renderTimes[frameIndex][2] = renderVehicles(gl, car, false);
 	
@@ -1995,7 +2031,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	private long renderParticles(GL2 gl, Car car)
+	public long renderParticles(GL2 gl, Car car)
 	{
 		long start = System.nanoTime();
 		
@@ -2016,7 +2052,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public int foliageMode = 0;
 
-	private long renderFoliage(GL2 gl, Car car)
+	public long renderFoliage(GL2 gl, Car car)
 	{
 		long start = System.nanoTime();
 		
@@ -2418,15 +2454,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			
-			case KeyEvent.VK_T:  enableTerrain = !enableTerrain; for(Car car : cars) car.friction = 1; break;
-			case KeyEvent.VK_O:  enableItemBoxes = !enableItemBoxes; break;
+			case KeyEvent.VK_T:   enableTerrain = !enableTerrain; for(Car car : cars) car.friction = 1; break;
+			case KeyEvent.VK_F10: enableItemBoxes = !enableItemBoxes; break;
 //			case KeyEvent.VK_I:  spawnItemsInSphere(8, 10, new float[] {0, 100, 0}, 50); break;
 //			case KeyEvent.VK_U:  spawnItemsInOBB(0, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
-//			case KeyEvent.VK_U: manipulator.shadowRadius -= 10; break;
-//			case KeyEvent.VK_I: manipulator.shadowRadius += 10; break;
-			case KeyEvent.VK_P: sphereMap = !sphereMap; break;
+			case KeyEvent.VK_F9: sphereMap = !sphereMap; break;
+			case KeyEvent.VK_P: bloom.cycleMode(); break;
+			case KeyEvent.VK_O: texture++; if(texture > 6) texture = 0; System.out.println(texture); break;
 			
 			case KeyEvent.VK_L        : printDataToFile(null, RENDER_HEADERS, renderTimes); break;
 			case KeyEvent.VK_SEMICOLON: printDataToFile(null, UPDATE_HEADERS, updateTimes); break;
@@ -2523,6 +2559,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		rightClick = SwingUtilities.isRightMouseButton(e);
 		mousePressed = true;
+		
+		bloom.increaseIncrement();
 	}
 
 	public void mouseReleased(MouseEvent e)
@@ -2646,6 +2684,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		     if(source.equals(menuItem_multisample)) multisample                  = selected;
 		else if(source.equals(menuItem_anisotropic)) Renderer.anisotropic         = selected; 
+		else if(source.equals(menuItem_bloom      )) enableBloom                  = selected;  
 		else if(source.equals(menuItem_motionblur )) enableBlur                   = selected;
 		else if(source.equals(menuItem_fog        )) enableFog                    = selected;    
 		else if(source.equals(menuItem_normalize  )) normalize                    = selected;
@@ -2670,7 +2709,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling      = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing     = selected;
 		else if(source.equals(menuItem_shaders    )) Shader.enabled               = selected;  
-		else if(source.equals(menuItem_shadows    )) enableShadow                 = selected; 
+		else if(source.equals(menuItem_shadows    )) enableShadow                 = selected;   
 		else if(source.equals(menuItem_aberration )) cars.get(0).enableAberration = selected;     
 		else if(source.equals(menuItem_cubemap    ))
 		{

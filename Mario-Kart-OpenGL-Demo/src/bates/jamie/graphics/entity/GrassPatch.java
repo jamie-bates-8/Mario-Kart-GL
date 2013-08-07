@@ -49,8 +49,8 @@ public class GrassPatch
 		this.length = length;
 		this.spread = spread;
 		
-		createBuffer(gl);
-		createTextures(gl);
+		createBuffers(gl);
+		createTexture(gl);
 		updateHeights(gl);
 	}
 	
@@ -60,14 +60,14 @@ public class GrassPatch
 	
 	public void setOrigin(float[] origin) { this.origin = origin; }
 	
-	public void createBuffer(GL2 gl)
+	public void createBuffers(GL2 gl)
 	{
 		vBuffer = FloatBuffer.allocate(MODEL_DATA.length);
 		vBuffer.put(MODEL_DATA);
 		vBuffer.position(0);
 	}
 	
-	public void createTextures(GL2 gl)
+	public void createTexture(GL2 gl)
 	{
 		int[] id = new int[1];
 		gl.glGenTextures(1, id, 0);
@@ -78,8 +78,8 @@ public class GrassPatch
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, heightMap);
 		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_REPEAT);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_REPEAT);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
 		
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
@@ -154,35 +154,5 @@ public class GrassPatch
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D);
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		
-//		float[][] points = new float[length * length][3];
-//		
-//		float[] position = Arrays.copyOf(origin, 3);
-//		
-//		for(int i = 0; i < length; i++)
-//		{
-//			for(int j = 0; j < length; j++)
-//			{
-//				Quadtree cell = surface != null ? surface.getCell(position, Quadtree.MAXIMUM_LOD) : null;
-//				float h = (cell != null ? cell.getHeight(position) : 0);
-//				points[i * length + j] = new float[] {position[0], h, position[2]};
-//				
-//				position[0] += spread;
-//			}
-//			
-//			position[0]  = origin[0]; 
-//			position[2] += spread;
-//		}
-//		
-//		gl.glColor3f(1, 0, 0);
-//		
-//		gl.glBegin(GL2.GL_POINTS);
-//		{
-//			for(float[] p : points)
-//			{
-//				gl.glVertex3f(p[0], p[1] + 0.05f, p[2]);
-//			}
-//		}
-//		gl.glEnd();
 	}
 }
