@@ -84,7 +84,6 @@ public class BloomStrobe
 	    Shader.disable(gl);
 	}
 
-	// Called to draw scene
 	public void render(GL2 gl)
 	{
 		setupShaders(gl);
@@ -99,9 +98,10 @@ public class BloomStrobe
 	
 		// Original Scene + Bright Pass
 		firstPass(gl);
+		
+		gl.glEnable(GL2.GL_BLEND);
 	
 		// Generate mipmaps of the bright pass results:
-		// we'll use levels 0 - 3 for blurring
 		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
 		gl.glGenerateMipmap(GL_TEXTURE_2D);
 	
@@ -136,32 +136,32 @@ public class BloomStrobe
 		if(status != GL2.GL_FRAMEBUFFER_COMPLETE)
 			System.out.println("Frame Buffer Error : First Rendering Pass");
 
-		// Clear the window with current clearing color
-		gl.glClearColor(0, 0, 0, 0);
+		// Clear the frame buffer with current clearing color
+		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		gl.glDrawBuffers(1, attachments, 0);
+		gl.glDrawBuffers(1, attachments, 0); // standard rendering
 		
 		Car car = scene.getCars().get(0);
 		
-		scene.renderWater(gl, car);
+		scene.renderWater(gl, car, true);
 		
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
 		
 		scene.water.setRefraction(gl);
 		
-		scene.renderParticles(gl, car);
-		Particle.resetTexture();
-		
-		scene.renderFoliage(gl, car);
-		
 		gl.glDrawBuffers(2, attachments, 0);
 		scene.water.render(gl, car.getPosition());
 		
-		gl.glEnable(GL2.GL_BLEND);
-
+		scene.renderParticles(gl, car);
+		Particle.resetTexture();
+		
+		gl.glDrawBuffers(1, attachments, 0);
+		scene.renderFoliage(gl, car);
+		
+		gl.glDrawBuffers(2, attachments, 0);
 		// Draw objects in the scene
 		drawModels(gl);
 	}
@@ -494,7 +494,15 @@ public class BloomStrobe
 	    for(int i = 2; i < 7; i++)
 	    {
 	    	gl.glBindTexture(GL_TEXTURE_2D, textureID[i]);
-	    	gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth >> (i - 2), fboHeight >> (i - 2), 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
+	    	
+	    	if (i < 6)
+			{
+				gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth >> (i - 2), fboHeight >> (i - 2), 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
+			}
+			else
+			{
+				gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
+			}
 	    }
 
 	    setGuassian();

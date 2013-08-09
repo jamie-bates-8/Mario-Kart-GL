@@ -1384,12 +1384,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				}
 			}
 			
-			if(enableBloom) bloom.render(gl);
-			else
+//			if(enableBloom) bloom.render(gl);
+//			else
 			{
 				if(enableReflection) displayReflection(gl, car);
 				
-				if(terrain != null && terrain.enableWater) renderWater(gl, car);
+				if(terrain != null && terrain.enableWater) renderWater(gl, car, false);
 				
 				renderWorld(gl);
 				render3DModels(gl, car);
@@ -1400,6 +1400,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					water.render(gl, car.getPosition());
 				}
 			}
+
+			if(enableBloom) bloom.render(gl);
 			
 			if(enableShadow) manipulator.disable(gl);
 			
@@ -1443,7 +1445,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(shadowMap) displayMap(gl, bloom.getTexture(texture), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	
-	public void renderWater(GL2 gl, Car car)
+	/**
+	 * This method renders the world as reflected by the surface of the water.
+	 * A new clipping plane is defined so that any primitives drawn below water
+	 * level are clipped (the primitives clipped are actually above water level
+	 * as the reflected environment is rendered upside down).
+	 */
+	public void renderWater(GL2 gl, Car car, boolean bloom)
 	{
 		gl.glEnable(GL2.GL_CLIP_PLANE1);
 		double equation[] = {0, -1, 0, 0}; // primitives above water are clipped
@@ -1460,7 +1468,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		gl.glDisable(GL2.GL_CLIP_PLANE1);
 		water.setReflection(gl);
+		
+		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// removed reflected geometry from final render
 	}
 	
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
@@ -1473,6 +1484,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		canvasWidth  = width;
 		
 		cars.get(0).camera.setDimensions(width, height);
+		bloom.changeSize(gl);
 		
 		final float ratio = (float) width / (float) height;
 		
