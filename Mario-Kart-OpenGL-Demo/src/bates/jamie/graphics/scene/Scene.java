@@ -1212,11 +1212,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", attributes);
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		Shader grass        = new Shader(gl, "grass", "grass");
+		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
 		
-		Shader ball         = new Shader(gl, "hdrball", "hdrball");
-		Shader gaussian     = new Shader(gl, "combine", "gaussian");
-		Shader combine      = new Shader(gl, "combine", "combine");
-		Shader show2D       = new Shader(gl, "combine", "show2d");
+		Shader ball         = new Shader(gl, "hdr_ball", "hdr_ball");
+		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
+		Shader combine      = new Shader(gl, "show_texture", "combine");
+		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
@@ -1232,11 +1233,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
 		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
 		if(       grass.isValid()) shaders.put("grass", grass);
+		if(    dissolve.isValid()) shaders.put("dissolve", dissolve);
 		
 		if(        ball.isValid()) shaders.put("ball", ball);
 		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
 		if(     combine.isValid()) shaders.put("combine", combine);
-		if(      show2D.isValid()) shaders.put("show2D", show2D);
+		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
 	}
 
 	private void loadParticles()

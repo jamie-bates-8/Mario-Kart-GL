@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.media.opengl.GL2;
+import javax.media.opengl.glu.GLU;
+import javax.media.opengl.glu.GLUquadric;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.OBJParser;
@@ -31,12 +32,14 @@ public class BlueShell extends Shell
 	
 	private static Texture[] textures;
 	private static Texture shellTop;
+	private static Texture cloudSampler;
 	
 	static
 	{
 		try
 		{
-			shellTop = TextureIO.newTexture(new File("tex/blueShellTop.jpg"), true);
+			shellTop     = TextureIO.newTexture(new File("tex/blueShellTop.jpg"), true);
+			cloudSampler = TextureIO.newTexture(new File("tex/grass_data.png"), true);
 			
 			textures = new Texture[] {shellTop};
 		}
@@ -107,8 +110,53 @@ public class BlueShell extends Shell
 			gl.glPopMatrix();
 			
 			Shader.disable(gl);
+		}	
+		else if(!blast.isEmpty())
+		{
+			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+			gl.glDrawBuffers(2, attachments, 0);
+			
+//			BlastParticle.renderList(gl, blast);
+			
+			GLU glu = new GLU();
+			
+			Shader shader = Shader.enabled ? Scene.shaders.get("dissolve") : null;
+			if(shader != null) shader.enable(gl);
+			
+			shader.setSampler(gl, "cloudSampler", 0);
+			shader.setUniform(gl, "dissolveFactor", 1.0f - ((float) blastDuration / 60.0f));
+			
+			gl.glEnable(GL2.GL_TEXTURE_GEN_S);
+			gl.glEnable(GL2.GL_TEXTURE_GEN_T);
+			
+			gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
+			gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
+			
+			gl.glEnable(GL2.GL_TEXTURE_2D);
+			
+			GLUquadric sphere = glu.gluNewQuadric();
+			
+			glu.gluQuadricDrawStyle(sphere, GLU.GLU_FILL);
+			glu.gluQuadricTexture  (sphere, true);
+			
+			gl.glPushMatrix();
+			{
+				cloudSampler.bind(gl);
+				cloudSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+				
+				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+				
+				glu.gluSphere(sphere, blastRadius, 24, 24);
+			}
+			gl.glPopMatrix();
+			
+			gl.glDisable(GL2.GL_TEXTURE_GEN_S);
+			gl.glDisable(GL2.GL_TEXTURE_GEN_T);
+			
+			gl.glDrawBuffers(1, attachments, 0);
+			
+			Shader.disable(gl);
 		}
-		else if(!blast.isEmpty()) BlastParticle.renderList(gl, blast);
 	}
 	
 	@Override

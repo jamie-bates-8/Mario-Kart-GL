@@ -273,7 +273,6 @@ public class Terrain
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"    ));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"   ));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "water.png"   ));
-			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "caustics.jpg"));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
