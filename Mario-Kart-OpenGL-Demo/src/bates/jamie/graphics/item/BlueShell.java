@@ -114,17 +114,20 @@ public class BlueShell extends Shell
 		else if(!blast.isEmpty())
 		{
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			gl.glDrawBuffers(2, attachments, 0);
-			
+			if(!Scene.reflectMode) gl.glDrawBuffers(2, attachments, 0);
+
 //			BlastParticle.renderList(gl, blast);
 			
 			GLU glu = new GLU();
 			
 			Shader shader = Shader.enabled ? Scene.shaders.get("dissolve") : null;
-			if(shader != null) shader.enable(gl);
-			
-			shader.setSampler(gl, "cloudSampler", 0);
-			shader.setUniform(gl, "dissolveFactor", 1.0f - ((float) blastDuration / 60.0f));
+			if(shader != null)
+			{
+				shader.enable(gl);
+				
+				shader.setSampler(gl, "cloudSampler", 0);
+				shader.setUniform(gl, "dissolveFactor", 1.0f - ((float) blastDuration / 60.0f));
+			}
 			
 			gl.glEnable(GL2.GL_TEXTURE_GEN_S);
 			gl.glEnable(GL2.GL_TEXTURE_GEN_T);
@@ -153,7 +156,7 @@ public class BlueShell extends Shell
 			gl.glDisable(GL2.GL_TEXTURE_GEN_S);
 			gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 			
-			gl.glDrawBuffers(1, attachments, 0);
+			if(!Scene.reflectMode) gl.glDrawBuffers(1, attachments, 0);
 			
 			Shader.disable(gl);
 		}

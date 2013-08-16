@@ -17,6 +17,7 @@ import static javax.media.opengl.GL2GL3.GL_TEXTURE_MAX_LEVEL;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.util.Shader;
 
@@ -93,7 +94,7 @@ public class BloomStrobe
 		if (animationAngle == 360.0f) animationAngle = 0.0f;
 	
 		// slow down over time
-		angleIncrement *= 0.99f;
+		angleIncrement *= 0.999f;
 		if (Math.abs(angleIncrement) < 0.01f) angleIncrement = 0.0f;
 	
 		// Original Scene + Bright Pass
@@ -144,22 +145,26 @@ public class BloomStrobe
 		gl.glDrawBuffers(1, attachments, 0); // standard rendering
 		
 		Car car = scene.getCars().get(0);
+		Terrain terrain = scene.getTerrain();
 		
-		scene.renderWater(gl, car, true);
+		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car, true);
 		
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
 		
-		scene.water.setRefraction(gl);
-		
-		gl.glDrawBuffers(2, attachments, 0);
-		scene.water.render(gl, car.getPosition());
+		if(terrain != null && terrain.enableWater) 
+		{
+			scene.water.setRefraction(gl);
+			
+			gl.glDrawBuffers(2, attachments, 0);
+			scene.water.render(gl, car.getPosition());
+		}
 		
 		scene.renderParticles(gl, car);
 		Particle.resetTexture();
 		
 		gl.glDrawBuffers(1, attachments, 0);
-		scene.renderFoliage(gl, car);
+		if(scene.enableTerrain) scene.renderFoliage(gl, car);
 		
 		gl.glDrawBuffers(2, attachments, 0);
 		// Draw objects in the scene
@@ -178,9 +183,9 @@ public class BloomStrobe
 		// Draw sphere
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(0.0f, 30.0f, 0.0f);
+			gl.glTranslatef(75.0f, 30.0f, 75.0f);
 			gl.glRotatef(animationAngle / 5.0f, 0.0f, 1.0f, 0.0f);
-			glut.glutSolidSphere(15.0f, 75, 75);
+			glut.glutSolidSphere(15.0f, 25, 25);
 		}
 		gl.glPopMatrix();
 	}

@@ -250,7 +250,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private GLU glu;
 	private GLUT glut;
 	
-	public float[] background = RGB.SKY_BLUE;
+	public float[] background = RGB.SKY_BLUE_3F;
 	
 	public static boolean enableAnimation = true;
 	private boolean normalize = true;
@@ -1164,7 +1164,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupGenerators()
 	{
-		
+		generators.add(new ParticleGenerator(1, 10, ParticleGenerator.GeneratorType.SPARK, new float[] {0, 30, 0}));
 	}
 
 	private void loadPlayers(GL2 gl)
@@ -1447,6 +1447,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(shadowMap) displayMap(gl, bloom.getTexture(texture), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	
+	public static boolean reflectMode = false;
+	
 	/**
 	 * This method renders the world as reflected by the surface of the water.
 	 * A new clipping plane is defined so that any primitives drawn below water
@@ -1458,6 +1460,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glEnable(GL2.GL_CLIP_PLANE1);
 		double equation[] = {0, -1, 0, 0}; // primitives above water are clipped
 		gl.glClipPlane(GL2.GL_CLIP_PLANE1, equation, 0);
+		
+		reflectMode = true;
 
 		gl.glPushMatrix();
 		{
@@ -1467,6 +1471,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			render3DModels(gl, car);
 		}
 		gl.glPopMatrix();
+		
+		reflectMode = false;
 
 		gl.glDisable(GL2.GL_CLIP_PLANE1);
 		water.setReflection(gl);
@@ -2462,7 +2468,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 */
 	public void keyPressed(KeyEvent e)
 	{	
-		switch (e.getKeyCode())
+		if(e.isShiftDown()) { shiftEvent(e); return; }
+		
+		switch(e.getKeyCode())
 		{
 			case KeyEvent.VK_ESCAPE: System.exit(0); break;
 			
@@ -2470,8 +2478,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_T:   enableTerrain = !enableTerrain; for(Car car : cars) car.friction = 1; break;
 			case KeyEvent.VK_F10: enableItemBoxes = !enableItemBoxes; break;
-//			case KeyEvent.VK_I:  spawnItemsInSphere(8, 10, new float[] {0, 100, 0}, 50); break;
-//			case KeyEvent.VK_U:  spawnItemsInOBB(0, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
 			case KeyEvent.VK_F9: sphereMap = !sphereMap; break;
@@ -2521,6 +2527,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 			default: for(Car car : cars) car.keyPressed(e); break;
 		}
+	}
+	
+	public void shiftEvent(KeyEvent e)
+	{
+		switch(e.getKeyCode())
+		{
+			case KeyEvent.VK_1: spawnItemsInSphere(0, 10, new float[] {0, 100, 0}, 50); break;
+			case KeyEvent.VK_2: spawnItemsInOBB(13, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			
+			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform;
+			
+			default: break;
+		}
+	
+		
 	}
 	
 	public void keyReleased(KeyEvent e)

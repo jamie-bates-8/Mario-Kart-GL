@@ -19,8 +19,9 @@ public class RGB
 	public static final float[] GRAY        = {127, 127, 127};
 	public static final float[] DARK_GRAY   = { 64,  64,  64};
 	public static final float[] BLACK       = {  0,   0,   0};
+	public static final float[] SKY_BLUE    = { 30, 144,   1};
 	
-	public static final float[] SKY_BLUE    = {0.118f, 0.565f, 1.000f};
+	public static final float[] SKY_BLUE_3F = {0.118f, 0.565f, 1.000f};
 	
 	public static final float[] DARK_BROWN  = { 44,  29,   9};
 	public static final float[] LIGHT_BROWN = { 93,  63,  19};

@@ -380,6 +380,7 @@ public class Car
 		
 		car_body.setTranslation(bound.c);
 		car_body.setOrientation(getRotationMatrix(bound.u));
+		car_body.setScale(new float[] {scale, scale, scale});
 		
 		for(int i = 0; i < 4; i++)
 		{
@@ -1025,13 +1026,13 @@ public class Car
 		
 		if(accelerating && !slipping) accelerate();
 		else decelerate();
-		
-		if(velocity <= 0 || slipping)
-		{
-			drift = Direction.STRAIGHT;
-			driftState = DriftState.YELLOW;
-			driftCounter = false;
-		}
+		// TODO
+//		if(velocity <= 0 || slipping)
+//		{
+//			drift = Direction.STRAIGHT;
+//			driftState = DriftState.YELLOW;
+//			driftCounter = false;
+//		}
 		
 		if     (drift == Direction.LEFT ) turnLeft();
 		else if(drift == Direction.RIGHT) turnRight();
@@ -1062,15 +1063,17 @@ public class Car
 		
 		turnWheels();
 		
-		//The wheels are rotated in relation to the distance travelled
-		zRotation_Wheel += 360 * (distance - currentDistance) / (2 * PI * 0.5); //0.5 is the wheel radius
+		// The wheels are rotated in relation to the distance travelled
+		zRotation_Wheel += 360 * (distance - currentDistance) / (2 * PI * 0.5); // 0.5 is the wheel radius
 		
 		if(drift != Direction.STRAIGHT && !falling)
 		{
-			for(float[] source : getDriftVectors())
+			for(float[] vector : getDriftVectors())
 			{
+				float[] source = add(getPosition(), vector);
+				
 				scene.addParticles(generator.generateDriftParticles(source, 10, driftState.ordinal(), miniature));
-				scene.addParticles(generator.generateSparkParticles(source,  2, miniature));
+				scene.addParticles(generator.generateSparkParticles(source, vector, 1, driftState.ordinal(), miniature, this));
 			}
 		}
 		
@@ -1326,6 +1329,14 @@ public class Car
 		
 		return subtract(bound.c, multiply(bound.u[0], _velocity * friction));
 	}
+	
+	public float[] getVector()
+	{
+		float _velocity = (miniature) ?  velocity * 0.75f :  velocity;
+		      _velocity = (starPower) ? _velocity * 1.25f : _velocity;
+		
+		return multiply(bound.u[0], _velocity * friction);
+	}
 
 	public float[][] getBoostVectors()
 	{	
@@ -1360,8 +1371,8 @@ public class Car
 		
 		return new float[][]
 		{
-			subtract(subtract(add(getPosition(), eu0), eu1), eu2),
-			     add(subtract(add(getPosition(), eu0), eu1), eu2)
+			subtract(subtract(eu0, eu1), eu2),
+			     add(subtract(eu0, eu1), eu2)
 		};
 	}
 	
@@ -1435,8 +1446,8 @@ public class Car
 	
 	public void useLightningBolt()
 	{
-		for(Car car : scene.getCars())
-			if(!car.equals(this)) car.struckByLightning();
+		for(Car car : scene.getCars()) car.struckByLightning();
+//			if(!car.equals(this)) car.struckByLightning();
 	}
 	
 	public void struckByLightning()

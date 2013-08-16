@@ -86,6 +86,15 @@ public class Vector
 		return w;
 	}
 	
+	public static float[] mix(float[] u, float[] v, float factor)
+	{
+		float  f = factor < 0 ? 0 : (factor > 1 ? 1 : factor);
+		float _f = 1 - f;
+		
+		return add(multiply(u, f), multiply(v, _f));
+		
+	}
+	
 	public static double getAngle(float[] u, float[] v)
 	{
 		double cos = dot(u, v) / (sqrt(dot(u, u)) * sqrt(dot(v, v)));

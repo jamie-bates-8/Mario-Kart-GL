@@ -1,17 +1,18 @@
 package bates.jamie.graphics.particle;
 
 
+import static bates.jamie.graphics.util.Vector.multiply;
+import static bates.jamie.graphics.util.Vector.normalize;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
+import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.opengl.util.texture.Texture;
-
-import static bates.jamie.graphics.util.Vector.multiply;
-import static bates.jamie.graphics.util.Vector.normalize;
 
 public class ParticleGenerator
 {
@@ -61,7 +62,7 @@ public class ParticleGenerator
 		switch(type)
 		{
 			case BLAST: return generateBlastParticles(source, quantity);
-			case SPARK: return generateSparkParticles(source, quantity, false);
+			case SPARK: return generateSparkParticles(source, getRandomVector(), quantity, 1, false, null);
 			
 			default: return null;
 		}
@@ -103,21 +104,28 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateSparkParticles(float[] source, int n, boolean miniature)
+	public List<Particle> generateSparkParticles(float[] source, float[] t, int n, int type, boolean miniature, Car car)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
-		float[][] colors = {RGB.WHITE, RGB.YELLOW, RGB.ORANGE};
+		float[][][] colors =
+		{
+			{RGB.YELLOW, RGB.ORANGE},
+			{RGB.ORANGE, RGB.RED   },
+			{RGB.INDIGO, RGB.BLUE  },
+		};
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[]  color = colors[generator.nextInt(colors.length)];
+			float[]  color = Vector.mix(colors[type][0], colors[type][1], generator.nextFloat());
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255};
 			
-			float[] t = getRandomVector();
-			t[1] = Math.abs(t[1] * 0.75f);
+			float[] _t = Vector.add(Vector.normalize(t), getRandomVector());
+			_t[1] = Math.abs(_t[1] * (generator.nextBoolean() ? 1 : 2));
 			
-			particles.add(new SparkParticle(source, t, 0, 12, _color, miniature));
+			int length = 3 + generator.nextInt(4);
+			
+			particles.add(new SparkParticle(source, _t, 8, _color, length, miniature, car));
 		}
 		
 		return particles;
