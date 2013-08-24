@@ -29,6 +29,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class FakeItemBox extends Item
 {
+	public static final int ID = 7;
+	
 	private static final List<Face> BOX_FACES = OBJParser.parseTriangles("fake_item_box");
 	private static float rotation = 45.0f; 
 	public static final float SCALE = 1.75f;

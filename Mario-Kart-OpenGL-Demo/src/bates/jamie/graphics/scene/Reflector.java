@@ -189,11 +189,8 @@ public class Reflector
 
 			gl.glFramebufferTexture2D(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, i, textureID, 0);
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-
-			scene.renderObstacles(gl);
-			scene.renderSkybox(gl);
-			scene.renderWalls(gl);
-			scene.renderFloor(gl, false);
+			
+			scene.renderWorld(gl);
 		}
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);

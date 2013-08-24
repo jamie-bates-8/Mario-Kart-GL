@@ -74,11 +74,11 @@ public class BillBoard
 	{
 		gl.glPushMatrix();
 		{
-			gl.glDepthMask(false);
+//			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
-//			gl.glEnable(GL2.GL_ALPHA_TEST);
-//			gl.glAlphaFunc(GL2.GL_GREATER, 0.25f);
+			gl.glEnable(GL2.GL_ALPHA_TEST);
+			gl.glAlphaFunc(GL2.GL_GREATER, 0.25f);
 			
 			float[] c = sphere.c;
 
@@ -101,10 +101,10 @@ public class BillBoard
 			}
 			gl.glEnd();
 			
-			gl.glDepthMask(true);
+//			gl.glDepthMask(true);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
-//			gl.glDisable(GL2.GL_ALPHA_TEST);
+			gl.glDisable(GL2.GL_ALPHA_TEST);
 			
 		}
 		gl.glPopMatrix();

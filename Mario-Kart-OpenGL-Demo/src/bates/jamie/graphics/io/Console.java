@@ -10,7 +10,12 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
+import bates.jamie.graphics.item.Banana;
+import bates.jamie.graphics.item.BlueShell;
+import bates.jamie.graphics.item.FakeItemBox;
+import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
+import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Scene;
 
@@ -139,7 +144,7 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-		if(_cmd.equalsIgnoreCase("offset")) scene.manipulator.shadowOffset = cmd.nextFloat();
+		if(_cmd.equalsIgnoreCase("offset")) scene.caster.shadowOffset = cmd.nextFloat();
 	}
 	
 	private void parseWireframe(Scanner cmd)
@@ -278,6 +283,7 @@ public class Console
 			
 			scene.background = new float[] {r, g, b};
 		}
+		else if(_cmd.equalsIgnoreCase("attenuation")) Scene.attenuation = cmd.nextFloat();  
 	}
 	
 	private void parseLight(Scanner cmd)
@@ -425,11 +431,11 @@ public class Console
 	{
 		if(itemID.matches("\\d+")) return Integer.parseInt(itemID);
 		
-		else if(itemID.equalsIgnoreCase( "GreenShell")) return  0;
-		else if(itemID.equalsIgnoreCase(   "RedShell")) return  2;
-		else if(itemID.equalsIgnoreCase("FakeItemBox")) return  7;
-		else if(itemID.equalsIgnoreCase(     "Banana")) return  8;
-		else if(itemID.equalsIgnoreCase(  "BlueShell")) return 13;
+		else if(itemID.equalsIgnoreCase( "GreenShell")) return GreenShell.ID;
+		else if(itemID.equalsIgnoreCase(   "RedShell")) return RedShell.ID;
+		else if(itemID.equalsIgnoreCase("FakeItemBox")) return FakeItemBox.ID;
+		else if(itemID.equalsIgnoreCase(     "Banana")) return Banana.ID;
+		else if(itemID.equalsIgnoreCase(  "BlueShell")) return BlueShell.ID;
 		
 		else return -1;	
 	}

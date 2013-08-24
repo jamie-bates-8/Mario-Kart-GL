@@ -2,9 +2,10 @@ package bates.jamie.graphics.scene;
 
 import static bates.jamie.graphics.util.Vector.multiply;
 import static bates.jamie.graphics.util.Vector.subtract;
-
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
+
+import java.awt.event.MouseEvent;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
@@ -15,13 +16,26 @@ public class Camera extends AnchorPoint
 {
 	private CameraMode mode = CameraMode.DYNAMIC_VIEW;
 	
-	private float zoom = 0.75f;
+	private float[] position = {0, 0, 0};
+	
+	public float zoom = 1.5f;
 	
 	private int width  = 860;
 	private int height = 640;
 	
-	private boolean rearview = false;
-	public  boolean shaking  = true;
+	public boolean  rearview = false;
+	public boolean   shaking = true;
+	public boolean trackball = false;
+	
+	public int mouseX = 0;
+	public int mouseY = 0;
+	
+	private static final float EPSILON = 0.001f;
+	
+	public float incline = (float) Math.toRadians( -60);
+	public float azimuth = (float) Math.toRadians(-180);
+	
+	
 	
 	public Camera() {}
 	
@@ -31,19 +45,60 @@ public class Camera extends AnchorPoint
 	
 	public void setRearview(boolean mirror) { rearview = mirror; }
 	
+	public void mouseDragged(MouseEvent e)
+	{
+		int x = e.getX();
+		int y = e.getY();
+		
+		azimuth += (x - mouseX) * 0.01f; // 0 < theta < PI
+		incline += (y - mouseY) * 0.01f; // 0 < phi < 2 PI
+		
+		if(incline == 0) incline = EPSILON;
+		
+		mouseX = x; 
+		mouseY = y; 
+	}
+	
+	public void mouseMoved(MouseEvent e)
+	{
+		int x = e.getX();
+		int y = e.getY();
+		
+		mouseX = x; 
+		mouseY = y; 
+	}
+	
+	@Override
+	public float[] getPosition() { return position; }
+	
+	public float[] getSphericalCoordinate()
+	{
+		float cameraX = (float) (c[0] + zoom * 10 * Math.sin(incline) * Math.cos(azimuth));
+		float cameraY = (float) (c[1] + zoom * 10 * Math.cos(incline));
+		float cameraZ = (float) (c[2] + zoom * 10 * Math.sin(incline) * Math.sin(azimuth));
+		
+		return new float[] {cameraX, cameraY, cameraZ};
+	}
+	
 	public void setupView(GL2 gl, GLU glu)
 	{
 		switch(mode)
 		{	
 			//Cause the camera to follow the car dynamically as it moves along the track 
 			case DYNAMIC_VIEW:
-			{	
-				gl.glTranslatef(0, -15.0f * zoom, -30.0f * zoom);
-				gl.glRotated(ry + (rearview ? 180 : 0), 0.0f, -1.0f, 0.0f);
-	
-				glu.gluLookAt(c[0] +  0, c[1], c[2],
-							  c[0] - 10, c[1], c[2],
-							  0, 1, 0);
+			{
+				if(!trackball)
+				{
+					int rear = rearview ? 0 : -180;
+					
+					incline = (float) Math.toRadians(     -60);
+					azimuth = (float) Math.toRadians(rear -ry);
+					   zoom = 1.5f;
+				}
+				
+				position = getSphericalCoordinate();
+				
+				glu.gluLookAt(position[0], position[1], position[2], c[0], c[1], c[2], 0, 1, 0);
 
 				break;
 			}
@@ -51,13 +106,17 @@ public class Camera extends AnchorPoint
 			case BIRDS_EYE_VIEW:
 			{		
 				float ratio = (float) width / height;
+				int size = 220;
+				
+				position = new float[] {c[0], 150, c[2]};
 				
 				gl.glMatrixMode(GL_PROJECTION);
 				gl.glLoadIdentity();
-				gl.glOrtho(-220 * ratio, 220 * ratio, -220, 220, 1, 200);
-				glu.gluLookAt(0, 150, 0,
-					          0, 0, 0,
-					          0, 0, 1);
+				
+				gl.glOrtho(-size * ratio, size * ratio, -size, size, 1, 2000);
+				glu.gluLookAt(c[0], 150, c[2], c[0], 0, c[2], 0, 0, 1);
+				// up-vector cannot be 'up' when camera is looking 'down'
+				
 				gl.glMatrixMode(GL_MODELVIEW);
 				gl.glLoadIdentity();
 
@@ -68,6 +127,8 @@ public class Camera extends AnchorPoint
 			{	
 				gl.glTranslatef(0, -3.0f, 0);
 				gl.glRotated(ry, 0.0f, -1.0f, 0.0f);
+				
+				position = c;
 				
 				float[] v = shaking ? u[1] : new float[] {0, 1, 0};
 				
@@ -80,6 +141,8 @@ public class Camera extends AnchorPoint
 			case FREE_LOOK_VIEW:
 			{		
 				float[] p = subtract(c, multiply(u[0], 20));
+				
+				position = c;
 				
 				glu.gluLookAt(c[0], c[1], c[2],
 						      p[0], p[1], p[2],
@@ -144,7 +207,7 @@ public class Camera extends AnchorPoint
 	{
 		zoom += increments * 0.05;
 		
-		if(zoom < 0.25) zoom = 0.25f;
-		if(zoom > 2.00) zoom = 2.00f;
+		if(zoom < 1.00) zoom = 1.00f;
+		if(zoom > 2.50) zoom = 2.50f;
 	}
 }

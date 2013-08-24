@@ -1,4 +1,5 @@
 package bates.jamie.graphics.item;
+
 import static bates.jamie.graphics.util.Renderer.displayColoredObject;
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
 
@@ -26,6 +27,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class BlueShell extends Shell
 {
+	public static final int ID = 13;
+	
 	private static int shellList = -1;
 	private static int spikeList = -1;
 	private static final List<Face> SPIKE_FACES = OBJParser.parseTriangles("spikes");

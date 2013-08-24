@@ -44,7 +44,7 @@ public class HoloTag
 		
 		gl.glPushMatrix();
 		{
-			gl.glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
+			gl.glColor4f(0.5f, 0.5f, 0.5f, 0.0f);
 			
 			float width  = (float) renderer.getBounds(tag).getCenterX();
 			float height = (float) renderer.getBounds(tag).getCenterY();

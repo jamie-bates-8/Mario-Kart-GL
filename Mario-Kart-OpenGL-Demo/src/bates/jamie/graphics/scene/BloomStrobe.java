@@ -152,19 +152,21 @@ public class BloomStrobe
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
 		
-		if(terrain != null && terrain.enableWater) 
-		{
-			scene.water.setRefraction(gl);
-			
-			gl.glDrawBuffers(2, attachments, 0);
-			scene.water.render(gl, car.getPosition());
-		}
+		gl.glDrawBuffers(2, attachments, 0);
 		
 		scene.renderParticles(gl, car);
 		Particle.resetTexture();
 		
 		gl.glDrawBuffers(1, attachments, 0);
 		if(scene.enableTerrain) scene.renderFoliage(gl, car);
+		
+		if(terrain != null && terrain.enableWater) 
+		{
+			scene.water.setRefraction(gl);
+			
+			gl.glDrawBuffers(2, attachments, 0);
+			scene.water.render(gl, car.camera.getPosition());
+		}
 		
 		gl.glDrawBuffers(2, attachments, 0);
 		// Draw objects in the scene

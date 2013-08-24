@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
@@ -116,7 +117,7 @@ import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.StarParticle;
-import bates.jamie.graphics.scene.ShadowManipulator.ShadowQuality;
+import bates.jamie.graphics.scene.ShadowCaster.ShadowQuality;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
@@ -140,7 +141,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
  * track by the use of hotkeys. Users can also interact with the car model and 
  * manipulation the scene in a number of ways.
  */
-public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, ActionListener, ItemListener, ListSelectionListener
+public class Scene implements GLEventListener, KeyListener, MouseWheelListener, MouseListener, MouseMotionListener, ActionListener, ItemListener, ListSelectionListener
 {
 	private static final boolean SMOOTH_FPS = true;
 	
@@ -162,9 +163,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private JMenu menu_camera;
 	private JCheckBoxMenuItem menuItem_shaking;
+	private JCheckBoxMenuItem menuItem_trackball;
 	
 	private JMenu menu_vehicle;
 	private JCheckBoxMenuItem menuItem_reverse;
+	private JCheckBoxMenuItem menuItem_tag;
 	private JMenu menu_car_material;
 	private JMenuItem menuItem_car_color;
 	private JCheckBoxMenuItem menuItem_cubemap;
@@ -235,8 +238,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenuItem menuItem_height;
 	private JMenuItem menuItem_reset;
 	
-	private int canvasWidth  = 860;
-	private int canvasHeight = 640;
+	public static int canvasWidth  = 860;
+	public static int canvasHeight = 640;
 	
 	public float far = 2000.0f;
 	
@@ -309,7 +312,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Shadow Fields **/
-	public ShadowManipulator manipulator;
+	public ShadowCaster caster;
 	public static boolean enableShadow = true;
 	public boolean shadowMap   = false;
 	public boolean resetShadow = false;
@@ -436,6 +439,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		canvas.addKeyListener(this);
 		canvas.addMouseWheelListener(this);
 		canvas.addMouseListener(this);
+		canvas.addMouseMotionListener(this);
 		canvas.setFocusable(true);
 		canvas.requestFocus();
 
@@ -539,7 +543,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_shaking.addItemListener(this);
 		menuItem_shaking.setMnemonic(KeyEvent.VK_S);
 		
+		menuItem_trackball = new JCheckBoxMenuItem("Enable Trackball");
+		menuItem_trackball.addItemListener(this);
+		menuItem_trackball.setMnemonic(KeyEvent.VK_T);
+		
 		menu_camera.add(menuItem_shaking);
+		menu_camera.add(menuItem_trackball);
 		
 		menuBar.add(menu_camera);
 		/**----------------**/
@@ -555,6 +564,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menu_vehicle.add(menuItem_reverse);
 		menu_vehicle.addSeparator();
+		
+		menuItem_tag = new JCheckBoxMenuItem("Show Label");
+		menuItem_tag.addItemListener(this);
+		menuItem_tag.setMnemonic(KeyEvent.VK_L);
+		menuItem_tag.setSelected(false);
+		
+		menu_vehicle.add(menuItem_tag);
 		
 		menu_car_material = new JMenu("Material");
 		menu_car_material.setMnemonic(KeyEvent.VK_M); 
@@ -1059,7 +1075,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    menuItem_smooth.setSelected(light.smooth);
 	    menuItem_secondary.setSelected(light.secondary);
 	    
-	    manipulator = new ShadowManipulator(this, light);
+	    caster = new ShadowCaster(this, light);
 	    
 	    reflector = new Reflector(this, 0.75f);
 	    reflector.setup(gl);
@@ -1097,7 +1113,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    fort = new BlockFort(gl);
 	    
-	    if(enableShadow) manipulator.setup(gl);
+	    if(enableTerrain)
+	    {
+	    	generateTerrain(gl, DEFAULT_TERRAIN);
+	    	setCheckBoxes();
+	    	
+	    	Set<String> trees = terrain.trees.keySet();
+		    
+		    for(String tree : trees)
+				listModel.addElement(tree);
+		    
+		    grassPatch = new GrassPatch(gl, terrain.trees.get("Base"), ORIGIN, 128, 1.0f);
+	    }
+	    
+	    if(enableShadow) caster.setup(gl);
 	    
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
@@ -1115,19 +1144,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    if(printVersion) printVersion(gl);
 	    
 	    console.parseCommand("profile project");
-	    
-	    if(enableTerrain)
-	    {
-	    	generateTerrain(gl, DEFAULT_TERRAIN);
-	    	setCheckBoxes();
-	    	
-	    	Set<String> trees = terrain.trees.keySet();
-		    
-		    for(String tree : trees)
-				listModel.addElement(tree);
-		    
-		    grassPatch = new GrassPatch(gl, terrain.trees.get("Base"), ORIGIN, 128, 1.0f);
-	    }
 	    
 	    long setupEnd = System.currentTimeMillis();
 	    System.out.println("\nSetup Time: " + (setupEnd - setupStart) + " ms" + "\n");
@@ -1164,7 +1180,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupGenerators()
 	{
-		generators.add(new ParticleGenerator(1, 10, ParticleGenerator.GeneratorType.SPARK, new float[] {0, 30, 0}));
+//		generators.add(new ParticleGenerator(1, 10, ParticleGenerator.GeneratorType.SPARK, new float[] {0, 30, 0}));
 	}
 
 	private void loadPlayers(GL2 gl)
@@ -1193,6 +1209,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
+	public static float attenuation = 0.1f;
+	
 	private void loadShaders(GL2 gl)
 	{
 		HashMap<Integer, String> attributes = new HashMap<Integer, String>();
@@ -1200,7 +1218,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		// load and compile shaders from file
 		Shader phong        = new Shader(gl, "phong", "phong");
-		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
+		Shader phongTexture = new Shader(gl, "phong_attenuate", "phong_attenuate");
 		Shader bump         = new Shader(gl, "bump", "bump", attributes);
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
@@ -1290,7 +1308,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
-		manipulator.disable(gl); // prevent reflections from being darkened by shadow
+		caster.disable(gl); // prevent reflections from being darkened by shadow
 		reflector.update(gl, cars.get(0).getPosition());
 		
 		     if(sphereMap) reflector.displayMap(gl);
@@ -1303,7 +1321,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		calculateFPS();
 
-		if(enableShadow) manipulator.update(gl);
+		if(enableShadow) caster.update(gl);
 	}
 	
 	private int texture = 0;
@@ -1377,11 +1395,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			if(enableShadow && Shader.enabled)
 			{
-				manipulator.displayShadow(gl);
+				caster.displayShadow(gl);
 				
 				if(resetShadow) // required if shadow quality is altered
 				{
-					manipulator.setup(gl);
+					caster.setup(gl);
 					resetShadow = false;
 				}
 			}
@@ -1396,21 +1414,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				renderWorld(gl);
 				render3DModels(gl, car);
 				
+				renderTimes[frameIndex][4] = renderParticles(gl, car);
+				Particle.resetTexture();
+				
+				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+				
 				if(terrain != null && terrain.enableWater) 
 				{
 					water.setRefraction(gl);
-					water.render(gl, car.getPosition());
+					water.render(gl, car.camera.getPosition());
 				}
 			}
 
 			if(enableBloom) bloom.render(gl);
 			
-			if(enableShadow) manipulator.disable(gl);
-			
-			renderTimes[frameIndex][4] = renderParticles(gl, car);
-			Particle.resetTexture();
-			
-			if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+			if(enableShadow) caster.disable(gl);
 			
 			gl.glDisable(GL2.GL_CLIP_PLANE2);
 			
@@ -1444,7 +1462,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableBlur && _i != boostCounter) gl.glAccum(GL_LOAD, 1.0f);
 		boostCounter = _i;
 		
-		if(shadowMap) displayMap(gl, bloom.getTexture(texture), 0.0f, 0.0f, 1.0f, 1.0f);
+		if(shadowMap) displayMap(gl, caster.getTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	
 	public static boolean reflectMode = false;
@@ -1457,8 +1475,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 */
 	public void renderWater(GL2 gl, Car car, boolean bloom)
 	{
+		int aboveWater = car.camera.getPosition()[1] >= 0 ? -1 : 1;  
+		
 		gl.glEnable(GL2.GL_CLIP_PLANE1);
-		double equation[] = {0, -1, 0, 0}; // primitives above water are clipped
+		double equation[] = {0, aboveWater, 0, 0}; // primitives above water are clipped
 		gl.glClipPlane(GL2.GL_CLIP_PLANE1, equation, 0);
 		
 		reflectMode = true;
@@ -1493,6 +1513,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		cars.get(0).camera.setDimensions(width, height);
 		bloom.changeSize(gl);
+		resetShadow = true;
 		
 		final float ratio = (float) width / (float) height;
 		
@@ -1853,7 +1874,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 		
 		// prevents shadow texture unit from being active
-		if(enableShadow ) manipulator.disable(gl);
+		if(enableShadow ) caster.disable(gl);
 		if(displaySkybox || Shader.enabled) renderSkybox(gl);
 		
 		Shader shader = null;
@@ -1866,7 +1887,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 				if(shader != null)
 				{
-					manipulator.enable(gl);
+					caster.enable(gl);
 					shader.enable(gl);
 					shader.setSampler(gl, "texture"  , 0);
 					shader.setSampler(gl, "shadowMap", 2);
@@ -1889,7 +1910,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderObstacles(gl);
 		
-		manipulator.disable(gl);
+		caster.disable(gl);
 		Shader.disable(gl);
 			
 		if(displaySkybox) renderWalls(gl);
@@ -2225,38 +2246,38 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void addItem(Item item) { itemList.add(item); }
 	
-	public void addItem(int itemID, float[] c, float trajectory)
+	public void addItem(int item, float[] c, float trajectory)
 	{
-		switch(itemID)
+		switch(item)
 		{
-			case  0: itemList.add(new  GreenShell(this, c, trajectory)); break;
-			case  2: itemList.add(new    RedShell(this, c, trajectory)); break;
-			case  7: itemList.add(new FakeItemBox(this, c, trajectory)); break;
-			case  8: itemList.add(new      Banana(this, c)); break;
-			case 13: itemList.add(new   BlueShell(this, c)); break;
+			case GreenShell.ID  : itemList.add(new  GreenShell(this, c, trajectory)); break;
+			case RedShell.ID    : itemList.add(new    RedShell(this, c, trajectory)); break;
+			case FakeItemBox.ID : itemList.add(new FakeItemBox(this, c, trajectory)); break;
+			case Banana.ID      : itemList.add(new      Banana(this, c)); break;
+			case BlueShell.ID   : itemList.add(new   BlueShell(this, c)); break;
 			
 			default: break;
 		}
 	}
 
-	public void spawnItemsInBound(int itemID, int quantity, Bound b)
+	public void spawnItemsInBound(int item, int quantity, Bound b)
 	{
 		Random random = new Random();
 		
 		for(int i = 0; i < quantity; i++)
 		{
-			addItem(itemID, b.randomPointInside(), random.nextInt(360));
+			addItem(item, b.randomPointInside(), random.nextInt(360));
 		}
 	}
 
-	public void spawnItemsInSphere(int itemID, int quantity, float[] c, float r)
+	public void spawnItemsInSphere(int item, int quantity, float[] c, float r)
 	{
-		spawnItemsInBound(itemID, quantity, new Sphere(c, r));
+		spawnItemsInBound(item, quantity, new Sphere(c, r));
 	}
 
-	public void spawnItemsInOBB(int itemID, int quantity, float[] c, float[] u, float[] e)
+	public void spawnItemsInOBB(int item, int quantity, float[] c, float[] u, float[] e)
 	{
-		spawnItemsInBound(itemID, quantity, new OBB(c, u, e, null));
+		spawnItemsInBound(item, quantity, new OBB(c, u, e, null));
 	}
 
 	public void clearItems() { itemList.clear(); }
@@ -2533,10 +2554,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_1: spawnItemsInSphere(0, 10, new float[] {0, 100, 0}, 50); break;
-			case KeyEvent.VK_2: spawnItemsInOBB(13, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			case KeyEvent.VK_1: spawnItemsInSphere(Banana.ID, 10, new float[] {0, 100, 0}, 50); break;
+			case KeyEvent.VK_2: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform;
+			
+			case KeyEvent.VK_S: ShadowCaster.cycle();
 			
 			default: break;
 		}
@@ -2615,10 +2638,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
 		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
 		     
-		else if(event.getActionCommand().equals("shadow_low"   )) { manipulator.setQuality(ShadowQuality.LOW);  resetShadow = true; }
-		else if(event.getActionCommand().equals("shadow_medium")) { manipulator.setQuality(ShadowQuality.MED);  resetShadow = true; }
-		else if(event.getActionCommand().equals("shadow_high"  )) { manipulator.setQuality(ShadowQuality.HIGH); resetShadow = true; }
-		else if(event.getActionCommand().equals("shadow_best"  )) { manipulator.setQuality(ShadowQuality.BEST); resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_low"   )) { caster.setQuality(ShadowQuality.LOW);  resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_medium")) { caster.setQuality(ShadowQuality.MED);  resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_high"  )) { caster.setQuality(ShadowQuality.HIGH); resetShadow = true; }
+		else if(event.getActionCommand().equals("shadow_best"  )) { caster.setQuality(ShadowQuality.BEST); resetShadow = true; }
 		     
 		else if(event.getActionCommand().equals("recalc_norms" )) terrain.tree.resetNormals();
 		else if(event.getActionCommand().equals("recalc_tangs" )) terrain.tree.resetTangent();    
@@ -2741,6 +2764,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_vcoloring  )) terrain.tree.enableColoring  = selected;
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse    = selected;
 		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking   = selected;
+		else if(source.equals(menuItem_trackball  )) cars.get(0).camera.trackball = selected;
+		else if(source.equals(menuItem_tag        )) cars.get(0).displayTag       = selected;    
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling      = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing     = selected;
 		else if(source.equals(menuItem_shaders    )) Shader.enabled               = selected;  
@@ -2759,5 +2784,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		terrain.selectQuadtree(listModel.elementAt(index));
 		
 		setCheckBoxes();
+	}
+
+	public void mouseMoved(MouseEvent e)
+	{
+		if(cars != null && !cars.isEmpty()) cars.get(0).camera.mouseMoved(e);
+	}
+	
+	public void mouseDragged(MouseEvent e)
+	{
+		if(cars != null && !cars.isEmpty()) cars.get(0).camera.mouseDragged(e);
 	}
 }

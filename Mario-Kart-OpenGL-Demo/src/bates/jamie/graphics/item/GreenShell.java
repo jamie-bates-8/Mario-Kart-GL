@@ -18,6 +18,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class GreenShell extends Shell
 {	
+	public static final int ID = 0;
+	
 	private static int shellList = -1;
 	
 	private static Texture[] textures;

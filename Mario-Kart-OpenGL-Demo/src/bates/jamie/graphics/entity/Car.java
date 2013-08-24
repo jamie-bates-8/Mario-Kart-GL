@@ -271,6 +271,7 @@ public class Car
 		body.setTranslation(bound.c);
 		body.setOrientation(getRotationMatrix(bound.u));
 		body.setScale(new float[] {scale, scale, scale});
+		body.setBloom(true);
 		
 		if(enableChrome)
 		{
@@ -278,6 +279,19 @@ public class Car
 			body.setReflector(scene.reflector);
 		}
 		else body.setRenderMode(SceneNode.RenderMode.COLOR);
+		
+		for(int i = 0; i < 4; i++)
+		{
+			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
+			wheel.setColor(new float[] {1, 1, 1});
+			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
+			wheel.setTranslation(offsets_Wheel[i]);
+			wheel.setRotation(ORIGIN);
+			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
+			
+			body.addChild(wheel);
+		}
+		
 		
 		SceneNode headlights = new SceneNode(null, carList, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
@@ -292,18 +306,6 @@ public class Car
 		car_base.setRenderMode(SceneNode.RenderMode.TEXTURE);
 		
 		body.addChild(car_base);
-		
-		for(int i = 0; i < 4; i++)
-		{
-			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
-			wheel.setColor(new float[] {1, 1, 1});
-			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
-			wheel.setTranslation(offsets_Wheel[i]);
-			wheel.setRotation(ORIGIN);
-			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
-			
-			body.addChild(wheel);
-		}
 		
 		SceneNode windows = new SceneNode(null, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
 		windows.setColor(windowColor);
@@ -384,11 +386,10 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			if(i % 2 != 0)
-			{
-				SceneNode wheel = car_body.getChildren().get(i);
-				wheel.setRotation(new float[] {0, yRotation_Wheel, zRotation_Wheel});
-			}
+			SceneNode wheel = car_body.getChildren().get(i);
+			
+			if(i % 2 != 0) wheel.setRotation(new float[] {0, yRotation_Wheel, zRotation_Wheel});
+			else           wheel.setRotation(new float[] {0, 0, zRotation_Wheel});
 		}
 	}
 	
@@ -686,7 +687,7 @@ public class Car
 		}
 	}
 	
-	public boolean displayTag = true;
+	public boolean displayTag = false;
 
 	private void updateColor()
 	{
@@ -1026,13 +1027,13 @@ public class Car
 		
 		if(accelerating && !slipping) accelerate();
 		else decelerate();
-		// TODO
-//		if(velocity <= 0 || slipping)
-//		{
-//			drift = Direction.STRAIGHT;
-//			driftState = DriftState.YELLOW;
-//			driftCounter = false;
-//		}
+
+		if(velocity <= 0 || slipping)
+		{
+			drift = Direction.STRAIGHT;
+			driftState = DriftState.YELLOW;
+			driftCounter = false;
+		}
 		
 		if     (drift == Direction.LEFT ) turnLeft();
 		else if(drift == Direction.RIGHT) turnRight();
@@ -1073,7 +1074,7 @@ public class Car
 				float[] source = add(getPosition(), vector);
 				
 				scene.addParticles(generator.generateDriftParticles(source, 10, driftState.ordinal(), miniature));
-				scene.addParticles(generator.generateSparkParticles(source, vector, 1, driftState.ordinal(), miniature, this));
+				scene.addParticles(generator.generateSparkParticles(source, vector, 1, driftState.ordinal(), this));
 			}
 		}
 		
@@ -1444,7 +1445,7 @@ public class Car
 		}
 	}
 	
-	public void useLightningBolt()
+	public void useLightningBolt() // TODO
 	{
 		for(Car car : scene.getCars()) car.struckByLightning();
 //			if(!car.equals(this)) car.struckByLightning();
@@ -1676,7 +1677,11 @@ public class Car
 				camera.setRotation(_trajectory);
 				break;
 			}
-			case BIRDS_EYE_VIEW: break;
+			case BIRDS_EYE_VIEW:
+			{
+				camera.setPosition(getPosition());
+				break;
+			}
 			case DRIVERS_VIEW:
 			{
 				camera.setPosition(getPosition());

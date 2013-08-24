@@ -2,6 +2,7 @@
 varying vec3 lightDir;
 varying vec3 lightVec;
 varying vec3 eyeDir;
+varying vec4 shadowCoord;
 
 varying vec3 worldPos, eyePos;
 varying vec3 vNormal, vTangent, vBinormal;
@@ -34,6 +35,8 @@ mat3 getRotation(mat4 m)
 void main(void)
 {
 	worldPos = vec3(ModelMatrix * gl_Vertex);  
+	
+	shadowCoord = gl_TextureMatrix[2] * (ModelMatrix * gl_Vertex);
 	
 	vTangent  = getRotation(ModelMatrix) * tangent;
 	vBinormal = getRotation(ModelMatrix) * cross(gl_Normal, tangent);

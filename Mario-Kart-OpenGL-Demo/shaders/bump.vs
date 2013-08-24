@@ -1,5 +1,8 @@
 // bump.vs
 
+uniform mat4 ModelMatrix;
+
+varying vec4 shadowCoord;
 varying vec3 lightDir;
 varying vec3 eyeDir;
 
@@ -12,6 +15,7 @@ void main(void)
 	gl_Position = ftransform();
 	
 	gl_TexCoord[0] = gl_MultiTexCoord0;
+	shadowCoord = gl_TextureMatrix[2] * (ModelMatrix * gl_Vertex);
 	
 	vec3 n = normalize(gl_NormalMatrix * gl_Normal);
 	vec3 t = normalize(gl_NormalMatrix * tangent);

@@ -12,6 +12,7 @@ import bates.jamie.graphics.collision.BoundParser;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.ShadowCaster;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
@@ -88,15 +89,29 @@ public class BlockFort
 		
 		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
-		Shader shader = Shader.enabled ? Scene.shaders.get("phong_shadow") : null;
+		Shader shader = Scene.shaders.get("phong_shadow");
+		if(shader != null)
+		{
+			shader.enable(gl);
+			
+			if(Scene.enableShadow)
+			{
+				shader.setUniform(gl, "enableShadow", 1);
+				shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+				shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+			}
+			else shader.setUniform(gl, "enableShadow", 0);
+		}
 		
 		gl.glPushMatrix(); // Green Fort
 		{
 			gl.glTranslatef(90, 30, 90);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			if(shader != null && Scene.enableShadow)
+			if(shader != null)
 			{
+				shader.setUniform(gl, "factor", Scene.attenuation);
+				
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 				Matrix.translate(model, 90, 30, 90);
 				Matrix.scale    (model, 30, 30, 30);
@@ -117,7 +132,7 @@ public class BlockFort
 			gl.glRotatef(-90, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			if(shader != null && Scene.enableShadow)
+			if(shader != null)
 			{
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 				Matrix.translate(model, -90, 30, 90);
@@ -140,7 +155,7 @@ public class BlockFort
 			gl.glRotatef(-180, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			if(shader != null && Scene.enableShadow)
+			if(shader != null)
 			{
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 				Matrix.translate(model, -90, 30, -90);
@@ -163,7 +178,7 @@ public class BlockFort
 			gl.glRotatef(-270, 0, 1, 0);
 			gl.glScalef(30.0f, 30.0f, 30.0f);
 			
-			if(shader != null && Scene.enableShadow)
+			if(shader != null)
 			{
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 				Matrix.translate(model, 90, 30, -90);

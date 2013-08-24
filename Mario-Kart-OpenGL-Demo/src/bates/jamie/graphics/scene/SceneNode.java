@@ -35,6 +35,8 @@ public class SceneNode
 	private Material material;
 	private Reflector reflector;
 	
+	private boolean enableBloom = false;
+	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
 		children = new ArrayList<SceneNode>();
@@ -80,6 +82,9 @@ public class SceneNode
 					}
 					case REFLECT:
 					{
+						int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+						if(!Scene.reflectMode && enableBloom) gl.glDrawBuffers(2, attachments, 0);
+						
 						Shader shader = Shader.enabled ? Scene.shaders.get("phong_cube") : null;
 						if(shader != null)
 						{
@@ -93,6 +98,8 @@ public class SceneNode
 							model.render(gl);
 						}
 						if(reflector != null) reflector.disable(gl);
+						
+						if(!Scene.reflectMode && enableBloom) gl.glDrawBuffers(1, attachments, 0);
 						
 						break;      
 					}
@@ -268,6 +275,8 @@ public class SceneNode
 	public Reflector getReflector() { return reflector; }
 	
 	public void setReflector(Reflector reflector) { this.reflector = reflector; }
+	
+	public void setBloom(boolean bloom) { enableBloom = bloom; }
 
 	public enum MatrixOrder
 	{

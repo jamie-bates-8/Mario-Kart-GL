@@ -3,13 +3,21 @@ varying vec3 worldPos, eyePos;
 varying vec3 lightDir;
 varying vec3 lightVec;
 varying vec3 eyeDir;
+varying vec4 shadowCoord;
 
 uniform float timer;
+uniform vec2 texScale;
+
 uniform sampler2D texture;
 uniform sampler2D normalMap;
 uniform sampler2D bumpmap;
 
-bool causticFringe = true;
+uniform sampler2DShadow shadowMap;
+
+bool enableFringe = true;
+
+uniform bool enableShadow;
+uniform int sampleMode;
 
 float choppy = 0.8;
 float refractAmount = 0.3;
@@ -26,6 +34,55 @@ float scale = 1.0; // overall wave scale
 vec2 bWaves = vec2(0.30, 0.30); // strength of big waves
 vec2 mWaves = vec2(0.30, 0.15); // strength of middle sized waves
 vec2 sWaves = vec2(0.15, 0.10); // strength of small waves
+
+const float epsilon = 0.05;
+float illumination = 0.5;
+
+float lookup(float x, float y)
+{
+	vec2 offset = vec2(mod(floor(gl_FragCoord.xy), 2.0));
+	x += offset.x;
+	y += offset.y;
+
+	float depth = shadow2DProj(shadowMap, shadowCoord + vec4(x, y, 0, 0) * epsilon).x;
+	return depth != 1.0 ? illumination : 1.0;
+}
+
+float lookup(sampler2DShadow map, vec4 coord, vec2 offset)
+{
+	float depth = shadow2DProj(shadowMap, vec4(coord.xy + offset * texScale * coord.w, coord.z, coord.w)).x;
+	return depth != 1.0 ? illumination : 1.0;
+}
+
+float shadowIntensity()
+{
+	if(sampleMode == 0)
+	{	
+		return lookup(0.0, 0.0);
+	}
+	else if(sampleMode == 1)
+	{
+		float sum = 0.0;
+		
+		sum += lookup(-1.0, -1.0);
+		sum += lookup(+1.0, -1.0);
+		sum += lookup(-1.0, +1.0);
+		sum += lookup(+1.0, +1.0);
+			
+		return sum * 0.25;
+	}
+	else if(sampleMode == 2)
+	{
+		float sum = 0.0;
+		float x, y;
+
+		for (y = -1.5; y <= 1.5; y += 1.0)
+  			for (x = -1.5; x <= 1.5; x += 1.0)
+    			sum += lookup(shadowMap, shadowCoord, vec2(x, y));
+    				
+    	return sum / 16.0;
+	}	
+}
 
 vec3 tangentSpace(vec3 v)
 {
@@ -144,7 +201,7 @@ void main()
         
     vec3 caustics = clamp(pow(vec3(causticR) * 5.5, vec3(5.5 * causticdepth)), 0.0, 1.0) * NdotL * sunFade * causticdepth;
     
-    if(causticFringe)
+    if(enableFringe)
     {
     	float causticG = 1.0 - perturb(normalMap, causticPos.xz + (1.0 - causticdepth) * aberration, causticdepth).z;
     	float causticB = 1.0 - perturb(normalMap, causticPos.xz + (1.0 - causticdepth) * aberration * 2.0, causticdepth).z;
@@ -168,6 +225,9 @@ void main()
     normal = texture2D(bumpmap, gl_TexCoord[0].st).rgb;
     normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]
 
+	//float distanceToLight = length(gl_LightSource[0].position.xyz - worldPos);
+	//float attenuation = 1.0 / (1.0 + 0.1 * pow(distanceToLight, 2.0));
+	//attenuation = 1.0;
 
     // Diffuse Lighting
     float diffuse = max(0.0, dot(normalize(normal), normalize(lightVec)));
@@ -193,5 +253,12 @@ void main()
 	
 	
 	fogging.rgb *= gl_Color.rgb;
-    gl_FragColor =  vec4(fogging, 1.0);
+	
+	
+	if(enableShadow)
+	{
+		float sIntensity = shadowIntensity();
+		gl_FragColor = vec4(sIntensity * fogging.rgb, 1.0);
+	}
+	else gl_FragColor = vec4(fogging, 1.0);
 }

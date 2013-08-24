@@ -19,8 +19,8 @@ public class SparkParticle extends Particle
 	
 	private Car car;
 	
-	public SparkParticle(float[] c, float[] t, int duration,
-			float[] color, int length, boolean miniature, Car car)
+	public SparkParticle(Car car, float[] c, float[] t,
+		int duration, float[] color, int length)
 	{
 		super(c, t, 0, duration);
 		

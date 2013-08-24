@@ -31,5 +31,11 @@ void main(void)
 	
 	vFragColor.rgba *= gl_Color.rgba;
 	
-	gl_FragColor = vFragColor;
+	//gl_FragColor = vFragColor;
+	gl_FragData[0] = vFragColor;
+	
+	vec3 brightColor = max(vFragColor.rgb - vec3(1.0), vec3(0.0));
+    float bright = dot(brightColor, vec3(1.0));
+    bright = smoothstep(0.0, 0.5, bright);
+    gl_FragData[1] = vec4(mix(vec3(0.0), vFragColor.rgb, bright), 1.0);
 }

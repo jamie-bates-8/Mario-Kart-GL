@@ -59,19 +59,7 @@ public class Light extends AnchorPoint
 	
 	public static int getLight(int id)
 	{
-		switch(id)
-		{
-			case 0: return GL2.GL_LIGHT0;
-			case 1: return GL2.GL_LIGHT1;
-			case 2: return GL2.GL_LIGHT2;
-			case 3: return GL2.GL_LIGHT3;
-			case 4: return GL2.GL_LIGHT4;
-			case 5: return GL2.GL_LIGHT5;
-			case 6: return GL2.GL_LIGHT6;
-			case 7: return GL2.GL_LIGHT7;
-			
-			default: return 0;
-		}
+		return  GL2.GL_LIGHT0 + id;
 	}
 	
 	public void render(GL2 gl, GLU glu)

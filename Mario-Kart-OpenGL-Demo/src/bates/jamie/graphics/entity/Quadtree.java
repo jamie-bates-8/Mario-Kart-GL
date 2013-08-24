@@ -15,6 +15,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.ShadowCaster;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
@@ -1386,14 +1387,25 @@ public class Quadtree
 			if(enableBumpmap && Shader.enabled && shader != null)
 			{
 				shader.setSampler(gl, "bumpmap", 1);
+				
+				if(Scene.enableShadow)
+				{
+					shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+					
+					shader.setSampler(gl, "shadowMap", 2);
+					
+					shader.setUniform(gl, "enableShadow", 1);
+					shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+					shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+				}
+				else shader.setUniform(gl, "enableShadow", 0);
 			}
 			
 			if(enableCaustic && Shader.enabled && shader != null)
 			{
-				shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 				shader.setUniform(gl, "timer", timer);
-				shader.setSampler(gl, "normalMap", 2);
-				
+				shader.setSampler(gl, "normalMap", 3);
+					
 				if(Scene.enableAnimation) timer += 0.05;
 			}
 			
@@ -1432,7 +1444,7 @@ public class Quadtree
 		if(Shader.enabled)
 		{
 			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); bumpmap.bind(gl); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glEnable(GL2.GL_TEXTURE_2D); caustic.bind(gl); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glEnable(GL2.GL_TEXTURE_2D); caustic.bind(gl); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
@@ -1497,7 +1509,7 @@ public class Quadtree
 		if(Shader.enabled)
 		{
 			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glDisable(GL2.GL_TEXTURE_2D); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glDisable(GL2.GL_TEXTURE_2D); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		

@@ -27,6 +27,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class Banana extends Item
 {
+	public static final int ID = 8;
+	
 	private static final List<Face> BANANA_FACES = OBJParser.parseTriangles("banana");
 	
 	private static final float[] BROWN  = {100,  50,   0};

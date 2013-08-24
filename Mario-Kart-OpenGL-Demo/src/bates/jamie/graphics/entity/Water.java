@@ -87,7 +87,7 @@ public class Water
 	}
 	
 	public void render(GL2 gl, float[] p)
-	{
+	{	
 		gl.glPushMatrix();
 		{
 			gl.glColor4f(timer, 1, 1, 1);
@@ -105,7 +105,7 @@ public class Water
 			shader.setSampler(gl, "normalSampler"    , 2);
 			
 			shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
-			
+			// TODO temporary fix, should pass actual camera position to shader
 			shader.setUniform(gl, "cameraPos", p);
 			
 			gl.glBegin(GL2.GL_QUADS);

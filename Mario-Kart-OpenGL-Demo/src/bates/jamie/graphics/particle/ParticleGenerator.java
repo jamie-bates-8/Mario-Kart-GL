@@ -62,7 +62,7 @@ public class ParticleGenerator
 		switch(type)
 		{
 			case BLAST: return generateBlastParticles(source, quantity);
-			case SPARK: return generateSparkParticles(source, getRandomVector(), quantity, 1, false, null);
+			case SPARK: return generateSparkParticles(source, getRandomVector(), quantity, 1, null);
 			
 			default: return null;
 		}
@@ -104,7 +104,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateSparkParticles(float[] source, float[] t, int n, int type, boolean miniature, Car car)
+	public List<Particle> generateSparkParticles(float[] source, float[] t, int n, int type, Car car)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -125,7 +125,7 @@ public class ParticleGenerator
 			
 			int length = 3 + generator.nextInt(4);
 			
-			particles.add(new SparkParticle(source, _t, 8, _color, length, miniature, car));
+			particles.add(new SparkParticle(car, source, _t, 8, _color, length));
 		}
 		
 		return particles;

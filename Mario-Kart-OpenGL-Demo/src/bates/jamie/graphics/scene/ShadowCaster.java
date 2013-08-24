@@ -13,7 +13,7 @@ import javax.media.opengl.glu.gl2.GLUgl2;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Shader;
 
-public class ShadowManipulator
+public class ShadowCaster
 {
 	private Scene scene;
 	private Light light;
@@ -29,6 +29,8 @@ public class ShadowManipulator
 	private int shadowQuality = 12;
 	private boolean enableBuffer = true;
 	
+	public static SampleMode sampleMode = SampleMode.SIXTEEN_SAMPLES;
+	
 	public enum ShadowQuality
 	{
 		LOW,
@@ -37,7 +39,19 @@ public class ShadowManipulator
 		BEST;
 	}
 	
-	public ShadowManipulator(Scene scene, Light light)
+	public enum SampleMode
+	{
+		ONE_SAMPLE,
+		FOUR_DITHERED,
+		SIXTEEN_SAMPLES;
+		
+		public static SampleMode cycle(SampleMode mode)
+		{
+			return values()[(mode.ordinal() + 1) % values().length];
+		}
+	}
+	
+	public ShadowCaster(Scene scene, Light light)
 	{
 		this.scene = scene;
 		this.light = light;
@@ -72,8 +86,8 @@ public class ShadowManipulator
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
 		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
 		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
 		
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
@@ -137,8 +151,10 @@ public class ShadowManipulator
 	    depthMode(gl, true);
 	    
 	    scene.renderVehicles (gl, scene.getCars().get(0), true);
-	    scene.renderItems    (gl, scene.getCars().get(0)); 
+	    scene.renderItems    (gl, scene.getCars().get(0));
+	    scene.renderFoliage  (gl, scene.getCars().get(0));
 	    scene.renderObstacles(gl); 
+	    
 	    
 	    enable(gl);
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
@@ -201,8 +217,8 @@ public class ShadowManipulator
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
 		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
 
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
 		
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
@@ -278,7 +294,7 @@ public class ShadowManipulator
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
 		
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_COMPARE_R_TO_TEXTURE);
+		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_COMPARE_R_TO_TEXTURE);
 		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_FUNC, GL2.GL_LEQUAL);
 
 		// Set up the eye plane for projecting the shadow map on the scene
@@ -314,39 +330,9 @@ public class ShadowManipulator
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 	}
-	
-	public void displayMap(GL2 gl, int texture)
-    {
-        gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
-        gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
-        
-        gl.glMatrixMode(GL2.GL_TEXTURE);
-        gl.glPushMatrix();
-        {
-	        gl.glLoadIdentity();
-	           
-	        gl.glEnable(GL_TEXTURE_2D);
-	        gl.glBindTexture(GL_TEXTURE_2D, texture);
-	        gl.glDisable(GL2.GL_LIGHTING);
-	        
-	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_REPLACE);
-	        gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_NONE);
-	        
-	        // Show the shadow map at its actual size relative to window
-	        gl.glBegin(GL2.GL_QUADS);
-	        {
-	            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(-1.0f, -1.0f);
-	            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f( 1.0f, -1.0f);
-	            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f( 1.0f,  1.0f);
-	            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(-1.0f,  1.0f);
-	        }
-	        gl.glEnd();
-	        
-	        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-	        gl.glEnable(GL2.GL_LIGHTING);
-        }
-        gl.glPopMatrix();
-		
-        scene.resetView(gl);
-    }
+
+	public static void cycle()
+	{
+		sampleMode = SampleMode.cycle(sampleMode);
+	}
 }

@@ -1,4 +1,5 @@
 package bates.jamie.graphics.item;
+
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
 import static bates.jamie.graphics.util.Vector.*;
 
@@ -19,6 +20,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class RedShell extends Shell
 {
+	public static final int ID = 1;
+	
 	private static int shellList = -1;
 	
 	private static Texture[] textures;

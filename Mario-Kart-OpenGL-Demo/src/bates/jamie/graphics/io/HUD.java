@@ -271,6 +271,10 @@ public class HUD
 		
 		int x = scene.getWidth() - 200;
 		
+		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, 550);
+		renderer.draw("Azimuth: " + String.format("%.1f", Math.toDegrees(car.camera.azimuth)), x, 520);
+		renderer.draw("Incline: " + String.format("%.1f", Math.toDegrees(car.camera.incline)), x, 490);
+		
 		renderer.draw("Colliding: "   + car.colliding, x, 430);
 		renderer.draw("Falling: "     + car.falling,   x, 400);
 		
