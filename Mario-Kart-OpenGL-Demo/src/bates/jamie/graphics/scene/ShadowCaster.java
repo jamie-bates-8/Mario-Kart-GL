@@ -5,20 +5,24 @@ import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
-import java.util.Arrays;
-
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
-import bates.jamie.graphics.util.Matrix;
+import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.util.Shader;
 
 public class ShadowCaster
 {
+	public static final double[] SHADOW_BIAS =
+	 {	
+		0.5, 0.0, 0.0, 0.0, 
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	};
+	
 	private Scene scene;
 	private Light light;
-	
-	private float[] shadowMatrix = new float[16];
 	
 	public float shadowRadius = 300.0f;
 	public float shadowOffset =   2.0f;
@@ -94,14 +98,55 @@ public class ShadowCaster
 		
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_DEPTH_TEXTURE_MODE, GL2.GL_INTENSITY);
 		
-		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		gl.glTexGeni(GL2.GL_Q, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_EYE_LINEAR);
-		
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
+	void createBuffer(GL2 gl)
+	{
+		int shadowWidth  = scene.getWidth () * shadowQuality;
+		int shadowHeight = scene.getHeight() * shadowQuality;
+	
+		int bufferStatus = 0;
+	
+		// Try to use a texture depth component
+		int[] texID = new int[1];
+	    gl.glGenTextures(1, texID, 0);
+	    shadowTexture = texID[0];
+	    
+	    gl.glActiveTexture(GL2.GL_TEXTURE2);
+		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
+	
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
+		
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+	
+		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL2.GL_DEPTH_COMPONENT, GL2.GL_UNSIGNED_BYTE, null);
+		gl.glBindTexture(GL_TEXTURE_2D, 0);
+	
+		// create a framebuffer object
+		int[] fboID = new int[1];
+		gl.glGenFramebuffers(1, fboID, 0);
+		shadowBuffer = fboID[0];
+		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer);
+	
+		// Instruct OpenGL that we won't bind a color texture with the currently bound FBO
+		gl.glDrawBuffer(GL2.GL_NONE);
+		gl.glReadBuffer(GL2.GL_NONE);
+	
+		// attach the texture to FBO depth attachment point
+		gl.glFramebufferTexture2D(GL2.GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexture, 0);
+	
+		// check FBO status
+		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
+		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
+			System.out.println("Frame Buffer failure!");
+	
+		// switch back to window-system-provided framebuffer
+		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+	}
+
 	public int getTexture() { return shadowTexture; }
 	
 	public void update(GL2 gl)
@@ -150,104 +195,52 @@ public class ShadowCaster
 
 	    depthMode(gl, true);
 	    
-	    scene.renderVehicles (gl, scene.getCars().get(0), true);
-	    scene.renderItems    (gl, scene.getCars().get(0));
-	    scene.renderFoliage  (gl, scene.getCars().get(0));
-	    scene.renderObstacles(gl); 
-	    
+	    renderCasters(gl);
 	    
 	    enable(gl);
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
 
 	    // Copy depth values into depth texture
-	    if(!enableBuffer) gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, 0, 0, width, height, 0);
+	    if(!enableBuffer)
+	    {
+	    	gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
+	    	gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, 0, 0, width, height, 0);
+	    }
 
 	    depthMode(gl, false);
 
 	    gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
 
-	    gl.glMatrixMode(GL2.GL_TEXTURE);
-	    
-	    if(!Shader.enabled)
-	    {
-		    // Set up texture matrix for shadow map projection,
-		 	float[] tempMatrix = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-		 	Matrix.translate(tempMatrix, 0.5f, 0.5f, 0.5f);
-		 	Matrix.scale    (tempMatrix, 0.5f, 0.5f, 0.5f);
-		 	
-		 	Matrix.multiply(shadowMatrix, tempMatrix, projection);
-		 	Matrix.multiply(tempMatrix, shadowMatrix, modelview );
-		 	// transpose to get the s, t, r, and q rows for plane equations
-		 	Matrix.transpose(shadowMatrix, tempMatrix);
-		 	gl.glLoadMatrixf(shadowMatrix, 0);
-	    }
+	    loadShadowMatrix(gl, modelview, projection); 
+	    gl.glActiveTexture(GL2.GL_TEXTURE0);
 
-	 	double[] bias =
-	 	{	
-			0.5, 0.0, 0.0, 0.0, 
-			0.0, 0.5, 0.0, 0.0,
-			0.0, 0.0, 0.5, 0.0,
-			0.5, 0.5, 0.5, 1.0
-		};
+	    scene.resetView(gl);
+	}
+
+	private void loadShadowMatrix(GL2 gl, float[] modelview, float[] projection)
+	{
+		gl.glMatrixMode(GL2.GL_TEXTURE);
 			
 		gl.glLoadIdentity();	
-		gl.glLoadMatrixd(bias, 0);
+		gl.glLoadMatrixd(SHADOW_BIAS, 0);
 			
 		// concatating all matrices into one.
 		gl.glMultMatrixf(projection, 0);
 		gl.glMultMatrixf(modelview , 0);
 	 	
-	 	gl.glActiveTexture(GL2.GL_TEXTURE0); 
+	 	gl.glActiveTexture(GL2.GL_TEXTURE0);
+	}
 
-	    scene.resetView(gl);
+	private void renderCasters(GL2 gl)
+	{
+		Car car = scene.getCars().get(0);
+		
+		scene.renderVehicles (gl, car, true);
+	    scene.renderItems    (gl, car);
+	    scene.renderFoliage  (gl, car);
+	    scene.renderObstacles(gl);
 	}
 	
-	void createBuffer(GL2 gl)
-	{
-		int shadowWidth  = scene.getWidth () * shadowQuality;
-		int shadowHeight = scene.getHeight() * shadowQuality;
-
-		int bufferStatus = 0;
-
-		// Try to use a texture depth component
-		int[] texID = new int[1];
-	    gl.glGenTextures(1, texID, 0);
-	    shadowTexture = texID[0];
-	    
-	    gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
-
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
-
-		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL2.GL_DEPTH_COMPONENT, GL2.GL_UNSIGNED_BYTE, null);
-		gl.glBindTexture(GL_TEXTURE_2D, 0);
-
-		// create a framebuffer object
-		int[] fboID = new int[1];
-		gl.glGenFramebuffers(1, fboID, 0);
-		shadowBuffer = fboID[0];
-		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer);
-
-		// Instruct OpenGL that we won't bind a color texture with the currently bound FBO
-		gl.glDrawBuffer(GL2.GL_NONE);
-		gl.glReadBuffer(GL2.GL_NONE);
-
-		// attach the texture to FBO depth attachment point
-		gl.glFramebufferTexture2D(GL2.GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexture, 0);
-
-		// check FBO status
-		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
-		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("Frame Buffer failure!");
-
-		// switch back to window-system-provided framebuffer
-		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
-	}
-
 	private void depthMode(GL2 gl, boolean enable)
 	{
 		if(enable) // Only need depth values
@@ -296,17 +289,6 @@ public class ShadowCaster
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_COMPARE_R_TO_TEXTURE);
 		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_FUNC, GL2.GL_LEQUAL);
-
-		// Set up the eye plane for projecting the shadow map on the scene
-		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_Q);
-		
-		gl.glTexGenfv(GL2.GL_S, GL2.GL_EYE_PLANE, shadowMatrix,  0); 
-		gl.glTexGenfv(GL2.GL_T, GL2.GL_EYE_PLANE, shadowMatrix,  4); 
-		gl.glTexGenfv(GL2.GL_R, GL2.GL_EYE_PLANE, shadowMatrix,  8);
-		gl.glTexGenfv(GL2.GL_Q, GL2.GL_EYE_PLANE, shadowMatrix, 12);
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}

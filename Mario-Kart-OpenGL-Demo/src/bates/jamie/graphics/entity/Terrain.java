@@ -260,6 +260,11 @@ public class Terrain
 			textures.add(TextureLoader.load(gl, "tex/sand.jpg"   ));
 			textures.add(TextureLoader.load(gl, "tex/snow.jpg"   ));
 			textures.add(TextureLoader.load(gl, "tex/cobbles.jpg"));
+			textures.add(TextureLoader.load(gl, "tex/brick_color.jpg"));
+			textures.add(TextureLoader.load(gl, "tex/concrete.jpg"));
+			textures.add(TextureLoader.load(gl, "tex/rock_soil.jpg"));
+			textures.add(TextureLoader.load(gl, "tex/rock_mine.jpg"));
+			textures.add(TextureLoader.load(gl, "tex/rock_cave.jpg"));
 			
 			baseTexture = textures.get(0);
 			
@@ -273,6 +278,11 @@ public class Terrain
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock.jpg"    ));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "stone.jpg"   ));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "water.png"   ));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "brick_parallax.png"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "concrete.jpg"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_soil.jpg"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_mine.jpg"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_cave.tga"));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}

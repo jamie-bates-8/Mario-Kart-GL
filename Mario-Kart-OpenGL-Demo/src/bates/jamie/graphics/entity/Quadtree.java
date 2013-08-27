@@ -1388,6 +1388,8 @@ public class Quadtree
 			{
 				shader.setSampler(gl, "bumpmap", 1);
 				
+				shader.setUniform(gl, "enableParallax", Scene.enableParallax );
+				
 				if(Scene.enableShadow)
 				{
 					shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);

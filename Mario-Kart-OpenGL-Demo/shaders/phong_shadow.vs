@@ -11,6 +11,7 @@ varying vec3 lightDir;
 
 void main(void) 
 { 
+	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
     gl_Position = ftransform();
 	
     // Get surface normal in eye coordinates

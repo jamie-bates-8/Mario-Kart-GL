@@ -202,6 +202,16 @@ public class Vector
 		return true;
 	}
 	
+	public static boolean isZeroVector(float[] v)
+	{
+		for(int i = 0; i < v.length; i++)
+		{
+			if(abs(v[i]) > EPSILON) return false;
+		}
+		
+		return true;
+	}
+	
 	public static String print(float[] u, int precision)
 	{
 		String vec = "(";

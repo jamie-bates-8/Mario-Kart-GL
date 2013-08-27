@@ -20,6 +20,8 @@ public class Water
 	private float timer = 0;
 	private float increment = 0.05f;
 	
+	public boolean frozen = true;
+	
 	public Water(Scene scene)
 	{
 		this.scene = scene;
@@ -29,6 +31,7 @@ public class Water
 	public int refractTexture;
 	
 	public Texture perturbTexture;
+	public Texture diffuseTexture;
 	
 	public void createTextures(GL2 gl)
 	{
@@ -38,6 +41,7 @@ public class Water
 		refractTexture = id[1];
 
 		perturbTexture = TextureLoader.load(gl, BUMP_MAPS + "water.png");
+		diffuseTexture = TextureLoader.load(gl, "tex/ice.jpg");
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		
@@ -96,6 +100,7 @@ public class Water
 			
 			if(shader != null && Shader.enabled) shader.enable(gl);
 			
+			gl.glActiveTexture(GL2.GL_TEXTURE3); diffuseTexture.bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE2); perturbTexture.bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL2.GL_TEXTURE_2D, refractTexture);
 			gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glBindTexture(GL2.GL_TEXTURE_2D, reflectTexture);
@@ -103,6 +108,9 @@ public class Water
 			shader.setSampler(gl, "reflectionSampler", 0);
 			shader.setSampler(gl, "refractionSampler", 1);
 			shader.setSampler(gl, "normalSampler"    , 2);
+			shader.setSampler(gl, "iceSampler"       , 3);
+			
+			shader.setUniform(gl, "frozen", frozen);
 			
 			shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 			// TODO temporary fix, should pass actual camera position to shader
@@ -124,10 +132,11 @@ public class Water
 			
 			Shader.disable(gl);
 			
-			if(Scene.enableAnimation) timer += increment;
+			if(Scene.enableAnimation && !frozen) timer += increment;
 			
 			gl.glColor4f(1, 1, 1, 1);
 			
+			gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glDisable(GL2.GL_TEXTURE_2D);
 			gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glDisable(GL2.GL_TEXTURE_2D);
 			gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D);
 			gl.glActiveTexture(GL2.GL_TEXTURE0);

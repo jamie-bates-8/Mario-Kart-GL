@@ -404,6 +404,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public BloomStrobe bloom;
 	
 	public boolean enableBloom = false;
+	public static boolean enableParallax = true;
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
 	
@@ -1218,7 +1219,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		// load and compile shaders from file
 		Shader phong        = new Shader(gl, "phong", "phong");
-		Shader phongTexture = new Shader(gl, "phong_attenuate", "phong_attenuate");
+		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
 		Shader bump         = new Shader(gl, "bump", "bump", attributes);
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
@@ -2557,9 +2558,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_1: spawnItemsInSphere(Banana.ID, 10, new float[] {0, 100, 0}, 50); break;
 			case KeyEvent.VK_2: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
-			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform;
+			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform; break;
+			case KeyEvent.VK_P: enableParallax = !enableParallax; break;
+			case KeyEvent.VK_W: water.frozen = !water.frozen; break;
 			
-			case KeyEvent.VK_S: ShadowCaster.cycle();
+			case KeyEvent.VK_S: ShadowCaster.cycle(); break;
 			
 			default: break;
 		}

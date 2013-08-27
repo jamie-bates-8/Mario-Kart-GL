@@ -1,11 +1,17 @@
 
-varying vec4 fragPos; //fragment coordinates
-varying vec3 T, B, N; //tangent binormal normal
+varying vec4 fragPos; // fragment coordinates
+varying vec3 T, B, N; // tangent, bitangent, normal
 varying vec3 viewPos;
 varying vec3 worldPos;
 varying float timer;
 
-uniform sampler2D reflectionSampler, refractionSampler, normalSampler;
+uniform sampler2D reflectionSampler;
+uniform sampler2D refractionSampler;
+uniform sampler2D normalSampler;
+uniform sampler2D iceSampler;
+
+uniform bool frozen;
+
 uniform vec3 cameraPos;
 
 //----------------
@@ -175,11 +181,14 @@ void main()
     vec3 color = mix(mix(refraction, scatterColor, lightScatter), reflection, fresnel);
     //color = (cameraPos.y < 0.0) ? mix(clamp(refraction * 1.5, 0.0, 1.0), reflection, fresnel) : color;   
     //color = (cameraPos.y < 0.0) ? mix(color, watercolor * darkness, clamp(fog / waterext, 0.0, 1.0)) : color;
+    
+    if(frozen) color = mix(color, texture2D(iceSampler, worldPos.xz * 0.05).rgb, 0.25);
 
 	vec3 final = color + (specColor * specular);
 
     gl_FragData[0] = vec4(final, 1.0);
     //gl_FragColor = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
+    //gl_FragColor = texture2D(reflectionSampler, fragCoord);
     
     vec3 brightColor = max(final - vec3(bloomLimit), vec3(0.0));
     float bright = dot(brightColor, vec3(1.0));

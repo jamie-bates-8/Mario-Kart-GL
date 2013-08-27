@@ -185,6 +185,12 @@ public class Shader
 		gl.glUniform1i(uniformID, value);
 	}
 	
+	public void setUniform(GL2 gl, String uniform, boolean value)
+	{	
+		int uniformID = gl.glGetUniformLocation(shaderID, uniform);
+		gl.glUniform1i(uniformID, value ? 1 : 0);
+	}
+	
 	public void setUniform(GL2 gl, String uniform, float[] vec)
 	{
 		int uniformID = gl.glGetUniformLocation(shaderID, uniform);

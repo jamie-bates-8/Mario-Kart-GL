@@ -51,6 +51,7 @@ import bates.jamie.graphics.scene.SceneGraph;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vector;
 
 /* TODO
  * 
@@ -168,6 +169,9 @@ public class Car
 	private float[] slipVector = ORIGIN;
 	public float slipTrajectory = 0;
 	private int slipDuration = 0;
+	
+	private boolean sliding = false;
+	private float[] slideVector = ORIGIN;
 	
 	private boolean miniature = false;
 	private int miniatureDuration = 0;
@@ -814,7 +818,14 @@ public class Car
 				if(h > max && !tree.enableBlending) { max = h; _trees[i] = tree; }
 			}
 
-			heights[i] = max;
+			Water water = scene.water;
+			
+			if(water.frozen)
+			{
+				heights[i] = max > 0 ? max : 0;
+				sliding = max <= 0;
+			}
+			else heights[i] = max;
 		}
 		
 		if(accelerating && enableDeform)
@@ -1212,7 +1223,7 @@ public class Car
 	public void accelerate()
 	{
 		if(reversing) velocity += (velocity < -TOP_SPEED) ? acceleration : (velocity > 0 ? -acceleration * 2 : -acceleration);
-		else velocity += (velocity < TOP_SPEED) ? (velocity < 0 ? acceleration * 2 : acceleration) : -acceleration;
+		else          velocity += (velocity <  TOP_SPEED) ? (velocity < 0 ? acceleration * 2 : acceleration) : -acceleration;
 	}
 
 	/**
@@ -1276,7 +1287,9 @@ public class Car
 			else if(direction == Direction.RIGHT) k = 0.5f;
 		}
 		
-		if(velocity != 0) trajectory += turnRate * k;
+		if(sliding) k *= 0.75;
+		
+		if(velocity != 0 || (sliding && !Vector.isZeroVector(slideVector))) trajectory += turnRate * k;
 	}
 
 	private void turnRight()
@@ -1298,7 +1311,9 @@ public class Car
 			else if(direction == Direction.RIGHT) k = 1.25f;
 		}
 		
-		if(velocity != 0) trajectory += turnRate * k;
+		if(sliding) k *= 0.8;
+		
+		if(velocity != 0 || (sliding && !Vector.isZeroVector(slideVector))) trajectory += turnRate * k;
 	}
 	
 	public void straighten() { direction = Direction.STRAIGHT; }
@@ -1327,8 +1342,23 @@ public class Car
 	{
 		float _velocity = (miniature) ?  velocity * 0.75f :  velocity;
 		      _velocity = (starPower) ? _velocity * 1.25f : _velocity;
+		      
+		float[] vector = multiply(bound.u[0], _velocity * friction);
+		      
+		float[] p = subtract(bound.c, vector);
 		
-		return subtract(bound.c, multiply(bound.u[0], _velocity * friction));
+		if(sliding)
+		{
+			acceleration = 0.006f;
+			
+			float k = 0.05f + Math.abs(turnRate / TOP_TURN_RATE) * 0.10f;
+			slideVector = multiply(subtract(slideVector, vector), k);
+			
+			p = add(p, slideVector);
+		}
+		else acceleration = 0.012f;
+		
+		return p;
 	}
 	
 	public float[] getVector()
