@@ -101,7 +101,7 @@ public class ShadowCaster
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
-	void createBuffer(GL2 gl)
+	private void createBuffer(GL2 gl)
 	{
 		int shadowWidth  = scene.getWidth () * shadowQuality;
 		int shadowHeight = scene.getHeight() * shadowQuality;
@@ -121,6 +121,8 @@ public class ShadowCaster
 		
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+		
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_DEPTH_TEXTURE_MODE, GL2.GL_INTENSITY);
 	
 		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL2.GL_DEPTH_COMPONENT, GL2.GL_UNSIGNED_BYTE, null);
 		gl.glBindTexture(GL_TEXTURE_2D, 0);
@@ -197,7 +199,6 @@ public class ShadowCaster
 	    
 	    renderCasters(gl);
 	    
-	    enable(gl);
 	    gl.glActiveTexture(GL2.GL_TEXTURE2);
 
 	    // Copy depth values into depth texture
@@ -243,8 +244,11 @@ public class ShadowCaster
 	
 	private void depthMode(GL2 gl, boolean enable)
 	{
+		boolean enableShaders = Shader.enabled;
+		
 		if(enable) // Only need depth values
 		{
+			Shader.enabled = false;
 			// Clear the depth buffer only
 		    gl.glClear(GL_DEPTH_BUFFER_BIT);
 		    
@@ -278,6 +282,8 @@ public class ShadowCaster
 		    
 		    gl.glDisable(GL2.GL_POLYGON_OFFSET_FILL);
 		}
+		
+		Shader.enabled = enableShaders;
 	}
 	
 	public void displayShadow(GL2 gl)

@@ -21,8 +21,6 @@ import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.util.Shader;
 
-import com.jogamp.opengl.util.gl2.GLUT;
-
 public class BloomStrobe
 {
 	private Scene scene;
@@ -147,7 +145,7 @@ public class BloomStrobe
 		Car car = scene.getCars().get(0);
 		Terrain terrain = scene.getTerrain();
 		
-		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car, true);
+		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
 		
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
@@ -169,27 +167,6 @@ public class BloomStrobe
 		}
 		
 		gl.glDrawBuffers(2, attachments, 0);
-		// Draw objects in the scene
-		drawModels(gl);
-	}
-
-	public void drawModels(GL2 gl)
-	{
-		GLUT glut = new GLUT();
-		
-		Shader shader = Scene.shaders.get("ball");
-		if(shader != null) shader.enable(gl);
-
-		shader.setUniform(gl, "starIntensity", Math.abs(angleIncrement));
-		
-		// Draw sphere
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(75.0f, 30.0f, 75.0f);
-			gl.glRotatef(animationAngle / 5.0f, 0.0f, 1.0f, 0.0f);
-			glut.glutSolidSphere(15.0f, 25, 25);
-		}
-		gl.glPopMatrix();
 	}
 
 	/*
@@ -250,12 +227,6 @@ public class BloomStrobe
 		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, pboID);
 		gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
 		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
-		
-//		for(int i = 2; i < 7; i++)
-//		{
-//			gl.glActiveTexture(GL2.GL_TEXTURE1 + i - 2);
-//			gl.glBindTexture(GL_TEXTURE_2D, textureID[i]);
-//		}
 //		
 		gl.glActiveTexture(GL_TEXTURE0);
 		
@@ -530,8 +501,8 @@ public class BloomStrobe
 	    		{
 	    			int index = ((i * 5) + j) * 2;
 	    			
-	    			offsets[k][index + 0] = (-1.0f * xInc) + ((float) i * xInc);
-	    			offsets[k][index + 1] = (-1.0f * yInc) + ((float) j * yInc);
+	    			offsets[k][index + 0] = (-2.0f * xInc) + ((float) i * xInc);
+	    			offsets[k][index + 1] = (-2.0f * yInc) + ((float) j * yInc);
 	    		}
 	    	}
 	    }

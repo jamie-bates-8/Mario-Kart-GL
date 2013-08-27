@@ -164,6 +164,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_camera;
 	private JCheckBoxMenuItem menuItem_shaking;
 	private JCheckBoxMenuItem menuItem_trackball;
+	private JCheckBoxMenuItem menuItem_focal_blur;
 	
 	private JMenu menu_vehicle;
 	private JCheckBoxMenuItem menuItem_reverse;
@@ -402,9 +403,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public Water water;
 	public BloomStrobe bloom;
+	public FocalBlur focalBlur;
 	
 	public boolean enableBloom = false;
 	public static boolean enableParallax = true;
+	public static boolean enableFocalBlur = true;
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
 	
@@ -548,8 +551,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_trackball.addItemListener(this);
 		menuItem_trackball.setMnemonic(KeyEvent.VK_T);
 		
+		menuItem_focal_blur = new JCheckBoxMenuItem("Focal Blur");
+		menuItem_focal_blur.addItemListener(this);
+		menuItem_focal_blur.setMnemonic(KeyEvent.VK_B);
+		
 		menu_camera.add(menuItem_shaking);
 		menu_camera.add(menuItem_trackball);
+		menu_camera.add(menuItem_focal_blur);
 		
 		menuBar.add(menu_camera);
 		/**----------------**/
@@ -1135,12 +1143,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    bloom = new BloomStrobe(gl, this);
 	    
+	    focalBlur = new FocalBlur(this);
+	    
 	    water = new Water(this);
 	    water.createTextures(gl);
 	    
 	    frameTimes  = new long[240];
 	    renderTimes = new long[240][RENDER_HEADERS.length];
 	    updateTimes = new long[240][UPDATE_HEADERS.length];
+	    
+	    focalBlur.setup(gl);
 	    
 	    if(printVersion) printVersion(gl);
 	    
@@ -1172,11 +1184,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_caustics .setSelected(terrain.tree.enableCaustic );
 		menuItem_malleable.setSelected(terrain.tree.malleable     );
 		
+		menuItem_bloom.setSelected(enableBloom);
+		menuItem_focal_blur.setSelected(enableFocalBlur);
+		
 		Car car = cars.get(0);
 		
 		menuItem_cubemap.setSelected(car.enableChrome);
 		menuItem_aberration.setSelected(car.enableAberration);
-		menuItem_bloom.setSelected(enableBloom);
+		
 	}
 
 	private void setupGenerators()
@@ -1235,6 +1250,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader ball         = new Shader(gl, "hdr_ball", "hdr_ball");
 		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
+		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
 		Shader combine      = new Shader(gl, "show_texture", "combine");
 		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
 		
@@ -1256,6 +1272,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(        ball.isValid()) shaders.put("ball", ball);
 		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
+		if(  depthField.isValid()) shaders.put("depth_field", depthField);
 		if(     combine.isValid()) shaders.put("combine", combine);
 		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
 	}
@@ -1401,8 +1418,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				if(resetShadow) // required if shadow quality is altered
 				{
 					caster.setup(gl);
+					focalBlur.setup(gl);
 					resetShadow = false;
 				}
+			}
+			
+			if(enableFocalBlur)
+			{
+				focalBlur.display(gl);
+				focalBlur.update(gl);
 			}
 			
 //			if(enableBloom) bloom.render(gl);
@@ -1410,7 +1434,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				if(enableReflection) displayReflection(gl, car);
 				
-				if(terrain != null && terrain.enableWater) renderWater(gl, car, false);
+				if(terrain != null && terrain.enableWater) renderWater(gl, car);
 				
 				renderWorld(gl);
 				render3DModels(gl, car);
@@ -1428,6 +1452,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 
 			if(enableBloom) bloom.render(gl);
+			
+			if(enableFocalBlur)
+			{
+				focalBlur.guassianPass(gl);
+				focalBlur.disable(gl);
+			}
 			
 			if(enableShadow) caster.disable(gl);
 			
@@ -1463,7 +1493,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableBlur && _i != boostCounter) gl.glAccum(GL_LOAD, 1.0f);
 		boostCounter = _i;
 		
-		if(shadowMap) displayMap(gl, caster.getTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
+		if(shadowMap) displayMap(gl, focalBlur.getDepthTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	
 	public static boolean reflectMode = false;
@@ -1474,7 +1504,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * level are clipped (the primitives clipped are actually above water level
 	 * as the reflected environment is rendered upside down).
 	 */
-	public void renderWater(GL2 gl, Car car, boolean bloom)
+	public void renderWater(GL2 gl, Car car)
 	{
 		int aboveWater = car.camera.getPosition()[1] >= 0 ? -1 : 1;  
 		
@@ -2768,6 +2798,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_reverse    )) cars.get(0).invertReverse    = selected;
 		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking   = selected;
 		else if(source.equals(menuItem_trackball  )) cars.get(0).camera.trackball = selected;
+		else if(source.equals(menuItem_focal_blur )) enableFocalBlur              = selected;
 		else if(source.equals(menuItem_tag        )) cars.get(0).displayTag       = selected;    
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling      = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing     = selected;
