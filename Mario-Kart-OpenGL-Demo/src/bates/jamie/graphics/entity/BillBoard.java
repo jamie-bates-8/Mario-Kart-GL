@@ -25,10 +25,15 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class BillBoard
 {
+	public static final String TEXTURE_DIRECTORY = "tex/foliage/";
+	
 	public int texture;
 	public Sphere sphere;
 	
 	private float size;
+	
+	private float timer    = 0;
+	private float rotation = 0;
 	
 	private static Texture[] textures;
 	
@@ -36,36 +41,45 @@ public class BillBoard
 	{
 		try
 		{
-			textures = new Texture[4];
+			textures = new Texture[8];
 			
-			textures[0] = TextureIO.newTexture(new File("tex/plant1.png"), true);
-			textures[1] = TextureIO.newTexture(new File("tex/plant2.png"), true);
-			textures[2] = TextureIO.newTexture(new File("tex/plant3.png"), true);
-			textures[3] = TextureIO.newTexture(new File("tex/plant4.png"), true);
+			textures[0] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "plant1.png"), true);
+			textures[1] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "plant2.png"), true);
+			textures[2] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "plant3.png"), true);
+			textures[3] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "plant4.png"), true);
+			
+			textures[4] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "tree1.png"), true);
+			textures[5] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "tree2.png"), true);
+			textures[6] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "tree3.png"), true);
+			textures[7] = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "tree4.png"), true);
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
 	private static int current = 0;
 	
-	public BillBoard(float[] c)
+	public BillBoard(float[] c, float baseSize)
 	{	
 		Random generator = new Random();
 		
-		size = 1 + generator.nextFloat() * 3;
+		size = baseSize + generator.nextFloat() * 0.25f;
+		rotation = generator.nextInt(90);
 		
 		sphere = new Sphere(c, size);
+		timer = generator.nextInt(90);
 		
 		this.texture = generator.nextInt(textures.length);
 	}
 	
-	public BillBoard(float[] c, int texture)
+	public BillBoard(float[] c, float baseSize, int texture)
 	{		
 		Random generator = new Random();
 		
-		size = 1 + generator.nextFloat() * 3;
+		size = baseSize + generator.nextFloat() * 0.25f;
+		rotation = generator.nextInt(90);
 		
 		sphere = new Sphere(c, size);
+		timer = generator.nextInt(90);
 		
 		this.texture = texture;
 	}
@@ -74,17 +88,10 @@ public class BillBoard
 	{
 		gl.glPushMatrix();
 		{
-//			gl.glDepthMask(false);
-			gl.glDisable(GL_LIGHTING);
-			gl.glEnable(GL_BLEND);
 			gl.glEnable(GL2.GL_ALPHA_TEST);
 			gl.glAlphaFunc(GL2.GL_GREATER, 0.25f);
 			
 			float[] c = sphere.c;
-
-			gl.glTranslatef(c[0], c[1] + size * 0.9f, c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
-			gl.glScalef(size * 2, size * 2, size * 2);
 			
 			if(texture != current)
 			{
@@ -92,18 +99,43 @@ public class BillBoard
 				current = texture;
 			}
 
+			gl.glTranslatef(c[0], c[1] + size * 0.75f, c[2]);
+			if(size > 15) gl.glRotatef(trajectory - 90, 0, 1, 0);
+			else gl.glRotatef(rotation, 0, 1, 0);
+			gl.glScalef(size * 2, size * 2, size * 2);
+			
+			timer += 0.75;
+			float xoffset = (float) Math.sin(Math.toRadians(timer)) * 0.10f;
+			float zoffset = (float) Math.sin(Math.toRadians(timer + rotation)) * 0.05f;
+			
+			if(size > 15)
+			{
+				xoffset *= 0.1f;
+				zoffset *= 0.1f;
+			}
+
 			gl.glBegin(GL_QUADS);
 			{
-				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
-				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
-				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
-				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
+				gl.glNormal3f(0.0f, 0.0f, 1.0f);
+				
+				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f,  0.0f);
+				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f + xoffset,  0.5f,  0.0f + zoffset);
+				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f + xoffset,  0.5f,  0.0f + zoffset);
+				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f,  0.0f);
+				
+				if(size < 15)
+				{
+					gl.glNormal3f(0.25f, 0.0f, 1.0f);
+					
+					gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f( 0.0f, -0.5f, -0.5f);
+					gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f( 0.0f + xoffset,  0.5f, -0.5f + zoffset);
+					gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.0f + xoffset,  0.5f,  0.5f + zoffset);
+					gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.0f, -0.5f,  0.5f);
+				}
 			}
 			gl.glEnd();
 			
-//			gl.glDepthMask(true);
 			gl.glDisable(GL_BLEND);
-			gl.glEnable(GL_LIGHTING);
 			gl.glDisable(GL2.GL_ALPHA_TEST);
 			
 		}

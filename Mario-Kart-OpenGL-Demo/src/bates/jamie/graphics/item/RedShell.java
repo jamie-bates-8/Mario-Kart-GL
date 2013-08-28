@@ -31,7 +31,7 @@ public class RedShell extends Shell
 	{
 		try
 		{
-			shellTop = TextureIO.newTexture(new File("tex/redShellTop.jpg"), true);
+			shellTop = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "redShellTop.jpg"), true);
 			
 			textures = new Texture[] {shellTop};
 		}

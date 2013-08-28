@@ -73,7 +73,7 @@ public class GrassPatch
 		gl.glGenTextures(1, id, 0);
 		heightMap = id[0];
 
-		perturbMap = TextureLoader.load(gl, "tex/grass_data.png");
+		perturbMap = TextureLoader.load(gl, "tex/blast_noise.png");
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, heightMap);

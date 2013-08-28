@@ -69,12 +69,11 @@ vec4 guassian7x7()
 void main(void)
 {
 	float depth = texture2D(depthSampler, gl_TexCoord[0].st).x;
+	vec4  final = texture2D(sceneSampler, gl_TexCoord[0].st);
 	
-	vec4 final = texture2D(sceneSampler, gl_TexCoord[0].st);
-	
-	if(depth > 0.97) final = guassian3x3();
-	if(depth > 0.98) final = guassian5x5();
-	if(depth > 0.99) final = guassian7x7();
+	if(depth > 0.980) final = guassian3x3();
+	if(depth > 0.990) final = guassian5x5();
+	if(depth > 0.995) final = guassian7x7();
 
     gl_FragColor = vec4(final.rgb, 1.0);
 }

@@ -2417,7 +2417,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	if(i > patches * 0.75)
 	    	{
 	    		p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
-	    		foliage.add(new BillBoard(p, t));
+	    		foliage.add(new BillBoard(p, 3, t));
 	    	}
 	    	else
 	    	{    	
@@ -2427,16 +2427,32 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    	{
 		    		float[] p0 = {p[0], p[1], p[2]};
 		    		
-		    		p0[0] += (generator.nextFloat() * spread * 2) - spread;
-		    		p0[2] += (generator.nextFloat() * spread * 2) - spread;
+		    		double incline = Math.toRadians(generator.nextInt(360));
+		    		double azimuth = Math.toRadians(generator.nextInt(360));
+		    		
+		    		p0[0] += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
+		    		p0[2] += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
 		    		
 		    		if(Math.abs(p0[0]) < 200 && Math.abs(p0[2]) < 200)
 		    		{
 		    			p0[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p0, terrain.tree.detail).getHeight(p0) : terrain.getHeight(p0);
-		    			foliage.add(new BillBoard(p0, t));
+		    			foliage.add(new BillBoard(p0, 3, t));
 		    		}
 		    	}
 	    	}
+	    }
+	    
+	    for(int i = 0; i < 30; i++)
+	    {
+	    	int t = 4 + generator.nextInt(4);
+	    	
+	    	float[] p = new float[3];
+	    	
+	    	p[0] = generator.nextFloat() * 360 - 180;
+	    	p[2] = generator.nextFloat() * 360 - 180;
+	    	
+	    	p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
+	    	foliage.add(new BillBoard(p, 30, t));
 	    }
 	}
 	
@@ -2596,8 +2612,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			default: break;
 		}
-	
-		
 	}
 	
 	public void keyReleased(KeyEvent e)

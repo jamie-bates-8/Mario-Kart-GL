@@ -29,7 +29,7 @@ public class GreenShell extends Shell
 	{
 		try
 		{
-			shellTop = TextureIO.newTexture(new File("tex/greenShellTop.jpg"), true);
+			shellTop = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "greenShellTop.jpg"), true);
 			
 			textures = new Texture[] {shellTop};
 		}

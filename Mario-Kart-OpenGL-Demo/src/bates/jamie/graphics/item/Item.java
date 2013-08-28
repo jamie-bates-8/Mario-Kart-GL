@@ -28,6 +28,8 @@ import com.jogamp.opengl.util.gl2.GLUT;
 
 public abstract class Item
 {
+	public static final String TEXTURE_DIRECTORY = "tex/items/";
+	
 	public static final float[] ORIGIN = {0, 0, 0};
 	public static final float GLOBAL_RADIUS = 300;
 	

@@ -35,14 +35,14 @@ public class BlueShell extends Shell
 	
 	private static Texture[] textures;
 	private static Texture shellTop;
-	private static Texture cloudSampler;
+	private static Texture noiseSampler;
 	
 	static
 	{
 		try
 		{
-			shellTop     = TextureIO.newTexture(new File("tex/blueShellTop.jpg"), true);
-			cloudSampler = TextureIO.newTexture(new File("tex/grass_data.png"), true);
+			shellTop     = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "blueShellTop.jpg"), true);
+			noiseSampler = TextureIO.newTexture(new File("tex/blast_noise.png"), true);
 			
 			textures = new Texture[] {shellTop};
 		}
@@ -147,8 +147,8 @@ public class BlueShell extends Shell
 			
 			gl.glPushMatrix();
 			{
-				cloudSampler.bind(gl);
-				cloudSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+				noiseSampler.bind(gl);
+				noiseSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 				
 				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
 				
