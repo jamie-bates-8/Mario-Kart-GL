@@ -2,10 +2,11 @@ package bates.jamie.graphics.particle;
 
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
-
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import javax.media.opengl.GL2;
+
+import bates.jamie.graphics.util.Vec3;
 
 public class SplashParticle extends Particle
 {
@@ -15,7 +16,7 @@ public class SplashParticle extends Particle
 	
 	private float[] color;
 	
-	public SplashParticle(float[] c, float[] t, float[] color)
+	public SplashParticle(Vec3 c, Vec3 t, float[] color)
 	{
 		super(c, t, 0, 6);
 		
@@ -27,13 +28,13 @@ public class SplashParticle extends Particle
 	{
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(c[0], c[1], c[2]);
+			gl.glTranslatef(c.x, c.y, c.z);
 			
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			gl.glDisable(GL_TEXTURE_2D);
 
-			gl.glColor4f(color[0], color[1], color[2], color[3]);
+			gl.glColor4fv(color, 0);
 			
 			gl.glBegin(GL2.GL_POINTS);
 			{
@@ -54,6 +55,6 @@ public class SplashParticle extends Particle
 		super.update();
 		
 		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
-		c[1] -= fallRate;
+		c.y -= fallRate;
 	}
 }

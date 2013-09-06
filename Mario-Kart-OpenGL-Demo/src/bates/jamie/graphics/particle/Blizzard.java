@@ -1,5 +1,6 @@
 package bates.jamie.graphics.particle;
 
+import static bates.jamie.graphics.util.Vec3.getRandomVector;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_FLOAT;
 import static javax.media.opengl.GL.GL_POINTS;
@@ -17,7 +18,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.scene.Scene;
-import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.common.nio.Buffers;
 
@@ -35,7 +36,7 @@ public class Blizzard
 	
 	Collection<Particle> droplets = new ArrayList<Particle>();
 	
-	public float[] wind;
+	public Vec3 wind;
 	
 	public boolean enableSettling  = false;
 	public boolean enableSplashing = true; 
@@ -61,7 +62,7 @@ public class Blizzard
 	};
 	public StormType type;
 	
-	public Blizzard(Scene scene, int flakeLimit, float[] wind, StormType type)
+	public Blizzard(Scene scene, int flakeLimit, Vec3 wind, StormType type)
 	{
 		this.scene = scene;
 		
@@ -91,14 +92,14 @@ public class Blizzard
 			{
 				case SNOW:
 				{
-					vBuffer.put(flake.c);
+					vBuffer.put(flake.c.toArray());
 					cBuffer.put(new float[] {1, 1, 1, flake.alpha});
 					break;
 				}
 				case RAIN:
 				{
-					vBuffer.put(flake.c);
-					vBuffer.put(flake.getDirectionVector(wind, 4));
+					vBuffer.put(flake.c.toArray());
+					vBuffer.put(flake.getDirectionVector(wind, 4).toArray());
 					cBuffer.put(new float[] {1, 1, 1,           0});
 					cBuffer.put(new float[] {1, 1, 1, flake.alpha});
 					break;
@@ -131,10 +132,11 @@ public class Blizzard
 			if(flake.falling)
 			{
 				flake.update(wind);
-				if(flake.c[1] < -10 || Scene.outOfBounds(flake.c))
+				
+				if(flake.c.y < -10 || Scene.outOfBounds(flake.c))
 				{
 					flake.c = getSource();
-					flake.t = type == StormType.SNOW ? getRandomVector(1) : getRandomVector(0.25f);
+					flake.t = type == StormType.SNOW ? getRandomVector() : getRandomVector(0.25f);
 				}
 				
 				int position = vBuffer.position();
@@ -142,8 +144,8 @@ public class Blizzard
 				
 				switch(type)
 				{
-					case SNOW: vBuffer.put(flake.c); break;
-					case RAIN: vBuffer.put(flake.c); vBuffer.put(flake.getDirectionVector(wind, 4)); break;
+					case SNOW: vBuffer.put(flake.c.toArray()); break;
+					case RAIN: vBuffer.put(flake.c.toArray()); vBuffer.put(flake.getDirectionVector(wind, 4).toArray()); break;
 				}
 				
 				vBuffer.position(position);
@@ -159,20 +161,20 @@ public class Blizzard
 	private void splash(WeatherParticle flake)
 	{
 		Terrain terrain = scene.getTerrain();
-		float h = terrain.getHeight(terrain.trees.values(), flake.c);
+		float h = terrain.getHeight(terrain.trees.values(), flake.c.toArray());
 		
-		if(flake.c[1] <= h + 1 && flake.c[1] > h - 1)
+		if(flake.c.y <= h + 1 && flake.c.y > h - 1)
 		{
 			for(int j = 0; j < 10; j++)
 			{
-				float[] t = getRandomVector(0.25f);
-				t[1] = Math.abs(t[1] * 2);
+				Vec3 t = getRandomVector(0.25f);
+				t.y = Math.abs(t.y * 2);
 				
 				SplashParticle drop = new SplashParticle(flake.c, t, new float[] {1, 1, 1, generator.nextFloat() * 0.3f});
 				droplets.add(drop);
 			}
 		}
-		else if(flake.c[1] < h - 1)
+		else if(flake.c.y < h - 1)
 		{
 			flake.c = getSource();
 			flake.t = type == StormType.SNOW ? getRandomVector(1) : getRandomVector(0.25f);
@@ -182,15 +184,15 @@ public class Blizzard
 	private void settle(WeatherParticle flake, int index)
 	{
 		Terrain terrain = scene.getTerrain();
-		float h = terrain.getHeight(terrain.trees.values(), flake.c);
+		float h = terrain.getHeight(terrain.trees.values(), flake.c.toArray());
 		
-		if(flake.c[1] <= h)
+		if(flake.c.y <= h)
 		{
 			flake.falling = false;
-			flake.c[1] = h + 0.01f;
+			flake.c.y = h + 0.01f;
 			
 			int position = vBuffer.position();
-			vBuffer.position(index * 3); vBuffer.put(flake.c);
+			vBuffer.position(index * 3); vBuffer.put(flake.c.toArray());
 			vBuffer.position(position);
 		}
 	}
@@ -203,8 +205,8 @@ public class Blizzard
 			
 			while(i > 0)
 			{
-				float[] source = getSource();
-				float[] vector = type == StormType.SNOW ? getRandomVector(1) : getRandomVector(0.25f);
+				Vec3 source = getSource();
+				Vec3 vector = type == StormType.SNOW ? getRandomVector() : getRandomVector(0.25f);
 				float alpha = type == StormType.SNOW ? generator.nextFloat() : generator.nextFloat() * 0.40f;
 				
 				flakes.add(new WeatherParticle(source, vector, alpha));
@@ -213,14 +215,14 @@ public class Blizzard
 				{
 					case SNOW:
 					{
-						vBuffer.put(source);
+						vBuffer.put(source.toArray());
 						cBuffer.put(new float[] {1, 1, 1, alpha});
 						break;
 					}
 					case RAIN:
 					{
-						vBuffer.put(source);
-						vBuffer.put(source);
+						vBuffer.put(source.toArray());
+						vBuffer.put(source.toArray());
 						cBuffer.put(new float[] {1, 1, 1,     0});
 						cBuffer.put(new float[] {1, 1, 1, alpha});
 						break;
@@ -232,22 +234,13 @@ public class Blizzard
 		}
 	}
 	
-	private float[] getSource()
+	private Vec3 getSource()
 	{
 		float x = generator.nextFloat() * (generator.nextBoolean() ? 200 : -200);
 		float y = generator.nextFloat() * (generator.nextBoolean() ?  10 : - 10);
 		float z = generator.nextFloat() * (generator.nextBoolean() ? 200 : -200);
 		
-		return new float[] {x, y + 175, z};
-	}
-	
-	private float[] getRandomVector(float scalar)
-	{
-		float xVel = (generator.nextBoolean()) ? generator.nextFloat() : -generator.nextFloat();
-		float yVel = (generator.nextBoolean()) ? generator.nextFloat() : -generator.nextFloat();
-		float zVel = (generator.nextBoolean()) ? generator.nextFloat() : -generator.nextFloat();
-		
-		return Vector.multiply(new float[] {xVel, yVel, zVel}, scalar);
+		return new Vec3(x, y + 175, z);
 	}
 	
 	public void render(GL2 gl)
@@ -371,7 +364,7 @@ public class Blizzard
 			gl.glColor4f(1, 1, 1, 0.2f);
 			
 			FloatBuffer vBuffer = Buffers.newDirectFloatBuffer(droplets.size() * 3);
-			for(Particle drop : droplets) { drop.update(); vBuffer.put(drop.c); }
+			for(Particle drop : droplets) { drop.update(); vBuffer.put(drop.c.toArray()); }
 			
 			vBuffer.position(0);
 			

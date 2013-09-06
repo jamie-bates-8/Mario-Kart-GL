@@ -9,6 +9,8 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Vec3;
+
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
@@ -19,13 +21,13 @@ public class LightningParticle extends Particle
 	
 	static
 	{
-		try { lightning = TextureIO.newTexture(new File("tex/lightning.png"), true); }
+		try { lightning = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "lightning.png"), true); }
 		catch (Exception e) { e.printStackTrace(); }
 	}
 
-	public LightningParticle(float[] c)
+	public LightningParticle(Vec3 c)
 	{
-		super(c, new float[] {0, 0, 0}, 0, 20);
+		super(c, new Vec3(), 0, 20);
 	}
 
 	@Override
@@ -35,8 +37,8 @@ public class LightningParticle extends Particle
 		{
 			Random generator = new Random();
 			
-			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glTranslatef(c.x, c.y, c.z);
+			gl.glRotatef(trajectory, 0, -1, 0);
 			gl.glScalef(15, 50, 5);
 			
 			gl.glDepthMask(false);

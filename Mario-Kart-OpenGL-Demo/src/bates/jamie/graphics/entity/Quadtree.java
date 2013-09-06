@@ -1370,7 +1370,7 @@ public class Quadtree
 	
 	private static float timer = 1.0f;
 	
-	public void render(GL2 gl, float[] p)
+	public void render(GL2 gl)
 	{
 		if(solid)
 		{

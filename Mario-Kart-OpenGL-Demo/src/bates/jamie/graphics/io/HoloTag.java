@@ -1,7 +1,10 @@
 package bates.jamie.graphics.io;
+
 import java.awt.Font;
 
 import javax.media.opengl.GL2;
+
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.awt.TextRenderer;
 
@@ -9,10 +12,10 @@ import com.jogamp.opengl.util.awt.TextRenderer;
 public class HoloTag
 {
 	private String tag = "";
-	private float[] p;
+	private Vec3 p;
 	private TextRenderer renderer;
 	
-	public HoloTag(String tag, float[] p)
+	public HoloTag(String tag, Vec3 p)
 	{
 		this.tag = tag;
 		setPosition(p);
@@ -21,7 +24,7 @@ public class HoloTag
 		renderer = new TextRenderer(font, true, false);
 	}
 	
-	public void setPosition(float[] p)
+	public void setPosition(Vec3 p)
 	{
 		this.p = p;
 	}
@@ -33,7 +36,7 @@ public class HoloTag
 	
 	public void displayPosition()
 	{
-		tag = String.format("(%+3.2f, %+3.2f, %+3.2f)", p[0], p[1], p[2]);
+		tag = String.format("(%+3.2f, %+3.2f, %+3.2f)", p.x, p.y, p.z);
 	}
 	
 	public void render(GL2 gl, float trajectory)
@@ -56,7 +59,7 @@ public class HoloTag
 			
 			float centre = 5 + (height / 2);
 			
-			gl.glTranslatef(p[0], p[1], p[2]);
+			gl.glTranslatef(p.x, p.y, p.z);
 			gl.glRotatef(trajectory + 90, 0, 1, 0);
 			
 			gl.glRectd(w, h, -w, -h);

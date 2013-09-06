@@ -10,6 +10,7 @@ import javax.media.opengl.glu.gl2.GLUgl2;
 
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 public class ShadowCaster
 {
@@ -165,10 +166,10 @@ public class ShadowCaster
 	    
 	    float radius = shadowRadius; // based on objects in scene
 
-	    float[] p = light.getPosition();
+	    Vec3 p = light.getPosition();
 	    
 	    // Euclidian distance from light source to origin
-	    distance = (float) Math.sqrt(p[0] * p[0] +  p[1] * p[1] + p[2] * p[2]);
+	    distance = p.magnitude();
 
 	    near = distance - radius;
 	    // Keep the scene filling the depth texture
@@ -183,7 +184,7 @@ public class ShadowCaster
 	    // Switch to light's point of view
 	    gl.glMatrixMode(GL_MODELVIEW);
 	    gl.glLoadIdentity();
-	    glu.gluLookAt(p[0], p[1], p[2], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	    glu.gluLookAt(p.x, p.y, p.z, 0, 0, 0, 0, 1, 0);
 	    
 	    gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, modelview, 0);
 

@@ -2,6 +2,8 @@ package bates.jamie.graphics.particle;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Vec3;
+
 import com.jogamp.opengl.util.texture.Texture;
 
 public class TerrainParticle extends Particle
@@ -13,7 +15,7 @@ public class TerrainParticle extends Particle
 	private float[] texCoords;
 	private Texture texture;
 	
-	public TerrainParticle(float[] c, float[] t, float rotation, int duration,
+	public TerrainParticle(Vec3 c, Vec3 t, float rotation, int duration,
 			float[] texCoords, Texture texture)
 	{
 		super(c, t, rotation, duration);
@@ -38,7 +40,7 @@ public class TerrainParticle extends Particle
 			gl.glBegin(GL2.GL_POINTS);
 			{
 				gl.glTexCoord2f(texCoords[0], texCoords[1]);
-				gl.glVertex3f(c[0], c[1], c[2]);
+				gl.glVertex3f(c.x, c.y, c.z);
 			}
 			gl.glEnd();
 
@@ -55,7 +57,7 @@ public class TerrainParticle extends Particle
 		super.update();
 		
 		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
-		c[1] -= fallRate;
+		c.y -= fallRate;
 	}
 }
 

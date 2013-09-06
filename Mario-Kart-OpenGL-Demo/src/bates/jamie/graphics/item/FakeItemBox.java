@@ -6,7 +6,6 @@ import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -21,6 +20,7 @@ import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -54,7 +54,7 @@ public class FakeItemBox extends Item
 		this.scene = scene;
 		this.car = car;
 		
-		bound = new Sphere(new float[] {0, 0, 0}, 2.5f);
+		bound = new Sphere(new Vec3(), 2.5f);
 		boundColor = RGB.toRGBAi(RGB.RED, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
@@ -70,7 +70,7 @@ public class FakeItemBox extends Item
 		}
 	}
 	
-	public FakeItemBox(Scene scene, float[] c, float trajectory)
+	public FakeItemBox(Scene scene, Vec3 c, float trajectory)
 	{
 		this.scene = scene;
 		
@@ -106,8 +106,8 @@ public class FakeItemBox extends Item
 			gl.glEnable(GL_BLEND);
 			gl.glDepthMask(false);
 			
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+			gl.glRotatef(trajectory, 0, -1, 0);
 			gl.glScalef(3.0f, 3.0f, 3.0f);
 			
 			questionMark.bind(gl);
@@ -129,7 +129,7 @@ public class FakeItemBox extends Item
 		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 			gl.glRotatef(rotation, 1, 1, 1);
 			gl.glScalef(SCALE, SCALE, SCALE);
 			
@@ -172,14 +172,14 @@ public class FakeItemBox extends Item
 
 	private void setHeights(OBB obb)
 	{
-		float[] face = obb.getFaceVector(getPosition());
+		Vec3 face = obb.getFaceVector(getPosition());
 
-		if(Arrays.equals(face, obb.getUpVector(1)))
+		if(face.equals(obb.getUpVector(1)))
 		{
-			float h = obb.closestPointOnPerimeter(getPosition())[1]
+			float h = obb.closestPointOnPerimeter(getPosition()).y
 					+ bound.getMaximumExtent();
 			
-			if(h > bound.c[1]) bound.c[1] = h;
+			if(h > bound.c.y) bound.c.y = h;
 
 			bounce();
 		}
@@ -202,9 +202,9 @@ public class FakeItemBox extends Item
 	@Override
 	public float[] getHeights(Terrain map)
 	{
-		float h = map.getHeight(getPosition());
+		float h = map.getHeight(getPosition().toArray());
 		
-		if(bound.c[1] - bound.getMaximumExtent() <= h) bounce();
+		if(bound.c.y - bound.getMaximumExtent() <= h) bounce();
 
 		return heights;
 	}
@@ -231,7 +231,7 @@ public class FakeItemBox extends Item
 			else getHeights();
 		}
 		
-		if(thrown) setRotation(0, trajectory, -45);
+		if(thrown) setRotation(-45, trajectory, 0);
 	}
 	
 	@Override

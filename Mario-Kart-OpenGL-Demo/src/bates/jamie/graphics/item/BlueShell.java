@@ -21,6 +21,7 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -82,7 +83,7 @@ public class BlueShell extends Shell
 		boundColor = RGB.toRGBAi(RGB.INDIGO, BOUND_ALPHA);
 	}
 	
-	public BlueShell(Scene scene, float[] c)
+	public BlueShell(Scene scene, Vec3 c)
 	{
 		super(null, scene, null, 0);
 		
@@ -97,16 +98,20 @@ public class BlueShell extends Shell
 	{
 		if(!dead)
 		{
-			Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
-			if(shader != null) shader.enable(gl);
-			
 			gl.glPushMatrix();
 			{
-				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-				gl.glRotatef(rotation, 0, 1, 0);
+				gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+				gl.glRotatef(rotation, 0, -1, 0);
 				gl.glScalef(1.5f, 1.5f, 1.5f);
 				
+				Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+				if(shader != null) shader.enable(gl);
+				
 				gl.glCallList(shellList);
+				
+				shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+				if(shader != null) shader.enable(gl);
+				
 				gl.glCallList(rimList);
 				gl.glCallList(spikeList);
 			}
@@ -150,7 +155,7 @@ public class BlueShell extends Shell
 				noiseSampler.bind(gl);
 				noiseSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 				
-				gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+				gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 				
 				glu.gluSphere(sphere, blastRadius, 24, 24);
 			}
@@ -179,8 +184,8 @@ public class BlueShell extends Shell
 			
 			if(scene.enableTerrain)
 			{
-				float h = scene.getTerrain().getHeight(getPosition());
-				if(bound.c[1] - bound.getMaximumExtent() <= h) destroy();
+				float h = scene.getTerrain().getHeight(getPosition().toArray());
+				if(bound.c.y - bound.getMaximumExtent() <= h) destroy();
 			}
 	
 			rotation += 10 * velocity;

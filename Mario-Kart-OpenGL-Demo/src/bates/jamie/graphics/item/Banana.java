@@ -1,6 +1,5 @@
 package bates.jamie.graphics.item;
 
-import static bates.jamie.graphics.util.Matrix.getRotationMatrix;
 import static bates.jamie.graphics.util.Renderer.displayGradientObject;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
@@ -20,6 +19,7 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -69,11 +69,11 @@ public class Banana extends Item
 	    
 	    bananaID = id;
 		
-		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
+		bound = new Sphere(new Vec3(), RADIUS);
 		boundColor = RGB.toRGBAi(RGB.YELLOW, BOUND_ALPHA);
 	}
 	
-	public Banana(Scene scene, float[] c)
+	public Banana(Scene scene, Vec3 c)
 	{
 		this.scene = scene;
 		
@@ -93,9 +93,9 @@ public class Banana extends Item
 	{
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			if(thrown) gl.glRotatef(trajectory, 0, 1, 0);
-			else gl.glMultMatrixf(getRotationMatrix(u), 0);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+			if(thrown) gl.glRotatef(trajectory, 0, -1, 0);
+			else gl.glMultMatrixf(u.toArray(), 0);
 			
 			
 			Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
@@ -110,8 +110,7 @@ public class Banana extends Item
 				gl.glDisable(GL_LIGHTING);
 				gl.glEnable(GL_BLEND);
 				
-				gl.glTranslatef(0.325f, 0, 0);
-				gl.glRotatef(90, 0, 1, 0);
+				gl.glTranslatef(0, 0, 0.325f);
 				
 				face.bind(gl);
 
@@ -144,7 +143,7 @@ public class Banana extends Item
 		float[] heights = scene.enableTerrain ? getHeights(scene.getTerrain()) : getHeights();
 
 		setRotation(getRotationAngles(heights));
-		if(thrown) setRotation(0, trajectory, -45);
+		if(thrown) setRotation(-45, trajectory, 0);
 	}
 	
 	@Override

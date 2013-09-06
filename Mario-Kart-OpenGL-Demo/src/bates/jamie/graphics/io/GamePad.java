@@ -13,7 +13,7 @@ import net.java.games.input.Version;
 public class GamePad 
 {
 	private static final int DELAY = 40; //milliseconds
-	private static final float EPSILON = 0.25f;
+	private static final float DEAD_ZONE = 0.25f;
 	
 	private static int controllerID = 0;
 	
@@ -165,7 +165,7 @@ public class GamePad
 		{
 			float x = components[xAxis].getPollData();
 
-			return (Math.abs(x) > EPSILON) ? -x : 0; 
+			return (Math.abs(x) > DEAD_ZONE) ? -x : 0; 
 		}
 	}
 	
@@ -176,7 +176,7 @@ public class GamePad
 		{
 			float y = components[yAxis].getPollData();
 
-			return (Math.abs(y) > EPSILON) ? -y : 0; 
+			return (Math.abs(y) > DEAD_ZONE) ? -y : 0; 
 		}
 	}
 	
@@ -187,7 +187,7 @@ public class GamePad
 		{
 			float z = components[zAxis].getPollData();
 			
-			return (Math.abs(z) > EPSILON) ? z : 0; 
+			return (Math.abs(z) > DEAD_ZONE) ? z : 0; 
 		}
 	}
 	
@@ -198,7 +198,7 @@ public class GamePad
 		{
 			float x = components[xRotation].getPollData();
 			
-			return (Math.abs(x) > EPSILON) ? x : 0; 
+			return (Math.abs(x) > DEAD_ZONE) ? x : 0; 
 		}
 	}
 	
@@ -209,7 +209,7 @@ public class GamePad
 		{
 			float y = components[yRotation].getPollData();
 			
-			return (Math.abs(y) > EPSILON) ? y : 0; 
+			return (Math.abs(y) > DEAD_ZONE) ? y : 0; 
 		}
 	}
 	
@@ -327,7 +327,7 @@ public class GamePad
 			
 			if(current != previous)
 			{
-				if(Math.abs(current) > EPSILON)
+				if(Math.abs(current) > DEAD_ZONE)
 				{
 					System.out.print(current + "; ");
 					i++;

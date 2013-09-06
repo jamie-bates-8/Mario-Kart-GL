@@ -1,7 +1,6 @@
 package bates.jamie.graphics.scene;
 
 import static bates.jamie.graphics.util.Renderer.displayTexturedCuboid;
-import static bates.jamie.graphics.util.Vector.dot;
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
@@ -96,6 +95,7 @@ import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.GrassPatch;
+import bates.jamie.graphics.entity.LightingStrike;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
@@ -125,6 +125,7 @@ import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.gl2.GLUT;
@@ -410,6 +411,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static boolean enableFocalBlur = true;
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
+	
+	private LightingStrike[] bolts;
 	
 	public Scene()
 	{
@@ -1148,6 +1151,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    water = new Water(this);
 	    water.createTextures(gl);
 	    
+	    bolts = new LightingStrike[3];
+	    bolts[0] = new LightingStrike(new float[] {0, 50, 0}, new float[] {0, 5, 0});
+	    bolts[1] = new LightingStrike(new float[] {0, 50, 0}, new float[] {0, 5, 0});
+	    bolts[2] = new LightingStrike(new float[] {0, 50, 0}, new float[] {0, 5, 0});
+	    
 	    frameTimes  = new long[240];
 	    renderTimes = new long[240][RENDER_HEADERS.length];
 	    updateTimes = new long[240][UPDATE_HEADERS.length];
@@ -1201,16 +1209,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void loadPlayers(GL2 gl)
 	{
-		cars.add(new Car(gl, new float[] { 78.75f, 1.8f, 0}, 0,   0, 0, this));
+		cars.add(new Car(gl, new Vec3( 78.75f, 1.8f, 0), 0,   0, 0, this));
 	    
 	    if(GamePad.numberOfGamepads() > 1)
-	    	cars.add(new Car(gl, new float[] {-78.75f, 1.8f, 0}, 0, 180, 0, this));
+	    	cars.add(new Car(gl, new Vec3( -78.75f, 1.8f, 0), 0, 180, 0, this));
 	    
 	    if(GamePad.numberOfGamepads() > 2)
-	    	cars.add(new Car(gl, new float[] {0, 1.8f,  78.75f}, 0, 270, 0, this));
+	    	cars.add(new Car(gl, new Vec3( 0, 1.8f,  78.75f), 0, 270, 0, this));
 	    	
 	    if(GamePad.numberOfGamepads() > 3)
-		    cars.add(new Car(gl, new float[] {0, 1.8f, -78.75f}, 0,  90, 0, this));
+		    cars.add(new Car(gl, new Vec3( 0, 1.8f, -78.75f), 0,  90, 0, this));
 	}
 
 	private void loadTextures(GL2 gl)
@@ -1279,9 +1287,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void loadParticles()
 	{
-		new BoostParticle(ORIGIN, null, 0, 0, 0, false, false);
-	    new LightningParticle(ORIGIN);
-	    new StarParticle(ORIGIN, null, 0, 0);
+		new BoostParticle(new Vec3(), null, 0, 0, 0, false, false);
+	    new LightningParticle(new Vec3());
+	    new StarParticle(new Vec3(), null, 0, 0);
 	}
 
 	private void loadItems(GL2 gl)
@@ -1405,7 +1413,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 			if(headlight)
 			{
-				float[][] vectors = car.getLightVectors();
+				Vec3[] vectors = car.getLightVectors();
 					
 				light.direction = vectors[1];
 				light.setPosition(vectors[0]);
@@ -1506,7 +1514,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 */
 	public void renderWater(GL2 gl, Car car)
 	{
-		int aboveWater = car.camera.getPosition()[1] >= 0 ? -1 : 1;  
+		int aboveWater = car.camera.getPosition().y >= 0 ? -1 : 1;  
 		
 		gl.glEnable(GL2.GL_CLIP_PLANE1);
 		double equation[] = {0, aboveWater, 0, 0}; // primitives above water are clipped
@@ -1732,7 +1740,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void terrainCollisions(Car car)
 	{
-		float[][] vertices = car.bound.getVertices();
+		Vec3[] vertices = car.bound.getVertices();
 		float[] frictions = {1, 1, 1, 1};
 		
 		cars.get(0).patch = null;
@@ -1743,7 +1751,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			for(int v = 0; v < 4; v++)
 			{
-				if(patch.isColliding(vertices[v]))
+				if(patch.isColliding(vertices[v].toArray()))
 				{
 					patch.colliding = true;
 					if(frictions[v] > patch.friction) frictions[v] = patch.friction;
@@ -1808,8 +1816,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		// TODO Weather effects may not be working correctly with reflection
 		
-		float[] p = light.getPosition();
-		light.setPosition(new float[] {p[0], -p[1], p[2]});
+		Vec3 p = light.getPosition(); 
+		light.setPosition(new Vec3(p.x, -p.y, p.z));
 		
 		if(enableTerrain)
 		{
@@ -1998,7 +2006,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		gl.glPushMatrix();
 		{	
-			terrain.render(gl, glut, cars.get(0).getPosition());
+			terrain.render(gl, glut);
 		}	
 		gl.glPopMatrix();
 
@@ -2108,6 +2116,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 		
 		if(enableBlizzard) blizzard.render(gl);
+		
+//		for(LightingStrike bolt : bolts) bolt.render(gl);
 		
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
@@ -2266,9 +2276,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		frameTimes[frameIndex] = currentTime - renderTime;
 	}
 	
-	public static boolean outOfBounds(float[] p)
+	public static boolean outOfBounds(Vec3 p)
 	{
-		return dot(p, p) > GLOBAL_RADIUS * GLOBAL_RADIUS;
+		return p.dot() > GLOBAL_RADIUS * GLOBAL_RADIUS;
 	}
 
 	public List<Car> getCars() { return cars; }
@@ -2277,7 +2287,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void addItem(Item item) { itemList.add(item); }
 	
-	public void addItem(int item, float[] c, float trajectory)
+	public void addItem(int item, Vec3 c, float trajectory)
 	{
 		switch(item)
 		{
@@ -2301,7 +2311,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	public void spawnItemsInSphere(int item, int quantity, float[] c, float r)
+	public void spawnItemsInSphere(int item, int quantity, Vec3 c, float r)
 	{
 		spawnItemsInBound(item, quantity, new Sphere(c, r));
 	}
@@ -2409,14 +2419,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    {
 	    	int t = (i < patches * 0.5) ? 3 : generator.nextInt(3);
 	    	
-	    	float[] p = new float[3];
+	    	Vec3 p = new Vec3();
 	    	
-	    	p[0] = generator.nextFloat() * 360 - 180;
-	    	p[2] = generator.nextFloat() * 360 - 180;
+	    	p.x = generator.nextFloat() * 360 - 180;
+	    	p.z = generator.nextFloat() * 360 - 180;
 	    	
 	    	if(i > patches * 0.75)
 	    	{
-	    		p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
+	    		p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
 	    		foliage.add(new BillBoard(p, 3, t));
 	    	}
 	    	else
@@ -2425,18 +2435,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    	
 		    	for(int j = 0; j < k; j++)
 		    	{
-		    		float[] p0 = {p[0], p[1], p[2]};
+		    		Vec3 p0 = new Vec3(p);
 		    		
 		    		double incline = Math.toRadians(generator.nextInt(360));
 		    		double azimuth = Math.toRadians(generator.nextInt(360));
 		    		
-		    		p0[0] += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
-		    		p0[2] += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
+		    		p0.x += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
+		    		p0.z += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
 		    		
-		    		if(Math.abs(p0[0]) < 200 && Math.abs(p0[2]) < 200)
+		    		if(Math.abs(p0.x) < 200 && Math.abs(p0.z) < 200)
 		    		{
-		    			p0[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p0, terrain.tree.detail).getHeight(p0) : terrain.getHeight(p0);
-		    			foliage.add(new BillBoard(p0, 3, t));
+		    			p0.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p0.toArray(), terrain.tree.detail).getHeight(p0.toArray()) : terrain.getHeight(p0.toArray());
+		    			foliage.add(new BillBoard(p0, 2, t));
 		    		}
 		    	}
 	    	}
@@ -2446,13 +2456,28 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    {
 	    	int t = 4 + generator.nextInt(4);
 	    	
-	    	float[] p = new float[3];
+	    	Vec3 p = new Vec3();
 	    	
-	    	p[0] = generator.nextFloat() * 360 - 180;
-	    	p[2] = generator.nextFloat() * 360 - 180;
+	    	p.x = generator.nextFloat() * 360 - 180;
+	    	p.z = generator.nextFloat() * 360 - 180;
 	    	
-	    	p[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
+	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+	    	
 	    	foliage.add(new BillBoard(p, 30, t));
+	    }
+	    
+	    for(int i = 0; i < 30; i++)
+	    {
+	    	int t = 8 + generator.nextInt(2);
+	    	
+	    	Vec3 p = new Vec3();
+	    	
+	    	p.x = generator.nextFloat() * 360 - 180;
+	    	p.z = generator.nextFloat() * 360 - 180;
+	    	
+	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+
+	    	foliage.add(new BillBoard(p, 4, t));
 	    }
 	}
 	
@@ -2460,8 +2485,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		for(BillBoard board : foliage)
 		{
-			float[] p = board.sphere.c;
-			board.sphere.c[1] = (terrain.enableQuadtree) ? terrain.tree.getCell(p, terrain.tree.detail).getHeight(p) : terrain.getHeight(p);
+			Vec3 p = board.sphere.c;
+			board.sphere.c.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
 		}
 	}
 
@@ -2601,7 +2626,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_1: spawnItemsInSphere(Banana.ID, 10, new float[] {0, 100, 0}, 50); break;
+			case KeyEvent.VK_1: spawnItemsInSphere(Banana.ID, 10, new Vec3(0, 100, 0), 50); break;
 			case KeyEvent.VK_2: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform; break;
@@ -2682,8 +2707,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		     
 		else if(event.getActionCommand().equals("no_weather"   )) enableBlizzard = false;
 		     
-		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.2f, -1.5f, 0.1f}, StormType.SNOW); }
-		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new float[] {0.0f, -4.0f, 0.0f}, StormType.RAIN); }
+		else if(event.getActionCommand().equals("snow"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new Vec3(0.2f, -1.5f, 0.1f), StormType.SNOW); }
+		else if(event.getActionCommand().equals("rain"         )) { enableBlizzard = true; blizzard = new Blizzard(this, flakeLimit, new Vec3(0.0f, -4.0f, 0.0f), StormType.RAIN); }
 		     
 		else if(event.getActionCommand().equals("shadow_low"   )) { caster.setQuality(ShadowQuality.LOW);  resetShadow = true; }
 		else if(event.getActionCommand().equals("shadow_medium")) { caster.setQuality(ShadowQuality.MED);  resetShadow = true; }

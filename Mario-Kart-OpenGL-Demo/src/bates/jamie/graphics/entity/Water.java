@@ -8,6 +8,7 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -90,7 +91,7 @@ public class Water
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
-	public void render(GL2 gl, float[] p)
+	public void render(GL2 gl, Vec3 p)
 	{	
 		gl.glPushMatrix();
 		{
@@ -114,7 +115,7 @@ public class Water
 			
 			shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 			// TODO temporary fix, should pass actual camera position to shader
-			shader.setUniform(gl, "cameraPos", p);
+			shader.setUniform(gl, "cameraPos", p.toArray());
 			
 			gl.glBegin(GL2.GL_QUADS);
 			{

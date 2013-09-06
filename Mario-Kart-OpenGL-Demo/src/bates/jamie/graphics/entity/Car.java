@@ -1,11 +1,6 @@
 package bates.jamie.graphics.entity;
 
-import static bates.jamie.graphics.util.Matrix.getRotationMatrix;
 import static bates.jamie.graphics.util.Renderer.displayPartiallyTexturedObject;
-import static bates.jamie.graphics.util.Vector.add;
-import static bates.jamie.graphics.util.Vector.multiply;
-import static bates.jamie.graphics.util.Vector.normalize;
-import static bates.jamie.graphics.util.Vector.subtract;
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.asin;
@@ -14,7 +9,6 @@ import static java.lang.Math.toDegrees;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,8 +44,9 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Shader;
-import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.Vec3;
 
 /* TODO
  * 
@@ -104,14 +99,16 @@ public class Car
 	private float yRotation_Wheel = 0.0f;
 	private float zRotation_Wheel = 0.0f;
 	
-	private float[][] offsets_Wheel =
-		{{ 2.4f, -0.75f,  1.75f},  //back-left
-		 {-2.4f, -0.75f,  1.75f},  //front-left
-		 { 2.4f, -0.75f, -1.75f},  //back-right
-		 {-2.4f, -0.75f, -1.75f}}; //front-right
+	private Vec3[] offsets_Wheel =
+	{
+		new Vec3(+1.75f, -0.75f, +2.4f), // back-left
+		new Vec3(+1.75f, -0.75f, -2.4f), // front-left
+		new Vec3(-1.75f, -0.75f, +2.4f), // back-right
+		new Vec3(-1.75f, -0.75f, -2.4f)  // front-right
+	}; 
 	
-	private float[] offsets_LeftDoor =  {-1.43f, 0.21f,  1.74f};
-	private float[] offsets_RightDoor = {-1.43f, 0.21f, -1.74f};
+	private Vec3 offsets_LeftDoor =  new Vec3(-1.43f, 0.21f,  1.74f);
+	private Vec3 offsets_RightDoor = new Vec3(-1.43f, 0.21f, -1.74f);
 	
 	
 	/** Motion Fields **/
@@ -166,12 +163,12 @@ public class Car
 	private Queue<Integer> itemCommands = new ArrayBlockingQueue<Integer>(100);
 	
 	private boolean slipping = false;
-	private float[] slipVector = ORIGIN;
+	private Vec3 slipVector = new Vec3();
 	public float slipTrajectory = 0;
 	private int slipDuration = 0;
 	
 	private boolean sliding = false;
-	private float[] slideVector = ORIGIN;
+	private Vec3 slideVector = new Vec3();
 	
 	private boolean miniature = false;
 	private int miniatureDuration = 0;
@@ -218,7 +215,7 @@ public class Car
 	public boolean high_quality = true;
 	
 	
-	public Car(GL2 gl, float[] c, float xrot, float yrot, float zrot, Scene scene)
+	public Car(GL2 gl, Vec3 c, float xrot, float yrot, float zrot, Scene scene)
 	{
 		if(carList == -1)
 		{
@@ -235,8 +232,8 @@ public class Car
 				gl.glEndList();
 			}
 			
-			wheel_faces       = OBJParser.parseTriangles("wheel");
-			base_faces        = OBJParser.parseTriangles("car_base");
+			wheel_faces = OBJParser.parseTriangles("new_wheel");
+			base_faces  = OBJParser.parseTriangles("car_base");
 			
 			all_windows = OBJParser.parseTriangleMesh("windows_all");
 			car_body    = OBJParser.parseTriangleMesh("car_body");
@@ -244,9 +241,9 @@ public class Car
 		}
 	    
 	    bound = new OBB(
-				c[0], c[1], c[2],
+				c.x, c.y, c.z,
 	    		xrot, yrot, zrot,
-	    		5.5f, 2.0f, 2.7f);
+	    		2.7f, 2.0f, 5.5f);
 	    
 	    trajectory = yrot;
 	    
@@ -256,7 +253,7 @@ public class Car
 	    controller = new GamePad();
 	    
 	    hud = new HUD(scene, this);
-	    tag = new HoloTag(String.format("(%+3.2f, %+3.2f, %+3.2f)", c[0], c[1], c[2]), c);
+	    tag = new HoloTag(String.format("(%+3.2f, %+3.2f, %+3.2f)", c.x, c.y, c.z), c);
 	    
 	    anchor = new AnchorPoint();
 	    
@@ -273,8 +270,8 @@ public class Car
 		SceneNode body = new SceneNode(null, carList, car_body, SceneNode.MatrixOrder.T_M_S, shiny);
 		body.setColor(color);
 		body.setTranslation(bound.c);
-		body.setOrientation(getRotationMatrix(bound.u));
-		body.setScale(new float[] {scale, scale, scale});
+		body.setOrientation(bound.u.toArray());
+		body.setScale(new Vec3(scale));
 		body.setBloom(true);
 		
 		if(enableChrome)
@@ -290,8 +287,8 @@ public class Car
 			wheel.setColor(new float[] {1, 1, 1});
 			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
-			wheel.setRotation(ORIGIN);
-			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
+			wheel.setRotation(new Vec3());
+			wheel.setScale(new Vec3(0.6f));
 			
 			body.addChild(wheel);
 		}
@@ -299,14 +296,14 @@ public class Car
 		
 		SceneNode headlights = new SceneNode(null, carList, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
-		headlights.setTranslation(new float[] {0.2925f, 0, 0});
+		headlights.setTranslation(new Vec3());
 		headlights.setRenderMode(SceneNode.RenderMode.COLOR);
 		
 		body.addChild(headlights);
 		
 		SceneNode car_base = new SceneNode(base_faces, -1, null, SceneNode.MatrixOrder.T, shiny);
 		car_base.setColor(new float[] {1, 1, 1});
-		car_base.setTranslation(new float[] {0.2925f, 0, 0});
+		car_base.setTranslation(new Vec3());
 		car_base.setRenderMode(SceneNode.RenderMode.TEXTURE);
 		
 		body.addChild(car_base);
@@ -328,9 +325,9 @@ public class Car
 		SceneNode car_body = new SceneNode(car_faces, carList, null, SceneNode.MatrixOrder.T_M_S, shiny);
 		car_body.setColor(new float[] {1, 1, 1});
 		car_body.setTranslation(bound.c);
-		car_body.setOrientation(getRotationMatrix(bound.u));
+		car_body.setOrientation(bound.u.toArray());
 		car_body.setRenderMode(SceneNode.RenderMode.TEXTURE);
-		car_body.setScale(new float[] {scale, scale, scale});
+		car_body.setScale(new Vec3(scale));
 		
 		for(int i = 0; i < 4; i++)
 		{
@@ -338,8 +335,8 @@ public class Car
 			wheel.setColor(new float[] {1, 1, 1});
 			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
-			wheel.setRotation(ORIGIN);
-			wheel.setScale(new float[] {0.6f, 0.6f, 0.6f});
+			wheel.setRotation(new Vec3());
+			wheel.setScale(new Vec3(0.6f));
 			
 			car_body.addChild(wheel);
 		}
@@ -348,7 +345,6 @@ public class Car
 		left_door.setColor(color);
 		left_door.setRenderMode(SceneNode.RenderMode.COLOR);
 		left_door.setTranslation(offsets_LeftDoor);
-		left_door.setScale(new float[] {1, 1, 1});
 		
 		SceneNode left_window = new SceneNode(door_window_faces, -1, null, SceneNode.MatrixOrder.NONE, null);
 		left_window.setColor(windowColor);
@@ -361,7 +357,7 @@ public class Car
 		right_door.setColor(color);
 		right_door.setRenderMode(SceneNode.RenderMode.COLOR);
 		right_door.setTranslation(offsets_RightDoor);
-		right_door.setScale(new float[] {1, 1, -1});
+		right_door.setScale(new Vec3(1, 1, -1));
 		
 		SceneNode right_window = new SceneNode(door_window_faces, -1, null, SceneNode.MatrixOrder.NONE, null);
 		right_window.setColor(windowColor);
@@ -373,7 +369,7 @@ public class Car
 		SceneNode windows = new SceneNode(window_faces, -1, null, SceneNode.MatrixOrder.T, null);
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
-		windows.setTranslation(new float[] {0.3f, -1.2f, 0});
+		windows.setTranslation(new Vec3(0.3f, -1.2f, 0));
 		
 		car_body.addChild(windows);
 		
@@ -385,15 +381,16 @@ public class Car
 		SceneNode car_body = graph.getRoot();
 		
 		car_body.setTranslation(bound.c);
-		car_body.setOrientation(getRotationMatrix(bound.u));
-		car_body.setScale(new float[] {scale, scale, scale});
+		car_body.setOrientation(bound.u.toArray());
+		car_body.setScale(new Vec3(scale));
 		
 		for(int i = 0; i < 4; i++)
 		{
 			SceneNode wheel = car_body.getChildren().get(i);
 			
-			if(i % 2 != 0) wheel.setRotation(new float[] {0, yRotation_Wheel, zRotation_Wheel});
-			else           wheel.setRotation(new float[] {0, 0, zRotation_Wheel});
+			// only front wheels can turn left/right
+			if(i % 2 != 0) wheel.setRotation(new Vec3(zRotation_Wheel, yRotation_Wheel, 0));
+			else           wheel.setRotation(new Vec3(zRotation_Wheel, 0, 0));
 		}
 	}
 	
@@ -433,7 +430,7 @@ public class Car
 	
 	public ItemRoulette getRoulette() { return roulette; }
 	
-	public float[][] getRotation() { return bound.u; }
+	public RotationMatrix getRotation() { return bound.u; }
 	
 	public void aimForwards()  { aiming = Aim.FORWARDS;  }
 	
@@ -602,17 +599,17 @@ public class Car
 	
 	public float getThrowVelocity() { return TOP_SPEED * 1.5f + abs(velocity); }
 
-	public void setRotation(float x, float y, float z) { bound.u = getRotationMatrix(x, y, z); }
+	public void setRotation(float x, float y, float z) { bound.u = new RotationMatrix(x, y, z); }
 	
-	public float[] getForwardVector() { return multiply(bound.u[0], velocity); }
+	public Vec3 getForwardVector() { return bound.u.zAxis.multiply(velocity); }
 	
-	public float[] getSlipVector() { return subtract(bound.c, multiply(slipVector, velocity)); }
+	public Vec3 getSlipVector() { return bound.c.subtract(slipVector.multiply(velocity)); }
 	
-	public void setRotation(float[] angles) { bound.u = getRotationMatrix(angles[0], angles[1], angles[2]); }
+	public void setRotation(Vec3 angles) { bound.u = new RotationMatrix(angles.x, angles.y, angles.z); }
 	
-	public void setPosition(float[] c) { bound.setPosition(c); }
+	public void setPosition(Vec3 c) { bound.setPosition(c); }
 	
-	public float[] getPosition() { return bound.getPosition(); }
+	public Vec3 getPosition() { return bound.getPosition(); }
 	
 	public float[] getColor() { return color; }
 	
@@ -685,7 +682,7 @@ public class Car
 		if(displayTag && !camera.isFirstPerson())
 		{
 			float ry = slipping ? slipTrajectory : trajectory; 
-			if(camera.isFree()) ry = camera.getRotation()[1];
+			if(camera.isFree()) ry = camera.getRotation().y;
 			
 			tag.render(gl, ry);
 		}
@@ -764,14 +761,16 @@ public class Car
 	
 	public float[] getHeights(Quadtree tree, int lod)
 	{
-		float[][] vertices = bound.getVertices();
+		Vec3[] vertices = bound.getVertices();
 		
 		long start = System.nanoTime();
 		
 		for(int i = 0; i < 4; i++)
 		{
-			Quadtree cell = tree.getCell(vertices[i], lod);
-			heights[i] = (cell != null) ? cell.getHeight(vertices[i]) : 0;
+			float[] vertex = vertices[i].toArray();
+			
+			Quadtree cell = tree.getCell(vertex, lod);
+			heights[i] = (cell != null) ? cell.getHeight(vertex) : 0;
 		}
 		
 		if(accelerating && enableDeform)
@@ -783,9 +782,11 @@ public class Car
 			
 			for(int i = 0; i < 4; i++)
 			{
-				Quadtree cell = tree.getCell(vertices[i], Quadtree.MAXIMUM_LOD);
+				float[] vertex = vertices[i].toArray();
+				
+				Quadtree cell = tree.getCell(vertex, Quadtree.MAXIMUM_LOD);
 				if(cell != null) cell.subdivide();
-				tree.deform(vertices[i], 1.5f, -depression);
+				tree.deform(vertex, 1.5f, -depression);
 			}
 		}
 		
@@ -793,15 +794,15 @@ public class Car
 		scene.updateTimes[scene.frameIndex][3] = 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		h += bound.e[1];
-		bound.c[1] = h;
+		h += bound.e.y;
+		bound.c.y = h;
 		
 		return heights;
 	}
 	
 	public float[] getHeights(Collection<Quadtree> trees)
 	{
-		float[][] vertices = bound.getVertices();
+		Vec3[] vertices = bound.getVertices();
 		
 		long start = System.nanoTime();
 		
@@ -810,11 +811,12 @@ public class Car
 		for(int i = 0; i < 4; i++)
 		{
 			float max = Integer.MIN_VALUE;
+			float[] vertex = vertices[i].toArray();
 			
 			for(Quadtree tree : trees)
 			{
-				Quadtree cell = tree.getCell(vertices[i], tree.detail);
-				float h = (cell != null) ? cell.getHeight(vertices[i]) : 0;
+				Quadtree cell = tree.getCell(vertex, tree.detail);
+				float h = (cell != null) ? cell.getHeight(vertex) : 0;
 				if(h > max && !tree.enableBlending) { max = h; _trees[i] = tree; }
 			}
 
@@ -837,9 +839,11 @@ public class Car
 			
 			for(int i = 0; i < 4; i++)
 			{
-				Quadtree cell = _trees[i].getCell(vertices[i], Quadtree.MAXIMUM_LOD);
+				float[] vertex = vertices[i].toArray();
+				
+				Quadtree cell = _trees[i].getCell(vertex, Quadtree.MAXIMUM_LOD);
 				if(cell != null) cell.subdivide();
-				_trees[i].deform(vertices[i], 1.5f, -depression);
+				_trees[i].deform(vertex, 1.5f, -depression);
 			}
 		}
 		
@@ -847,8 +851,8 @@ public class Car
 		scene.updateTimes[scene.frameIndex][3] = 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		h += bound.e[1];
-		bound.c[1] = h;
+		h += bound.e.y;
+		bound.c.y = h;
 		
 		return heights;
 	}
@@ -857,17 +861,19 @@ public class Car
 	{
 		if(map.enableQuadtree) return getHeights(map.trees.values());
 		
-		float[][] vertices = bound.getVertices();
+		Vec3[] vertices = bound.getVertices();
 
 		for(int i = 0; i < 4; i++)
 		{
-			float h = map.getHeight(vertices[i]);
+			float[] vertex = vertices[i].toArray();
+			
+			float h = map.getHeight(vertex);
 			heights[i] = h;
 		}
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		h += bound.e[1];
-		bound.c[1] = h;
+		h += bound.e.y;
+		bound.c.y = h;
 		
 		return heights;
 	}
@@ -881,50 +887,47 @@ public class Car
 	 */
 	private void setHeights(OBB obb)
 	{
-		float[] face = obb.getFaceVector(getPosition());
+		Vec3 face = obb.getFaceVector(getPosition());
 
 		//if the side of collision is the upwards face
-		if(Arrays.equals(face, obb.getUpVector(1)))
+		if(face.equals(obb.getUpVector(1)))
 		{
-			float[][] vertices = bound.getVertices();
+			Vec3[] vertices = bound.getVertices();
 
-			//calculate the height at each wheel
+			// calculate the height at each wheel
 			for(int i = 0; i < 4; i++)
 			{
-				float h = obb.closestPointOnPerimeter(vertices[i])[1];
+				float h = obb.closestPointOnPerimeter(vertices[i]).y;
 				if(h > heights[i]) heights[i] = h;
 			}
 
-			//calculate the height at the centre of the vehicle
-			float h = obb.closestPointOnPerimeter(getPosition())[1]
-					+ (bound.e[1] * 0.99f);
+			// calculate the height at the centre of the vehicle
+			float h = obb.closestPointOnPerimeter(getPosition()).y
+					+ (bound.e.y * 0.99f);
 			
-			if(h > bound.c[1])
+			if(h > bound.c.y)
 			{
-				bound.c[1] = h;
+				bound.c.y = h;
 				
 				if(motionMode == Motion.ANCHOR)
-				{
-					float[] p = anchor.getPosition();
-					anchor.setPosition(new float[] {p[0], h, p[2]});
-				}
+					anchor.getPosition().y = h;
 			}
 
-			falling = false; fallRate = 0; //disable falling
+			falling = false; fallRate = 0; // disable falling
 		}
 	}
 	
-	public float[] getRotationAngles(float[] h)
+	public Vec3 getRotationAngles(float[] h)
 	{
 		float frontHeight = (h[0] + h[1]) / 2; 
 		float backHeight  = (h[2] + h[3]) / 2;
 		float leftHeight  = (h[1] + h[3]) / 2;
 		float rightHeight = (h[0] + h[2]) / 2;
 	
-		float xrot = (float) -toDegrees(atan((leftHeight - rightHeight) / (bound.e[2] * 2)));
-		float zrot = (float) -toDegrees(atan((frontHeight - backHeight) / (bound.e[0] * 2)));
+		float xrot = (float) toDegrees(atan((backHeight - frontHeight) / (bound.e.z * 2)));
+		float zrot = (float) toDegrees(atan((leftHeight - rightHeight) / (bound.e.x * 2)));
 		
-		return new float[] {xrot, trajectory, zrot};
+		return new Vec3(xrot, trajectory, zrot);
 	}
 
 	public void detectCollisions()
@@ -956,7 +959,7 @@ public class Car
 
 	private void resolveCollisions()
 	{
-		List<float[]> vectors = new ArrayList<float[]>();
+		List<Vec3> vectors = new ArrayList<Vec3>();
 		
 		for(Bound collision : collisions)
 		{
@@ -964,7 +967,7 @@ public class Car
 			else if(collision instanceof Sphere) vectors.add(resolveSphere((Sphere) collision));
 		}
 		
-		for(float[] vector : vectors) setPosition(add(getPosition(), vector));
+		for(Vec3 vector : vectors) setPosition(getPosition().add(vector));
 		
 		if(motionMode == Motion.ANCHOR) anchor.setPosition(getPosition());
 	}
@@ -976,16 +979,19 @@ public class Car
 	 * bounding geometry; therefore, this method is not used and may be inaccurate
 	 * 
 	 */
-	private float[] resolveSphere(Sphere sphere)
+	private Vec3 resolveSphere(Sphere sphere)
 	{
-		float[] face = sphere.getFaceVector(getPosition());
-		face[1] = 0;
-
-		float s = this.bound.getPenetration(sphere);
+		Vec3 face = sphere.getFaceVector(getPosition());
+		face.y = 0;
+		
+		float s = bound.getPenetration(sphere);
+		
+		face = face.subtract(sphere.getPosition());
+		face = face.normalize().multiply(s);
 
 		velocity *= (slipping) ? 0 : 0.9;
 
-		return multiply((normalize(subtract(face, sphere.getPosition()))), s);
+		return face;
 	}
 
 	/**
@@ -993,26 +999,27 @@ public class Car
 	 * note that it is assumed that the vehicle is colliding with the side or
 	 * bottom of the OBB (see setHeights(OBB) for top collisions) 
 	 */
-	private float[] resolveOBB(OBB obb)
+	private Vec3 resolveOBB(OBB obb)
 	{
-		float[] face = obb.getFaceVector(getPosition());
+		Vec3 face = obb.getFaceVector(getPosition());
 		
 		/*
 		 * the vehicles must be colliding with the side or bottom of the OBB
 		 * the face must be a valid collision (not all sides are considered)
 		 * the bottom of the vehicle must be lower than the top of the OBB
 		 */
-		if(!Arrays.equals(face, obb.getUpVector(1)) && obb.isValidCollision(face)
-		   && (getPosition()[1] - bound.e[1]) < (obb.c[1] + obb.e[1]))
+		if(!face.equals(obb.getUpVector(1)) && obb.isValidCollision(face)
+		   && (getPosition().y - bound.e.y) < (obb.c.y + obb.e.y))
 		{
 			float p = bound.getPenetration(obb);
 			
 			if(slipping) velocity = 0;
 			else velocity *= 0.9;
 			
-			return multiply(subtract(face, obb.getPosition()), p);
+			face = face.subtract(obb.getPosition());
+			return face.multiply(p);
 		}
-		else return new float[] {0, 0, 0};
+		else return new Vec3();
 	}
 
 	public void update()
@@ -1023,7 +1030,7 @@ public class Car
 		if(motionMode == Motion.ANCHOR)
 		{
 			setRotation(anchor.getRotation());
-			trajectory = anchor.getRotation()[1];
+			trajectory = anchor.getRotation().y;
 		}
 		else setRotation(getRotationAngles(heights));
 		
@@ -1080,9 +1087,9 @@ public class Car
 		
 		if(drift != Direction.STRAIGHT && !falling)
 		{
-			for(float[] vector : getDriftVectors())
+			for(Vec3 vector : getDriftVectors())
 			{
-				float[] source = add(getPosition(), vector);
+				Vec3 source = vector.add(getPosition());
 				
 				scene.addParticles(generator.generateDriftParticles(source, 10, driftState.ordinal(), miniature));
 				scene.addParticles(generator.generateSparkParticles(source, vector, 1, driftState.ordinal(), this));
@@ -1091,13 +1098,13 @@ public class Car
 		
 		if(scene.enableTerrain && !scene.getTerrain().enableQuadtree && patch != null && velocity != 0)
 		{
-			for(float[] source : getDriftVectors())
+			for(Vec3 source : getDriftVectors())
 			{
 				scene.addParticles(generator.generateTerrainParticles(source, 15, patch.texture));
 			}
 		}
 		
-		float[] p = {bound.c[0], bound.c[1] + 5, bound.c[2]};
+		Vec3 p = new Vec3(bound.c.x, bound.c.y + 5, bound.c.z);
 		
 		tag.setPosition(p);
 		tag.displayPosition();
@@ -1147,7 +1154,7 @@ public class Car
 		else if(miniature)
 		{
 			miniature = false;
-			bound.e = multiply(bound.e, 2);
+			bound.e.multiply(2);
 			scale *= 2;
 		}
 		
@@ -1156,7 +1163,7 @@ public class Car
 		
 		if(boosting)
 		{
-			for(float[] source : getBoostVectors())
+			for(Vec3 source : getBoostVectors())
 				scene.addParticles(generator.generateBoostParticles(source, boostDuration / 4, superBoosting, miniature));
 		}
 		
@@ -1196,7 +1203,7 @@ public class Car
 	private void fall()
 	{
 		if(fallRate < TOP_FALL_RATE) fallRate += gravity;
-		bound.c[1] -= fallRate;
+		bound.c.y -= fallRate;
 	}
 	
 	public void drift() { drift = direction; }
@@ -1270,13 +1277,13 @@ public class Car
 
 	private void turnLeft()
 	{
-		if(!controller.isEnabled() || controller.getXAxis() <= 0)
+		if(!controller.isEnabled() || controller.getXAxis() >= 0)
 		{
-			if(turnRate < TOP_TURN_RATE) turnRate += turnIncrement;
+			if(turnRate > -TOP_TURN_RATE) turnRate -= turnIncrement;
 		}
 		else
 		{
-			if(turnRate < TOP_TURN_RATE * controller.getXAxis()) turnRate += turnIncrement;
+			if(turnRate > -TOP_TURN_RATE * controller.getXAxis()) turnRate -= turnIncrement;
 		}
 		
 		float k = 1; 
@@ -1289,18 +1296,18 @@ public class Car
 		
 		if(sliding) k *= 0.75;
 		
-		if(velocity != 0 || (sliding && !Vector.isZeroVector(slideVector))) trajectory += turnRate * k;
+		if(velocity != 0 || (sliding && !slideVector.isZeroVector())) trajectory += turnRate * k;
 	}
 
 	private void turnRight()
 	{
-		if(!controller.isEnabled() || controller.getXAxis() >= 0)
+		if(!controller.isEnabled() || controller.getXAxis() <= 0)
 		{
-			if(turnRate > -TOP_TURN_RATE) turnRate -= turnIncrement;
+			if(turnRate < TOP_TURN_RATE) turnRate += turnIncrement;
 		}
 		else
 		{
-			if(turnRate > TOP_TURN_RATE * controller.getXAxis()) turnRate -= turnIncrement;
+			if(turnRate < TOP_TURN_RATE * controller.getXAxis()) turnRate += turnIncrement;
 		}
 		
 		float k = 1;
@@ -1311,9 +1318,9 @@ public class Car
 			else if(direction == Direction.RIGHT) k = 1.25f;
 		}
 		
-		if(sliding) k *= 0.8;
+		if(sliding) k *= 0.75;
 		
-		if(velocity != 0 || (sliding && !Vector.isZeroVector(slideVector))) trajectory += turnRate * k;
+		if(velocity != 0 || (sliding && !slideVector.isZeroVector())) trajectory += turnRate * k;
 	}
 	
 	public void straighten() { direction = Direction.STRAIGHT; }
@@ -1329,115 +1336,116 @@ public class Car
 
 	public void turnWheels()
 	{
-		float turnRatio = turnRate / TOP_TURN_RATE;
+		float turnRatio = -turnRate / TOP_TURN_RATE;
 	
-		if(turnRatio > 1) turnRatio = 1;
+		     if(turnRatio > +1) turnRatio = +1;
 		else if(turnRatio < -1) turnRatio = -1;
 	
 		yRotation_Wheel = (float) (toDegrees(asin(turnRatio)) / 2);
-		if(velocity < 0) yRotation_Wheel = -yRotation_Wheel;
+		if(velocity < 0) yRotation_Wheel = -yRotation_Wheel; // TODO
 	}
 
-	public float[] getPositionVector()
+	public Vec3 getPositionVector()
 	{
 		float _velocity = (miniature) ?  velocity * 0.75f :  velocity;
 		      _velocity = (starPower) ? _velocity * 1.25f : _velocity;
 		      
-		float[] vector = multiply(bound.u[0], _velocity * friction);
-		      
-		float[] p = subtract(bound.c, vector);
+		Vec3 vector = bound.u.zAxis.multiply(_velocity * friction);
+		Vec3 p = bound.c.subtract(vector);
 		
 		if(sliding)
 		{
 			acceleration = 0.006f;
 			
 			float k = 0.05f + Math.abs(turnRate / TOP_TURN_RATE) * 0.10f;
-			slideVector = multiply(subtract(slideVector, vector), k);
 			
-			p = add(p, slideVector);
+			slideVector = slideVector.subtract(vector);
+		    slideVector = slideVector.multiply(k);
+			
+			p = p.add(slideVector);
 		}
 		else acceleration = 0.012f;
 		
 		return p;
 	}
 	
-	public float[] getVector()
+	public Vec3 getVector()
 	{
 		float _velocity = (miniature) ?  velocity * 0.75f :  velocity;
 		      _velocity = (starPower) ? _velocity * 1.25f : _velocity;
 		
-		return multiply(bound.u[0], _velocity * friction);
+		return bound.u.zAxis.multiply(_velocity * friction);
 	}
 
-	public float[][] getBoostVectors()
+	public Vec3[] getBoostVectors()
 	{	
-		float[] eu0 = multiply(bound.u[0], bound.e[0]);
-		float[] eu2 = multiply(bound.u[2], bound.e[2] * 0.75f);
+		Vec3 eu0 = bound.u.xAxis.multiply(bound.e.x * 0.75f);
+		Vec3 eu2 = bound.u.zAxis.multiply(bound.e.z);
 		
-		return new float[][]
+		return new Vec3[]
 		{
-			subtract(add(getPosition(), eu0), eu2), //right exhaust
-			     add(add(getPosition(), eu0), eu2)  //left exhaust
+			getPosition().subtract(eu0).add(eu2), // right exhaust
+			getPosition().     add(eu0).add(eu2)  // left exhaust
 		};
 	}
 	
-	public float[][] getLightVectors()
+	public Vec3[] getLightVectors()
 	{	
-		float[] eu0 = multiply(bound.u[0], bound.e[0]);
+		Vec3 v = bound.u.zAxis.multiply(bound.e.z);
 		
-		float[][] boost = getBoostVectors();
+		Vec3[] boost = getBoostVectors();
 		
-		return new float[][]
+		return new Vec3[]
 		{
-			subtract(getPosition(), eu0),
-			subtract(bound.c, boost[0])
+			getPosition().subtract(v),
+			bound.c.subtract(boost[0])
 		};
 	}
 	
-	public float[][] getDriftVectors()
+	public Vec3[] getDriftVectors()
 	{
-		float[] eu0 = multiply(bound.u[0], bound.e[0] * 0.75f);
-		float[] eu1 = multiply(bound.u[1], bound.e[1] * 0.75f);
-		float[] eu2 = multiply(bound.u[2], bound.e[2] * 1.25f);
+		Vec3 eu0 = bound.u.xAxis.multiply(bound.e.x * 1.25f);
+		Vec3 eu1 = bound.u.yAxis.multiply(bound.e.y * 0.75f);
+		Vec3 eu2 = bound.u.zAxis.multiply(bound.e.z * 0.75f);
 		
-		return new float[][]
+		return new Vec3[]
 		{
-			subtract(subtract(eu0, eu1), eu2),
-			     add(subtract(eu0, eu1), eu2)
+			eu2.subtract(eu1).subtract(eu0),
+			eu2.subtract(eu1).     add(eu0)
 		};
 	}
 	
-	public float[] getLightningVector()
+	public Vec3 getLightningVector()
 	{
-		return add(bound.c, multiply(bound.u[1], 20));
+		return bound.c.add(bound.u.yAxis.multiply(20));
 	}
 	
-	public float[] getBackwardItemVector(Item item, int iteration)
+	public Vec3 getBackwardItemVector(Item item, int iteration)
 	{
 		float radius = item.getMaximumExtent() * 1.5f * iteration;
 		
-		return add(bound.c, multiply(bound.u[0], bound.e[0] + radius));
+		return bound.c.add(bound.u.zAxis.multiply(bound.e.z + radius));
 	}
 	
-	public float[] getBackwardItemVector(Item item)
+	public Vec3 getBackwardItemVector(Item item)
 	{
 		float radius = item.getMaximumExtent() * 1.5f;
 		
-		return add(getUpItemVector(item), multiply(bound.u[0], bound.e[0] + radius));
+		return getUpItemVector(item).add(bound.u.zAxis.multiply(bound.e.z + radius));
 	}
 	
-	public float[] getForwardItemVector(Item item)
+	public Vec3 getForwardItemVector(Item item)
 	{
 		float radius = item.getMaximumExtent() * 1.5f;
 		
-		return subtract(getUpItemVector(item), multiply(bound.u[0], bound.e[0] + radius));
+		return getUpItemVector(item).subtract(bound.u.zAxis.multiply(bound.e.z + radius));
 	}
 	
-	public float[] getUpItemVector(Item item)
+	public Vec3 getUpItemVector(Item item)
 	{
 		float radius = item.getMaximumExtent() * 1.5f;
 		
-		return add(bound.c, multiply(bound.u[1], bound.e[1] + radius));
+		return bound.c.add(bound.u.yAxis.multiply(bound.e.y + radius));
 	}
 	
 	public void reset()
@@ -1467,7 +1475,7 @@ public class Car
 	{
 		if(!slipping)
 		{
-			slipVector = bound.u[0];
+			slipVector = bound.u.zAxis;
 			slipTrajectory = trajectory;
 			slipping = true;
 			slipDuration = 48;
@@ -1487,7 +1495,7 @@ public class Car
 		{
 			if(!miniature)
 			{
-				bound.e = multiply(bound.e, 0.5f);
+				bound.e = bound.e.multiply(0.5f);
 				scale /= 2;
 			}
 			
@@ -1499,7 +1507,7 @@ public class Car
 			else spin();
 		}
 		
-		float[] source = getLightningVector(); 
+		Vec3 source = getLightningVector(); 
 		scene.addParticle(new LightningParticle(source));
 	}
 	

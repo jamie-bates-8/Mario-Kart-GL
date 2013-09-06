@@ -8,7 +8,7 @@ import java.util.Collection;
 
 public class Vector
 {
-	public static final float EPSILON = 0.00001f;
+	public static final float EPSILON = 1E-5f;
 	public static final int DEFAULT_PRECISION = 2;
 	
 	public float[] u;
@@ -44,6 +44,12 @@ public class Vector
 		for(int i = 0; i < n; i++) dot += (u[i] * v[i]);
 		
 		return dot;
+	}
+	
+	public static float length(float[] u, float[] v)
+	{
+		float[] t = subtract(v, u);
+		return (float) Math.sqrt(dot(t, t));
 	}
 	
 	public static float[] add(float[] u, float[] v)

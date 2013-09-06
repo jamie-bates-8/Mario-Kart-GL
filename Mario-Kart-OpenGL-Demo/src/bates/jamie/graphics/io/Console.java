@@ -18,6 +18,7 @@ import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.Vec3;
 
 /* TODO
  * 
@@ -388,7 +389,7 @@ public class Console
 
 			float r = cmd.nextFloat();
 
-			scene.spawnItemsInSphere(itemID, quantity, new float[] {x, y, z}, r);
+			scene.spawnItemsInSphere(itemID, quantity, new Vec3(x, y, z), r);
 		}
 		else if(_cmd.equalsIgnoreCase("obb"))
 		{
@@ -423,7 +424,7 @@ public class Console
 
 			float t = cmd.nextFloat();
 			
-			scene.addItem(itemID, new float[] {x, y, z}, t);
+			scene.addItem(itemID, new Vec3(x, y, z), t);
 		}
 	}
 	
@@ -468,7 +469,7 @@ public class Console
 			float y = cmd.nextFloat();
 			float z = cmd.nextFloat();
 			
-			player.setPosition(new float[] {x, y, z});   
+			player.setPosition(new Vec3(x, y, z));   
 		}
 	}
 	

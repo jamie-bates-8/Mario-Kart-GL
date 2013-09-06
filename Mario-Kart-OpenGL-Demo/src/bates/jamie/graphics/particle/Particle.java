@@ -1,7 +1,5 @@
 package bates.jamie.graphics.particle;
 
-import static bates.jamie.graphics.util.Vector.add;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,11 +7,15 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Vec3;
+
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
 public abstract class Particle
 {
+	protected static final String TEXTURE_DIRECTORY = "tex/particles/";
+	
 	protected static Texture reset;
 	protected static Texture current;
 	
@@ -39,23 +41,21 @@ public abstract class Particle
 	{
 		try
 		{
-			redFlare    = TextureIO.newTexture(new File("tex/redFlare.png"), true);
-			orangeFlare = TextureIO.newTexture(new File("tex/orangeFlare.png"), true);
-			yellowFlare = TextureIO.newTexture(new File("tex/yellowFlare.png"), true);
-			greenFlare  = TextureIO.newTexture(new File("tex/greenFlare.png"), true);
-			blueFlare   = TextureIO.newTexture(new File("tex/blueFlare.png"), true);
-			indigoFlare = TextureIO.newTexture(new File("tex/indigoFlare.png"), true);
-			violetFlare = TextureIO.newTexture(new File("tex/violetFlare.png"), true);
-			whiteFlare  = TextureIO.newTexture(new File("tex/whiteFlare.png"), true);
+			redFlare    = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "redFlare.png"), true);
+			orangeFlare = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "orangeFlare.png"), true);
+			yellowFlare = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "yellowFlare.png"), true);
+			greenFlare  = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "greenFlare.png"), true);
+			blueFlare   = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "blueFlare.png"), true);
+			indigoFlare = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "indigoFlare.png"), true);
+			violetFlare = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "violetFlare.png"), true);
+			whiteFlare  = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "whiteFlare.png"), true);
 			
-			yellowSpark = TextureIO.newTexture(new File("tex/yellowSpark.png"), true);
-			redSpark    = TextureIO.newTexture(new File("tex/redSpark.png"), true);
-			blueSpark   = TextureIO.newTexture(new File("tex/blueSpark.png"), true);
-			whiteSpark  = TextureIO.newTexture(new File("tex/whiteSpark.png"), true);
+			yellowSpark = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "yellowSpark.png"), true);
+			redSpark    = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "redSpark.png"), true);
+			blueSpark   = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "blueSpark.png"), true);
+			whiteSpark  = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "whiteSpark.png"), true);
 			
-			whiteStar   = TextureIO.newTexture(new File("tex/whiteStar.png"), true);
-			
-			cloud1      = TextureIO.newTexture(new File("tex/cloud1.png"), true);
+			whiteStar   = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "whiteStar.png"), true);
 			
 			reset       = TextureIO.newTexture(new File("tex/default.jpg"), true);
 			
@@ -64,13 +64,13 @@ public abstract class Particle
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
-	public float[] c;
-	public float[] t;
+	public Vec3 c;
+	public Vec3 t;
 	public float rotation;
 	
 	public int duration;
 	
-	public Particle(float[] c, float[] t, float rotation, int duration)
+	public Particle(Vec3 c, Vec3 t, float rotation, int duration)
 	{
 		this.c = c;
 		this.t = t;
@@ -91,7 +91,7 @@ public abstract class Particle
 		return toRemove.size();
 	}
 	
-	public float[] getPosition() { return c; }
+	public Vec3 getPosition() { return c; }
 	
 	public boolean isDead() { return (duration < 1); }
 	
@@ -99,7 +99,7 @@ public abstract class Particle
 	
 	public void update()
 	{
-		c = add(c, t);
+		c = c.add(t);
 		duration--;
 	}
 	

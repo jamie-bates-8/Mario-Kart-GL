@@ -1,36 +1,35 @@
 package bates.jamie.graphics.collision;
 
-import java.util.List;
-
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.gl2.GLUT;
 
 public abstract class Bound
 {
-	public float[] c;
+	public Vec3 c;
 	
-	public void setPosition(float x, float y, float z) { c = new float[] {x, y, z}; }
+	public void setPosition(float x, float y, float z) { c = new Vec3(x, y, z); }
+	public void setPosition(float[] p)                 { c = new Vec3(p);       }
+	public void setPosition(Vec3 v)                    { c = v;                 }
 	
-	public void setPosition(float[] c) { this.c = c; }
-	
-	public float[] getPosition() { return c; }
-	
-	public abstract List<float[]> getPixelMap();
+	public Vec3 getPosition() { return c; }
 	
 	/**
 	 * Returns the normal of the bound's surface with reference to the point
 	 * <code>p</code>.
 	 */
-	public abstract float[] getFaceVector(float[] p);
+	public abstract Vec3 getFaceVector(Vec3 p);
 	
 	/**
 	 * Returns the closest point within the bound to the point <code>p</code>
 	 * passed as a parameter. If the point <code>p</code> is within the bound,
 	 * the point itself is returned.
 	 */
-	public abstract float[] closestPointToPoint(float[] p);
+	public abstract Vec3 closestPointToPoint(Vec3 p);
+	
+	public abstract Vec3 closestPointOnPerimeter(Vec3 p);
 	
 	public abstract boolean testSphere(Sphere s);
 	
@@ -44,9 +43,9 @@ public abstract class Bound
 	
 	public abstract float getHeight();
 	
-	public abstract float[] randomPointInside();
+	public abstract Vec3 randomPointInside();
 	
-	public void displayClosestPtToPt(GL2 gl, GLUT glut, float[] p, boolean smooth)
+	public void displayClosestPtToPt(GL2 gl, GLUT glut, Vec3 p, boolean smooth)
 	{
 		gl.glColor4f(1, 1, 1, 1);
 		
@@ -59,17 +58,17 @@ public abstract class Bound
 		
 		gl.glPushMatrix();
 		{
-			float[] vertex = closestPointToPoint(p);
+			Vec3 vertex = closestPointOnPerimeter(p);
 			
 			if(smooth)
 			{
 				gl.glBegin(GL2.GL_POINTS);
-				gl.glVertex3f(vertex[0], vertex[1], vertex[2]);
+				gl.glVertex3fv(vertex.toArray(), 0);
 				gl.glEnd();
 			}
 			else
 			{			
-				gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
+				gl.glTranslatef(vertex.x, vertex.y, vertex.z);
 				glut.glutSolidSphere(0.2, 12, 12);
 			}
 		}

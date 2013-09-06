@@ -7,6 +7,7 @@ import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vec3;
 
 
 public class DriftParticle extends Particle
@@ -17,9 +18,9 @@ public class DriftParticle extends Particle
 	private boolean flat;
 	private boolean miniature;
 	
-	public DriftParticle(float[] c, float rotation, int color, boolean flat, boolean miniature)
+	public DriftParticle(Vec3 c, float rotation, int color, boolean flat, boolean miniature)
 	{
-		super(c, new float[] {0, 0, 0}, rotation, 0);
+		super(c, new Vec3(), rotation, 0);
 		
 		this.color = color;
 		this.flat = flat;
@@ -31,8 +32,8 @@ public class DriftParticle extends Particle
 	{
 		gl.glPushMatrix();
 		{	
-			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glTranslatef(c.x, c.y, c.z);
+			gl.glRotatef(trajectory, 0, -1, 0);
 			gl.glRotatef((flat) ? -90 : 0, 1, 0, 0);
 			gl.glRotatef(rotation, 0, 0, 1);
 			

@@ -1,16 +1,15 @@
 package bates.jamie.graphics.particle;
 
-import static bates.jamie.graphics.util.Vector.add;
-import static bates.jamie.graphics.util.Vector.multiply;
-
 import javax.media.opengl.GL2;
+
+import bates.jamie.graphics.util.Vec3;
 
 public class WeatherParticle extends Particle
 {	
 	public float alpha;
 	public boolean falling = true;
 	
-	public WeatherParticle(float[] c, float[] t, float alpha)
+	public WeatherParticle(Vec3 c, Vec3 t, float alpha)
 	{
 		super(c, t, 0, 0);
 		
@@ -23,13 +22,16 @@ public class WeatherParticle extends Particle
 		
 	}
 	
-	public void update(float[] wind)
+	public void update(Vec3 wind)
 	{
-		c = add(add(c, t), wind);
+		c = c.add(t).add(wind);
 	}
 	
-	public float[] getDirectionVector(float[] wind, float scalar)
+	public Vec3 getDirectionVector(Vec3 wind, float scalar)
 	{
-		return add(add(c, multiply(t, scalar)), multiply(wind, scalar));
+		Vec3 _w = wind.multiply(scalar);
+		Vec3 _t =    t.multiply(scalar);
+		
+		return c.add(_t).add(_w);
 	}
 }

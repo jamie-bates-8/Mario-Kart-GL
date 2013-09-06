@@ -1,33 +1,39 @@
 package bates.jamie.graphics.collision;
 
-import static java.lang.Math.*;
+import static bates.jamie.graphics.util.Vec3.getRandomVector;
+import static java.lang.Math.abs;
+import static java.lang.Math.sqrt;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_LINES;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
-import static bates.jamie.graphics.util.Matrix.*;
-import static bates.jamie.graphics.util.Vector.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 
 import javax.media.opengl.GL2;
 
-
 import bates.jamie.graphics.util.Renderer;
+import bates.jamie.graphics.util.RotationMatrix;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.gl2.GLUT;
 
+
 public class OBB extends Bound
 {	
-	public static final float EPSILON = 0.00001f;
+	public static final float EPSILON = 1E-5f;
+	
+	private static final int LEFT  = 0;
+	private static final int RIGHT = 1;
+	private static final int DOWN  = 2;
+	private static final int UP    = 3;
+	private static final int FRONT = 4;
+	private static final int BACK  = 5;
 	
 	// rotation matrix used to describe orientation of bound
-	public float[][] u = new float[3][3];
+	public RotationMatrix u = new RotationMatrix();
 	
 	// half-extents of bound in the form {width, height, depth}
-	public float[] e;
+	public Vec3 e;
 	
 	// flags to determine whether collisions with certain faces should be considered 
 	public boolean[] validFaces = new boolean[6];
@@ -37,9 +43,10 @@ public class OBB extends Bound
 			   float u0, float u1, float u2,
 			   float e0, float e1, float e2)
 	{
-		setPosition(c0, c1, c2);
-		setRotation(u0, u1, u2);
-		e = new float[] {e0, e1, e2};	
+		 setPosition(c0, c1, c2);
+		 setRotation(u0, u1, u2);
+		e = new Vec3(e0, e1, e2);
+		
 		Arrays.fill(validFaces, true);
 	}
 	
@@ -47,7 +54,7 @@ public class OBB extends Bound
 	{
 		setPosition(x, y, z);
 		setRotation(rx, ry, rz);
-		e = new float[] {halfWidth, halfHeight, halfDepth};	
+		e = new Vec3(halfWidth, halfHeight, halfDepth);	
 		this.validFaces = validFaces;
 	}
 	
@@ -63,78 +70,63 @@ public class OBB extends Bound
 	{
 		setPosition(c);
 		setRotation(u[0], u[1], u[2]);
-		this.e = e;
+		this.e = new Vec3(e);
 		validFaces = v;
 	}
 
-	public boolean isValidCollision(float[] face)
+	public boolean isValidCollision(Vec3 face)
 	{
-		float[][] faces = getAxisVectors(1);
+		Vec3[] faces = getAxisVectors();
 		
 		for(int i = 0; i < faces.length; i++)
-			if(Arrays.equals(face, faces[i])) return validFaces[i];
+			if(face.equals(faces[i])) return validFaces[i];
 		
 		return false;
 	}
 	
-	public void setRotation(float x, float y, float z) { u = getRotationMatrix(x, y, z); }
+	public void setRotation(float x, float y, float z) { u = new RotationMatrix(x, y, z); }
 	
-	public float getHeight() { return e[1] * 2; }
+	public float getHeight() { return e.y * 2; }
 	
 	@Override
-	public float[] getFaceVector(float[] p)
+	public Vec3 getFaceVector(Vec3 p)
 	{	
-		float[] closest = closestPointToPoint(p);
+		Vec3[] normals = getAxisVectors();
+		Vec3 q = closestPointToPoint(p).subtract(c);
 		
-		float[][] normals = getAxisVectors(1);
+		float xScale = q.dot(u.xAxis) / e.x;
+		float yScale = q.dot(u.yAxis) / e.y;
+		float zScale = q.dot(u.zAxis) / e.z;
 		
-		float[] q = subtract(closest, c);
-		
-		float xScale = dot(q, u[0]) / e[0];
-		float yScale = dot(q, u[1]) / e[1];
-		float zScale = dot(q, u[2]) / e[2];
-		
+		// vertical collisions are resolved differently so the top and bottom faces are prioritized 
 		if(abs(yScale) >= abs(xScale) && abs(yScale) >= abs(zScale))
 		{
-			if(yScale < 0 && p[1] < c[1] - e[1]) return normals[2];
-			else if(yScale > 0) return normals[3];
+			     if(yScale < 0 && p.y < c.y - e.y) return normals[DOWN];
+			else if(yScale > 0) return normals[UP];
 		}
+		
+		// prioritize side (left and right) faces over front and back faces
 		if(abs(xScale) > abs(zScale))
 		{
-			if(xScale < 0) return normals[0];
-			else return normals[1];
+			return xScale < 0 ? normals[LEFT] : normals[RIGHT];
 		}
+		
+		// if the x and z components of the translation vector are equal, the faces to prioritize
+		// are calculated using a number of techniques...
 		if(abs(xScale) == abs(zScale))
 		{
-			if(e[0] < e[2])
+			if(e.x < e.z) // side faces are prioritized if the x extent of the OBB is greater 
 			{
-				if(xScale < 0) return normals[0];
-				else return normals[1];
+				 return xScale < 0 ? normals[LEFT] : normals[RIGHT];
 			}
-			else if(e[0] == e[2])
+			else if(e.x == e.z)
 			{
-				if(dot(q, u[0]) < dot(q, u[2]))
-				{
-					if(xScale < 0) return normals[0];
-					else return normals[1];
-				}
-				else
-				{
-					if(zScale < 0) return normals[4];
-					else return normals[5];
-				}
+				if(q.dot(u.xAxis) < q.dot(u.zAxis))
+					 return xScale < 0 ? normals[LEFT ] : normals[RIGHT];
+				else return zScale < 0 ? normals[FRONT] : normals[BACK ];
 			}
-			else
-			{
-				if(zScale < 0) return normals[4];
-				else return normals[5];
-			}
-		}
-		else
-		{
-			if(zScale < 0) return normals[4];
-			else return normals[5];
-		}		
+			else return zScale < 0 ? normals[FRONT] : normals[BACK];
+		}   else return zScale < 0 ? normals[FRONT] : normals[BACK];		
 	}
 	
 	public float getPenetration(OBB b)
@@ -144,33 +136,34 @@ public class OBB extends Bound
 		OBB a = this;
 		
 		float ra, rb, r;
-		float[][] R = new float[3][3];
+		
+		float[][] R    = new float[3][3];
 		float[][] AbsR = new float[3][3];
 		
 		for(int i = 0; i < 3; i++)
 			for(int j = 0; j < 3; j++)
 			{
-				R[j][i] = dot(b.u[i], a.u[j]);
+				   R[j][i] = b.u.getAxis(i).dot(u.getAxis(j));
 				AbsR[j][i] = abs(R[j][i]) + EPSILON;
 			}
 		
-		float[] t = subtract(a.c, b.c);
-		t = new float[] {dot(t, b.u[0]), dot(t, b.u[1]), dot(t, b.u[2])};		
+		Vec3 t = a.c.subtract(b.c);
+		t = new Vec3(t.dot(b.u.xAxis), t.dot(b.u.yAxis), t.dot(b.u.zAxis));		
 		
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e[i];
-			rb = a.e[0] * AbsR[i][0] + a.e[1] * AbsR[i][1] + a.e[2] * AbsR[i][2];
-			r  = abs(t[i]);
+			ra = b.e.get(i);
+			rb = e.dot(new Vec3(AbsR[i]));
+			r  = abs(t.get(i));
 
 			if(p > abs(rb - (r - ra))) p = abs(rb - (r - ra));
 		}
 
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e[0] * AbsR[0][i] + b.e[1] * AbsR[1][i] + b.e[2] * AbsR[2][i];
-			rb = a.e[i];
-			r  = abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]);
+			ra = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
+			rb = a.e.get(i);
+			r  = abs(t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i]);
 
 			if(p > abs(rb - (r - ra))) p = abs(rb - (r - ra));
 		}
@@ -180,10 +173,10 @@ public class OBB extends Bound
 	
 	public float getPenetration(Sphere s)
 	{
-		float[]  q = closestPointOnPerimeter(s.c);
-		float[] _q = subtract(q, s.c);
+		Vec3 q = closestPointOnPerimeter(s.c);
+		q = q.subtract(s.c);
 		
-		double ra = sqrt(_q[0] * _q[0] + _q[2] * _q[2]);
+		double ra = sqrt(q.x * q.x + q.z * q.z);
 		double rb = s.r;
 		
 		return (float) abs(rb - ra);
@@ -192,53 +185,35 @@ public class OBB extends Bound
 	@Override
 	public float getMaximumExtent()
 	{
-		return (float) sqrt(dot(e, e));
+		return e.magnitude();
 	}
 	
 	/**
 	 * An even index indicates that the vertex is on front of the OBB.
 	 * Conversely, an odd index indicates that the vertex is on the back.
-	 * The first four indices store the bottom vertices while the last,
-	 * while the last four store the top vertices.
+	 * <P>
+	 * The first four indices store the bottom vertices while the last
+	 * four store the top vertices.
+	 * <P>
 	 * If the modolo 4 of the index is 0 or 1, the vertex is on the left,
 	 * else if the modolo 4 is 2 or 3, the vertex is on the right.
 	 */
-	public float[][] getVertices()
+	public Vec3[] getVertices()
 	{ 	
-		float[][] vertices = new float[8][3];
+		Vec3[] vertices = new Vec3[8];
 		
-		float[] eu0 = multiply(u[0], e[0]);
-		float[] eu1 = multiply(u[1], e[1]);
-		float[] eu2 = multiply(u[2], e[2]);
+		Vec3 eu0 = u.xAxis.multiply(e.x);
+		Vec3 eu1 = u.yAxis.multiply(e.y);
+		Vec3 eu2 = u.zAxis.multiply(e.z);
 		
-		vertices[0] = subtract(subtract(subtract(c, eu0), eu1), eu2); //right bottom front 
-		vertices[1] =      add(subtract(subtract(c, eu0), eu1), eu2); //left  bottom front
-		vertices[2] = subtract(subtract(     add(c, eu0), eu1), eu2); //right bottom back
-		vertices[3] =      add(subtract(     add(c, eu0), eu1), eu2); //left  bottom back
-		vertices[4] = subtract(     add(subtract(c, eu0), eu1), eu2); //right top    front
-		vertices[5] =      add(     add(subtract(c, eu0), eu1), eu2); //left  top    front
-		vertices[6] = subtract(     add(     add(c, eu0), eu1), eu2); //right top    back
-		vertices[7] =      add(     add(     add(c, eu0), eu1), eu2); //left  top    back
-		
-		return vertices;
-	}
-	
-	@Override
-	public List<float[]> getPixelMap()
-	{ 
-		List<float[]> vertices = new ArrayList<float[]>();
-		
-		for(int i = 1; i <= 100; i++)
-			for(int j = 1; j <= 100; j++)
-			{
-				float[] x = multiply(u[0], e[0] * ((float) i / 100));
-				float[] z = multiply(u[2], e[2] * ((float) j / 100));
-				
-				vertices.add(add(add(c, x), z));
-				vertices.add(add(subtract(c, x), z));
-				vertices.add(subtract(add(c, x), z));
-				vertices.add(subtract(subtract(c, x), z));
-			}
+		vertices[0] = c.     add(eu0).subtract(eu1).subtract(eu2); // right bottom front 
+		vertices[1] = c.subtract(eu0).subtract(eu1).subtract(eu2); // left  bottom front
+		vertices[2] = c.     add(eu0).subtract(eu1).     add(eu2); // right bottom back
+		vertices[3] = c.subtract(eu0).subtract(eu1).     add(eu2); // left  bottom back
+		vertices[4] = c.     add(eu0).     add(eu1).subtract(eu2); // right top    front
+		vertices[5] = c.subtract(eu0).     add(eu1).subtract(eu2); // left  top    front
+		vertices[6] = c.     add(eu0).     add(eu1).     add(eu2); // right top    back
+		vertices[7] = c.subtract(eu0).     add(eu1).     add(eu2); // left  top    back
 		
 		return vertices;
 	}
@@ -249,68 +224,69 @@ public class OBB extends Bound
 		OBB a = this;
 		
 		float ra, rb;
-		float[][] R = new float[3][3];
+		
+		float[][]    R = new float[3][3];
 		float[][] AbsR = new float[3][3];
 		
 		for(int i = 0; i < 3; i++)
 			for(int j = 0; j < 3; j++)
 			{
-				R[j][i] = dot(b.u[i], a.u[j]);
+				   R[j][i] = b.u.getAxis(i).dot(a.u.getAxis(j));
 				AbsR[j][i] = abs(R[j][i]) + EPSILON;
 			}
 		
-		float[] t = subtract(a.c, b.c);
-		t = new float[] {dot(t, b.u[0]), dot(t, b.u[1]), dot(t, b.u[2])};		
+		Vec3 t = a.c.subtract(b.c);
+		t = new Vec3(t.dot(b.u.xAxis), t.dot(b.u.yAxis), t.dot(b.u.zAxis));	
 		
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e[i];
-			rb = a.e[0] * AbsR[i][0] + a.e[1] * AbsR[i][1] + a.e[2] * AbsR[i][2];
-			if(abs(t[i]) > ra + rb) return false;
+			ra = b.e.get(i);
+			rb = a.e.x * AbsR[i][0] + a.e.y * AbsR[i][1] + a.e.z * AbsR[i][2];
+			if(abs(t.get(i)) > ra + rb) return false;
 		}
 		
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e[0] * AbsR[0][i] + b.e[1] * AbsR[1][i] + b.e[2] * AbsR[2][i];
-			rb = a.e[i];
-			if(abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) return false;
+			ra = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
+			rb = a.e.get(i);
+			if(abs(t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i]) > ra + rb) return false;
 		}
 		
-		ra = b.e[1] * AbsR[2][0] + b.e[2] * AbsR[1][0];
-		rb = a.e[1] * AbsR[0][2] + a.e[2] * AbsR[0][1];
-		if(abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return false;
+		ra = b.e.y * AbsR[2][0] + b.e.z * AbsR[1][0];
+		rb = a.e.y * AbsR[0][2] + a.e.z * AbsR[0][1];
+		if(abs(t.z * R[1][0] - t.y * R[2][0]) > ra + rb) return false;
 		
-		ra = b.e[1] * AbsR[2][1] + b.e[2] * AbsR[1][1];
-		rb = a.e[0] * AbsR[0][2] + a.e[2] * AbsR[0][0];
-		if(abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return false;
+		ra = b.e.y * AbsR[2][1] + b.e.z * AbsR[1][1];
+		rb = a.e.x * AbsR[0][2] + a.e.z * AbsR[0][0];
+		if(abs(t.z * R[1][1] - t.y * R[2][1]) > ra + rb) return false;
 		
-		ra = b.e[1] * AbsR[2][2] + b.e[2] * AbsR[1][2];
-		rb = a.e[0] * AbsR[0][1] + a.e[1] * AbsR[0][0];
-		if(abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return false;
+		ra = b.e.y * AbsR[2][2] + b.e.z * AbsR[1][2];
+		rb = a.e.x * AbsR[0][1] + a.e.y * AbsR[0][0];
+		if(abs(t.z * R[1][2] - t.y * R[2][2]) > ra + rb) return false;
 		
-		ra = b.e[0] * AbsR[2][0] + b.e[2] * AbsR[0][0];
-		rb = a.e[1] * AbsR[1][2] + a.e[2] * AbsR[1][1];
-		if(abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return false;
+		ra = b.e.x * AbsR[2][0] + b.e.z * AbsR[0][0];
+		rb = a.e.y * AbsR[1][2] + a.e.z * AbsR[1][1];
+		if(abs(t.x * R[2][0] - t.z * R[0][0]) > ra + rb) return false;
 		
-		ra = b.e[0] * AbsR[2][1] + b.e[2] * AbsR[0][1];
-		rb = a.e[0] * AbsR[1][2] + a.e[2] * AbsR[1][0];
-		if(abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return false;
+		ra = b.e.x * AbsR[2][1] + b.e.z * AbsR[0][1];
+		rb = a.e.x * AbsR[1][2] + a.e.z * AbsR[1][0];
+		if(abs(t.x * R[2][1] - t.z * R[0][1]) > ra + rb) return false;
 		
-		ra = b.e[0] * AbsR[2][2] + b.e[2] * AbsR[0][2];
-		rb = a.e[0] * AbsR[1][1] + a.e[1] * AbsR[1][0];
-		if(abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return false;
+		ra = b.e.x * AbsR[2][2] + b.e.z * AbsR[0][2];
+		rb = a.e.x * AbsR[1][1] + a.e.y * AbsR[1][0];
+		if(abs(t.x * R[2][2] - t.z * R[0][2]) > ra + rb) return false;
 		
-		ra = b.e[0] * AbsR[1][0] + b.e[1] * AbsR[0][0];
-		rb = a.e[1] * AbsR[2][2] + a.e[2] * AbsR[2][1];
-		if(abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return false;
+		ra = b.e.x * AbsR[1][0] + b.e.y * AbsR[0][0];
+		rb = a.e.y * AbsR[2][2] + a.e.z * AbsR[2][1];
+		if(abs(t.y * R[0][0] - t.x * R[1][0]) > ra + rb) return false;
 		
-		ra = b.e[0] * AbsR[1][1] + b.e[1] * AbsR[0][1];
-		rb = a.e[0] * AbsR[2][2] + a.e[2] * AbsR[2][0];
-		if(abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return false;
+		ra = b.e.x * AbsR[1][1] + b.e.y * AbsR[0][1];
+		rb = a.e.x * AbsR[2][2] + a.e.z * AbsR[2][0];
+		if(abs(t.y * R[0][1] - t.x * R[1][1]) > ra + rb) return false;
 		
-		ra = b.e[0] * AbsR[1][2] + b.e[1] * AbsR[0][2];
-		rb = a.e[0] * AbsR[2][1] + a.e[1] * AbsR[2][0];
-		if(abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return false;
+		ra = b.e.x * AbsR[1][2] + b.e.y * AbsR[0][2];
+		rb = a.e.x * AbsR[2][1] + a.e.y * AbsR[2][0];
+		if(abs(t.y * R[0][2] - t.x * R[1][2]) > ra + rb) return false;
 		
 		return true;
 	}
@@ -318,78 +294,75 @@ public class OBB extends Bound
 	@Override
 	public boolean testSphere(Sphere s)
 	{
-		float[] p = closestPointToPoint(s.c);
+		Vec3 p = closestPointToPoint(s.c);
 		
-		float[] v = subtract(p, s.c);
+		p = p.subtract(s.c);
 		
-		return dot(v, v) <= s.r * s.r;
+		return p.dot() <= s.r * s.r;
 	}
 
-	public boolean testRay(float[] p0, float[] p1)
+	public boolean testRay(Vec3 p0, Vec3 p1)
 	{
-		float[] v = subtract(p0, c);
+		p0.subtract(c);
+		p0 = new Vec3(p0.dot(u.xAxis), p0.dot(u.yAxis), p0.dot(u.zAxis));
 		
-		p0 = new float[] {dot(v, u[0]), dot(v, u[1]), dot(v, u[2])};
+		Vec3 min = c.subtract(e);
+		Vec3 max = c.add(e);
 		
-		float[] min = subtract(c, e);
-		float[] max = add(c, e);
+		Vec3 d = p1.subtract(p0);
+		Vec3 m = p0.add(p1).subtract(min).subtract(max);
 		
-		float[] d = subtract(p1, p0);
-		float[] m = subtract(subtract(add(p0, p1), min), max);
-		
-		float adx = abs(d[0]);
-		if(abs(m[0]) > e[0] + adx) return false;
-		float ady = abs(d[1]);
-		if(abs(m[1]) > e[1] + ady) return false;
-		float adz = abs(d[2]);
-		if(abs(m[2]) > e[2] + adz) return false;
+		float adx = abs(d.x); if(abs(m.x) > e.x + adx) return false;
+		float ady = abs(d.y); if(abs(m.y) > e.y + ady) return false;
+		float adz = abs(d.z); if(abs(m.z) > e.z + adz) return false;
 		
 		adx += EPSILON; ady += EPSILON; adz += EPSILON;
 		
-		if(abs(m[1] * d[2] - m[2] * d[1]) > e[1] * adz + e[2] * ady) return false;
-		if(abs(m[2] * d[0] - m[0] * d[2]) > e[0] * adz + e[2] * adx) return false;
-		if(abs(m[0] * d[1] - m[1] * d[0]) > e[0] * ady + e[1] * adx) return false;
+		if(abs(m.y * d.z - m.z * d.y) > e.y * adz + e.z * ady) return false;
+		if(abs(m.z * d.x - m.x * d.z) > e.x * adz + e.z * adx) return false;
+		if(abs(m.x * d.y - m.y * d.x) > e.x * ady + e.y * adx) return false;
 		
 		return true;	
 	}
 
 	@Override
-	public float[] closestPointToPoint(float[] p)
+	public Vec3 closestPointToPoint(Vec3 p)
 	{	
-		float[] d = subtract(p, c);
-		float[] q = c;
+		Vec3 d = p.subtract(c);
+		Vec3 q = new Vec3(c);
+		
+		float[] e = this.e.toArray();
 		
 		for(int i = 0; i < 3; i++)
 		{
-			float dist = dot(d, u[i]);
+			float dist = d.dot(u.getAxis(i));
 			
 			if(dist >  e[i]) dist =  e[i];
 			if(dist < -e[i]) dist = -e[i];
 			
-			q = add(q, multiply(u[i], dist));
+			q = q.add(u.getAxis(i).multiply(dist));
 		}
 		
 		return q;
 	}
 	
-	public float[] closestPointOnPerimeter(float[] p)
+	public Vec3 closestPointOnPerimeter(Vec3 p)
 	{
-		float[] d = subtract(p, c);
+		Vec3 d = p.subtract(c);
+		Vec3 q = new Vec3(c);
 		
-		float[] q = c;
+		int n = getFaceIndex(getFaceVector(p));
 		
-		float[] normal = getFaceVector(p);
-		
-		int n = getFaceIndex(normal);
+		float[] e = this.e.toArray();
 
 		for(int i = 0; i < 3; i++)
 		{
-			float dist = dot(d, u[i]);
+			float dist = d.dot(u.getAxis(i));
 			
 			if(dist >  e[i] || (i * 2) + 1 == n) dist =  e[i];
 			if(dist < -e[i] || (i * 2)     == n) dist = -e[i];
 			
-			q = add(q, multiply(u[i], dist));
+			q = q.add(u.getAxis(i).multiply(dist));
 		}
 		
 		return q;
@@ -399,12 +372,12 @@ public class OBB extends Bound
 	 * Return the index of the face with the normal passed as a parameter,
 	 * or an invalid index of -1 if no face has that normal. 
 	 */
-	public int getFaceIndex(float[] normal)
+	public int getFaceIndex(Vec3 normal)
 	{
-		float[][] normals = getAxisVectors(1);
+		Vec3[] normals = getAxisVectors();
 		
 		for(int i = 0; i < 6; i++)
-			if(Arrays.equals(normals[i], normal)) return i;
+			if(normals[i].equals(normal)) return i;
 		
 		return -1;
 	}
@@ -414,22 +387,24 @@ public class OBB extends Bound
 	 * <code>scale</code>. These normals can be used to render the local axes
 	 * of the bound.
 	 */
-	public float[][] getAxisVectors(float scale)
+	public Vec3[] getAxisVectors(float scale)
 	{
-		return new float[][]
-			{
-				subtract(c, multiply(u[0],  scale)), //0 front
-					 add(c, multiply(u[0],  scale)), //1 back
-				subtract(c, multiply(u[1],  scale)), //2 down
-					 add(c, multiply(u[1],  scale)), //3 up	 
-				subtract(c, multiply(u[2],  scale)), //4 right 
-					 add(c, multiply(u[2],  scale)), //5 left	
-			};
+		return new Vec3[]
+		{
+			c.subtract(u.xAxis.multiply(scale)), // 0 left
+			c.	   add(u.xAxis.multiply(scale)), // 1 right
+			c.subtract(u.yAxis.multiply(scale)), // 2 down
+			c.	   add(u.yAxis.multiply(scale)), // 3 up	 
+			c.subtract(u.zAxis.multiply(scale)), // 4 front 
+			c.	   add(u.zAxis.multiply(scale)), // 5 back	
+		};
 	}
 	
-	public float[] closestPointToOBB(OBB b)
+	public Vec3[] getAxisVectors() { return getAxisVectors(1); }
+	
+	public Vec3 closestPointToOBB(OBB b)
 	{
-		float[] p = closestPointToPoint(b.getPosition());
+		Vec3 p = closestPointToPoint(b.getPosition());
 		
 		for(int i = 0; i < 10; i++)
 		{
@@ -440,22 +415,21 @@ public class OBB extends Bound
 		return p;
 	}
 	
-	public float[] getUpVector(float scale) { return add(c, multiply(u[1], scale)); }
-	
-	public float[] getDownVector(float scale) { return subtract(c, multiply(u[1], scale)); }
+	public Vec3 getUpVector  (float scale) { return c.     add(u.yAxis.multiply(scale)); }
+	public Vec3 getDownVector(float scale) { return c.subtract(u.yAxis.multiply(scale)); }
 	
 	public void displaySolid(GL2 gl, GLUT glut, float[] color)
 	{
-		gl.glColor4f(color[0], color[1], color[2], color[3]);
+		gl.glColor4fv(color, 0);
 		
 		gl.glDisable(GL_LIGHTING);
 		gl.glEnable(GL_BLEND);
 
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glMultMatrixf(getRotationMatrix(u), 0);
-			gl.glScalef(e[0] * 2, e[1] * 2, e[2] * 2);
+			gl.glTranslatef(c.x, c.y, c.z);
+			gl.glMultMatrixf(u.toArray(), 0);
+			gl.glScalef(e.x * 2, e.y * 2, e.z * 2);
 			
 			glut.glutSolidCube(1);
 		}
@@ -468,8 +442,8 @@ public class OBB extends Bound
 	public void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth)
 	{
 		if(color.length > 3)
-			 gl.glColor4f(color[0], color[1], color[2], color[3]);
-		else gl.glColor3f(color[0], color[1], color[2]);
+			 gl.glColor4fv(color, 0);
+		else gl.glColor3fv(color, 0);
 		
 		if(smooth)
 		{
@@ -479,9 +453,9 @@ public class OBB extends Bound
 		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glMultMatrixf(getRotationMatrix(u), 0);
-			gl.glScalef(e[0] * 2, e[1] * 2, e[2] * 2);
+			gl.glTranslatef(c.x, c.y, c.z);
+			gl.glMultMatrixf(u.toArray(), 0);
+			gl.glScalef(e.x * 2, e.y * 2, e.z * 2);
 			
 			glut.glutWireCube(1);
 		}
@@ -493,12 +467,25 @@ public class OBB extends Bound
 	
 	public void displayVertices(GL2 gl, GLUT glut, float[] color, boolean smooth)
 	{
-		Renderer.displayPoints(gl, glut, getVertices(), color, 5, smooth);
+		float[][] vertices = new float[8][3];
+		
+		int i = 0;
+		
+		for(Vec3 vertex : getVertices())
+		{
+			vertices[i][0] = vertex.x;
+			vertices[i][1] = vertex.y;
+			vertices[i][2] = vertex.z;
+			
+			i++;
+		}
+		
+		Renderer.displayPoints(gl, glut, vertices, color, 5, smooth);
 	}
 		
 	public void displayAxes(GL2 gl, float scale)
 	{
-		float[][] axes = getAxisVectors(scale);
+		Vec3[] axes = getAxisVectors(scale);
 		
 		for(int a = 0; a < 3; a++)
 		{
@@ -506,17 +493,17 @@ public class OBB extends Bound
 			
 			c[a] = 1;
 			
-			gl.glColor4f(c[0], c[1], c[2], c[3]);
+			gl.glColor4fv(c, 0);
 			
 			int i = a * 2;
 			int j = i + 1;
-			float[] u = axes[i];
-			float[] v = axes[j];
+			float[] u = axes[i].toArray();
+			float[] v = axes[j].toArray();
 			
 			gl.glBegin(GL_LINES);
 			
-			gl.glVertex3f(u[0], u[1], u[2]);
-			gl.glVertex3f(v[0], v[1], v[2]);
+			gl.glVertex3fv(u, 0);
+			gl.glVertex3fv(v, 0);
 			
 			gl.glEnd();
 		}
@@ -528,9 +515,9 @@ public class OBB extends Bound
 		
 		gl.glPushMatrix();
 		{
-			float[] vertex = closestPointOnPerimeter(p);
+			Vec3 vertex = closestPointOnPerimeter(new Vec3(p));
 
-			gl.glTranslatef(vertex[0], vertex[1], vertex[2]);
+			gl.glTranslatef(vertex.x, vertex.y, vertex.z);
 			glut.glutSolidSphere(0.2, 12, 12);
 		}
 		gl.glPopMatrix();
@@ -539,18 +526,14 @@ public class OBB extends Bound
 	/**
 	 * Returns a randomly calculated point that is within the bound.
 	 */
-	public float[] randomPointInside()
+	public Vec3 randomPointInside()
 	{
-		Random random = new Random();
-
-		float x = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
-		float y = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
-		float z = (random.nextBoolean()) ? random.nextFloat() : -random.nextFloat();
+		Vec3 r = getRandomVector();
 	
-		float[] _x = multiply(u[0], e[0] * x);
-		float[] _y = multiply(u[1], e[1] * y);
-		float[] _z = multiply(u[2], e[2] * z);
+		Vec3 x = u.xAxis.multiply(e.x * r.x);
+		Vec3 y = u.yAxis.multiply(e.y * r.y);
+		Vec3 z = u.zAxis.multiply(e.z * r.z);
 		
-		return add(add(add(c, _x), _y), _z);
+		return c.add(x).add(y).add(z);
 	}
 }

@@ -104,6 +104,7 @@ public class Matrix
 		for (int i = 0; i < 4; i++)
 		{
 			float ai0 = cell(a,i,0),  ai1 = cell(a,i,1),  ai2 = cell(a,i,2),  ai3 = cell(a,i,3);
+			
 			product[(0 << 2) + i] = ai0 * cell(b,0,0) + ai1 * cell(b,1,0) + ai2 * cell(b,2,0) + ai3 * cell(b,3,0);
 			product[(1 << 2) + i] = ai0 * cell(b,0,1) + ai1 * cell(b,1,1) + ai2 * cell(b,2,1) + ai3 * cell(b,3,1);
 			product[(2 << 2) + i] = ai0 * cell(b,0,2) + ai1 * cell(b,1,2) + ai2 * cell(b,2,2) + ai3 * cell(b,3,2);

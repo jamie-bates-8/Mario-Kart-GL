@@ -26,6 +26,7 @@ import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.opengl.util.awt.TextRenderer;
@@ -267,7 +268,7 @@ public class HUD
 		
 		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), 40, y - 430);
 		
-		float[] p = car.getPosition();
+		Vec3 p = car.getPosition();
 		
 		int x = scene.getWidth() - 200;
 		
@@ -280,9 +281,9 @@ public class HUD
 		
 		renderer.draw("Turn Rate: "   + String.format("%.2f", car.turnRate), x, 340);
 		
-		renderer.draw("x: " + String.format("%.2f", p[0]), x, 280);
-		renderer.draw("y: " + String.format("%.2f", p[1]), x, 250);
-		renderer.draw("z: " + String.format("%.2f", p[2]), x, 220);
+		renderer.draw("x: " + String.format("%.2f", p.x), x, 280);
+		renderer.draw("y: " + String.format("%.2f", p.y), x, 250);
+		renderer.draw("z: " + String.format("%.2f", p.z), x, 220);
 		
 		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 50);
 		renderer.draw("Distance: " + (int) car.distance + " m", x, 20);

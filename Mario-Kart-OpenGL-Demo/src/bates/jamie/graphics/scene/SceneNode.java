@@ -11,6 +11,7 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 
 public class SceneNode
@@ -23,9 +24,9 @@ public class SceneNode
 	
 	private float[] color = {1, 1, 1};
 	
-	private float[] t; // translation
-	private float[] r; // rotation
-	private float[] s; // scale
+	private Vec3 t = new Vec3(0); // translation
+	private Vec3 r = new Vec3(0); // rotation
+	private Vec3 s = new Vec3(1); // scale
 	
 	private float[] orientation;
 	
@@ -58,7 +59,7 @@ public class SceneNode
 		{
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
-			gl.glColor3f(color[0], color[1], color[2]);
+			gl.glColor3fv(color, 0);
 			
 			if(model != null)
 			{	
@@ -208,44 +209,48 @@ public class SceneNode
 	
 	public void setColor(float[] color) { this.color = color; }
 	
-	public void setTranslation(float[] t) { this.t = t; }
+	public void setTranslation(Vec3 c) { this.t = c; }
 	
-	public void setRotation(float[] r) { this.r = r; }
+	public void setRotation(Vec3 r) { this.r = r; }
 	
-	public void setScale(float[] s) { this.s = s; }
+	public void setScale(Vec3 s) { this.s = s; }
 	
 	public void setupMatrix(GL2 gl)
 	{
 		switch(order)
 		{
-			case T : gl.glTranslatef(t[0], t[1], t[2]); break;
-			case RX: gl.glRotatef(r[0], 1, 0, 0); break;
-			case RY: gl.glRotatef(r[1], 0, 1, 0); break;
-			case RZ: gl.glRotatef(r[2], 0, 0, 1); break;
-			case S:  gl.glScalef(s[0], s[1], s[2]); break;
+			case T : gl.glTranslatef(t.x, t.y, t.z); break;
+			
+			case RX: gl.glRotatef(r.x, 1, 0, 0); break;
+			case RY: gl.glRotatef(r.y, 0, 1, 0); break;
+			case RZ: gl.glRotatef(r.z, 0, 0, 1); break;
+			
+			case S:  gl.glScalef(s.x, s.y, s.z); break;
 			
 			case T_RX_RY_RZ_S:
 			{
-				gl.glTranslatef(t[0], t[1], t[2]); 
-				gl.glRotatef(r[0], 1, 0, 0); 
-				gl.glRotatef(r[1], 0, 1, 0); 
-				gl.glRotatef(r[2], 0, 0, 1);
-				gl.glScalef(s[0], s[1], s[2]);
+				gl.glTranslatef(t.x, t.y, t.z); 
+				
+				gl.glRotatef(r.y, 0, 1, 0);
+				gl.glRotatef(r.x, 1, 0, 0); 
+				gl.glRotatef(r.z, 0, 0, 1);
+				
+				gl.glScalef(s.x, s.y, s.z);
 				
 				break;
 			}
 			
 			case T_S:
 			{
-				gl.glTranslatef(t[0], t[1], t[2]);
-				gl.glScalef(s[0], s[1], s[2]);
+				gl.glTranslatef(t.x, t.y, t.z);
+				gl.glScalef    (s.x, s.y, s.z);
 				
 				break;
 			}
 			
 			case T_M:
 			{
-				gl.glTranslatef(t[0], t[1], t[2]);
+				gl.glTranslatef(t.x, t.y, t.z);
 				gl.glMultMatrixf(orientation, 0);
 				
 				break;
@@ -253,9 +258,9 @@ public class SceneNode
 			
 			case T_M_S:
 			{
-				gl.glTranslatef(t[0], t[1], t[2]);
+				gl.glTranslatef(t.x, t.y, t.z);
 				gl.glMultMatrixf(orientation, 0);
-				gl.glScalef(s[0], s[1], s[2]);
+				gl.glScalef(s.x, s.y, s.z);
 				
 				break;
 			}

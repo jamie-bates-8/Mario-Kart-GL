@@ -1,12 +1,10 @@
 package bates.jamie.graphics.item;
 
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
-import static bates.jamie.graphics.util.Vector.*;
 
 import java.io.File;
 
 import javax.media.opengl.GL2;
-
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
@@ -14,6 +12,7 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -67,7 +66,7 @@ public class RedShell extends Shell
 		target = seekTarget();
 	}
 
-	public RedShell(Scene scene, float[] c, float trajectory)
+	public RedShell(Scene scene, Vec3 c, float trajectory)
 	{	
 		super(null, scene, null, trajectory);
 		
@@ -92,7 +91,8 @@ public class RedShell extends Shell
 		{
 			if(!c.equals(car))
 			{
-				float distance = dot(c.getPosition(), getPosition());
+				float distance = c.getPosition().dot(getPosition());
+				
 				if(distance < min_distance)
 				{
 					min_distance = distance;
@@ -109,16 +109,20 @@ public class RedShell extends Shell
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
-		Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
-		if(shader != null) shader.enable(gl);
-		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glRotatef(rotation, 0, 1, 0);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+			gl.glRotatef(rotation, 0, -1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);
 			
+			Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+			if(shader != null) shader.enable(gl);
+			
 			gl.glCallList(shellList);
+			
+			shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+			if(shader != null) shader.enable(gl);
+			
 			gl.glCallList(rimList);
 		}
 		gl.glPopMatrix();
@@ -149,17 +153,17 @@ public class RedShell extends Shell
 	}
 	
 	@Override
-	public float[] getPositionVector()
+	public Vec3 getPositionVector()
 	{
 		if(thrown || !locked)
-			return subtract(getPosition(), multiply(u[0], velocity));
+			return getPosition().subtract(u.zAxis.multiply(velocity));
 		else
 		{
-			float[]  t = subtract(target.getPosition(), getPosition());
-			float[] _t = normalize(t);
-			_t[1] = 0;
+			Vec3  t = target.getPosition().subtract(getPosition());
+			Vec3 _t = t.normalize();
+			_t.y = 0;
 			
-			return add(getPosition(), multiply(_t, velocity));
+			return getPosition().add(_t.multiply(velocity));
 		}
 	}
 	

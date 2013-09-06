@@ -60,8 +60,8 @@ public class Renderer
 	public static void displayPoints(GL2 gl, GLUT glut, float[][] points, float[] color, float size, boolean smooth)
 	{
 		if(color.length > 3)
-			 gl.glColor4f(color[0], color[1], color[2], color[3]);
-		else gl.glColor3f(color[0], color[1], color[2]);
+			 gl.glColor4fv(color, 0);
+		else gl.glColor3fv(color, 0);
 		
 		if(smooth)
 		{
@@ -76,7 +76,7 @@ public class Renderer
 			if(smooth)
 			{
 				gl.glBegin(GL2.GL_POINTS);
-				gl.glVertex3f(point[0], point[1], point[2]);
+				gl.glVertex3fv(point, 0);
 				gl.glEnd();
 			}
 			else

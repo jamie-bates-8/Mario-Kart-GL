@@ -17,6 +17,7 @@ import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -43,9 +44,9 @@ public class ItemBox
 	private ParticleGenerator generator = new ParticleGenerator();
 	private List<Particle> particles;
 	
-	public ItemBox(float[] c, List<Particle> particles)
+	public ItemBox(Vec3 c, List<Particle> particles)
 	{
-		c[1] += 3;
+		c.y += 3;
 		
 		bound = new Sphere(c, 2.5f);
 		
@@ -59,7 +60,7 @@ public class ItemBox
 		this.particles = particles;
 	}
 	
-	public float[] getPosition() { return bound.c; }
+	public Vec3 getPosition() { return bound.c; }
 	
 	public static void increaseRotation() { rotation += 4; }
 	
@@ -71,8 +72,8 @@ public class ItemBox
 			gl.glEnable(GL_BLEND);
 			gl.glDepthMask(false);
 			
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+			gl.glRotatef(trajectory, 0, -1, 0);
 			gl.glRotatef(180, 0, 0, 1);
 			gl.glScalef(3.0f, 3.0f, 3.0f);
 			
@@ -99,7 +100,7 @@ public class ItemBox
 			gl.glEnable(GL_BLEND);
 			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 			
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 			gl.glRotatef(rotation, 1, 1, 1);
 			gl.glScalef(SCALE, SCALE, SCALE);
 

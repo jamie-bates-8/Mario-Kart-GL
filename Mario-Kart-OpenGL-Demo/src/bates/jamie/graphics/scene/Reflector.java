@@ -6,7 +6,7 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
 import bates.jamie.graphics.util.Matrix;
-import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.Vec3;
 
 public class Reflector
 {
@@ -143,7 +143,7 @@ public class Reflector
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 	}
 	
-	public void update(GL2 gl, float[] p)
+	public void update(GL2 gl, Vec3 p)
 	{
 		GLUgl2 glu = new GLUgl2();
 		
@@ -161,16 +161,16 @@ public class Reflector
 			gl.glMatrixMode(GL2.GL_MODELVIEW);
 			gl.glLoadIdentity();
 			
-			float[] q = new float[3];
+			Vec3 q = new Vec3();
 			
 			switch(i)
 			{
-				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X: q = Vector.add(p, new float[] {+1,  0,  0}); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: q = Vector.add(p, new float[] {-1,  0,  0}); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: q = Vector.add(p, new float[] { 0, +1,  0}); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: q = Vector.add(p, new float[] { 0, -1,  0}); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z: q = Vector.add(p, new float[] { 0,  0, +1}); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: q = Vector.add(p, new float[] { 0,  0, -1}); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X: q = p.add(Vec3.POSITIVE_X_AXIS); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: q = p.add(Vec3.NEGATIVE_X_AXIS); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: q = p.add(Vec3.POSITIVE_Y_AXIS); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: q = p.add(Vec3.NEGATIVE_Y_AXIS); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z: q = p.add(Vec3.POSITIVE_Z_AXIS); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: q = p.add(Vec3.NEGATIVE_Z_AXIS); break;
 					
 				default: assert(false); break;
 			}
@@ -180,9 +180,9 @@ public class Reflector
 				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X:
 				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: 
 				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: glu.gluLookAt(p[0], p[1], p[2], q[0], q[1], q[2], 0.0f, -1.0f,  0.0f); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: glu.gluLookAt(p[0], p[1], p[2], q[0], q[1], q[2], 0.0f,  0.0f,  1.0f); break;
-				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: glu.gluLookAt(p[0], p[1], p[2], q[0], q[1], q[2], 0.0f,  0.0f, -1.0f); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: glu.gluLookAt(p.x, p.y, p.z, q.x, q.y, q.z, 0, -1,  0); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: glu.gluLookAt(p.x, p.y, p.z, q.x, q.y, q.z, 0,  0,  1); break;
+				case GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: glu.gluLookAt(p.x, p.y, p.z, q.x, q.y, q.z, 0,  0, -1); break;
 
 				default: assert(false); break;
 			}

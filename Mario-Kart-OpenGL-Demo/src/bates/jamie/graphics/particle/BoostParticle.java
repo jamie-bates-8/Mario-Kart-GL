@@ -1,7 +1,5 @@
 package bates.jamie.graphics.particle;
 
-import static bates.jamie.graphics.util.Vector.subtract;
-
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_POINTS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
@@ -10,6 +8,7 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -23,7 +22,7 @@ public class BoostParticle extends Particle
 	private boolean special;
 	private boolean miniature;
 
-	public BoostParticle(float[] c, float[] t, float rotation, int duration,
+	public BoostParticle(Vec3 c, Vec3 t, float rotation, int duration,
 			float scale, boolean special, boolean miniature)
 	{
 		super(c, t, rotation, duration);
@@ -49,8 +48,8 @@ public class BoostParticle extends Particle
 			if(special) r *= 1.5;
 			if(miniature) r *= 0.5;
 			
-			float[] _t = {(float) (-r * Math.cos(rotation)), 0, (float) (r * Math.sin(rotation))};
-			float[] _c = subtract(c, _t);
+			Vec3 _t = new Vec3((float) (r * Math.sin(rotation)), 0, (float) (-r * Math.cos(rotation)));
+			Vec3 _c = c.subtract(_t);
 			
 			gl.glPointSize(30 * scale);
 			
@@ -65,7 +64,7 @@ public class BoostParticle extends Particle
 			
 			gl.glBegin(GL_POINTS);
 			{
-				gl.glVertex3f(_c[0], _c[1], _c[2]);
+				gl.glVertex3f(_c.x, _c.y, _c.z);
 			}
 			gl.glEnd();
 

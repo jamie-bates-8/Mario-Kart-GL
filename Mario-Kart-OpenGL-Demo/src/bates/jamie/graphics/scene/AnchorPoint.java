@@ -1,22 +1,16 @@
 package bates.jamie.graphics.scene;
-import static bates.jamie.graphics.util.Vector.add;
-import static bates.jamie.graphics.util.Vector.multiply;
-import static bates.jamie.graphics.util.Vector.subtract;
-
 
 import java.awt.event.KeyEvent;
 
 import bates.jamie.graphics.io.GamePad;
-import bates.jamie.graphics.util.Matrix;
+import bates.jamie.graphics.util.RotationMatrix;
+import bates.jamie.graphics.util.Vec3;
 
 
 public class AnchorPoint
 {
-	protected float[] c;
-	private static final float[] ORIGIN = {0, 10, 0};
-	
-	protected float[][] u;
-	private static final float[][] DEFAULT_ROTATION = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+	protected Vec3 c;
+	protected RotationMatrix u;
 	protected float rx, ry, rz;
 	
 	private float speed = 5.0f;
@@ -34,29 +28,29 @@ public class AnchorPoint
 	
 	public void reset()
 	{
-		c = ORIGIN;
-		u = DEFAULT_ROTATION;
+		c = new Vec3(); c.y = 50;
+		u = new RotationMatrix();
 		rx = ry = rz = 0;
 	}
 	
-	public void moveLeft(float d)     { c = 	 add(c, multiply(u[2], d)); }
-	public void moveRight(float d)    { c = subtract(c, multiply(u[2], d)); }
-	public void moveForward(float d)  { c = subtract(c, multiply(u[0], d)); }
-	public void moveBackward(float d) { c =      add(c, multiply(u[0], d)); }
+	public void moveLeft(float d)     { c = c.subtract(u.xAxis.multiply(d)); }
+	public void moveRight(float d)    { c = c.     add(u.xAxis.multiply(d)); }
+	public void moveForward(float d)  { c = c.subtract(u.zAxis.multiply(d)); }
+	public void moveBackward(float d) { c = c.     add(u.zAxis.multiply(d)); }
 	
-	public void lookLeft(float theta)  { ry += theta * sensitivity; u = Matrix.getRotationMatrix(rx, ry, rz); }
-	public void lookRight(float theta) { ry -= theta * sensitivity; u = Matrix.getRotationMatrix(rx, ry, rz); }
+	public void lookLeft (float theta) { ry -= theta * sensitivity; u = new RotationMatrix(rx, ry, rz); }
+	public void lookRight(float theta) { ry += theta * sensitivity; u = new RotationMatrix(rx, ry, rz); }
 	
 	public void lookUp(float theta)
 	{
-		if(rz > -MAX_PITCH) rz -= theta * sensitivity;
-		u = Matrix.getRotationMatrix(rx, ry, rz);
+		if(rx > -MAX_PITCH) rx -= theta * sensitivity;
+		u = new RotationMatrix(rx, ry, rz);
 	}
 	
 	public void lookDown(float theta)
 	{
-		if(rz <  MAX_PITCH) rz += theta * sensitivity;
-		u = Matrix.getRotationMatrix(rx, ry, rz);
+		if(rx <  MAX_PITCH) rx += theta * sensitivity;
+		u = new RotationMatrix(rx, ry, rz);
 	}
 	
 	public void increaseSensitivity()
@@ -71,24 +65,24 @@ public class AnchorPoint
 	
 	public float getSensitivity() { return sensitivity; }
 	
-	public float[] getPosition() { return c; }
+	public Vec3 getPosition() { return c; }
 	
-	public void setPosition(float[] c) { this.c = c; }
+	public void setPosition(Vec3 c) { this.c = c; }
 	
-	public float[][] getOrientation() { return u; }
+	public RotationMatrix getOrientation() { return u; }
 	
-	public void setOrientation(float[][] u) { this.u = u; }
+	public void setOrientation(RotationMatrix u) { this.u = u; }
 	
-	public void setRotation(float[] r)
+	public void setRotation(Vec3 r)
 	{
-		rx = r[0];
-		ry = r[1];
-		rz = r[2];
+		rx = r.x;
+		ry = r.y;
+		rz = r.z;
 		
-		u = Matrix.getRotationMatrix(rx, ry, rz);
+		u = new RotationMatrix(rx, ry, rz);
 	}
 	
-	public float[] getRotation() { return new float[] {rx, ry, rz}; }
+	public Vec3 getRotation() { return new Vec3(rx, ry, rz); }
 	
 	public void setSpeed(float speed) { this.speed = speed; }
 	

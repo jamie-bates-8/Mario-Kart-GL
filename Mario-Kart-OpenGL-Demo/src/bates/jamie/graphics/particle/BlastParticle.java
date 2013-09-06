@@ -1,6 +1,5 @@
 package bates.jamie.graphics.particle;
 
-import static bates.jamie.graphics.util.Vector.multiply;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_FLOAT;
 import static javax.media.opengl.GL.GL_POINTS;
@@ -17,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.media.opengl.GL2;
+
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.common.nio.Buffers;
 
@@ -37,7 +38,7 @@ public class BlastParticle extends Particle
 		}
 	}
 	
-	public BlastParticle(float[] c, float[] t, float rotation, int duration)
+	public BlastParticle(Vec3 c, Vec3 t, float rotation, int duration)
 	{
 		super(c, t, rotation, duration);
 	}
@@ -59,7 +60,7 @@ public class BlastParticle extends Particle
 				gl.glEnable(GL_POINT_SPRITE);
 				gl.glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 				
-				float[] p = this.c;
+				Vec3 p = this.c;
 				
 				float c = colorMap.get(duration);
 
@@ -72,7 +73,7 @@ public class BlastParticle extends Particle
 				}
 				
 				gl.glBegin(GL2.GL_POINTS);
-				gl.glVertex3f(p[0], p[1], p[2]);
+				gl.glVertex3f(p.x, p.y, p.z);
 				gl.glEnd();
 				
 				gl.glDisable(GL2.GL_POINT_SPRITE);
@@ -81,8 +82,8 @@ public class BlastParticle extends Particle
 			}
 			else
 			{
-				gl.glTranslatef(c[0], c[1], c[2]);
-				gl.glRotatef(trajectory - 90, 0, 1, 0);
+				gl.glTranslatef(c.x, c.y, c.z);
+				gl.glRotatef(trajectory, 0, -1, 0);
 				gl.glScalef(15, 15, 15);
 				
 				float c = 2.0f / (duration + 1);
@@ -139,7 +140,7 @@ public class BlastParticle extends Particle
 			
 			FloatBuffer vertices = Buffers.newDirectFloatBuffer(particles.size() * 3);
 			
-			for(Particle particle : particles) vertices.put(particle.c);
+			for(Particle particle : particles) vertices.put(particle.c.toArray());
 			vertices.position(0);  
 			
 			FloatBuffer colors = Buffers.newDirectFloatBuffer(particles.size() * 4);
@@ -174,6 +175,6 @@ public class BlastParticle extends Particle
 	public void update()
 	{
 		super.update();
-		t = multiply(t, 0.9f);
+		t = t.multiply(0.9f);
 	}
 }

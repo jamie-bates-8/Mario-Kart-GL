@@ -1,9 +1,6 @@
 package bates.jamie.graphics.item;
 
-import static bates.jamie.graphics.util.Matrix.*;
 import static bates.jamie.graphics.util.Renderer.displayColoredObject;
-import static bates.jamie.graphics.util.Vector.add;
-import static bates.jamie.graphics.util.Vector.multiply;
 
 import java.util.List;
 
@@ -15,6 +12,8 @@ import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.RotationMatrix;
+import bates.jamie.graphics.util.Vec3;
 
 //TODO Add Shell fragments when a Shell is destroyed
 
@@ -43,7 +42,7 @@ public abstract class Shell extends Item
 		this.scene = scene;
 	    this.car = car;
 	    
-		bound = new Sphere(new float[] {0, 0, 0}, RADIUS);
+		bound = new Sphere(new Vec3(), RADIUS);
 		
 		rotation = trajectory;
 	}
@@ -57,13 +56,13 @@ public abstract class Shell extends Item
 		if(orbiting)
 		{
 			rotation -= 10;
-			float radius = car.bound.e[0] * 1.2f + Shell.RADIUS;
+			float radius = car.bound.e.z * 1.2f + Shell.RADIUS;
 			
-			float[] p = multiply(car.bound.u[0], radius);
+			Vec3 p = car.bound.u.zAxis.multiply(radius);
 			
-			p = multiply(p, getRotationMatrix(car.bound.u[1], rotation));
+			p = p.multiply(new RotationMatrix(car.bound.u.yAxis, rotation));
 			
-			setPosition(add(car.getPosition(), p));
+			setPosition(car.getPosition().add(p));
 		}
 		else
 		{	

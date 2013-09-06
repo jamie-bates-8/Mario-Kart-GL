@@ -1,7 +1,5 @@
 package bates.jamie.graphics.scene;
 
-import static bates.jamie.graphics.util.Vector.multiply;
-import static bates.jamie.graphics.util.Vector.subtract;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
@@ -10,13 +8,15 @@ import java.awt.event.MouseEvent;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
+import bates.jamie.graphics.util.Vec3;
+
 //TODO Zoom camera in when obscured by an obstacle
 
 public class Camera extends AnchorPoint
 {
 	private CameraMode mode = CameraMode.DYNAMIC_VIEW;
 	
-	private float[] position = {0, 0, 0};
+	private Vec3 position = new Vec3();
 	
 	public float zoom = 1.5f;
 	
@@ -30,10 +30,13 @@ public class Camera extends AnchorPoint
 	public int mouseX = 0;
 	public int mouseY = 0;
 	
-	private static final float EPSILON = 0.001f;
+	private static final float EPSILON = 1E-3f;
 	
-	public float incline = (float) Math.toRadians( -60);
-	public float azimuth = (float) Math.toRadians(-180);
+	private static final int INCLINE = -60;
+	private static final int AZIMUTH = -90;
+	
+	public float incline = (float) Math.toRadians(INCLINE);
+	public float azimuth = (float) Math.toRadians(AZIMUTH);
 	
 	
 	
@@ -69,15 +72,15 @@ public class Camera extends AnchorPoint
 	}
 	
 	@Override
-	public float[] getPosition() { return position; }
+	public Vec3 getPosition() { return position; }
 	
-	public float[] getSphericalCoordinate()
+	public Vec3 getSphericalCoordinate()
 	{
-		float cameraX = (float) (c[0] + zoom * 10 * Math.sin(incline) * Math.cos(azimuth));
-		float cameraY = (float) (c[1] + zoom * 10 * Math.cos(incline));
-		float cameraZ = (float) (c[2] + zoom * 10 * Math.sin(incline) * Math.sin(azimuth));
+		float cameraX = (float) (c.x + zoom * 10 * Math.sin(incline) * Math.cos(azimuth));
+		float cameraY = (float) (c.y + zoom * 10 * Math.cos(incline));
+		float cameraZ = (float) (c.z + zoom * 10 * Math.sin(incline) * Math.sin(azimuth));
 		
-		return new float[] {cameraX, cameraY, cameraZ};
+		return new Vec3(cameraX, cameraY, cameraZ);
 	}
 	
 	public void setupView(GL2 gl, GLU glu)
@@ -89,16 +92,16 @@ public class Camera extends AnchorPoint
 			{
 				if(!trackball)
 				{
-					int rear = rearview ? 0 : -180;
+					int rear = rearview ? 90 : AZIMUTH;
 					
-					incline = (float) Math.toRadians(     -60);
-					azimuth = (float) Math.toRadians(rear -ry);
+					incline = (float) Math.toRadians(INCLINE);
+					azimuth = (float) Math.toRadians(rear + ry);
 					   zoom = 1.5f;
 				}
 				
 				position = getSphericalCoordinate();
 				
-				glu.gluLookAt(position[0], position[1], position[2], c[0], c[1], c[2], 0, 1, 0);
+				glu.gluLookAt(position.x, position.y, position.z, c.x, c.y, c.z, 0, 1, 0);
 
 				break;
 			}
@@ -108,13 +111,13 @@ public class Camera extends AnchorPoint
 				float ratio = (float) width / height;
 				int size = 220;
 				
-				position = new float[] {c[0], 150, c[2]};
+				position = new Vec3(c.x, 150, c.z);
 				
 				gl.glMatrixMode(GL_PROJECTION);
 				gl.glLoadIdentity();
 				
 				gl.glOrtho(-size * ratio, size * ratio, -size, size, 1, 2000);
-				glu.gluLookAt(c[0], 150, c[2], c[0], 0, c[2], 0, 0, 1);
+				glu.gluLookAt(c.x, 150, c.z, c.x, 0, c.z, 0, 0, 1);
 				// up-vector cannot be 'up' when camera is looking 'down'
 				
 				gl.glMatrixMode(GL_MODELVIEW);
@@ -126,27 +129,28 @@ public class Camera extends AnchorPoint
 			case DRIVERS_VIEW:
 			{	
 				gl.glTranslatef(0, -3.0f, 0);
-				gl.glRotated(ry, 0.0f, -1.0f, 0.0f);
+				gl.glRotated(ry, 0.0f, 1.0f, 0.0f);
 				
 				position = c;
 				
-				float[] v = shaking ? u[1] : new float[] {0, 1, 0};
+				Vec3 v = shaking ? u.yAxis : Vec3.POSITIVE_Y_AXIS;
 				
-				glu.gluLookAt(c[0] +  0, c[1], c[2],
-							  c[0] - 10, c[1], c[2],
-					          v[0], v[1], v[2]);
+				glu.gluLookAt(c.x, c.y, c.z +  0,
+							  c.x, c.y, c.z - 10,
+					          v.x, v.y, v.z);
 				
 				break;
 			}
 			case FREE_LOOK_VIEW:
 			{		
-				float[] p = subtract(c, multiply(u[0], 20));
+				Vec3 p = c.subtract(u.zAxis.multiply(20));
+				Vec3 u = this.u.yAxis;
 				
 				position = c;
 				
-				glu.gluLookAt(c[0], c[1], c[2],
-						      p[0], p[1], p[2],
-				              u[1][0], u[1][1], u[1][2]);
+				glu.gluLookAt(c.x, c.y, c.z,
+						      p.x, p.y, p.z,
+				              u.x, u.y, u.z);
 			}
 			
 			default: break;

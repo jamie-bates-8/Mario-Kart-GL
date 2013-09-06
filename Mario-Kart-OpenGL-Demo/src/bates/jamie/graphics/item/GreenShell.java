@@ -5,13 +5,13 @@ import java.io.File;
 
 import javax.media.opengl.GL2;
 
-
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -63,7 +63,7 @@ public class GreenShell extends Shell
 		boundColor = RGB.toRGBAi(RGB.GREEN, BOUND_ALPHA);
 	}
 	
-	public GreenShell(Scene scene, float[] c, float trajectory)
+	public GreenShell(Scene scene, Vec3 c, float trajectory)
 	{	
 		super(null, scene, null, trajectory);
 		
@@ -79,16 +79,20 @@ public class GreenShell extends Shell
 	
 	public void render(GL2 gl, float trajectory)
 	{
-		Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
-		if(shader != null) shader.enable(gl);
-		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(bound.c[0], bound.c[1], bound.c[2]);
-			gl.glRotatef(rotation, 0, 1, 0);
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+			gl.glRotatef(rotation, 0, -1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);
 			
+			Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+			if(shader != null) shader.enable(gl);
+			
 			gl.glCallList(shellList);
+			
+			shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+			if(shader != null) shader.enable(gl);
+			
 			gl.glCallList(rimList);
 		}
 		gl.glPopMatrix();

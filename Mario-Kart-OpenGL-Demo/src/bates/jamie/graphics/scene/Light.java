@@ -19,6 +19,8 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUquadric;
 
+import bates.jamie.graphics.util.Vec3;
+
 
 public class Light extends AnchorPoint
 {
@@ -33,7 +35,7 @@ public class Light extends AnchorPoint
 	
 	private int shininess = 128;
 
-	public float[] direction = {0, -1, 0};
+	public Vec3 direction = Vec3.NEGATIVE_Y_AXIS;
 
 	public boolean smooth    = true;
 	public boolean parallel  = false;
@@ -44,8 +46,8 @@ public class Light extends AnchorPoint
 	{
 		id = count++; count %= 8;
 		
-		setPosition(new float[] {1, 1, 0});
-		setPosition(new float[] {250, 250, 250});
+		setPosition(new Vec3(1, 1, 0));
+		setPosition(new Vec3(250));
 
 		gl.glEnable(GL_LIGHTING);
 		gl.glEnable(getLight(id));
@@ -74,9 +76,8 @@ public class Light extends AnchorPoint
 		
 		gl.glPushMatrix();
 		{	
-			float[] p = getPosition();
-			
-			gl.glTranslatef(p[0], p[1], p[2]);
+			Vec3 p = getPosition();
+			gl.glTranslatef(p.x, p.y, p.z);
 			
 			glu.gluSphere(sphere, 2, 32, 32);
 		}
@@ -107,11 +108,11 @@ public class Light extends AnchorPoint
 		if(spotlight)
 		{
 			gl.glLightf (light, GL_SPOT_CUTOFF, 30.0f);
-			gl.glLightfv(light, GL_SPOT_DIRECTION, direction, 0);
+			gl.glLightfv(light, GL_SPOT_DIRECTION, direction.toArray(), 0);
 		}
 
-		float[] p = getPosition();
-		float[] _p = {p[0], p[1], p[2], parallel ? 0 : 1};
+		Vec3 p = getPosition();
+		float[] _p = {p.x, p.y, p.z, parallel ? 0 : 1};
 		gl.glLightfv(light, GL_POSITION, _p, 0);
 
 		gl.glMaterialfv(GL_FRONT, GL_SPECULAR,  specular, 0);

@@ -8,12 +8,14 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Vec3;
+
 
 public class StarParticle extends Particle
 {
 	private float scale;
 	
-	public StarParticle(float[] c, float[] t, int duration, float scale)
+	public StarParticle(Vec3 c, Vec3 t, int duration, float scale)
 	{
 		super(c, t, 0, duration);
 
@@ -27,8 +29,8 @@ public class StarParticle extends Particle
 		{	
 			Random generator = new Random();
 			
-			gl.glTranslatef(c[0], c[1], c[2]);
-			gl.glRotatef(trajectory - 90, 0, 1, 0);
+			gl.glTranslatef(c.x, c.y, c.z);
+			gl.glRotatef(trajectory, 0, -1, 0);
 			gl.glScalef(scale, scale, scale);
 			
 			gl.glDepthMask(false);

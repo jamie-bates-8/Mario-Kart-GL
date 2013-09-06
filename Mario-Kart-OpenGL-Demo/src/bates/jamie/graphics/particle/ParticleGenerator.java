@@ -1,8 +1,7 @@
 package bates.jamie.graphics.particle;
 
 
-import static bates.jamie.graphics.util.Vector.multiply;
-import static bates.jamie.graphics.util.Vector.normalize;
+import static bates.jamie.graphics.util.Vec3.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +9,7 @@ import java.util.Random;
 
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.opengl.util.texture.Texture;
@@ -22,7 +22,7 @@ public class ParticleGenerator
 	private int counter  = 0;
 	private int quantity = 0;
 	
-	private float[] source = {0, 0, 0};
+	private Vec3 source = new Vec3();
 	
 	public enum GeneratorType
 	{
@@ -34,7 +34,7 @@ public class ParticleGenerator
 	
 	public ParticleGenerator() { generator = new Random(); }
 	
-	public ParticleGenerator(int pulse, int quantity, GeneratorType type, float[] source)
+	public ParticleGenerator(int pulse, int quantity, GeneratorType type, Vec3 source)
 	{
 		generator = new Random();
 		
@@ -68,7 +68,7 @@ public class ParticleGenerator
 		}
 	}
 	
-	public List<Particle> generateTerrainParticles(float[] source, int n, Texture texture)
+	public List<Particle> generateTerrainParticles(Vec3 source, int n, Texture texture)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -76,8 +76,8 @@ public class ParticleGenerator
 		{
 			float[] texCoords = {generator.nextFloat(), generator.nextFloat()};
 			
-			float[] t = getRandomVector();
-			t[1] = Math.abs(t[1] * 0.75f);
+			Vec3 t = getRandomVector();
+			t.y = Math.abs(t.y * 0.75f);
 			
 			particles.add(new TerrainParticle(source, t, 0, 12, texCoords, texture));
 		}
@@ -85,7 +85,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateItemBoxParticles(float[] source, int n)
+	public List<Particle> generateItemBoxParticles(Vec3 source, int n)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -96,7 +96,7 @@ public class ParticleGenerator
 			float[]  color = colors[generator.nextInt(colors.length)];
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
 			
-			float[] t = getRandomVector();
+			Vec3 t = getRandomVector();
 			
 			particles.add(new ItemBoxParticle(source, t, 0, _color, generator.nextBoolean(), false));
 		}
@@ -104,7 +104,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateSparkParticles(float[] source, float[] t, int n, int type, Car car)
+	public List<Particle> generateSparkParticles(Vec3 source, Vec3 t, int n, int type, Car car)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -120,18 +120,18 @@ public class ParticleGenerator
 			float[]  color = Vector.mix(colors[type][0], colors[type][1], generator.nextFloat());
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255};
 			
-			float[] _t = Vector.add(Vector.normalize(t), getRandomVector());
-			_t[1] = Math.abs(_t[1] * (generator.nextBoolean() ? 1 : 2));
+			t = t.normalize().add(getRandomVector());
+			t.y = Math.abs(t.y * (generator.nextBoolean() ? 1 : 2));
 			
 			int length = 3 + generator.nextInt(4);
 			
-			particles.add(new SparkParticle(car, source, _t, 8, _color, length));
+			particles.add(new SparkParticle(car, source, t, 8, _color, length));
 		}
 		
 		return particles;
 	}
 	
-	public List<Particle> generateDriftParticles(float[] source, int n, int color, boolean miniature)
+	public List<Particle> generateDriftParticles(Vec3 source, int n, int color, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -145,14 +145,14 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateBlastParticles(float[] source, int n)
+	public List<Particle> generateBlastParticles(Vec3 source, int n)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[] t = getRandomVector();
-			t = multiply(normalize(t), 2.5f);
+			Vec3 t = getRandomVector();
+			t = t.normalize().multiply(2.5f);
 			
 			int duration = 30 + generator.nextInt(30);
 			
@@ -162,14 +162,14 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateStarParticles(float[] source, int n, boolean miniature)
+	public List<Particle> generateStarParticles(Vec3 source, int n, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[] t = getRandomVector();
-			if(miniature) t = multiply(t, 0.5f);
+			Vec3 t = getRandomVector();
+			if(miniature) t = t.multiply(0.5f);
 			
 			float scale = generator.nextFloat() * ((miniature) ? 1.25f : 2.5f);
 			
@@ -179,7 +179,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateFakeItemBoxParticles(float[] source, int n, boolean miniature)
+	public List<Particle> generateFakeItemBoxParticles(Vec3 source, int n, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -190,8 +190,8 @@ public class ParticleGenerator
 			float[]  color = RGB.RED;
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
 			
-			float[] t = getRandomVector();
-			if(miniature) t = multiply(t, 0.5f);
+			Vec3 t = getRandomVector();
+			if(miniature) t = t.multiply(0.5f);
 			
 			particles.add(new ItemBoxParticle(source, t, 45, _color, generator.nextBoolean(), miniature));
 		}
@@ -199,7 +199,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateBoostParticles(float[] source, int n, boolean special, boolean miniature)
+	public List<Particle> generateBoostParticles(Vec3 source, int n, boolean special, boolean miniature)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -207,11 +207,11 @@ public class ParticleGenerator
 		
 		for(int i = 0; i < n; i++)
 		{	
-			float[] t = getRandomVector();
+			Vec3 t = getRandomVector();
 			
 			float k = (special) ? 0.55f : 0.5f;
-			t = multiply(t, k);
-			if(miniature) t = multiply(t, 0.5f);
+			t = t.multiply(k);
+			if(miniature) t = t.multiply(0.5f);
 			
 			float scale = generator.nextFloat() * ((miniature) ? 1.25f : 2.5f);
 			
@@ -219,14 +219,5 @@ public class ParticleGenerator
 		}
 		
 		return particles;
-	}
-	
-	private float[] getRandomVector()
-	{
-		float xVel = (generator.nextBoolean()) ? generator.nextFloat() : -generator.nextFloat();
-		float yVel = (generator.nextBoolean()) ? generator.nextFloat() : -generator.nextFloat();
-		float zVel = (generator.nextBoolean()) ? generator.nextFloat() : -generator.nextFloat();
-		
-		return new float[] {xVel, yVel, zVel};
 	}
 }

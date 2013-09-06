@@ -7,19 +7,19 @@ import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.Vec3;
 
 public class SparkParticle extends Particle
 {
 	private float[] color;
-	private float[] origin;
+	private Vec3 origin;
 	
 	private int length;
 	private int timer = 5;
 	
 	private Car car;
 	
-	public SparkParticle(Car car, float[] c, float[] t,
+	public SparkParticle(Car car, Vec3 c, Vec3 t,
 		int duration, float[] color, int length)
 	{
 		super(c, t, 0, duration);
@@ -55,10 +55,10 @@ public class SparkParticle extends Particle
 					float time = (timer - i) * 0.2f;
 					if(car != null && car.isMiniature()) time /= 2;
 					
-					float[] p = Vector.add(origin, Vector.multiply(t, time));
-					p[1] -= 4.9f * time * time * 0.1f;
+					Vec3 p = origin.add(t.multiply(time));
+					p.y -= 4.9f * time * time * 0.1f;
 					
-					gl.glVertex3f(p[0], p[1], p[2]);
+					gl.glVertex3f(p.x, p.y, p.z);
 				}
 			}
 			gl.glEnd();
@@ -79,7 +79,7 @@ public class SparkParticle extends Particle
 	{
 		duration--;
 		
-		if(car != null) origin = Vector.subtract(origin, car.getVector());
+		if(car != null) origin = origin.subtract(car.getVector());
 		timer++;
 	}
 }
