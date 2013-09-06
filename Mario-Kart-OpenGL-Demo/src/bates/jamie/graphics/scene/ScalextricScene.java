@@ -40,6 +40,7 @@ import javax.media.opengl.glu.GLU;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Scalextric;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.OBJParser;
 
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.awt.TextRenderer;

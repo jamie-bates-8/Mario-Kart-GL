@@ -15,8 +15,8 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;

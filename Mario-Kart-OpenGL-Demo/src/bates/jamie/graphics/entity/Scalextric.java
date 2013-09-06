@@ -9,8 +9,8 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.OBJParser;
 
 public class Scalextric
 {

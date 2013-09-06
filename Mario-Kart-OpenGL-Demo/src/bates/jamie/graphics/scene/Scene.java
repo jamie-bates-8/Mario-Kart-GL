@@ -97,6 +97,7 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.LightingStrike;
 import bates.jamie.graphics.entity.Quadtree;
+import bates.jamie.graphics.entity.SkyBox;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
 import bates.jamie.graphics.entity.Water;
@@ -121,6 +122,7 @@ import bates.jamie.graphics.scene.ShadowCaster.ShadowQuality;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
+import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
@@ -196,6 +198,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenuItem menuItem_background;
 	private JCheckBoxMenuItem menuItem_fog;
 	private JMenuItem menuItem_fogcolor;
+	private JMenuItem menuItem_skycolor;
+	private JMenuItem menuItem_horizon;
 	private JMenu menu_weather;
 	private JRadioButtonMenuItem menuItem_none;
 	private JRadioButtonMenuItem menuItem_rain;
@@ -289,9 +293,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Model Fields **/	
-	private List<Face> environmentFaces;
 	private List<Face> floorFaces;
-	private int environmentList;
 	private int floorList;
 	
 	private List<Car> cars = new ArrayList<Car>();
@@ -330,6 +332,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
     
     /** Environment Fields **/
+    public SkyBox skybox;
     public boolean displaySkybox = true;
     public Reflector reflector;
 	public boolean sphereMap = false;
@@ -735,6 +738,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_fogcolor.addActionListener(this);
 		menuItem_fogcolor.setActionCommand("fog_color");
 		
+		menuItem_skycolor = new JMenuItem("Sky Color", KeyEvent.VK_S);
+		menuItem_skycolor.addActionListener(this);
+		menuItem_skycolor.setActionCommand("sky_color");
+		
+		menuItem_horizon = new JMenuItem("Horizon Color", KeyEvent.VK_H);
+		menuItem_horizon.addActionListener(this);
+		menuItem_horizon.setActionCommand("horizon");
+		
 		menu_weather = new JMenu("Weather");
 		menu_weather.setMnemonic(KeyEvent.VK_W);
 		
@@ -779,6 +790,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_environment.addSeparator();
 		menu_environment.add(menuItem_fog);
 		menu_environment.add(menuItem_fogcolor);
+		menu_environment.add(menuItem_skycolor);
+		menu_environment.add(menuItem_horizon);
 		menu_environment.addSeparator();
 		menu_environment.add(menu_weather);
 		
@@ -1098,13 +1111,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long setupStart = System.currentTimeMillis();
 		
 		/** Model Setup **/
-		environmentFaces = OBJParser.parseTriangles("environment");
-		floorFaces       = OBJParser.parseTriangles("floor");
-	    
-	    environmentList = gl.glGenLists(1);
-	    gl.glNewList(environmentList, GL2.GL_COMPILE);
-	    Renderer.displayTexturedObject(gl, environmentFaces);
-	    gl.glEndList();
+		skybox = new SkyBox(gl);
+		
+		floorFaces = OBJParser.parseTriangles("floor");
 	    
 	    floorList = gl.glGenLists(1);
 	    gl.glNewList(floorList, GL2.GL_COMPILE);
@@ -1973,31 +1982,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void renderSkybox(GL2 gl)
 	{
-		gl.glDisable(GL2.GL_LIGHTING);
-		
-		Shader shader = shaders.get("clear_sky");
-		
-		if(Shader.enabled && shader != null) shader.enable(gl);
-		
-		gl.glPushMatrix();
-		{
-			if(Shader.enabled)
-			{
-				glut.glutSolidSphere(800, 32, 32);
-			}
-			else
-			{
-				gl.glTranslatef(0, 0, 0);
-				gl.glScalef(40.0f, 40.0f, 40.0f);
-				
-				gl.glCallList(environmentList);
-			}
-		}	
-		gl.glPopMatrix();
-		
-		Shader.disable(gl);
-		
-		gl.glEnable(GL2.GL_LIGHTING);
+		skybox.render(gl);
 	}
 
 	public long renderTerrain(GL2 gl)
@@ -2132,10 +2117,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 	
+	public boolean enableFoliage = true;
 	public int foliageMode = 0;
 
 	public long renderFoliage(GL2 gl, Car car)
 	{
+		if(!enableFoliage) return 0;
+		
 		long start = System.nanoTime();
 		
 		switch(foliageMode)
@@ -2626,12 +2614,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_1: spawnItemsInSphere(Banana.ID, 10, new Vec3(0, 100, 0), 50); break;
-			case KeyEvent.VK_2: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			case KeyEvent.VK_1: spawnItemsInSphere(GreenShell.ID, 10, new Vec3(0, 100, 0), 50); break;
+			case KeyEvent.VK_2: spawnItemsInSphere(RedShell.ID, 10, new Vec3(0, 100, 0), 50); break;
+			case KeyEvent.VK_3: spawnItemsInOBB(FakeItemBox.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			case KeyEvent.VK_4: spawnItemsInSphere(Banana.ID, 10, new Vec3(0, 100, 0), 50); break;
+			case KeyEvent.VK_5: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform; break;
 			case KeyEvent.VK_P: enableParallax = !enableParallax; break;
 			case KeyEvent.VK_W: water.frozen = !water.frozen; break;
+			case KeyEvent.VK_F: enableFoliage = !enableFoliage; break;
 			
 			case KeyEvent.VK_S: ShadowCaster.cycle(); break;
 			
@@ -2724,87 +2716,36 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			tree.setGradient(tree.gradient);
 		}
 		else if(event.getActionCommand().equals("reset_heights")) terrain.tree.resetHeights();
-		else if(event.getActionCommand().equals("set_ambience" ))
-		{
-			float[] c = light.getAmbience();
-			Color ambience = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Ambient Lighting Color", ambience);
-			
-			if(color == null) return;
-			
-			light.setAmbience(RGB.toRGBA(color));
-		}
-		else if(event.getActionCommand().equals("set_emission"))
-		{
-			float[] c = light.getEmission();
-			Color emission = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Emissive Material Color", emission);
-			
-			if(color == null) return;
-			
-			light.setEmission(RGB.toRGBA(color));
-		}
-		else if(event.getActionCommand().equals("set_specular"))
-		{
-			float[] c = light.getSpecular();
-			Color specular = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Specular Lighting Color", specular);
-			
-			if(color == null) return;
-			
-			light.setSpecular(RGB.toRGBA(color));
-		}
-		else if(event.getActionCommand().equals("material_specular"))
-		{
-			float[] c = terrain.tree.specular;
-			Color specular = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Specular Reflectivity", specular);
-			
-			if(color == null) return;
-			
-			terrain.tree.specular = RGB.toRGBA(color);
-		}
-		else if(event.getActionCommand().equals("set_diffuse"))
-		{
-			float[] c = light.getDiffuse();
-			Color diffuse = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Diffuse Lighting Color", diffuse);
-			
-			if(color == null) return;
-			
-			light.setDiffuse(RGB.toRGBA(color));
-		}
-		else if(event.getActionCommand().equals("fog_color"))
-		{
-			float[] c = fogColor;
-			Color fog = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Fog Color", fog);
-			
-			if(color == null) return;
-			
-			fogColor = RGB.toRGBA(color);
-		}
-		else if(event.getActionCommand().equals("bg_color"))
-		{
-			float[] c = background;
-			Color bg = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Background Color", bg);
-			
-			if(color == null) return;
-			
-			background = RGB.toRGBA(color);
-		}
-		else if(event.getActionCommand().equals("car_color"))
-		{
-			float[] c = cars.get(0).getColor();
-			Color car = c.length > 3 ? new Color(c[0], c[1], c[2], c[3]) : new Color(c[0], c[1], c[2]);
-			Color color = JColorChooser.showDialog(frame, "Body Color", car);
-			
-			if(color == null) return;
-			
-			cars.get(0).setColor(RGB.toRGBA(color));
-		}
+		     
+		else if(event.getActionCommand().equals("set_ambience" )) light.setAmbience(chooseColor(light.getAmbience(), "Ambient Lighting Color" ));
+		else if(event.getActionCommand().equals("set_emission" )) light.setEmission(chooseColor(light.getEmission(), "Emissive Material Color"));
+		else if(event.getActionCommand().equals("set_specular" )) light.setSpecular(chooseColor(light.getSpecular(), "Specular Lighting Color"));
+		else if(event.getActionCommand().equals("set_diffuse"  )) light.setDiffuse (chooseColor(light.getDiffuse() , "Diffuse Lighting Color" )); 
+		     
+		else if(event.getActionCommand().equals("material_specular")) terrain.tree.specular = chooseColor(terrain.tree.specular, "Specular Reflectivity");
+		
+		else if(event.getActionCommand().equals("fog_color")) fogColor   = chooseColor(fogColor, "Fog Color");
+		else if(event.getActionCommand().equals("bg_color" )) background = chooseColor(background, "Background Color");
+		else if(event.getActionCommand().equals("sky_color")) skybox.setSkyColor(chooseColor(skybox.getSkyColor(), "Sky Color"));
+		else if(event.getActionCommand().equals("horizon"  )) skybox.setHorizonColor(chooseColor(skybox.getHorizonColor(), "Horizon Color"));
+		     
+		else if(event.getActionCommand().equals("car_color")) cars.get(0).setColor(chooseColor(cars.get(0).getColor(), "Body Color"));
+		     
 		else if(event.getActionCommand().equals("close"        )) System.exit(0);
+	}
+	
+	public float[] chooseColor(float[] color, String title)
+	{
+		Color oldColor = color.length > 3 ? new Color(color[0], color[1], color[2], color[3]) :
+											new Color(color[0], color[1], color[2]);
+		Color newColor = JColorChooser.showDialog(frame, title, oldColor);
+		
+		if(newColor == null) return color;
+		
+		if(color.length > 3) color = RGB.toRGBA(newColor);
+		else color = RGB.toRGB(newColor);
+		
+		return color;
 	}
 
 	public void itemStateChanged(ItemEvent ie)

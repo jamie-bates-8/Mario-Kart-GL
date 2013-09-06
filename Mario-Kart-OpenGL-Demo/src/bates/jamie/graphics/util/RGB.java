@@ -63,6 +63,17 @@ public class RGB
 	    return _color;
 	}
 	
+	public static float[] toRGB(Color color)
+	{
+		float r = color.getRed();
+		float g = color.getGreen();
+		float b = color.getBlue();
+		
+		float[] _color = {r/255, g/255, b/255};
+	    
+	    return _color;
+	}
+	
 	public static int getRed(int color) { return (color >> 16) & 0xFF; }
 	
 	public static int getGreen(int color) { return (color >> 8) & 0xFF; }

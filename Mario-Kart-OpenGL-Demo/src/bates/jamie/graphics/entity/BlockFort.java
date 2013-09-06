@@ -10,11 +10,11 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.BoundParser;
 import bates.jamie.graphics.collision.OBB;
-import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.ShadowCaster;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
+import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;

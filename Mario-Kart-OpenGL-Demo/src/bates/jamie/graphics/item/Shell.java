@@ -8,9 +8,9 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.scene.OBJParser;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Vec3;
