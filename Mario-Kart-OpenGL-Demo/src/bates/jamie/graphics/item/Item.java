@@ -20,8 +20,6 @@ import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Vec3;
 
-import com.jogamp.opengl.util.gl2.GLUT;
-
 public abstract class Item
 {
 	public static final String TEXTURE_DIRECTORY = "tex/items/";
@@ -30,6 +28,8 @@ public abstract class Item
 	public static final float GLOBAL_RADIUS = 300;
 	
 	protected static final float BOUND_ALPHA = 0.25f;
+	
+	public int occludeQuery = -1;
 	
 	public static int renderMode = 0;
 	public static boolean smooth = true;
@@ -83,10 +83,31 @@ public abstract class Item
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 	}
 	
-	public void renderBound(GL2 gl, GLUT glut)
+	public void renderBound(GL2 gl)
 	{
-		if(boundFrames) bound.displayWireframe(gl, glut, RGB.BLACK_3F, smooth);
-		if(boundSolids) bound.displaySolid(gl, glut, boundColor);
+		if(boundFrames) bound.displayWireframe(gl, RGB.BLACK_3F, smooth);
+		if(boundSolids) bound.displaySolid(gl, boundColor);
+	}
+	
+	/**
+	 * This method renders a simplified version of this object so that an occlusion
+	 * query can be performed. If <code>false</code> is returned, this means that
+	 * the simplified object was not visible; consequently, the original object does
+	 * not need to be rendered in the final scene.
+	 */
+	public void renderFacade(GL2 gl)
+	{
+		gl.glPushMatrix();
+		{
+			gl.glColorMask(false, false, false, false);
+			gl.glDepthMask(false);
+			
+			bound.displaySolid(gl, RGB.WHITE_3F);
+			
+			if(!Scene.depthMode) gl.glColorMask(true, true, true, true);
+			gl.glDepthMask(true);
+		}
+		gl.glPopMatrix();
 	}
 	
 	public static int removeItems(Collection<Item> items)

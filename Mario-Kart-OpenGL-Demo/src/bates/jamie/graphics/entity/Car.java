@@ -308,7 +308,7 @@ public class Car
 		
 		body.addChild(car_base);
 		
-		SceneNode windows = new SceneNode(null, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
+		SceneNode windows = new SceneNode(window_faces, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
 		

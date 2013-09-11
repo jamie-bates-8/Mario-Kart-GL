@@ -15,6 +15,7 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.gl2.GLUT;
@@ -89,7 +90,7 @@ public class Sphere extends Bound
 	@Override
 	public float getMaximumExtent() { return r; }
 	
-	public void displaySolid(GL2 gl, GLUT glut, float[] color)
+	public void displaySolid(GL2 gl, float[] color)
 	{
 		if(color.length > 3)
 			 gl.glColor4fv(color, 0);
@@ -103,7 +104,9 @@ public class Sphere extends Bound
 			gl.glTranslatef(c.x, c.y, c.z);
 			gl.glScalef(r, r, r);
 			
-			glut.glutSolidSphere(1, 12, 12);
+			GLUT glut = new GLUT();
+			if(Scene.occludeSphere) glut.glutSolidSphere(1, 12, 12);
+			else glut.glutSolidCube(2);
 		}
 		gl.glPopMatrix();
 		
@@ -111,7 +114,7 @@ public class Sphere extends Bound
 		gl.glEnable(GL_LIGHTING);
 	}
 	
-	public void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth)
+	public void displayWireframe(GL2 gl, float[] color, boolean smooth)
 	{
 		int v = 24;
 		

@@ -152,6 +152,7 @@ public class FocalBlur
 		if(enable) // Only need depth values
 		{
 			Shader.enabled = false; // shaders not required
+			Scene.depthMode = true;
 			
 			// Clear the depth buffer only
 		    gl.glClear(GL_DEPTH_BUFFER_BIT);
@@ -166,6 +167,8 @@ public class FocalBlur
 		}
 		else // Restore normal drawing state
 		{ 
+			Scene.depthMode = false;
+			
 		    gl.glShadeModel(GL2.GL_SMOOTH);
 		    
 		    gl.glEnable(GL2.GL_LIGHTING      );

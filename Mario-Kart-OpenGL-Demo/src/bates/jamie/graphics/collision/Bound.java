@@ -78,9 +78,9 @@ public abstract class Bound
 		gl.glDisable(GL2.GL_POINT_SMOOTH);
 	}
 	
-	public abstract void displaySolid(GL2 gl, GLUT glut, float[] color);
+	public abstract void displaySolid(GL2 gl, float[] color);
 	
-	public abstract void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth);
+	public abstract void displayWireframe(GL2 gl, float[] color, boolean smooth);
 	
 	public boolean testBound(Bound b)
 	{

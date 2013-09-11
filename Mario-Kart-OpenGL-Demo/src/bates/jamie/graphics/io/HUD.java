@@ -22,7 +22,9 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
+import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
@@ -268,10 +270,17 @@ public class HUD
 		
 		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), 40, y - 430);
 		
+		renderer.draw("Quadtree Render: " + Quadtree.renderTime, 40, y - 460);
+		renderer.draw("Banana Render: " + Banana.renderTime, 40, y - 490);
+		renderer.draw("Occlusion: " + (Scene.enableOcclusion ? "Enabled" : "Disabled"), 40, y - 520);
+		
 		Vec3 p = car.getPosition();
 		
 		int x = scene.getWidth() - 200;
 		
+		renderer.draw("Bananas: " + Scene.bananasRendered, x, 610);
+		
+		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, 580);
 		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, 550);
 		renderer.draw("Azimuth: " + String.format("%.1f", Math.toDegrees(car.camera.azimuth)), x, 520);
 		renderer.draw("Incline: " + String.format("%.1f", Math.toDegrees(car.camera.incline)), x, 490);

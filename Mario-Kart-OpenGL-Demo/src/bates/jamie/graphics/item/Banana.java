@@ -54,6 +54,8 @@ public class Banana extends Item
 	
 	private int bananaID = 0;
 	
+	private int timeQuery = -1;
+	
 	public Banana(GL2 gl, Scene scene, Car car, int id)
 	{
 		if(bananaList == -1)
@@ -88,15 +90,61 @@ public class Banana extends Item
 		velocity /= 2;
 	}
 	
+	public static float renderTime = 0;
+	public static long frameNumber = 0;
+	
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
+		long start = System.nanoTime();
+		
+		int[] results = new int[1];
+		
+		if(timeQuery != -1 && !Scene.depthMode && !Scene.shadowMode)
+		{
+			gl.glGetQueryObjectuiv(timeQuery, GL2.GL_QUERY_RESULT, results, 0);
+			gl.glDeleteQueries(1, new int[] {timeQuery}, 0);
+			
+			System.out.println("Query: " + results[0]);
+			renderTime = (float) ((renderTime * frameNumber) + results[0]) / ++frameNumber;
+		}
+		
+		int[] queries = new int[1];
+		gl.glGenQueries(1, queries, 0);
+		timeQuery = queries[0];
+		
+		gl.glBeginQuery(GL2.GL_TIME_ELAPSED, timeQuery);
+		
+		if(Scene.enableOcclusion)
+		{
+			if(occludeQuery != -1)
+			{
+				gl.glGetQueryObjectuiv(occludeQuery, GL2.GL_QUERY_RESULT, results, 0);
+				gl.glDeleteQueries(1, new int[] {occludeQuery}, 0);
+			}
+			
+			gl.glGenQueries(1, queries, 0);
+			occludeQuery = queries[0];
+			
+			gl.glBeginQuery(GL2.GL_ANY_SAMPLES_PASSED, occludeQuery);
+
+			if(results[0] == 0 && occludeQuery != -1)
+			{
+				renderFacade(gl);
+				
+				gl.glEndQuery(GL2.GL_TIME_ELAPSED);
+				gl.glEndQuery(GL2.GL_ANY_SAMPLES_PASSED);
+				
+				return;
+			}
+		}
+		Scene.bananasRendered++;
+		
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 			if(thrown) gl.glRotatef(trajectory, 0, -1, 0);
 			else gl.glMultMatrixf(u.toArray(), 0);
-			
 			
 			Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
 			if(shader != null) shader.enable(gl);
@@ -105,28 +153,41 @@ public class Banana extends Item
 			
 			Shader.disable(gl);
 			
-			gl.glPushMatrix();
-			{
-				gl.glDisable(GL_LIGHTING);
-				gl.glEnable(GL_BLEND);
-				
-				gl.glTranslatef(0, 0, 0.325f);
-				
-				face.bind(gl);
+			renderFace(gl);
+		}
+		gl.glPopMatrix();
+		
+		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
+		gl.glEndQuery(GL2.GL_ANY_SAMPLES_PASSED);
+		
+		System.out.println("System: " + (System.nanoTime() - start));
+	}
 
-				gl.glBegin(GL_QUADS);
-				{
-					gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.35f, -0.35f, 0.0f);
-					gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.35f,  0.35f, 0.0f);
-					gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.35f,  0.35f, 0.0f);
-					gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.35f, -0.35f, 0.0f);
-				}
-				gl.glEnd();
-				
-				gl.glDisable(GL_BLEND);
-				gl.glEnable(GL_LIGHTING);
+	private void renderFace(GL2 gl)
+	{
+		gl.glPushMatrix();
+		{
+			gl.glDisable(GL_LIGHTING);
+			gl.glEnable(GL_BLEND);
+			gl.glEnable(GL2.GL_ALPHA_TEST);
+			gl.glAlphaFunc(GL2.GL_GREATER, 0.25f);
+			
+			gl.glTranslatef(0, 0, 0.325f);
+			
+			face.bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.35f, -0.35f, 0.0f);
+				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.35f,  0.35f, 0.0f);
+				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.35f,  0.35f, 0.0f);
+				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.35f, -0.35f, 0.0f);
 			}
-			gl.glPopMatrix();
+			gl.glEnd();
+			
+			gl.glDisable(GL_BLEND);
+			gl.glDisable(GL2.GL_ALPHA_TEST);
+			gl.glEnable(GL_LIGHTING);
 		}
 		gl.glPopMatrix();
 	}

@@ -250,6 +250,8 @@ public class ShadowCaster
 		if(enable) // Only need depth values
 		{
 			Shader.enabled = false;
+			Scene.depthMode = true;
+			Scene.shadowMode = true;
 			// Clear the depth buffer only
 		    gl.glClear(GL_DEPTH_BUFFER_BIT);
 		    
@@ -270,6 +272,9 @@ public class ShadowCaster
 		}
 		else // Restore normal drawing state
 		{ 
+			Scene.depthMode = false;
+			Scene.shadowMode = false;
+			
 		    gl.glShadeModel(GL2.GL_SMOOTH);
 		    
 		    gl.glEnable(GL2.GL_LIGHTING      );

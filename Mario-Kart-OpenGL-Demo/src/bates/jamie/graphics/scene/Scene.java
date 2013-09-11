@@ -1401,9 +1401,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
         resetView(gl);
     }
+	
+	public static boolean enableOcclusion = true;
 
 	private void render(GL2 gl)
 	{	
+		bananasRendered = 0;
+		
 		int[] order = new int[cars.size()];
 		
 		int i = orderRender(order);
@@ -1460,6 +1464,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				Particle.resetTexture();
 				
 				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+				else renderTimes[frameIndex][1] = 0;
 				
 				if(terrain != null && terrain.enableWater) 
 				{
@@ -1511,9 +1516,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		boostCounter = _i;
 		
 		if(shadowMap) displayMap(gl, focalBlur.getDepthTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
+		
+		System.out.println();
 	}
 	
+	public static boolean shadowMode = false;
 	public static boolean reflectMode = false;
+	public static boolean depthMode = false;
 	
 	/**
 	 * This method renders the world as reflected by the surface of the water.
@@ -1954,7 +1963,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		
 		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
-		else if(!enableReflection) renderFloor(gl, false);
+		else if(!enableReflection)
+		{
+			renderFloor(gl, false);
+			renderTimes[frameIndex][0] = 0;
+		}
 		
 		renderObstacles(gl);
 		
@@ -2075,6 +2088,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+	
+	public static int bananasRendered = 0;
 
 	public long renderItems(GL2 gl, Car car)
 	{
@@ -2182,8 +2197,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			for(Car car : cars)
 			{
 				if(car.colliding)
-					 car.bound.displayWireframe(gl, glut, RGB.PURE_RED_3F, smoothBound);
-				else car.bound.displayWireframe(gl, glut, RGB.BLACK_3F, smoothBound);
+					 car.bound.displayWireframe(gl, RGB.PURE_RED_3F, smoothBound);
+				else car.bound.displayWireframe(gl, RGB.BLACK_3F, smoothBound);
 			}
 			
 			for(Bound bound : bounds)
@@ -2191,10 +2206,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				{
 					if(car.collisions != null && car.collisions.contains(bound))
 					{
-						 bound.displayWireframe(gl, glut, RGB.PURE_RED_3F, smoothBound);
+						 bound.displayWireframe(gl, RGB.PURE_RED_3F, smoothBound);
 						 break;
 					}
-					else bound.displayWireframe(gl, glut, RGB.BLACK_3F, smoothBound);
+					else bound.displayWireframe(gl, RGB.BLACK_3F, smoothBound);
 				}
 		}
 		
@@ -2207,13 +2222,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableOBBSolids)
 			for(Bound bound : bounds)
-				bound.displaySolid(gl, glut, RGB.toRGBAi(RGB.VIOLET, 0.1f));
+				bound.displaySolid(gl, RGB.toRGBAi(RGB.VIOLET, 0.1f));
 		
 		for(Car car : cars)
 			for(Item item : car.getItems())
-				item.renderBound(gl, glut);
+				item.renderBound(gl);
 		
-		for(Item item : itemList) item.renderBound(gl, glut);
+		for(Item item : itemList) item.renderBound(gl);
 		
 		gl.glEnable(GL_TEXTURE_2D);
 		gl.glEnable(GL2.GL_LIGHTING);
@@ -2610,6 +2625,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 	
+	public static boolean occludeSphere = true;
+	
 	public void shiftEvent(KeyEvent e)
 	{
 		switch(e.getKeyCode())
@@ -2622,8 +2639,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform; break;
 			case KeyEvent.VK_P: enableParallax = !enableParallax; break;
+			case KeyEvent.VK_I: occludeSphere = !occludeSphere; break;
 			case KeyEvent.VK_W: water.frozen = !water.frozen; break;
 			case KeyEvent.VK_F: enableFoliage = !enableFoliage; break;
+			
+			case KeyEvent.VK_O: enableOcclusion = !enableOcclusion; break;
 			
 			case KeyEvent.VK_S: ShadowCaster.cycle(); break;
 			

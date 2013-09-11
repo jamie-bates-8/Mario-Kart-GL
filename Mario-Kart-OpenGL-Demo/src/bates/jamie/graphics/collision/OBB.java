@@ -418,7 +418,7 @@ public class OBB extends Bound
 	public Vec3 getUpVector  (float scale) { return c.     add(u.yAxis.multiply(scale)); }
 	public Vec3 getDownVector(float scale) { return c.subtract(u.yAxis.multiply(scale)); }
 	
-	public void displaySolid(GL2 gl, GLUT glut, float[] color)
+	public void displaySolid(GL2 gl, float[] color)
 	{
 		gl.glColor4fv(color, 0);
 		
@@ -431,6 +431,7 @@ public class OBB extends Bound
 			gl.glMultMatrixf(u.toArray(), 0);
 			gl.glScalef(e.x * 2, e.y * 2, e.z * 2);
 			
+			GLUT glut = new GLUT();
 			glut.glutSolidCube(1);
 		}
 		gl.glPopMatrix();
@@ -439,7 +440,7 @@ public class OBB extends Bound
 		gl.glEnable(GL_LIGHTING);
 	}
 		
-	public void displayWireframe(GL2 gl, GLUT glut, float[] color, boolean smooth)
+	public void displayWireframe(GL2 gl, float[] color, boolean smooth)
 	{
 		if(color.length > 3)
 			 gl.glColor4fv(color, 0);
@@ -457,6 +458,7 @@ public class OBB extends Bound
 			gl.glMultMatrixf(u.toArray(), 0);
 			gl.glScalef(e.x * 2, e.y * 2, e.z * 2);
 			
+			GLUT glut = new GLUT();
 			glut.glutWireCube(1);
 		}
 		gl.glPopMatrix();

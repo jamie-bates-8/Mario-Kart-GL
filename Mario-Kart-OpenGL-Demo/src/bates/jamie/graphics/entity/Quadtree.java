@@ -1369,9 +1369,28 @@ public class Quadtree
 	public int normalCount() { return normals.size();  }
 	
 	private static float timer = 1.0f;
+	private int timeQuery = -1;
+	public static float renderTime = 0;
+	public static long frameNumber = 0;
 	
 	public void render(GL2 gl)
 	{
+		int[] results = new int[1];
+		
+		if(timeQuery != -1 && !Scene.depthMode && !Scene.shadowMode)
+		{
+			gl.glGetQueryObjectuiv(timeQuery, GL2.GL_QUERY_RESULT, results, 0);
+			gl.glDeleteQueries(1, new int[] {timeQuery}, 0);
+			
+			renderTime = (float) ((renderTime * frameNumber) + results[0]) / ++frameNumber;
+		}
+		
+		int[] queries = new int[1];
+		gl.glGenQueries(1, queries, 0);
+		timeQuery = queries[0];
+		
+		gl.glBeginQuery(GL2.GL_TIME_ELAPSED, timeQuery);
+		
 		if(solid)
 		{
 			Shader shader = null;
@@ -1421,7 +1440,7 @@ public class Quadtree
 		if(vNormals ) renderNormals  (gl, true, 1);
 		if(vTangents) renderTangents (gl, true, 1);
 		
-		if(selected != null && !selected.isEmpty()) renderSelected(gl);
+		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
 	}
 	
 	public void renderAlpha(GL2 gl)
@@ -1651,37 +1670,6 @@ public class Quadtree
 		gl.glColor3f(1, 1, 1);
 		
 		gl.glEnable(GL2.GL_LIGHTING);
-		gl.glEnable(GL_TEXTURE_2D);	
-	}
-	
-	public Set<Integer> selected = new HashSet<Integer>();
-	
-	public void renderSelected(GL2 gl)
-	{
-		gl.glDisable(GL2.GL_LIGHTING);
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		
-		gl.glColor3f(1, 0, 0);
-
-		gl.glEnable(GL2.GL_BLEND);
-		gl.glEnable(GL2.GL_POINT_SMOOTH);
-		gl.glPointSize(10);
-		gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
-		gl.glPointParameterfv(GL2.GL_POINT_DISTANCE_ATTENUATION, new float[] {1, 0, 0}, 0);
-		
-		gl.glBegin(GL2.GL_POINTS);
-		
-		for(int i : selected)
-		{
-			float[] point = vertices.get(i);
-			gl.glVertex3f(point[0], point[1] + 5, point[2]);
-		}
-		
-		gl.glEnd();
-		
-		gl.glDisable(GL2.GL_BLEND);
-		gl.glDisable(GL2.GL_POINT_SMOOTH);
-		
 		gl.glEnable(GL_TEXTURE_2D);	
 	}
 	
