@@ -131,7 +131,7 @@ public class Blizzard
 			
 			if(flake.falling)
 			{
-				flake.update(wind);
+				flake.update(wind.multiply(scene.water.magma ? -1 : 1));
 				
 				if(flake.c.y < -10 || Scene.outOfBounds(flake.c))
 				{
@@ -145,7 +145,7 @@ public class Blizzard
 				switch(type)
 				{
 					case SNOW: vBuffer.put(flake.c.toArray()); break;
-					case RAIN: vBuffer.put(flake.c.toArray()); vBuffer.put(flake.getDirectionVector(wind, 4).toArray()); break;
+					case RAIN: vBuffer.put(flake.c.toArray()); vBuffer.put(flake.getDirectionVector(wind.multiply(scene.water.magma ? -1 : 1), 4).toArray()); break;
 				}
 				
 				vBuffer.position(position);
@@ -216,7 +216,8 @@ public class Blizzard
 					case SNOW:
 					{
 						vBuffer.put(source.toArray());
-						cBuffer.put(new float[] {1, 1, 1, alpha});
+						if(scene.water.magma) cBuffer.put(new float[] {1, generator.nextFloat(), 0, alpha});
+						else cBuffer.put(new float[] {1, 1, 1, alpha});
 						break;
 					}
 					case RAIN:
@@ -240,7 +241,9 @@ public class Blizzard
 		float y = generator.nextFloat() * (generator.nextBoolean() ?  10 : - 10);
 		float z = generator.nextFloat() * (generator.nextBoolean() ? 200 : -200);
 		
-		return new Vec3(x, y + 175, z);
+		float offset = scene.water.magma ? 0 : 175;
+		
+		return new Vec3(x, y + offset, z);
 	}
 	
 	public void render(GL2 gl)

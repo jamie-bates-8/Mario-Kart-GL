@@ -16,8 +16,10 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.OccludeQuery;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
+import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 
 public abstract class Item
@@ -29,7 +31,8 @@ public abstract class Item
 	
 	protected static final float BOUND_ALPHA = 0.25f;
 	
-	public int occludeQuery = -1;
+	public OccludeQuery occludeQuery = new OccludeQuery();
+	public TimeQuery timeQuery = new TimeQuery(TimeQuery.ITEM_ID);
 	
 	public static int renderMode = 0;
 	public static boolean smooth = true;

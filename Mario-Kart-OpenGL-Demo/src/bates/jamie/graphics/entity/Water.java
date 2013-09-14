@@ -22,6 +22,7 @@ public class Water
 	private float increment = 0.05f;
 	
 	public boolean frozen = true;
+	public boolean magma = false;
 	
 	public Water(Scene scene)
 	{
@@ -32,7 +33,8 @@ public class Water
 	public int refractTexture;
 	
 	public Texture perturbTexture;
-	public Texture diffuseTexture;
+	public Texture frostTexture;
+	public Texture magmaTexture;
 	
 	public void createTextures(GL2 gl)
 	{
@@ -41,8 +43,9 @@ public class Water
 		reflectTexture = id[0];
 		refractTexture = id[1];
 
-		perturbTexture = TextureLoader.load(gl, BUMP_MAPS + "water.png");
-		diffuseTexture = TextureLoader.load(gl, "tex/ice.jpg");
+		perturbTexture = TextureLoader.load(gl, BUMP_MAPS + "water.png"); 
+		frostTexture = TextureLoader.load(gl, "tex/ice.jpg");
+		magmaTexture = TextureLoader.load(gl, "tex/magma.png");
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		
@@ -97,11 +100,11 @@ public class Water
 		{
 			gl.glColor4f(timer, 1, 1, 1);
 			
-			Shader shader = Scene.shaders.get("water");
+			Shader shader = magma ? Shader.get("magma") : Shader.get("water");
 			
 			if(shader != null && Shader.enabled) shader.enable(gl);
 			
-			gl.glActiveTexture(GL2.GL_TEXTURE3); diffuseTexture.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE3); if(magma) magmaTexture.bind(gl); else frostTexture.bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE2); perturbTexture.bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL2.GL_TEXTURE_2D, refractTexture);
 			gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glBindTexture(GL2.GL_TEXTURE_2D, reflectTexture);
@@ -133,7 +136,7 @@ public class Water
 			
 			Shader.disable(gl);
 			
-			if(Scene.enableAnimation && !frozen) timer += increment;
+			if(Scene.enableAnimation && (!frozen || magma)) timer += increment;
 			
 			gl.glColor4f(1, 1, 1, 1);
 			

@@ -67,7 +67,7 @@ public class SceneNode
 				{
 					case TEXTURE:
 					{
-						Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+						Shader shader = Shader.enabled ? Shader.get("phong_texture") : null;
 						if(shader != null)
 						{
 							shader.enable(gl);
@@ -77,7 +77,7 @@ public class SceneNode
 					}
 					case COLOR  :
 					{
-						Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+						Shader shader = Shader.enabled ? Shader.get("phong") : null;
 						if(shader != null) shader.enable(gl); model.render(gl);
 						break;
 					}
@@ -86,7 +86,7 @@ public class SceneNode
 						int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 						if(!Scene.reflectMode && enableBloom) gl.glDrawBuffers(2, attachments, 0);
 						
-						Shader shader = Shader.enabled ? Scene.shaders.get("phong_cube") : null;
+						Shader shader = Shader.enabled ? Shader.get("phong_cube") : null;
 						if(shader != null)
 						{
 							shader.enable(gl);

@@ -104,12 +104,12 @@ public class BlueShell extends Shell
 				gl.glRotatef(rotation, 0, -1, 0);
 				gl.glScalef(1.5f, 1.5f, 1.5f);
 				
-				Shader shader = Shader.enabled ? Scene.shaders.get("phong_texture") : null;
+				Shader shader = Shader.enabled ? Shader.get("phong_texture") : null;
 				if(shader != null) shader.enable(gl);
 				
 				gl.glCallList(shellList);
 				
-				shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+				shader = Shader.enabled ? Shader.get("phong") : null;
 				if(shader != null) shader.enable(gl);
 				
 				gl.glCallList(rimList);
@@ -128,7 +128,7 @@ public class BlueShell extends Shell
 			
 			GLU glu = new GLU();
 			
-			Shader shader = Shader.enabled ? Scene.shaders.get("dissolve") : null;
+			Shader shader = Shader.enabled ? Shader.get("dissolve") : null;
 			if(shader != null)
 			{
 				shader.enable(gl);

@@ -20,6 +20,7 @@ import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vector;
 
 import com.jogamp.common.nio.Buffers;
@@ -1368,36 +1369,21 @@ public class Quadtree
 	public int vertexCount() { return vertices.size(); }
 	public int normalCount() { return normals.size();  }
 	
-	private static float timer = 1.0f;
-	private int timeQuery = -1;
-	public static float renderTime = 0;
-	public static long frameNumber = 0;
+	public static float timer  = 1.0f;
+	private TimeQuery timeQuery = new TimeQuery(TimeQuery.TERRAIN_ID);
 	
 	public void render(GL2 gl)
 	{
-		int[] results = new int[1];
-		
-		if(timeQuery != -1 && !Scene.depthMode && !Scene.shadowMode)
-		{
-			gl.glGetQueryObjectuiv(timeQuery, GL2.GL_QUERY_RESULT, results, 0);
-			gl.glDeleteQueries(1, new int[] {timeQuery}, 0);
-			
-			renderTime = (float) ((renderTime * frameNumber) + results[0]) / ++frameNumber;
-		}
-		
-		int[] queries = new int[1];
-		gl.glGenQueries(1, queries, 0);
-		timeQuery = queries[0];
-		
-		gl.glBeginQuery(GL2.GL_TIME_ELAPSED, timeQuery);
+		timeQuery.getResult(gl);
+		timeQuery.begin(gl);
 		
 		if(solid)
 		{
 			Shader shader = null;
 			
 			if(enableCaustic)
-				 shader = enableBumpmap ? Scene.shaders.get("bump_caustics") : Scene.shaders.get("water_caustics");
-			else shader = enableBumpmap ? Scene.shaders.get("bump") : Scene.shaders.get("phong_texture");
+				 shader = enableBumpmap ? Shader.get("bump_caustics") : Shader.get("water_caustics");
+			else shader = enableBumpmap ? Shader.get("bump") : Shader.get("phong_texture");
 			
 			shader.enable(gl);
 			
@@ -1440,7 +1426,7 @@ public class Quadtree
 		if(vNormals ) renderNormals  (gl, true, 1);
 		if(vTangents) renderTangents (gl, true, 1);
 		
-		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
+		timeQuery.end(gl);
 	}
 	
 	public void renderAlpha(GL2 gl)

@@ -22,12 +22,11 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
-import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
 
@@ -270,8 +269,8 @@ public class HUD
 		
 		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), 40, y - 430);
 		
-		renderer.draw("Quadtree Render: " + Quadtree.renderTime, 40, y - 460);
-		renderer.draw("Banana Render: " + Banana.renderTime, 40, y - 490);
+		renderer.draw("Quadtree Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.TERRAIN_ID], 40, y - 460);
+		renderer.draw("Banana Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.ITEM_ID], 40, y - 490);
 		renderer.draw("Occlusion: " + (Scene.enableOcclusion ? "Enabled" : "Disabled"), 40, y - 520);
 		
 		Vec3 p = car.getPosition();
@@ -311,7 +310,7 @@ public class HUD
 
 	private void renderFrameTimes(GL2 gl)
 	{
-		int frame = scene.frameIndex;
+		int frame = Scene.frameIndex;
 		long[] times = scene.frameTimes;
 		
 		gl.glBegin(GL_LINES);
@@ -349,7 +348,7 @@ public class HUD
 	
 	private void renderFrameTimeComponents(GL2 gl)
 	{
-		int frameIndex = scene.frameIndex;
+		int frameIndex = Scene.frameIndex;
 		long[][] renderTimes = scene.renderTimes;
 		
 		int height = scene.getHeight();
@@ -385,7 +384,7 @@ public class HUD
 	
 	private void renderUpdateTimeComponents(GL2 gl)
 	{
-		int frameIndex = scene.frameIndex;
+		int frameIndex = Scene.frameIndex;
 		long[][] times = scene.updateTimes;
 		
 		int height = scene.getHeight();
@@ -419,7 +418,7 @@ public class HUD
 	
 	private void renderUpdateTimes(GL2 gl)
 	{
-		int frame = scene.frameIndex;
+		int frame = Scene.frameIndex;
 		long[][] times = scene.updateTimes;
 		
 		int y = scene.getHeight() - 50;

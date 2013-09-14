@@ -58,10 +58,10 @@ public class BloomStrobe
 	
 	public void setupShaders(GL2 gl)
 	{
-		Shader ball     = Scene.shaders.get("ball");
-		Shader gaussian = Scene.shaders.get("gaussian");
-		Shader combine  = Scene.shaders.get("combine");
-		Shader show2D   = Scene.shaders.get("show_texture");
+		Shader ball     = Shader.get("ball");
+		Shader gaussian = Shader.get("gaussian");
+		Shader combine  = Shader.get("combine");
+		Shader show2D   = Shader.get("show_texture");
 		
 		ball.enable(gl);
 	    ball.setUniform(gl, "bloomLimit", bloomLimit);
@@ -178,7 +178,7 @@ public class BloomStrobe
 	 */
 	public void secondPass(GL2 gl)
 	{
-		Shader shader = Scene.shaders.get("gaussian");
+		Shader shader = Shader.get("gaussian");
 		if(shader != null) shader.enable(gl);
 
 		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
@@ -236,7 +236,7 @@ public class BloomStrobe
 		{
 			case ORIGINAL_SCENE:
 			{
-				Shader shader = Scene.shaders.get("show_texture");
+				Shader shader = Shader.get("show_texture");
 				if(shader != null) shader.enable(gl);
 				gl.glBindTexture(GL_TEXTURE_2D, textureID[0]);
 				break;
@@ -244,14 +244,14 @@ public class BloomStrobe
 			case BRIGHT_PASS:
 			case PRE_BLUR:
 			{
-				Shader shader = Scene.shaders.get("show_texture");
+				Shader shader = Shader.get("show_texture");
 				if(shader != null) shader.enable(gl);
 				gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
 				break;
 			}
 			case POST_BLUR:
 			{
-				Shader shader = Scene.shaders.get("show_texture");
+				Shader shader = Shader.get("show_texture");
 				if(shader != null) shader.enable(gl);
 				break;
 			}
@@ -260,7 +260,7 @@ public class BloomStrobe
 			case JUST_AFTER_GLOW:
 			case FULL_SCENE:
 			{
-				Shader shader = Scene.shaders.get("combine");
+				Shader shader = Shader.get("combine");
 				if(shader != null) shader.enable(gl);
 
 				gl.glBindTexture(GL_TEXTURE_2D, 

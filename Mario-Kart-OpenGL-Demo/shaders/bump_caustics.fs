@@ -177,7 +177,7 @@ void main()
 	float depth = waterEyePos.y - worldPos.y; // water depth
 
     float shorecut    = smoothstep(-0.001, 0.0, depth);
-    float shorewetcut = smoothstep(-0.200, 0.0, depth + 0.2);
+    float shorewetcut = smoothstep(-0.400, 0.0, -abs(depth) + 0.4);
     
     depth /= visibility;  
     depth = clamp(depth, 0.0, 1.0);
@@ -239,7 +239,7 @@ void main()
     fcolor *= texture2D(texture, gl_TexCoord[0].st).rgb;
 
     vec3 fogging = mix(fcolor * mix(vec3(1.0), vec3(0.8), shorewetcut) * color, underwaterSunLight * foginess, clamp(fog / waterext, 0.0, 1.0)); // adding water color fog
-    
+    fogging = mix(fogging, vec3(1.0, 0.8, 0.6), shorewetcut);
     
 
     // Specular Light
@@ -258,7 +258,12 @@ void main()
 	if(enableShadow)
 	{
 		float sIntensity = shadowIntensity();
-		gl_FragColor = vec4(sIntensity * fogging.rgb, 1.0);
+		gl_FragData[0] = vec4(sIntensity * fogging.rgb, 1.0);
+		
+		vec3 brightColor = max(fogging.rgb - vec3(0.8), vec3(0.0));
+    	float bright = dot(brightColor, vec3(1.0));
+    	bright = smoothstep(0.0, 0.5, bright);
+    	gl_FragData[1] = vec4(mix(vec3(0.0), fogging.rgb, bright), 1.0);
 	}
-	else gl_FragColor = vec4(fogging, 1.0);
+	else gl_FragData[0] = vec4(fogging, 1.0);
 }

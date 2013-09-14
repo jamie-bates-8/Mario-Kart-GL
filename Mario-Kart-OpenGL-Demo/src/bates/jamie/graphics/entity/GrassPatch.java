@@ -8,7 +8,6 @@ import java.util.Arrays;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 
@@ -132,7 +131,7 @@ public class GrassPatch
 		
 		gl.glVertexPointer(2, GL2.GL_FLOAT, 0, vBuffer);
 		
-		Shader shader = Scene.shaders.get("grass");
+		Shader shader = Shader.get("grass");
 		if(shader == null) return; else shader.enable(gl);
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); gl.glBindTexture(GL2.GL_TEXTURE_2D, heightMap);

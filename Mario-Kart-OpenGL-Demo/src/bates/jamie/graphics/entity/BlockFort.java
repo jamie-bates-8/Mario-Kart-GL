@@ -89,7 +89,7 @@ public class BlockFort
 		
 		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
-		Shader shader = Scene.shaders.get("phong_shadow");
+		Shader shader = Shader.get("phong_shadow");
 		if(shader != null)
 		{
 			shader.enable(gl);

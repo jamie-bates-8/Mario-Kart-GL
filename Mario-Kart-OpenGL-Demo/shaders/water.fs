@@ -43,7 +43,7 @@ float sunSpec = 1000.0; //Sun specular hardness
 float scatterAmount = 3.0; //amount of sunlight scattering of waves
 vec3 scatterColor = vec3(0.0, 1.0, 0.95);// color of the sunlight scattering
 
-float bloomLimit = 1.0;
+float bloomLimit = 0.66;
 //----------------
 
 vec3 tangentSpace(vec3 v)

@@ -10,6 +10,9 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.TextureLoader;
+
+import com.jogamp.opengl.util.texture.Texture;
 
 public class FocalBlur
 {
@@ -19,6 +22,8 @@ public class FocalBlur
 	private int depthTexture;
 	private int depthBuffer ; // framebuffer ID
 	
+	private Texture mirageTexture;
+	
 	private int fboWidth  = 0;
 	private int fboHeight = 0;
 	
@@ -27,6 +32,9 @@ public class FocalBlur
 	private float[] offsets_7x7 = new float[7 * 7 * 2];
 	
 	private int sampleQuality = 1;
+	
+	public boolean enableMirage = false;
+	private float timer = 0;
 	
 	public FocalBlur(Scene scene)
 	{
@@ -48,6 +56,9 @@ public class FocalBlur
 	
 	private void createTexture(GL2 gl)
 	{
+		gl.glActiveTexture(GL2.GL_TEXTURE3);
+		mirageTexture = TextureLoader.load(gl, "tex/bump_maps/water.png"); 
+		
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, sceneTexture);
@@ -199,13 +210,19 @@ public class FocalBlur
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, depthTexture);
 		
-		Shader shader = Scene.shaders.get("depth_field");
+		gl.glActiveTexture(GL2.GL_TEXTURE3);
+		mirageTexture.bind(gl);
+		
+		Shader shader = enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field");
 		if(shader == null) return;
 		
 		shader.enable(gl);
 		
-		shader.setSampler(gl, "sceneSampler", 1);
-		shader.setSampler(gl, "depthSampler", 2);
+		shader.setSampler(gl, "sceneSampler" , 1);
+		shader.setSampler(gl, "depthSampler" , 2);
+		shader.setSampler(gl, "normalSampler", 3);
+		
+		shader.setUniform(gl, "timer", timer += 0.01);
 		
 		int offsetsLoc = -1;
 		

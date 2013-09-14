@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Renderer;
@@ -41,7 +40,7 @@ public class SkyBox
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		
-		Shader shader = Scene.shaders.get("clear_sky");
+		Shader shader = Shader.get("clear_sky");
 		
 		if(Shader.enabled && shader != null) shader.enable(gl);
 		

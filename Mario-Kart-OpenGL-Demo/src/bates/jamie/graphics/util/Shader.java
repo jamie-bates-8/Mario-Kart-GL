@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
@@ -16,6 +17,8 @@ import com.jogamp.opengl.util.glsl.ShaderUtil;
 public class Shader
 {
 	public static boolean enabled = true;
+	
+	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
 	
 	public int shaderID;
 	 
@@ -39,6 +42,62 @@ public class Shader
 	{	
 		valid = attachPrograms(gl, vShader, fShader, attributes);
 	}
+	
+	public static void loadShaders(GL2 gl)
+	{
+		HashMap<Integer, String> attributes = new HashMap<Integer, String>();
+		attributes.put(1, "tangent");
+		
+		// load and compile shaders from file
+		Shader phong        = new Shader(gl, "phong", "phong");
+		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
+		Shader bump         = new Shader(gl, "bump", "bump", attributes);
+		Shader shadow       = new Shader(gl, "shadow", "shadow");
+		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
+		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
+		Shader aberration   = new Shader(gl, "aberration", "aberration");
+		Shader ghost        = new Shader(gl, "ghost", "ghost");
+		Shader water        = new Shader(gl, "water", "water", attributes);
+		Shader magma        = new Shader(gl, "water", "magma", attributes);
+		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", attributes);
+		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", attributes);
+		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
+		Shader grass        = new Shader(gl, "grass", "grass");
+		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
+		
+		Shader ball         = new Shader(gl, "hdr_ball", "hdr_ball");
+		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
+		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
+		Shader mirage       = new Shader(gl, "show_texture", "mirage");
+		Shader combine      = new Shader(gl, "show_texture", "combine");
+		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
+		
+		// check that shaders have been compiled and linked correctly before hashing 
+		if(       phong.isValid()) shaders.put("phong", phong);
+		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
+		if(        bump.isValid()) shaders.put("bump", bump);
+		if(      shadow.isValid()) shaders.put("shadow", shadow);
+		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
+		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
+		if(  aberration.isValid()) shaders.put("aberration", aberration);
+		if(       ghost.isValid()) shaders.put("ghost", ghost);
+		if(       water.isValid()) shaders.put("water", water);
+		if(       magma.isValid()) shaders.put("magma", magma);
+		if(    caustics.isValid()) shaders.put("water_caustics", caustics);
+		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
+		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
+		if(       grass.isValid()) shaders.put("grass", grass);
+		if(    dissolve.isValid()) shaders.put("dissolve", dissolve);
+		
+		if(        ball.isValid()) shaders.put("ball", ball);
+		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
+		if(  depthField.isValid()) shaders.put("depth_field", depthField);
+		if(      mirage.isValid()) shaders.put("heat_haze", mirage);
+		if(     combine.isValid()) shaders.put("combine", combine);
+		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
+	}
+	
+	public static Shader get(String name) { return shaders.get(name); }
 	
 	public boolean isValid() { return valid; }
 

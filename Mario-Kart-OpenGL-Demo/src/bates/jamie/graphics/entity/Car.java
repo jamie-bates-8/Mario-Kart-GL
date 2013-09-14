@@ -650,7 +650,7 @@ public class Car
 			if(invisible)
 			{
 				String name = enableAberration ? "aberration" : "ghost";
-				Shader shader = Shader.enabled ? Scene.shaders.get(name) : null;
+				Shader shader = Shader.enabled ? Shader.get(name) : null;
 				
 				if(shader != null)
 				{
@@ -790,8 +790,8 @@ public class Car
 			}
 		}
 		
-		scene.updateTimes[scene.frameIndex][2] = System.nanoTime() - start;
-		scene.updateTimes[scene.frameIndex][3] = 0;
+		scene.updateTimes[Scene.frameIndex][2] = System.nanoTime() - start;
+		scene.updateTimes[Scene.frameIndex][3] = 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e.y;
@@ -822,7 +822,7 @@ public class Car
 
 			Water water = scene.water;
 			
-			if(water.frozen)
+			if(water.frozen && !water.magma)
 			{
 				heights[i] = max > 0 ? max : 0;
 				sliding = max <= 0;
@@ -847,8 +847,8 @@ public class Car
 			}
 		}
 		
-		scene.updateTimes[scene.frameIndex][2] = System.nanoTime() - start;
-		scene.updateTimes[scene.frameIndex][3] = 0;
+		scene.updateTimes[Scene.frameIndex][2] = System.nanoTime() - start;
+		scene.updateTimes[Scene.frameIndex][3] = 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
 		h += bound.e.y;

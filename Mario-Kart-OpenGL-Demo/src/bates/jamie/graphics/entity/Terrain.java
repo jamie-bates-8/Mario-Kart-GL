@@ -283,6 +283,7 @@ public class Terrain
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_soil.jpg"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_mine.jpg"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_cave.tga"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "large_stone.jpg"));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}

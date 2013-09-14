@@ -49,9 +49,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -127,6 +125,7 @@ import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
+import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.FPSAnimator;
@@ -168,6 +167,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JCheckBoxMenuItem menuItem_shaking;
 	private JCheckBoxMenuItem menuItem_trackball;
 	private JCheckBoxMenuItem menuItem_focal_blur;
+	private JCheckBoxMenuItem menuItem_mirage;
 	
 	private JMenu menu_vehicle;
 	private JCheckBoxMenuItem menuItem_reverse;
@@ -266,13 +266,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private Calendar execution;
 	
-	private int frames = 0; //frame counter for current second
-	private int frameRate = FPS; //FPS of previous second
-	private long startTime; //start time of current second
-	private long renderTime; //time at which previous frame was rendered 
+	private int frames = 0;      // frame counter for current second
+	private int frameRate = FPS; // FPS of previous second
+	private long startTime;      // start time of current second
+	private long renderTime;     // time at which previous frame was rendered 
 	
-	public int frameIndex = 0; //time independent frame counter (for FT graph)
-	public long[] frameTimes; //buffered frame times (for FT graph)
+	public static int frameIndex = 0;   //time independent frame counter (for FT graph)
+	public long[] frameTimes;    //buffered frame times (for FT graph)
 	public long[][] renderTimes; //buffered times for rendering each set of components
 	public long[][] updateTimes; //buffered times for collision detection tests (for CT graph)
 	
@@ -412,8 +412,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableBloom = false;
 	public static boolean enableParallax = true;
 	public static boolean enableFocalBlur = true;
-	
-	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
 	
 	private LightingStrike[] bolts;
 	
@@ -561,9 +559,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_focal_blur.addItemListener(this);
 		menuItem_focal_blur.setMnemonic(KeyEvent.VK_B);
 		
+		menuItem_mirage = new JCheckBoxMenuItem("Heat Haze");
+		menuItem_mirage.addItemListener(this);
+		menuItem_mirage.setMnemonic(KeyEvent.VK_H);
+		
 		menu_camera.add(menuItem_shaking);
 		menu_camera.add(menuItem_trackball);
 		menu_camera.add(menuItem_focal_blur);
+		menu_camera.add(menuItem_mirage);
 		
 		menuBar.add(menu_camera);
 		/**----------------**/
@@ -1058,7 +1061,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		glut = new GLUT();
 		
 		loadTextures(gl);
-		loadShaders(gl);
+		Shader.loadShaders(gl);
 		
 		// may provide extra speed depending on machine
 		gl.setSwapInterval(0);
@@ -1203,6 +1206,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menuItem_bloom.setSelected(enableBloom);
 		menuItem_focal_blur.setSelected(enableFocalBlur);
+		if(focalBlur != null) menuItem_mirage.setSelected(focalBlur.enableMirage);
 		
 		Car car = cars.get(0);
 		
@@ -1243,56 +1247,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 	
 	public static float attenuation = 0.1f;
-	
-	private void loadShaders(GL2 gl)
-	{
-		HashMap<Integer, String> attributes = new HashMap<Integer, String>();
-		attributes.put(1, "tangent");
-		
-		// load and compile shaders from file
-		Shader phong        = new Shader(gl, "phong", "phong");
-		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
-		Shader bump         = new Shader(gl, "bump", "bump", attributes);
-		Shader shadow       = new Shader(gl, "shadow", "shadow");
-		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
-		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
-		Shader aberration   = new Shader(gl, "aberration", "aberration");
-		Shader ghost        = new Shader(gl, "ghost", "ghost");
-		Shader water        = new Shader(gl, "water", "water", attributes);
-		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", attributes);
-		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", attributes);
-		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
-		Shader grass        = new Shader(gl, "grass", "grass");
-		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
-		
-		Shader ball         = new Shader(gl, "hdr_ball", "hdr_ball");
-		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
-		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
-		Shader combine      = new Shader(gl, "show_texture", "combine");
-		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
-		
-		// check that shaders have been compiled and linked correctly before hashing 
-		if(       phong.isValid()) shaders.put("phong", phong);
-		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
-		if(        bump.isValid()) shaders.put("bump", bump);
-		if(      shadow.isValid()) shaders.put("shadow", shadow);
-		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
-		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
-		if(  aberration.isValid()) shaders.put("aberration", aberration);
-		if(       ghost.isValid()) shaders.put("ghost", ghost);
-		if(       water.isValid()) shaders.put("water", water);
-		if(    caustics.isValid()) shaders.put("water_caustics", caustics);
-		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
-		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
-		if(       grass.isValid()) shaders.put("grass", grass);
-		if(    dissolve.isValid()) shaders.put("dissolve", dissolve);
-		
-		if(        ball.isValid()) shaders.put("ball", ball);
-		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
-		if(  depthField.isValid()) shaders.put("depth_field", depthField);
-		if(     combine.isValid()) shaders.put("combine", combine);
-		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
-	}
 
 	private void loadParticles()
 	{
@@ -1406,7 +1360,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void render(GL2 gl)
 	{	
-		bananasRendered = 0;
+		TimeQuery.resetCache();
 		
 		int[] order = new int[cars.size()];
 		
@@ -1449,6 +1403,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				focalBlur.display(gl);
 				focalBlur.update(gl);
 			}
+			
+			bananasRendered = 0;
 			
 //			if(enableBloom) bloom.render(gl);
 //			else
@@ -1516,13 +1472,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		boostCounter = _i;
 		
 		if(shadowMap) displayMap(gl, focalBlur.getDepthTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
-		
-		System.out.println();
 	}
 	
 	public static boolean shadowMode = false;
 	public static boolean reflectMode = false;
 	public static boolean depthMode = false;
+	public static boolean environmentMode = false;
 	
 	/**
 	 * This method renders the world as reflected by the surface of the water.
@@ -1655,14 +1610,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{			
 			long _start = System.nanoTime();
 			
-			List<BillBoard> toRemove = new ArrayList<BillBoard>();
-			
-			for(BillBoard b : foliage)
-			{
-				if(b.sphere.testOBB(cars.get(0).bound)) toRemove.add(b);
-			}
-			
-			foliage.removeAll(toRemove);
+//			List<BillBoard> toRemove = new ArrayList<BillBoard>();
+//			
+//			for(BillBoard b : foliage)
+//			{
+//				if(b.sphere.testOBB(cars.get(0).bound)) toRemove.add(b);
+//			}
+//			
+//			foliage.removeAll(toRemove);
 			
 			updateTimes[frameIndex][0] = System.nanoTime() - _start;
 				
@@ -1905,7 +1860,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				gl.glTranslatef(0, 0, 0);
 				gl.glScalef(40.0f, 40.0f, 40.0f);
 				
-				Shader shader = Scene.shaders.get("phong_shadow");
+				Shader shader = Shader.get("phong_shadow");
 				
 				if(enableShadow && shader != null)
 				{
@@ -1930,6 +1885,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
+		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+		
 		// prevents shadow texture unit from being active
 		if(enableShadow ) caster.disable(gl);
 		if(displaySkybox || Shader.enabled) renderSkybox(gl);
@@ -1940,7 +1897,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			if(enableShadow)
 			{
-				shader = Scene.shaders.get("phong_shadow");
+				shader = Shader.get("phong_shadow");
 				
 				if(shader != null)
 				{
@@ -1952,7 +1909,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			else
 			{
-				shader = Scene.shaders.get("phong_texture");
+				shader = Shader.get("phong_texture");
 				
 				if(shader != null)
 				{
@@ -1961,14 +1918,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				}
 			}
 		}
-		
-		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl);
+		gl.glDrawBuffers(2, attachments, 0);
+		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl); 
 		else if(!enableReflection)
 		{
 			renderFloor(gl, false);
 			renderTimes[frameIndex][0] = 0;
 		}
-		
+		gl.glDrawBuffers(1, attachments, 0);
 		renderObstacles(gl);
 		
 		caster.disable(gl);
@@ -2641,6 +2598,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_P: enableParallax = !enableParallax; break;
 			case KeyEvent.VK_I: occludeSphere = !occludeSphere; break;
 			case KeyEvent.VK_W: water.frozen = !water.frozen; break;
+			case KeyEvent.VK_M: water.magma = !water.magma; break;
 			case KeyEvent.VK_F: enableFoliage = !enableFoliage; break;
 			
 			case KeyEvent.VK_O: enableOcclusion = !enableOcclusion; break;
@@ -2799,6 +2757,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_shaking    )) cars.get(0).camera.shaking   = selected;
 		else if(source.equals(menuItem_trackball  )) cars.get(0).camera.trackball = selected;
 		else if(source.equals(menuItem_focal_blur )) enableFocalBlur              = selected;
+		else if(source.equals(menuItem_mirage     )) focalBlur.enableMirage       = selected;    
 		else if(source.equals(menuItem_tag        )) cars.get(0).displayTag       = selected;    
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling      = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing     = selected;

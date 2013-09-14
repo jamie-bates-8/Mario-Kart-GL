@@ -54,8 +54,6 @@ public class Banana extends Item
 	
 	private int bananaID = 0;
 	
-	private int timeQuery = -1;
-	
 	public Banana(GL2 gl, Scene scene, Car car, int id)
 	{
 		if(bananaList == -1)
@@ -90,50 +88,23 @@ public class Banana extends Item
 		velocity /= 2;
 	}
 	
-	public static float renderTime = 0;
-	public static long frameNumber = 0;
-	
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
-		long start = System.nanoTime();
-		
-		int[] results = new int[1];
-		
-		if(timeQuery != -1 && !Scene.depthMode && !Scene.shadowMode)
-		{
-			gl.glGetQueryObjectuiv(timeQuery, GL2.GL_QUERY_RESULT, results, 0);
-			gl.glDeleteQueries(1, new int[] {timeQuery}, 0);
-			
-			System.out.println("Query: " + results[0]);
-			renderTime = (float) ((renderTime * frameNumber) + results[0]) / ++frameNumber;
-		}
-		
-		int[] queries = new int[1];
-		gl.glGenQueries(1, queries, 0);
-		timeQuery = queries[0];
-		
-		gl.glBeginQuery(GL2.GL_TIME_ELAPSED, timeQuery);
+		timeQuery.getResult(gl);
+		timeQuery.begin(gl);
 		
 		if(Scene.enableOcclusion)
 		{
-			if(occludeQuery != -1)
-			{
-				gl.glGetQueryObjectuiv(occludeQuery, GL2.GL_QUERY_RESULT, results, 0);
-				gl.glDeleteQueries(1, new int[] {occludeQuery}, 0);
-			}
-			
-			gl.glGenQueries(1, queries, 0);
-			occludeQuery = queries[0];
-			
-			gl.glBeginQuery(GL2.GL_ANY_SAMPLES_PASSED, occludeQuery);
+			boolean visible = occludeQuery.getResult(gl);
+			occludeQuery.begin(gl);
 
-			if(results[0] == 0 && occludeQuery != -1)
+			if(!visible)
 			{
 				renderFacade(gl);
 				
-				gl.glEndQuery(GL2.GL_TIME_ELAPSED);
-				gl.glEndQuery(GL2.GL_ANY_SAMPLES_PASSED);
+				timeQuery.end(gl);
+				occludeQuery.end(gl);
 				
 				return;
 			}
@@ -146,7 +117,7 @@ public class Banana extends Item
 			if(thrown) gl.glRotatef(trajectory, 0, -1, 0);
 			else gl.glMultMatrixf(u.toArray(), 0);
 			
-			Shader shader = Shader.enabled ? Scene.shaders.get("phong") : null;
+			Shader shader = Shader.enabled ? Shader.get("phong") : null;
 			if(shader != null) shader.enable(gl);
 			
 			gl.glCallList(bananaList);
@@ -157,10 +128,8 @@ public class Banana extends Item
 		}
 		gl.glPopMatrix();
 		
-		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
-		gl.glEndQuery(GL2.GL_ANY_SAMPLES_PASSED);
-		
-		System.out.println("System: " + (System.nanoTime() - start));
+		timeQuery.end(gl);
+		occludeQuery.end(gl);
 	}
 
 	private void renderFace(GL2 gl)
