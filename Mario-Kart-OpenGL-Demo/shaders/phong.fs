@@ -2,28 +2,41 @@
 
 varying vec3 vNormal;
 varying vec3 lightDir;
+varying vec3 eyeDir;
+
+uniform bool enableAttenuation;
 
 void main(void)
 { 
-    // Dot product gives us diffuse intensity
-    float diff = max(0.0, dot(normalize(vNormal), normalize(lightDir)));
+		float distanceToLight, attenuation;
+    
+    distanceToLight = length(lightDir);
+    
+    attenuation = enableAttenuation ? 1.0 / (gl_LightSource[0].constantAttenuation  +
+             						         gl_LightSource[0].linearAttenuation    * distanceToLight +
+             						         gl_LightSource[0].quadraticAttenuation * distanceToLight * distanceToLight) : 1.0;
+    
+     // Add in ambient light
+    vec4 ambient = gl_LightSource[0].ambient * gl_Color;
 
-    // Multiply intensity by diffuse color, force alpha to 1.0
-    vec4 vFragColor = diff * gl_LightSource[0].diffuse;
+    // Diffuse Lighting
+    float diffuseCoefficient = max(0.0, dot(normalize(vNormal), normalize(lightDir)));
+    vec4 diffuse = diffuseCoefficient * gl_LightSource[0].diffuse * gl_Color;
 
-    // Add in ambient light
-    vFragColor += gl_LightSource[0].ambient;
-
-    // Specular Light
-	vec3 vReflection = normalize(reflect(-normalize(lightDir), normalize(vNormal)));
-    float spec = max(0.0, dot(normalize(vNormal), vReflection));
-    if(diff != 0.0)
+    // Specular Lighting
+    vec4 specular = vec4(0.0);
+    
+    if(diffuseCoefficient > 0.0)
 	{
-        float fSpec = pow(spec, 128.0);
-        vFragColor.rgb += gl_LightSource[0].specular.rgb * fSpec;
+		vec3 lightReflection = reflect(normalize(-lightDir), normalize(vNormal));
+		
+    	float specularCoefficient = max(0.0, dot(normalize(-eyeDir), lightReflection));
+		specularCoefficient = pow(specularCoefficient, gl_FrontMaterial.shininess);
+		
+        specular = specularCoefficient * gl_LightSource[0].specular;
     }
 	
-	vFragColor.rgba *= gl_Color.rgba;
+	vec4 linearColor = ambient + attenuation * (diffuse + specular);
 	
-	gl_FragColor = vFragColor;
+	gl_FragColor = vec4(linearColor.rgb, 1.0);
 }

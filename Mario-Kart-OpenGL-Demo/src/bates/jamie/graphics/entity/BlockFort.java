@@ -110,8 +110,6 @@ public class BlockFort
 			
 			if(shader != null)
 			{
-				shader.setUniform(gl, "factor", Scene.attenuation);
-				
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 				Matrix.translate(model, 90, 30, 90);
 				Matrix.scale    (model, 30, 30, 30);

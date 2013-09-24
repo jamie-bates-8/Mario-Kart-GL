@@ -150,6 +150,8 @@ public class FocalBlur
 		scene.renderParticles(gl, car);
 		Particle.resetTexture();
 		
+		gl.glColor3f(1, 1, 1);
+		
 		if(scene.enableTerrain) scene.renderFoliage(gl, car);
 		
 		if(terrain != null && terrain.enableWater)
@@ -222,7 +224,7 @@ public class FocalBlur
 		shader.setSampler(gl, "depthSampler" , 2);
 		shader.setSampler(gl, "normalSampler", 3);
 		
-		shader.setUniform(gl, "timer", timer += 0.01);
+		shader.setUniform(gl, "timer", timer += 0.05);
 		
 		int offsetsLoc = -1;
 		

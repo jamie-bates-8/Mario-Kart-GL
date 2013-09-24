@@ -4,11 +4,13 @@ import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.Face;
+import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
@@ -78,8 +80,8 @@ public class SceneNode
 					case COLOR  :
 					{
 						Shader shader = Shader.enabled ? Shader.get("phong") : null;
-						if(shader != null) shader.enable(gl); model.render(gl);
-						break;
+						if(shader != null) shader.enable(gl);
+						model.render(gl); break;
 					}
 					case REFLECT:
 					{
@@ -125,7 +127,7 @@ public class SceneNode
 		}
 		gl.glPopMatrix();
 	}
-	
+
 	public void renderGhost(GL2 gl, float fade, Shader shader)
 	{
 		gl.glPushMatrix();
@@ -227,7 +229,7 @@ public class SceneNode
 			
 			case S:  gl.glScalef(s.x, s.y, s.z); break;
 			
-			case T_RX_RY_RZ_S:
+			case T_RY_RX_RZ_S:
 			{
 				gl.glTranslatef(t.x, t.y, t.z); 
 				
@@ -269,6 +271,60 @@ public class SceneNode
 		}
 	}
 	
+	public float[] getModelMatrix()
+	{
+		float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+		
+		switch(order)
+		{
+			case T : Matrix.translate(model, t.x, t.y, t.z); break;
+			
+			case RX: Matrix.multiply (model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(r.x,   0,   0))); break;
+			case RY: Matrix.multiply (model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(  0, r.y,   0))); break;
+			case RZ: Matrix.multiply (model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(  0,   0, r.z))); break;
+			
+			case S:  Matrix.scale    (model, s.x, s.y, s.z); break;
+			
+			case T_RY_RX_RZ_S:
+			{
+				Matrix.translate(model, t.x, t.y, t.z);
+				Matrix.multiply (model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(r.x, r.y, r.z)));
+				Matrix.scale    (model, s.x, s.y, s.z);
+				
+				break;
+			}
+			
+			case T_S:
+			{
+				Matrix.translate(model, t.x, t.y, t.z);
+				Matrix.scale    (model, s.x, s.y, s.z);
+				
+				break;
+			}
+			
+			case T_M:
+			{
+				Matrix.translate(model, t.x, t.y, t.z);
+				Matrix.multiply (model, model, orientation);
+				
+				break;
+			}
+			
+			case T_M_S:
+			{
+				Matrix.translate(model, t.x, t.y, t.z);
+				Matrix.multiply (model, model, orientation);
+				Matrix.scale    (model, s.x, s.y, s.z);
+				
+				break;
+			}
+			
+			default : break;
+		}
+		
+		return model;
+	}
+	
 	public float[] getOrientation() { return orientation; }
 
 	public void setOrientation(float[] orientation) { this.orientation = orientation; }
@@ -289,7 +345,7 @@ public class SceneNode
 		T,
 		RX, RY, RZ,
 		S,
-		T_RX_RY_RZ_S,
+		T_RY_RX_RZ_S,
 		T_S,
 		T_M, T_M_S;
 	}

@@ -21,6 +21,8 @@ import static javax.media.opengl.GL2ES1.GL_FOG_HINT;
 import static javax.media.opengl.GL2ES1.GL_FOG_MODE;
 import static javax.media.opengl.GL2ES1.GL_FOG_START;
 import static javax.media.opengl.GL2ES1.GL_PERSPECTIVE_CORRECTION_HINT;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHT0;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_SPECULAR;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
@@ -147,6 +149,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 {
 	private static final boolean SMOOTH_FPS = true;
 	
+	public static Scene singleton;
+	
 	public boolean enableNimbus = false;
 	
 	public JFrame frame;
@@ -161,6 +165,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenu menu_load;
 	private JMenuItem menuItem_project;
 	private JMenuItem menuItem_game;
+	private JMenuItem menuItem_brimstone;
+	private JMenuItem menuItem_simple;
 	private JMenuItem menuItem_close;
 	
 	private JMenu menu_camera;
@@ -215,6 +221,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	private JCheckBoxMenuItem menuItem_normalize;
 	private JCheckBoxMenuItem menuItem_smooth;
+	private JCheckBoxMenuItem menuItem_attenuate;
 	private JCheckBoxMenuItem menuItem_local;
 	private JCheckBoxMenuItem menuItem_secondary;
 	
@@ -290,6 +297,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Texture brickWallTop;
 	
 	private Texture cobble;
+	private Texture floorBump;
+	private Texture floorTex;
 	
 	
 	/** Model Fields **/	
@@ -528,6 +537,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_game.addActionListener(this);
 		menuItem_game.setActionCommand("load_game");
 		
+		menuItem_brimstone = new JMenuItem("Brimstone", KeyEvent.VK_B);
+		menuItem_brimstone.addActionListener(this);
+		menuItem_brimstone.setActionCommand("load_brimstone");
+		
+		menuItem_simple = new JMenuItem("Simple", KeyEvent.VK_S);
+		menuItem_simple.addActionListener(this);
+		menuItem_simple.setActionCommand("load_simple");
+		
 		menuItem_close = new JMenuItem("Close", KeyEvent.VK_C);
 		menuItem_close.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
 		menuItem_close.addActionListener(this);
@@ -535,6 +552,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menu_load.add(menuItem_project);
 		menu_load.add(menuItem_game);
+		menu_load.add(menuItem_brimstone);
+		menu_load.add(menuItem_simple);
 		
 		menu_file.add(menu_load);
 		menu_file.addSeparator();
@@ -830,6 +849,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_smooth.addItemListener(this);
 		menuItem_smooth.setMnemonic(KeyEvent.VK_S);
 		
+		menuItem_attenuate = new JCheckBoxMenuItem("Enable Attenuation");
+		menuItem_attenuate.addItemListener(this);
+		menuItem_attenuate.setMnemonic(KeyEvent.VK_A);
+		
 		menuItem_local = new JCheckBoxMenuItem("Local Specularity");
 		menuItem_local.addItemListener(this);
 		menuItem_local.setMnemonic(KeyEvent.VK_L);
@@ -844,6 +867,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menu_light.addSeparator();
 		menu_light.add(menuItem_normalize);
 		menu_light.add(menuItem_smooth);
+		menu_light.add(menuItem_attenuate);
 		menu_light.add(menuItem_local);
 		menu_light.add(menuItem_secondary);
 		
@@ -1053,6 +1077,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void init(GLAutoDrawable drawable)
 	{
+		Scene.singleton = this;
+		
 		execution = Calendar.getInstance();
 		
 		GL2 gl = drawable.getGL().getGL2();
@@ -1100,8 +1126,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		/** Lighting Setup **/	
 	    light = new Light(gl);
-	    menuItem_smooth.setSelected(light.smooth);
-	    menuItem_secondary.setSelected(light.secondary);
 	    
 	    caster = new ShadowCaster(this, light);
 	    
@@ -1120,6 +1144,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    floorList = gl.glGenLists(1);
 	    gl.glNewList(floorList, GL2.GL_COMPILE);
+//	    Renderer.displayTexturedObject(gl, floorFaces);
 	    Renderer.displayTexturedObject(gl, floorFaces);
 	    gl.glEndList();
 	    
@@ -1185,7 +1210,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    //records the time prior to the rendering of the first frame after initialization
 	}
 	
-	private void setCheckBoxes()
+	public void setCheckBoxes()
 	{
 		if(terrain == null) return;
 		
@@ -1213,6 +1238,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_cubemap.setSelected(car.enableChrome);
 		menuItem_aberration.setSelected(car.enableAberration);
 		
+		menuItem_water.setSelected(terrain.enableWater);
+		
+		menuItem_smooth.setSelected(light.smooth);
+		menuItem_attenuate.setSelected(light.enableAttenuation);
+	    menuItem_secondary.setSelected(light.secondary);
 	}
 
 	private void setupGenerators()
@@ -1242,11 +1272,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			brickWallTop = TextureIO.newTexture(new File("tex/longBrickTop.jpg"), false);
 			cobble       = TextureIO.newTexture(new File("tex/cobbles.jpg"     ), true );
+			
+			floorBump = TextureLoader.load(gl, "tex/bump_maps/tile.png");
+			floorTex = TextureLoader.load(gl, "tex/tile.jpg");
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
-	
-	public static float attenuation = 0.1f;
 
 	private void loadParticles()
 	{
@@ -1313,8 +1344,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableShadow) caster.update(gl);
 	}
 	
-	private int texture = 0;
-	
 	public void displayMap(GL2 gl, int texture, float x, float y, float w, float h)
     {
         gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
@@ -1374,9 +1403,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			Car car = cars.get(index);
 			
 			setupViewport(gl, index);
+			
+//			light.setup(gl, headlight);
 			car.setupCamera(gl, glu);
 			
 			light.setup(gl, headlight);
+			
 				
 			if(headlight)
 			{
@@ -1831,6 +1863,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			gl.glClipPlane(GL2.GL_CLIP_PLANE2 , equation, 0);
 		}
 	}
+	
+	public boolean enableBump = false;
 
 	public void renderFloor(GL2 gl, boolean reflect)
 	{	
@@ -1857,10 +1891,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			gl.glPushMatrix();
 			{
-				gl.glTranslatef(0, 0, 0);
 				gl.glScalef(40.0f, 40.0f, 40.0f);
 				
+//				Shader shader = enableBump ? Shader.get("bump") : Shader.get("phong_shadow");
+//				
+//				shader.enable(gl);
+//				shader.setSampler(gl, "texture", 0);
+//				shader.setSampler(gl, "bumpmap", 1);
+//				
+//				Light.globalSpecular(gl, new float[] {.5f, .5f, .5f, 1});
+				
 				Shader shader = Shader.get("phong_shadow");
+				shader.enable(gl);
 				
 				if(enableShadow && shader != null)
 				{
@@ -1868,12 +1910,37 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					Matrix.scale(model, 40, 40, 40);
 					
 					shader.loadMatrix(gl, model);
+					
+					shader.setSampler(gl, "shadowMap", 2);
+					
+					shader.setUniform(gl, "enableShadow", 1);
+					shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+					shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
 				}
 	
 				gl.glCallList(floorList);
+				
+				
+//				gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); floorBump.bind(gl);
+//				gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glEnable(GL2.GL_TEXTURE_2D); floorTex.bind(gl);
+//				
+//				gl.glBegin(GL_QUADS);
+//				{
+//					gl.glNormal3f(0.0f, 1.0f, 0.0f);
+//					
+//					float size = 30.0f;
+//					
+//					gl.glTexCoord2f(size,    0); gl.glVertex3f(+250, -0.01f, +250);
+//					gl.glTexCoord2f(size, size); gl.glVertex3f(+250, -0.01f, -250);
+//					gl.glTexCoord2f(   0, size); gl.glVertex3f(-250, -0.01f, -250);
+//					gl.glTexCoord2f(   0,    0); gl.glVertex3f(-250, -0.01f, +250);
+//				}
+//				gl.glEnd();
 			}	
 			gl.glPopMatrix();
 		}
+		
+//		Light.globalSpecular(gl, new float[] {1, 1, 1, 1});
 	}
 
 	/**
@@ -1918,14 +1985,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				}
 			}
 		}
-		gl.glDrawBuffers(2, attachments, 0);
-		if(enableTerrain) renderTimes[frameIndex][0] = renderTerrain(gl); 
+		
+		if(water.magma) gl.glDrawBuffers(2, attachments, 0);
+		
+		if(enableTerrain && !environmentMode) renderTimes[frameIndex][0] = renderTerrain(gl); 
 		else if(!enableReflection)
 		{
 			renderFloor(gl, false);
 			renderTimes[frameIndex][0] = 0;
 		}
-		gl.glDrawBuffers(1, attachments, 0);
+		
+		if(water.magma) gl.glDrawBuffers(1, attachments, 0);
+		
 		renderObstacles(gl);
 		
 		caster.disable(gl);
@@ -2126,9 +2197,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 		
 		gl.glDisable(GL_TEXTURE_2D);
+		test(gl);
 		gl.glDisable(GL2.GL_LIGHTING);
 		
-		if(testMode) test(gl);
 		
 		List<Bound> bounds = getBounds();
 		
@@ -2195,7 +2266,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void test(GL2 gl)
 	{	
+		Shader shader = Shader.get("phong"); shader.enable(gl);
+		gl.glLightfv(GL_LIGHT0, GL_SPECULAR, light.getSpecular(), 0);
 		
+		gl.glPushMatrix();
+		{
+			gl.glTranslatef(0, 40, 0);
+			glut.glutSolidTeapot(10);
+		}
+		gl.glPopMatrix();
+		
+		Shader.disable(gl);
 	}
 
 	public void resetView(GL2 gl)
@@ -2412,33 +2493,33 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	}
 	    }
 	    
-	    for(int i = 0; i < 30; i++)
-	    {
-	    	int t = 4 + generator.nextInt(4);
-	    	
-	    	Vec3 p = new Vec3();
-	    	
-	    	p.x = generator.nextFloat() * 360 - 180;
-	    	p.z = generator.nextFloat() * 360 - 180;
-	    	
-	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-	    	
-	    	foliage.add(new BillBoard(p, 30, t));
-	    }
-	    
-	    for(int i = 0; i < 30; i++)
-	    {
-	    	int t = 8 + generator.nextInt(2);
-	    	
-	    	Vec3 p = new Vec3();
-	    	
-	    	p.x = generator.nextFloat() * 360 - 180;
-	    	p.z = generator.nextFloat() * 360 - 180;
-	    	
-	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-
-	    	foliage.add(new BillBoard(p, 4, t));
-	    }
+//	    for(int i = 0; i < 30; i++)
+//	    {
+//	    	int t = 4 + generator.nextInt(4);
+//	    	
+//	    	Vec3 p = new Vec3();
+//	    	
+//	    	p.x = generator.nextFloat() * 360 - 180;
+//	    	p.z = generator.nextFloat() * 360 - 180;
+//	    	
+//	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+//	    	
+//	    	foliage.add(new BillBoard(p, 30, t));
+//	    }
+//	    
+//	    for(int i = 0; i < 30; i++)
+//	    {
+//	    	int t = 8 + generator.nextInt(2);
+//	    	
+//	    	Vec3 p = new Vec3();
+//	    	
+//	    	p.x = generator.nextFloat() * 360 - 180;
+//	    	p.z = generator.nextFloat() * 360 - 180;
+//	    	
+//	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+//
+//	    	foliage.add(new BillBoard(p, 4, t));
+//	    }
 	}
 	
 	public void updateFoliage()
@@ -2535,7 +2616,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
 			case KeyEvent.VK_F9: sphereMap = !sphereMap; break;
 			case KeyEvent.VK_P: bloom.cycleMode(); break;
-			case KeyEvent.VK_O: texture++; if(texture > 6) texture = 0; System.out.println(texture); break;
 			
 			case KeyEvent.VK_L        : printDataToFile(null, RENDER_HEADERS, renderTimes); break;
 			case KeyEvent.VK_SEMICOLON: printDataToFile(null, UPDATE_HEADERS, updateTimes); break;
@@ -2569,6 +2649,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_K            :
 			case KeyEvent.VK_I            :
 			case KeyEvent.VK_U            : // TODO temporary for demonstration
+			case KeyEvent.VK_O            :
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
 			case KeyEvent.VK_QUOTE        :
@@ -2603,7 +2684,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_O: enableOcclusion = !enableOcclusion; break;
 			
+			case KeyEvent.VK_B: enableBump = !enableBump; break;
+			
 			case KeyEvent.VK_S: ShadowCaster.cycle(); break;
+			case KeyEvent.VK_Z: enableShadow = !enableShadow; break;
 			
 			default: break;
 		}
@@ -2625,12 +2709,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	public KeyEvent pressKey(char c)
+	public KeyEvent pressKey(char c, int modifier)
 	{
 		long when = System.nanoTime();
 		int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
 		
-		return new KeyEvent(command, KeyEvent.KEY_PRESSED, when, 0, keyCode, c);
+		return new KeyEvent(command, KeyEvent.KEY_PRESSED, when, modifier, keyCode, c);
 	}
 	
 	public void mouseWheelMoved(MouseWheelEvent e)
@@ -2671,9 +2755,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void actionPerformed(ActionEvent event)
 	{
-		     if(event.getActionCommand().equals("console"      )) console.parseCommand(command.getText());
-		else if(event.getActionCommand().equals("load_project" )) console.parseCommand("profile project");
-		else if(event.getActionCommand().equals("load_game"    )) console.parseCommand("profile game");
+		     if(event.getActionCommand().equals("console"       )) console.parseCommand(command.getText());
+		else if(event.getActionCommand().equals("load_project"  )) console.parseCommand("profile project");
+		else if(event.getActionCommand().equals("load_game"     )) console.parseCommand("profile game");
+		else if(event.getActionCommand().equals("load_brimstone")) console.parseCommand("profile brimstone");
+		else if(event.getActionCommand().equals("load_simple"   )) console.parseCommand("profile simple");
 		     
 		else if(event.getActionCommand().equals("no_weather"   )) enableBlizzard = false;
 		     
@@ -2709,7 +2795,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		     
 		else if(event.getActionCommand().equals("car_color")) cars.get(0).setColor(chooseColor(cars.get(0).getColor(), "Body Color"));
 		     
-		else if(event.getActionCommand().equals("close"        )) System.exit(0);
+		else if(event.getActionCommand().equals("close")) System.exit(0);
 	}
 	
 	public float[] chooseColor(float[] color, String title)
@@ -2738,6 +2824,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_fog        )) enableFog                    = selected;    
 		else if(source.equals(menuItem_normalize  )) normalize                    = selected;
 		else if(source.equals(menuItem_smooth     )) light.smooth                 = selected;
+		else if(source.equals(menuItem_attenuate  ))
+		{
+			light.enableAttenuation = selected;
+			light.updateAttenuation = true;
+		}
 		else if(source.equals(menuItem_secondary  )) light.secondary              = selected;
 		else if(source.equals(menuItem_local      )) light.local                  = selected;    
 		else if(source.equals(menuItem_water      )) terrain.enableWater          = selected;

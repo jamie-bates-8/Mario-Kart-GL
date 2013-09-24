@@ -26,7 +26,7 @@ public class ShadowCaster
 	private Light light;
 	
 	public float shadowRadius = 300.0f;
-	public float shadowOffset =   2.0f;
+	public float shadowOffset =   4.0f;
 	
 	private int shadowTexture;
 	private int shadowBuffer ; // framebuffer ID

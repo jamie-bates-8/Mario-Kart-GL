@@ -3,3 +3,11 @@ scene display skybox true
 collision obstacles false
 scene display fort false
 scene terrain true
+effect bloom false
+effect mirage false
+press u
+scene display water true
+water magma false
+water frozen false
+quadtree caustics false
+weather none

@@ -1,12 +1,11 @@
-item boxes true
+item boxes false
 scene display skybox true
-collision obstacles true
-scene display fort true
+collision obstacles false
+scene display fort false
 scene terrain false
 scene display foliage false
 effect bloom false
+effect focalblur false
 effect mirage false
 scene display water false
-water magma false
-quadtree caustics false
-weather none
+shadow enabled false

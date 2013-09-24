@@ -117,7 +117,7 @@ public class LightingStrike
 						float[] p = points[i];
 						if(i > 0 && i < points.length - 1)
 							p = Vector.add(p, getRandomVector(0.4f + (float) timer / duration * 0.4f));
-						gl.glVertex3fv(p, 0);
+						gl.glVertex3f(p[0], p[1], p[2]);
 						
 						_points[i] = Arrays.copyOf(p, 3);
 					}

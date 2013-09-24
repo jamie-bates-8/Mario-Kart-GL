@@ -12,7 +12,7 @@ public class OccludeQuery
 	
 	public boolean getResult(GL2 gl)
 	{
-		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode) return true;
+		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return true;
 		
 		int[] results = new int[1];
 		
@@ -29,7 +29,7 @@ public class OccludeQuery
 	
 	public void begin(GL2 gl)
 	{
-		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode) return;
+		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		
 		int[] queries = new int[1];
 		gl.glGenQueries(1, queries, 0);
@@ -40,7 +40,7 @@ public class OccludeQuery
 	
 	public void end(GL2 gl)
 	{
-		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode) return;
+		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		gl.glEndQuery(GL2.GL_ANY_SAMPLES_PASSED);
 	}
 }

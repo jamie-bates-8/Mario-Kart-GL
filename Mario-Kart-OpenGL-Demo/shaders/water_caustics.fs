@@ -10,7 +10,7 @@ bool causticFringe = true;
 float choppy = 0.8;
 float refractAmount = 0.3;
 float aberration = 0.2;
-float visibility = 64.0; // water visibility
+float visibility = 32.0; // water visibility
 
 float waterLevel = 0.0;
 

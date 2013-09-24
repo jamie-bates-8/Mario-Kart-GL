@@ -1,6 +1,7 @@
 // bump.vs
 
 uniform mat4 ModelMatrix;
+uniform vec3 lightPosition;
 
 varying vec4 shadowCoord;
 varying vec3 lightDir;
@@ -21,7 +22,7 @@ void main(void)
 	vec3 t = normalize(gl_NormalMatrix * tangent);
 	vec3 b = cross(n, t);
 	
-	vec3 light = gl_LightSource[0].position.xyz - gl_Vertex.xyz;
+	vec3 light = gl_LightSource[0].position.xyz - eyeDir;
 	
 	vec3 v;
 	
@@ -29,13 +30,13 @@ void main(void)
 	v.y = dot(light, b); // binormal
 	v.z = dot(light, n); // normal
 	
-	lightDir = normalize(v);
+	lightDir = v;
 	
 	v.x = dot(eyeDir, t);
 	v.y = dot(eyeDir, b);
 	v.z = dot(eyeDir, n);
 	
-	eyeDir = normalize(v);
+	eyeDir = v;
 	
 	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
     gl_FrontColor = gl_Color;

@@ -1,6 +1,7 @@
 varying vec3 reflectDir;
 varying vec3 vNormal;
 varying vec3 lightDir;
+varying vec3 eyeDir;
 
 uniform float shininess;
 uniform samplerCube cubeMap;
@@ -21,10 +22,11 @@ void main(void)
 	vFragColor = vec4(mix(envColor, vFragColor.rgb, shininess), 1.0);
 
     // Specular Light
-	vec3 vReflection = normalize(reflect(-normalize(lightDir), normalize(vNormal)));
-    float spec = max(0.0, dot(normalize(vNormal), vReflection));
-    if(diff != 0.0)
+    if(diff > 0.0)
 	{
+		vec3 vReflection = reflect(normalize(-lightDir), normalize(vNormal));
+    	float spec = max(0.0, dot(normalize(-eyeDir), vReflection));
+	
         float fSpec = pow(spec, 128.0);
         vFragColor.rgb += gl_LightSource[0].specular.rgb * fSpec;
     }

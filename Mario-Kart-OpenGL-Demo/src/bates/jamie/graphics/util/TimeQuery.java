@@ -35,7 +35,7 @@ public class TimeQuery
 	
 	public int getResult(GL2 gl)
 	{
-		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode) return 0;
+		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return 0;
 		
 		int[] results = new int[1];
 		
@@ -55,7 +55,7 @@ public class TimeQuery
 	
 	public void begin(GL2 gl)
 	{
-		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode) return;
+		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		
 		int[] queries = new int[1];
 		gl.glGenQueries(1, queries, 0);
@@ -66,7 +66,7 @@ public class TimeQuery
 	
 	public void end(GL2 gl)
 	{
-		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode) return;
+		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
 	}
 }

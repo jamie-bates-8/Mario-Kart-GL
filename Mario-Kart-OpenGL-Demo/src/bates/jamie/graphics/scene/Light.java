@@ -5,6 +5,9 @@ import static javax.media.opengl.GL2ES1.GL_LIGHT_MODEL_AMBIENT;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_AMBIENT;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_DIFFUSE;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_EMISSION;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_CONSTANT_ATTENUATION;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LINEAR_ATTENUATION;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_QUADRATIC_ATTENUATION;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_FLAT;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHT0;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
@@ -19,6 +22,7 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUquadric;
 
+import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
 
 
@@ -32,6 +36,13 @@ public class Light extends AnchorPoint
 	private float[] diffuse  = {0.7f, 0.7f, 0.7f, 1.0f};
 	private float[] specular = {1.0f, 1.0f, 1.0f, 1.0f};
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
+	
+	public boolean enableAttenuation = false;
+	public boolean updateAttenuation = false;
+	
+	private float constantAttenuation  = 0.50f;
+	private float linearAttenuation    = 0.02f;
+	private float quadraticAttenuation = 0.00f;
 	
 	private int shininess = 128;
 
@@ -61,7 +72,7 @@ public class Light extends AnchorPoint
 	
 	public static int getLight(int id)
 	{
-		return  GL2.GL_LIGHT0 + id;
+		return GL2.GL_LIGHT0 + id;
 	}
 	
 	public void render(GL2 gl, GLU glu)
@@ -104,6 +115,25 @@ public class Light extends AnchorPoint
 		gl.glLightfv(light, GL_AMBIENT,  ambience, 0);
 		gl.glLightfv(light, GL_DIFFUSE,  diffuse,  0);
 		gl.glLightfv(light, GL_SPECULAR, specular, 0);
+		
+		if(updateAttenuation)
+		{
+			updateAttenuation = false;
+			Shader.setupAttenuation(gl, enableAttenuation);
+		}
+		
+		if(enableAttenuation)
+		{
+			gl.glLightf(light, GL_CONSTANT_ATTENUATION , constantAttenuation );
+			gl.glLightf(light, GL_LINEAR_ATTENUATION   , linearAttenuation   );
+			gl.glLightf(light, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+		}
+		else
+		{
+			gl.glLightf(light, GL_CONSTANT_ATTENUATION , 1);
+			gl.glLightf(light, GL_LINEAR_ATTENUATION   , 0);
+			gl.glLightf(light, GL_QUADRATIC_ATTENUATION, 0);
+		}
 
 		if(spotlight)
 		{
@@ -129,6 +159,10 @@ public class Light extends AnchorPoint
 	public void setEmission(float[] emission) { this.emission = emission; }
 	public void setSpecular(float[] specular) { this.specular = specular; }
 	public void setDiffuse (float[] diffuse ) { this.diffuse  = diffuse;  } 
+	
+	public void setConstantAttenuation (float c) { this.constantAttenuation  = c; }
+	public void setLinearAttenuation   (float l) { this.linearAttenuation    = l; }
+	public void setQuadraticAttenuation(float q) { this.quadraticAttenuation = q; }
 	
 	public static void globalSpecular(GL2 gl, float[] specular)
 	{	

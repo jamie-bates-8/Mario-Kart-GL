@@ -11,6 +11,7 @@ varying vec4 shadowCoord;
 
 uniform sampler2DShadow shadowMap;
 
+uniform bool enableAttenuation;
 uniform bool enableShadow;
 uniform int sampleMode;
 
@@ -71,43 +72,48 @@ void main(void)
 	float height, scale = 0.05, bias = 0.0125;
 	vec2 texCoord = gl_TexCoord[0].st;
 	
-	if(enableParallax && texture2D(bumpmap, texCoord).a != 1.0)
+	if(enableParallax)
 	{
 		height = scale * texture2D(bumpmap, texCoord).a - bias;
-		texCoord = texCoord + height * normalize(eyeDir).xz;
+		texCoord += height * normalize(eyeDir).xy;
 	}
 	
     vec3 normal = texture2D(bumpmap, texCoord).rgb;
     normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]
-
+    
+    	float distanceToLight, attenuation;
+    
+    distanceToLight = length(lightDir);
+    
+    attenuation = enableAttenuation ? 1.0 / (gl_LightSource[0].constantAttenuation  +
+             						         gl_LightSource[0].linearAttenuation    * distanceToLight +
+             						         gl_LightSource[0].quadraticAttenuation * distanceToLight * distanceToLight) : 1.0;
+             						        
+    float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
+             						         
+    vec4 textureColor = texture2D(texture, texCoord);
+    
+     // Add in ambient light
+    vec4 ambient = gl_LightSource[0].ambient * textureColor;
 
     // Diffuse Lighting
-    float diffuse = max(0.0, dot(normalize(normal), normalize(lightDir)));
-    vec4 color = diffuse * gl_LightSource[0].diffuse;
+    float diffuseCoefficient = max(0.0, dot(normalize(normal), normalize(lightDir)));
+    vec4 diffuse = diffuseCoefficient * gl_LightSource[0].diffuse * textureColor;
 
-
-    // Ambient Light
-    color += gl_LightSource[0].ambient;
-	color *= texture2D(texture, texCoord);
-
-
-    // Specular Light
-	vec3 vReflection = normalize(reflect(normalize(lightDir), normalize(normal)));
-    float specular = max(0.0, dot(normalize(eyeDir), vReflection));
-    if(diffuse != 0.0)
+    // Specular Lighting
+    vec4 specular = vec4(0.0);
+    
+    if(diffuseCoefficient > 0.0)
 	{
-        specular = pow(specular, 128.0);
-        color.rgb += gl_LightSource[0].specular.rgb * specular;
+		vec3 lightReflection = reflect(normalize(-lightDir), normalize(normal));
+		
+    	float specularCoefficient = max(0.0, dot(normalize(-eyeDir), lightReflection));
+		specularCoefficient = pow(specularCoefficient, gl_FrontMaterial.shininess);
+		
+        specular = specularCoefficient * gl_LightSource[0].specular;
     }
 	
-	color.rgb *= gl_Color.rgb;
+	vec4 linearColor = ambient + attenuation * shadowCoefficient * (diffuse + specular);
 	
-	if(enableShadow)
-	{
-		float sIntensity = shadowIntensity();
-		gl_FragColor = vec4(sIntensity * color.rgb, 1.0);
-	}
-	else gl_FragColor = color;
-	
-	//gl_FragColor = vec4(mix(texture2D(bumpmap, texCoord).rgb, texture2D(texture, texCoord).rgb, 0.5), 1.0);
+	gl_FragColor = vec4(linearColor.rgb, 1.0);
 }

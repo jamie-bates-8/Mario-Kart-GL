@@ -57,6 +57,35 @@ public class Renderer
 		}
 	}
 	
+	public static void displayNormalMappedObject(GL2 gl, List<Face> objectFaces, Texture normalMap)
+	{
+		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); normalMap.bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		Texture current = objectFaces.get(0).getTexture();
+		current.bind(gl);
+		
+		for(Face face : objectFaces)
+		{	
+			if(!current.equals(face.getTexture()))
+			{
+				current = face.getTexture();
+				current.bind(gl);
+			}
+
+			gl.glBegin(GL_TRIANGLES);
+
+			for(int i = 0; i < face.getVertices().length; i++)
+			{
+				gl.glNormal3f  (face.getNx(i), face.getNy(i), face.getNz(i));
+				gl.glTexCoord2f(face.getTu(i), face.getTv(i));
+				gl.glVertex3f  (face.getVx(i), face.getVy(i), face.getVz(i));
+			}
+
+			gl.glEnd();
+		}
+	}
+	
 	public static void displayPoints(GL2 gl, GLUT glut, float[][] points, float[] color, float size, boolean smooth)
 	{
 		if(color.length > 3)
@@ -76,7 +105,7 @@ public class Renderer
 			if(smooth)
 			{
 				gl.glBegin(GL2.GL_POINTS);
-				gl.glVertex3fv(point, 0);
+				gl.glVertex3f(point[0], point[1], point[2]);
 				gl.glEnd();
 			}
 			else

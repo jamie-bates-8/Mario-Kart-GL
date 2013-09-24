@@ -97,7 +97,7 @@ public class Car
 	private float scale = 1.5f;
 	
 	private float yRotation_Wheel = 0.0f;
-	private float zRotation_Wheel = 0.0f;
+	private float xRotation_Wheel = 0.0f;
 	
 	private Vec3[] offsets_Wheel =
 	{
@@ -283,7 +283,7 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
+			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RY_RX_RZ_S, mat);
 			wheel.setColor(new float[] {1, 1, 1});
 			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
@@ -331,7 +331,7 @@ public class Car
 		
 		for(int i = 0; i < 4; i++)
 		{
-			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RX_RY_RZ_S, mat);
+			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RY_RX_RZ_S, mat);
 			wheel.setColor(new float[] {1, 1, 1});
 			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
 			wheel.setTranslation(offsets_Wheel[i]);
@@ -389,8 +389,8 @@ public class Car
 			SceneNode wheel = car_body.getChildren().get(i);
 			
 			// only front wheels can turn left/right
-			if(i % 2 != 0) wheel.setRotation(new Vec3(zRotation_Wheel, yRotation_Wheel, 0));
-			else           wheel.setRotation(new Vec3(zRotation_Wheel, 0, 0));
+			if(i % 2 != 0) wheel.setRotation(new Vec3(xRotation_Wheel, yRotation_Wheel, 0));
+			else           wheel.setRotation(new Vec3(xRotation_Wheel, 0, 0));
 		}
 	}
 	
@@ -1083,7 +1083,7 @@ public class Car
 		turnWheels();
 		
 		// The wheels are rotated in relation to the distance travelled
-		zRotation_Wheel += 360 * (distance - currentDistance) / (2 * PI * 0.5); // 0.5 is the wheel radius
+		xRotation_Wheel -= 360 * (distance - currentDistance) / (2 * PI * 0.5); // 0.5 is the wheel radius
 		
 		if(drift != Direction.STRAIGHT && !falling)
 		{
@@ -1455,7 +1455,7 @@ public class Car
 		bound.setRotation(0, 0, 0);
 		bound.setPosition(ORIGIN);
 		
-		yRotation_Wheel = zRotation_Wheel = 0.0f;
+		yRotation_Wheel = xRotation_Wheel = 0.0f;
 
 		turnRate = velocity = 0.0f;
 		

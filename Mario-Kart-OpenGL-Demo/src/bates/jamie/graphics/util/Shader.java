@@ -97,6 +97,19 @@ public class Shader
 		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
 	}
 	
+	public static void setupAttenuation(GL2 gl, boolean attenuate)
+	{
+		Shader phong        = shaders.get("phong");
+		Shader phongTexture = shaders.get("phong_texture");
+		Shader bump         = shaders.get("bump");
+		Shader phongShadow  = shaders.get("phong_shadow");
+		
+		phong       .enable(gl); phong       .setUniform(gl, "enableAttenuation", attenuate);
+		phongTexture.enable(gl); phongTexture.setUniform(gl, "enableAttenuation", attenuate);
+		bump        .enable(gl); bump        .setUniform(gl, "enableAttenuation", attenuate);
+		phongShadow .enable(gl); phongShadow .setUniform(gl, "enableAttenuation", attenuate);
+	}
+	
 	public static Shader get(String name) { return shaders.get(name); }
 	
 	public boolean isValid() { return valid; }

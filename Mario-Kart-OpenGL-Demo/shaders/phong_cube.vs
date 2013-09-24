@@ -1,6 +1,7 @@
 varying vec3 reflectDir;
 varying vec3 vNormal;
 varying vec3 lightDir;
+varying vec3 eyeDir;
 
 void main()
 {
@@ -20,6 +21,8 @@ void main()
 
     // Get vector to light source
     lightDir = normalize(gl_LightSource[0].position.rgb - position3);
+    
+    eyeDir = vec3(gl_ModelViewMatrix * gl_Vertex);
 	
 	gl_FrontColor = gl_Color;
 }

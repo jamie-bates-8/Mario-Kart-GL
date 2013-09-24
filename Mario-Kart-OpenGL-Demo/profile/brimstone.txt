@@ -1,0 +1,15 @@
+item boxes false
+scene display skybox false
+collision obstacles false
+scene display fort false
+scene terrain true
+scene display foliage false
+scene sky 0.6 0.6 1.0
+scene horizon 1.0 0.8 0.2
+effect bloom true
+effect mirage true
+press o
+scene display water true
+water magma true
+quadtree caustics true
+weather snow

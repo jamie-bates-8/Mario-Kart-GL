@@ -1383,17 +1383,29 @@ public class Quadtree
 			
 			if(enableCaustic)
 				 shader = enableBumpmap ? Shader.get("bump_caustics") : Shader.get("water_caustics");
-			else shader = enableBumpmap ? Shader.get("bump") : Shader.get("phong_texture");
+			else shader = enableBumpmap ? Shader.get("bump") : Shader.get("phong_shadow");
 			
 			shader.enable(gl);
 			
-			if(Shader.enabled && shader != null) shader.setSampler(gl, "texture", 0);
-			
-			if(enableBumpmap && Shader.enabled && shader != null)
+			if(Shader.enabled && shader != null)
 			{
-				shader.setSampler(gl, "bumpmap", 1);
+				shader.setSampler(gl, "texture", 0);
 				
-				shader.setUniform(gl, "enableParallax", Scene.enableParallax );
+				if(enableBumpmap)
+				{
+					shader.setSampler(gl, "bumpmap", 1);
+					shader.setUniform(gl, "enableParallax", Scene.enableParallax );
+				}
+				
+				if(enableCaustic && Shader.enabled && shader != null)
+				{
+					shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+					shader.setUniform(gl, "timer", timer);
+					shader.setSampler(gl, "normalMap", 3);
+					shader.setUniform(gl, "magma", Scene.singleton.water.magma);
+					
+					if(Scene.enableAnimation) timer += 0.05;
+				}
 				
 				if(Scene.enableShadow)
 				{
@@ -1406,14 +1418,6 @@ public class Quadtree
 					shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
 				}
 				else shader.setUniform(gl, "enableShadow", 0);
-			}
-			
-			if(enableCaustic && Shader.enabled && shader != null)
-			{
-				shader.setUniform(gl, "timer", timer);
-				shader.setSampler(gl, "normalMap", 3);
-					
-				if(Scene.enableAnimation) timer += 0.05;
 			}
 			
 			if(reliefMap) renderElevation(gl);
@@ -1447,6 +1451,12 @@ public class Quadtree
 	public void renderGeometry(GL2 gl)
 	{
 		Light.globalSpecular(gl, specular);
+		
+//		if(Scene.singleton != null)
+//		{
+//			Scene.singleton.light.setup(gl, false);
+//			System.out.println("Fail");
+//		}
 		
 		if(Shader.enabled)
 		{
@@ -1520,7 +1530,7 @@ public class Quadtree
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
-		Light.globalSpecular(gl, new float[] {1, 1, 1, 1});
+		Scene.singleton.light.setSpecular(Scene.singleton.light.getSpecular());
 	}
 	
 	public void renderWireframe(GL2 gl)
@@ -1607,6 +1617,8 @@ public class Quadtree
 		
 		gl.glBegin(GL2.GL_LINES);
 		
+		long start = System.nanoTime();
+		
 		for(int i = 0; i < vertices.size(); i++)
 		{
 			float[] p1 = vertices.get(i);
@@ -1616,6 +1628,8 @@ public class Quadtree
 			gl.glVertex3f(p2[0], p2[1], p2[2]);
 		}
 		gl.glEnd();
+		
+		System.out.println(System.nanoTime() - start);
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_POINT_SMOOTH);
@@ -1674,11 +1688,13 @@ public class Quadtree
 	public enum Material
 	{
 		SOFT_MUD,
-		WET_SAND;
+		WET_SAND,
+		BRIMSTONE;
 	}
 	
-	public void setMaterial(Material material, Texture bumpmap)
+	public void setMaterial(Material material, Texture texture, Texture bumpmap)
 	{
+		this.texture = texture;
 		this.bumpmap = bumpmap;
 		
 		switch(material)
@@ -1694,6 +1710,13 @@ public class Quadtree
 			{
 				specular = new float[] {1.0f, 1.0f, 1.0f, 1};
 				elasticity = 8;
+				
+				break;
+			}
+			case BRIMSTONE:
+			{
+				specular = new float[] {1.0f, 0.4f, 0.0f, 1};
+				elasticity = 0;
 				
 				break;
 			}
