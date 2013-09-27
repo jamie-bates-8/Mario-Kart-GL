@@ -3,15 +3,15 @@ package bates.jamie.graphics.scene;
 import static javax.media.opengl.GL.GL_FRONT;
 import static javax.media.opengl.GL2ES1.GL_LIGHT_MODEL_AMBIENT;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_AMBIENT;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_CONSTANT_ATTENUATION;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_DIFFUSE;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_EMISSION;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_CONSTANT_ATTENUATION;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LINEAR_ATTENUATION;
-import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_QUADRATIC_ATTENUATION;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_FLAT;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHT0;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LINEAR_ATTENUATION;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_POSITION;
+import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_QUADRATIC_ATTENUATION;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_SHININESS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_SMOOTH;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_SPECULAR;
@@ -22,15 +22,24 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUquadric;
 
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.Vector;
 
 
 public class Light extends AnchorPoint
 {
 	public static int count = 0;
 	
+	private static float[] globalAmbience = {0.2f, 0.2f, 0.2f, 1.0f};
+	
+	public static boolean smoothShading    = true;
+	public static boolean localViewer      = true;
+	public static boolean seperateSpecular = true;
+	
 	public int id;
+	
+	public boolean parallel  = false;
+	public boolean spotlight = false;
 	
 	private float[] ambience = {0.2f, 0.2f, 0.2f, 1.0f};
 	private float[] diffuse  = {0.7f, 0.7f, 0.7f, 1.0f};
@@ -38,7 +47,6 @@ public class Light extends AnchorPoint
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
 	
 	public boolean enableAttenuation = false;
-	public boolean updateAttenuation = false;
 	
 	private float constantAttenuation  = 0.50f;
 	private float linearAttenuation    = 0.02f;
@@ -48,23 +56,31 @@ public class Light extends AnchorPoint
 
 	public Vec3 direction = Vec3.NEGATIVE_Y_AXIS;
 
-	public boolean smooth    = true;
-	public boolean parallel  = false;
-	public boolean local     = false;
-	public boolean secondary = true;
-
 	public Light(GL2 gl)
 	{
 		id = count++; count %= 8;
 		
-		setPosition(new Vec3(1, 1, 0));
 		setPosition(new Vec3(250));
 
 		gl.glEnable(GL_LIGHTING);
 		gl.glEnable(getLight(id));
 
-		gl.glEnable(GL2.GL_NORMALIZE);
-		gl.glShadeModel(GL_SMOOTH);
+		gl.glEnable(GL2.GL_COLOR_MATERIAL);
+		gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
+	}
+	
+	public Light(GL2 gl, Vec3 p, float[] ambience, float[] diffuse, float[] specular)
+	{
+		id = count++; count %= 8;
+		
+		setPosition(p);
+
+		gl.glEnable(GL_LIGHTING);
+		gl.glEnable(getLight(id));
+		
+		this.ambience = ambience;
+		this.diffuse  = diffuse;
+		this.specular = specular;
 
 		gl.glEnable(GL2.GL_COLOR_MATERIAL);
 		gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
@@ -98,42 +114,28 @@ public class Light extends AnchorPoint
 		
 		gl.glColor3f(1, 1, 1);
 	}
+	
+	public static void setupModel(GL2 gl)
+	{
+		gl.glShadeModel(smoothShading ? GL_SMOOTH : GL_FLAT);
+		
+		gl.glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmbience, 0);
+		
+		gl.glLightModeli(GL2.GL_LIGHT_MODEL_LOCAL_VIEWER, localViewer ? GL2.GL_TRUE : GL2.GL_FALSE);
+		gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, seperateSpecular ? GL2.GL_SEPARATE_SPECULAR_COLOR : GL2.GL_SINGLE_COLOR);
+	}
 
-	public void setup(GL2 gl, boolean spotlight)
+	public void setup(GL2 gl)
 	{
 		int light = getLight(id);
-		
-		if(smooth) gl.glShadeModel(GL_SMOOTH);
-		else       gl.glShadeModel(GL_FLAT  );
-
-		gl.glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambience, 0);
-		gl.glLightModeli (GL2.GL_LIGHT_MODEL_LOCAL_VIEWER, local ? GL2.GL_TRUE : GL2.GL_FALSE);
-		
-		if(secondary) gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SEPARATE_SPECULAR_COLOR);
-		else          gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SINGLE_COLOR);
 
 		gl.glLightfv(light, GL_AMBIENT,  ambience, 0);
 		gl.glLightfv(light, GL_DIFFUSE,  diffuse,  0);
 		gl.glLightfv(light, GL_SPECULAR, specular, 0);
 		
-		if(updateAttenuation)
-		{
-			updateAttenuation = false;
-			Shader.setupAttenuation(gl, enableAttenuation);
-		}
-		
-		if(enableAttenuation)
-		{
-			gl.glLightf(light, GL_CONSTANT_ATTENUATION , constantAttenuation );
-			gl.glLightf(light, GL_LINEAR_ATTENUATION   , linearAttenuation   );
-			gl.glLightf(light, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
-		}
-		else
-		{
-			gl.glLightf(light, GL_CONSTANT_ATTENUATION , 1);
-			gl.glLightf(light, GL_LINEAR_ATTENUATION   , 0);
-			gl.glLightf(light, GL_QUADRATIC_ATTENUATION, 0);
-		}
+		gl.glLightf(light, GL_CONSTANT_ATTENUATION , enableAttenuation ? constantAttenuation  : 1);
+		gl.glLightf(light, GL_LINEAR_ATTENUATION   , enableAttenuation ? linearAttenuation    : 0);
+		gl.glLightf(light, GL_QUADRATIC_ATTENUATION, enableAttenuation ? quadraticAttenuation : 0);
 
 		if(spotlight)
 		{

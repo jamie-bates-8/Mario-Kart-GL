@@ -316,11 +316,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Light Fields **/
+	public Light[] lights = new Light[4];
 	public Light light;
+	public int lightID = 0;
 	
-	public boolean enableLight = true;
-	public boolean moveLight = false;
-	public boolean headlight = false;
+	public boolean enableLight  = true;
+	public boolean moveLight    = false;
 	public boolean displayLight = true;
 	
 	
@@ -1124,8 +1125,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glFogf  (GL_FOG_END, 250.0f);
 		gl.glHint  (GL_FOG_HINT, GL_NICEST);
 		
-		/** Lighting Setup **/	
-	    light = new Light(gl);
+		/** Lighting Setup **/
+	    createLights(gl);
 	    
 	    caster = new ShadowCaster(this, light);
 	    
@@ -1240,9 +1241,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		menuItem_water.setSelected(terrain.enableWater);
 		
-		menuItem_smooth.setSelected(light.smooth);
+		menuItem_smooth.setSelected(Light.smoothShading);
 		menuItem_attenuate.setSelected(light.enableAttenuation);
-	    menuItem_secondary.setSelected(light.secondary);
+	    menuItem_secondary.setSelected(Light.seperateSpecular);
 	}
 
 	private void setupGenerators()
@@ -1277,6 +1278,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			floorTex = TextureLoader.load(gl, "tex/tile.jpg");
 		}
 		catch (Exception e) { e.printStackTrace(); }
+	}
+	
+	private void createLights(GL2 gl)
+	{
+		float h = (float) (3 * 20 * Math.sqrt(3));
+		h /= 2.0f;
+		
+		lights[0] = new Light(gl);
+		lights[1] = new Light(gl, new Vec3(  0, 20, -h), new float[] {0.25f, 0.10f, 0.10f}, new float[] {0.75f, 0.50f, 0.50f}, new float[] {1.00f, 0.75f, 0.75f});
+		lights[2] = new Light(gl, new Vec3(-60, 20, +h), new float[] {0.10f, 0.25f, 0.10f}, new float[] {0.50f, 0.75f, 0.50f}, new float[] {0.75f, 1.00f, 0.75f});
+		lights[3] = new Light(gl, new Vec3(+60, 20, +h), new float[] {0.10f, 0.10f, 0.25f}, new float[] {0.50f, 0.50f, 0.75f}, new float[] {0.75f, 0.75f, 1.00f});
+		
+		light = lights[0];
 	}
 
 	private void loadParticles()
@@ -1404,19 +1418,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			setupViewport(gl, index);
 			
-//			light.setup(gl, headlight);
 			car.setupCamera(gl, glu);
-			
-			light.setup(gl, headlight);
-			
-				
-			if(headlight)
-			{
-				Vec3[] vectors = car.getLightVectors();
-					
-				light.direction = vectors[1];
-				light.setPosition(vectors[0]);
-			}
+			for(Light l : lights) l.setup(gl);
 			
 			if(enableShadow && Shader.enabled)
 			{
@@ -1489,7 +1492,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			else i--;
 			
-			if(displayLight && !moveLight) light.render(gl, glu);
+			if(displayLight && !moveLight)
+			{
+				for(Light l : lights) l.render(gl, glu);
+			}
 			
 			renderTimes[frameIndex][5] = renderBounds(gl);
 			renderTimes[frameIndex][6] = car.renderHUD(gl, glu);
@@ -2688,6 +2694,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_S: ShadowCaster.cycle(); break;
 			case KeyEvent.VK_Z: enableShadow = !enableShadow; break;
+			case KeyEvent.VK_L: lightID++; lightID %= 4; light = lights[lightID]; break;
 			
 			default: break;
 		}
@@ -2823,14 +2830,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_motionblur )) enableBlur                   = selected;
 		else if(source.equals(menuItem_fog        )) enableFog                    = selected;    
 		else if(source.equals(menuItem_normalize  )) normalize                    = selected;
-		else if(source.equals(menuItem_smooth     )) light.smooth                 = selected;
-		else if(source.equals(menuItem_attenuate  ))
-		{
-			light.enableAttenuation = selected;
-			light.updateAttenuation = true;
-		}
-		else if(source.equals(menuItem_secondary  )) light.secondary              = selected;
-		else if(source.equals(menuItem_local      )) light.local                  = selected;    
+		else if(source.equals(menuItem_smooth     )) Light.smoothShading          = selected;
+		else if(source.equals(menuItem_attenuate  )) light.enableAttenuation      = selected;
+		else if(source.equals(menuItem_secondary  )) Light.seperateSpecular       = selected;
+		else if(source.equals(menuItem_local      )) Light.localViewer            = selected;    
 		else if(source.equals(menuItem_water      )) terrain.enableWater          = selected;
 		else if(source.equals(menuItem_reflect    )) enableReflection             = selected;    
 		else if(source.equals(menuItem_solid      )) terrain.tree.solid           = selected;

@@ -3,7 +3,7 @@
 uniform mat4 ModelMatrix;
 
 varying vec4 shadowCoord;
-varying vec3 lightDir;
+varying vec3 lightDir[4];
 varying vec3 eyeDir;
 
 attribute vec3 tangent;
@@ -23,17 +23,19 @@ void main(void)
     vec3 position = (vertex / vertex.w).xyz;
     
     eyeDir = vertex.xyz;
-
-    // Get vector to light source
-    vec3 light = gl_LightSource[0].position.xyz - position;
 	
-	vec3 v;
+	vec3 light, v;
 	
-	v.x = dot(light, t); // tangent
-	v.y = dot(light, b); // bitangent
-	v.z = dot(light, n); // normal
+	for(int i = 0; i < 4; i++)
+	{
+		light = gl_LightSource[i].position.xyz - position;
 	
-	lightDir = v;
+		v.x = dot(light, t); // tangent
+		v.y = dot(light, b); // bitangent
+		v.z = dot(light, n); // normal
+	
+		lightDir[i] = v;
+	}
 	
 	v.x = dot(eyeDir, t);
 	v.y = dot(eyeDir, b);

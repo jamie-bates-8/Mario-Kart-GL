@@ -3,7 +3,7 @@
 // Single Texture Map
 // Shadow Mapping
 
-varying vec3 vNormal;
+varying vec3 vertexNormal;
 varying vec3 lightDir;
 varying vec3 eyeDir;
 varying vec4 shadowCoord;
@@ -12,7 +12,6 @@ uniform sampler2D texture;
 uniform sampler2DShadow shadowMap;
 
 uniform bool enableShadow;
-uniform bool enableAttenuation;
 uniform int sampleMode;
 
 const float epsilon = 0.05;
@@ -72,9 +71,9 @@ void main(void)
     
     distanceToLight = length(lightDir);
     
-    attenuation = enableAttenuation ? 1.0 / (gl_LightSource[0].constantAttenuation  +
-             						         gl_LightSource[0].linearAttenuation    * distanceToLight +
-             						         gl_LightSource[0].quadraticAttenuation * distanceToLight * distanceToLight) : 1.0;
+    attenuation = 1.0 / (gl_LightSource[0].constantAttenuation  +
+             		     gl_LightSource[0].linearAttenuation    * distanceToLight +
+             			 gl_LightSource[0].quadraticAttenuation * distanceToLight * distanceToLight);
              						        
     float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
              						         
@@ -84,7 +83,7 @@ void main(void)
     vec4 ambient = gl_LightSource[0].ambient * textureColor;
 
     // Diffuse Lighting
-    float diffuseCoefficient = max(0.0, dot(normalize(vNormal), normalize(lightDir)));
+    float diffuseCoefficient = max(0.0, dot(normalize(vertexNormal), normalize(lightDir)));
     vec4 diffuse = diffuseCoefficient * gl_LightSource[0].diffuse * textureColor;
 
     // Specular Lighting
@@ -92,7 +91,7 @@ void main(void)
     
     if(diffuseCoefficient > 0.0)
 	{
-		vec3 lightReflection = reflect(normalize(-lightDir), normalize(vNormal));
+		vec3 lightReflection = reflect(normalize(-lightDir), normalize(vertexNormal));
 		
     	float specularCoefficient = max(0.0, dot(normalize(-eyeDir), lightReflection));
 		specularCoefficient = pow(specularCoefficient, gl_FrontMaterial.shininess);

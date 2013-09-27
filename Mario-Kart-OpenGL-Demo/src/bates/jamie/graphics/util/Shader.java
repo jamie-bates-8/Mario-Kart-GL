@@ -52,6 +52,7 @@ public class Shader
 		Shader phong        = new Shader(gl, "phong", "phong");
 		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
 		Shader bump         = new Shader(gl, "bump", "bump", attributes);
+		Shader bumpLights   = new Shader(gl, "bump_lights", "bump_lights", attributes);
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
@@ -76,6 +77,7 @@ public class Shader
 		if(       phong.isValid()) shaders.put("phong", phong);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(        bump.isValid()) shaders.put("bump", bump);
+		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
 		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
@@ -95,19 +97,6 @@ public class Shader
 		if(      mirage.isValid()) shaders.put("heat_haze", mirage);
 		if(     combine.isValid()) shaders.put("combine", combine);
 		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
-	}
-	
-	public static void setupAttenuation(GL2 gl, boolean attenuate)
-	{
-		Shader phong        = shaders.get("phong");
-		Shader phongTexture = shaders.get("phong_texture");
-		Shader bump         = shaders.get("bump");
-		Shader phongShadow  = shaders.get("phong_shadow");
-		
-		phong       .enable(gl); phong       .setUniform(gl, "enableAttenuation", attenuate);
-		phongTexture.enable(gl); phongTexture.setUniform(gl, "enableAttenuation", attenuate);
-		bump        .enable(gl); bump        .setUniform(gl, "enableAttenuation", attenuate);
-		phongShadow .enable(gl); phongShadow .setUniform(gl, "enableAttenuation", attenuate);
 	}
 	
 	public static Shader get(String name) { return shaders.get(name); }

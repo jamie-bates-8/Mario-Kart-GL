@@ -1,28 +1,28 @@
 // ADS Point Lighting Shader (Phong)
 
-// Color to fragment program
-varying vec3 vNormal;
+varying vec3 vertexNormal;
 varying vec3 lightDir;
 varying vec3 eyeDir;
 
 void main(void) 
 { 
 	// Don't forget to transform the geometry!
-	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
-    gl_Position = ftransform();
+	vec4 vertex = gl_ModelViewMatrix * gl_Vertex;
+	
+	gl_ClipVertex = vertex;
+    gl_Position   = ftransform();
 	
     // Get surface normal in eye coordinates
-    vNormal = gl_NormalMatrix * gl_Normal;
-	vNormal = normalize(vNormal);
+    vertexNormal = gl_NormalMatrix * gl_Normal;
+	vertexNormal = normalize(vertexNormal);
 
     // Get vertex position in eye coordinates
-    vec4 position4 = gl_ModelViewMatrix * gl_Vertex;
-    vec3 position3 = (vec3(position4)) / position4.w;
+    vec3 position = (vertex / vertex.w).xyz;
+    
+    eyeDir = vertex.xyz;
 
     // Get vector to light source
-    lightDir = gl_LightSource[0].position.xyz - position3;
-    
-    eyeDir = vec3(gl_ModelViewMatrix * gl_Vertex);
+    lightDir = gl_LightSource[0].position.xyz - position;
 	
 	gl_FrontColor = gl_Color;
 

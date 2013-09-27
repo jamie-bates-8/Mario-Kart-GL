@@ -20,6 +20,7 @@ import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.Blizzard;
 import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.ParticleGenerator;
+import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vec3;
 
@@ -312,6 +313,7 @@ public class Console
 		
 		     if(_cmd.equalsIgnoreCase(        "fog")) parseFog(cmd);
 		else if(_cmd.equalsIgnoreCase(      "light")) parseLight(cmd);
+		else if(_cmd.equalsIgnoreCase(     "lights")) parseLights(cmd);
 		else if(_cmd.equalsIgnoreCase(    "display")) parseDisplay(cmd);
 		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();   
 		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat();
@@ -380,6 +382,47 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(   "linear")) scene.light.setLinearAttenuation   (cmd.nextFloat());
 		else if(_cmd.equalsIgnoreCase("quadratic")) scene.light.setQuadraticAttenuation(cmd.nextFloat());
 		
+	}
+	
+	private void parseLights(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		if(_cmd.equalsIgnoreCase("ambience"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			
+			float a = cmd.hasNextFloat() ? cmd.nextFloat() : 1.0f;
+			
+			for(Light l : scene.lights) l.setAmbience(new float[] {r, g, b, a});
+		}
+		else if(_cmd.equalsIgnoreCase("diffuse"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			
+			float a = cmd.hasNextFloat() ? cmd.nextFloat() : 1.0f;
+			
+			for(Light l : scene.lights) l.setDiffuse(new float[] {r, g, b, a});
+		}
+		else if(_cmd.equalsIgnoreCase("specular"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			
+			float a = cmd.hasNextFloat() ? cmd.nextFloat() : 1.0f;
+			
+			for(Light l : scene.lights) l.setSpecular(new float[] {r, g, b, a});
+		}
+		
+		else if(_cmd.equalsIgnoreCase( "constant")) { float c = cmd.nextFloat(); for(Light light : scene.lights) light.setConstantAttenuation (c); }
+		else if(_cmd.equalsIgnoreCase(   "linear")) { float l = cmd.nextFloat(); for(Light light : scene.lights) light.setLinearAttenuation   (l); }
+		else if(_cmd.equalsIgnoreCase("quadratic")) { float q = cmd.nextFloat(); for(Light light : scene.lights) light.setQuadraticAttenuation(q); }
+		else if(_cmd.equalsIgnoreCase("attenuate")) { boolean attenuate = cmd.nextBoolean(); for(Light light : scene.lights) light.enableAttenuation = attenuate; }
 	}
 	
 	private void parseDisplay(Scanner cmd)

@@ -1,12 +1,10 @@
 // ADS Point Lighting Shader (Phong)
 
-varying vec3 vNormal;
+varying vec3 vertexNormal;
 varying vec3 lightDir;
 varying vec3 eyeDir;
 
 uniform sampler2D texture;
-
-uniform bool enableAttenuation;
 
 void main(void)
 { 
@@ -14,9 +12,9 @@ void main(void)
     
     distanceToLight = length(lightDir);
     
-    attenuation = enableAttenuation ? 1.0 / (gl_LightSource[0].constantAttenuation  +
-             						         gl_LightSource[0].linearAttenuation    * distanceToLight +
-             						         gl_LightSource[0].quadraticAttenuation * distanceToLight * distanceToLight) : 1.0;
+    attenuation = 1.0 / (gl_LightSource[0].constantAttenuation  +
+             		     gl_LightSource[0].linearAttenuation    * distanceToLight +
+             			 gl_LightSource[0].quadraticAttenuation * distanceToLight * distanceToLight);
              						        
              						         
     vec4 textureColor = texture2D(texture, gl_TexCoord[0].st);
@@ -25,7 +23,7 @@ void main(void)
     vec4 ambient = gl_LightSource[0].ambient * textureColor;
 
     // Diffuse Lighting
-    float diffuseCoefficient = max(0.0, dot(normalize(vNormal), normalize(lightDir)));
+    float diffuseCoefficient = max(0.0, dot(normalize(vertexNormal), normalize(lightDir)));
     vec4 diffuse = diffuseCoefficient * gl_LightSource[0].diffuse * textureColor;
 
     // Specular Lighting
@@ -33,7 +31,7 @@ void main(void)
     
     if(diffuseCoefficient > 0.0)
 	{
-		vec3 lightReflection = reflect(normalize(-lightDir), normalize(vNormal));
+		vec3 lightReflection = reflect(normalize(-lightDir), normalize(vertexNormal));
 		
     	float specularCoefficient = max(0.0, dot(normalize(-eyeDir), lightReflection));
 		specularCoefficient = pow(specularCoefficient, gl_FrontMaterial.shininess);

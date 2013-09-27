@@ -6,30 +6,31 @@
 uniform mat4 ModelMatrix;
 
 varying vec4 shadowCoord;
-varying vec3 vNormal;
+varying vec3 vertexNormal;
 varying vec3 lightDir;
 varying vec3 eyeDir;
 
 void main(void) 
 { 
-	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
-    gl_Position = ftransform();
+	vec4 vertex = gl_ModelViewMatrix * gl_Vertex;
+	
+	gl_ClipVertex = vertex;
+    gl_Position   = ftransform();
 	
     // Get surface normal in eye coordinates
-    vNormal = gl_NormalMatrix * gl_Normal;
-	vNormal = normalize(vNormal);
+    vertexNormal = gl_NormalMatrix * gl_Normal;
+	vertexNormal = normalize(vertexNormal);
 
     // Get vertex position in eye coordinates
-    vec4 position4 = gl_ModelViewMatrix * gl_Vertex;
-    vec3 position3 = vec3(position4) / position4.w;
+    vec3 position = (vertex / vertex.w).xyz;
     
-    eyeDir = vec3(gl_ModelViewMatrix * gl_Vertex);
+    eyeDir = vertex.xyz;
 
     // Get vector to light source
-    lightDir = gl_LightSource[0].position.xyz - position3;
+    lightDir = gl_LightSource[0].position.xyz - position;
 	
 	gl_FrontColor = gl_Color;
 	
+	gl_TexCoord[0] = gl_MultiTexCoord0;
 	shadowCoord = gl_TextureMatrix[2] * (ModelMatrix * gl_Vertex);
-    gl_TexCoord[0] = gl_MultiTexCoord0;
 }
