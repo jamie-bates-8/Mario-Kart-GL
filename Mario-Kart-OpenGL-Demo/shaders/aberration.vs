@@ -1,32 +1,49 @@
-const float EtaR = 0.65;
-const float EtaG = 0.67; // Ratio of indices of refraction
-const float EtaB = 0.69;
-const float FresnelPower = 5.0;
-const float F = ((1.0 - EtaG) * (1.0 - EtaG)) / ((1.0 + EtaG) * (1.0 + EtaG));
+#extension GL_ARB_gpu_shader5 : enable
 
-varying vec3 Reflect;
+const float ETA_RED   = 0.95;
+const float ETA_GREEN = 0.97; // Ratio of indices of refraction
+const float ETA_BLUE  = 0.99;
 
-varying vec3 RefractR;
-varying vec3 RefractG;
-varying vec3 RefractB;
+const float FRESNEL_POWER = 5.0;
+const float REFLECTANCE = ((1.0 - ETA_BLUE) * (1.0 - ETA_BLUE)) / ((1.0 + ETA_BLUE) * (1.0 + ETA_BLUE));
 
-varying float Ratio;
+varying vec3 reflectDir;
+
+varying vec3 refractRed;
+varying vec3 refractGreen;
+varying vec3 refractBlue;
+
+varying float ratio;
+
+uniform mat4 cameraMatrix;
+
+uniform float eta;
+uniform float reflectance;
+
 
 void main()
 {
-	vec4 ecPosition = gl_ModelViewMatrix * gl_Vertex;
-	vec3 ecPosition3 = ecPosition.xyz / ecPosition.w;
+	vec4 vertex = gl_ModelViewMatrix * gl_Vertex;
+	vec3 position = (vertex / vertex.w).xyz;
 	
-	vec3 i = normalize(ecPosition3);
-	vec3 n = normalize(gl_NormalMatrix * gl_Normal);
+	vec3 eyeDir       = normalize(vertex.xyz);
+	vec3 vertexNormal = normalize(gl_NormalMatrix * gl_Normal);
 	
-	Ratio = F + (1.0 - F) * pow((1.0 - dot(-i, n)), FresnelPower);
+	ratio = REFLECTANCE + (1.0 - REFLECTANCE) * pow((1.0 - dot(-eyeDir.xyz, vertexNormal.xyz)), FRESNEL_POWER);
+	ratio = reflectance + (1.0 - reflectance) * pow((1.0 - dot(-eyeDir.xyz, vertexNormal.xyz)), FRESNEL_POWER);
 	
-	RefractR = refract(i, n, EtaR);
-	RefractG = refract(i, n, EtaG);
-	RefractB = refract(i, n, EtaB);
-
-	Reflect = reflect(i, n);
+	eyeDir       = (inverse(cameraMatrix) * vec4(eyeDir, 1.0)).xyz;
+	vertexNormal = (inverse(cameraMatrix) * vec4(vertexNormal, 0.0)).xyz;
+	
+	reflectDir = reflect(eyeDir, vertexNormal);
+	
+	//refractRed   = refract(eyeDir, vertexNormal, ETA_RED);
+	//refractGreen = refract(eyeDir, vertexNormal, ETA_GREEN);
+	//refractBlue  = refract(eyeDir, vertexNormal, ETA_BLUE);
+	
+	refractRed   = refract(eyeDir, vertexNormal, eta - 0.01);
+	refractGreen = refract(eyeDir, vertexNormal, eta);
+	refractBlue  = refract(eyeDir, vertexNormal, eta + 0.01);
 
 	gl_Position = ftransform();
 }

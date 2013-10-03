@@ -164,7 +164,7 @@ public class Terrain
 		Quadtree base = new Quadtree(210, 32, -10, textures.get(1), 7);
 		base.bumpmap = bumpmaps.get(6);
 		base.caustic = bumpmaps.get(9);
-		base.setHeights(1000, 1.25f);
+		base.setHeights(750, 1.25f);
 		base.specular = new float[] {0.3f, 0.3f, 0.3f, 1};
 		base.enableCaustic = false;
 		

@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
-import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Vec3;
 
 public class Reflector
@@ -22,11 +21,16 @@ public class Reflector
 	private int maxSize;
 	
 	public float reflectivity;
+	public float eta;
+	public float reflectance;
 	
 	public Reflector(Scene scene, float reflectivity)
 	{
 		this.scene = scene;
 		this.reflectivity = reflectivity;
+		
+		eta = 0.97f;
+		reflectance = ((1 - eta) * (1 - eta)) / ((1 + eta) * (1 + eta));
 	}
 	
 	public void setup(GL2 gl)
@@ -82,6 +86,8 @@ public class Reflector
 	    gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 	    gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 	    gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+	    
+	    gl.glGenerateMipmap(GL2.GL_TEXTURE_CUBE_MAP);
 
 	    // this may change with window size changes
 	    int j = GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
@@ -95,8 +101,9 @@ public class Reflector
 	    
 	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
 	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP_TO_EDGE);
 	    
-	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR_MIPMAP_LINEAR);
+	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR);
 	    gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 	}
 	
@@ -111,19 +118,6 @@ public class Reflector
 		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
 		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
 		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
-
-		/* We need to put the eye-space reflection vector back into world space
-		 * by multiplying by the transpose of the view matrix.
-		 */
-		float[] normalMatrix = new float[16];
-		gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, normalMatrix, 0);
-		Matrix.getNormalMatrix(normalMatrix, normalMatrix);
-		
-		gl.glMatrixMode(GL2.GL_TEXTURE);
-		gl.glPushMatrix();
-		gl.glLoadMatrixf(normalMatrix, 0);
-			
-		gl.glMatrixMode(GL2.GL_MODELVIEW);
 	}
 	
 	public void disable(GL2 gl)
@@ -135,17 +129,18 @@ public class Reflector
 		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
 		
-		gl.glMatrixMode(GL2.GL_TEXTURE);
-		gl.glPopMatrix();
-		
-		gl.glMatrixMode(GL2.GL_MODELVIEW);
-		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 	}
 	
 	public void update(GL2 gl, Vec3 p)
 	{
 		GLUgl2 glu = new GLUgl2();
+		
+		if(updateSize)
+		{
+			changeSize(gl);
+			updateSize = false;
+		}
 		
 		gl.glMatrixMode(GL2.GL_PROJECTION);
 		gl.glLoadIdentity();
@@ -189,6 +184,8 @@ public class Reflector
 
 			gl.glFramebufferTexture2D(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, i, textureID, 0);
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+			
+			for(Light l : scene.lights) l.setup(gl);
 			
 			Scene.environmentMode = true;
 			scene.renderWorld(gl);
@@ -264,19 +261,41 @@ public class Reflector
 	}
 	
 	public void changeSize(GL2 gl)
-	{
-		int size = mapSize;
-		// environment map is limited by max supported renderbuffer size
-		mapSize = maxSize;
+	{		
+		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBuffer);
+		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBuffer);
+		
+		gl.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL2.GL_DEPTH_STENCIL, mapSize, mapSize);
+		
+		gl.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT  , GL2.GL_RENDERBUFFER, renderBuffer);
+		gl.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_STENCIL_ATTACHMENT, GL2.GL_RENDERBUFFER, renderBuffer);
 
-		if (size != mapSize)
-		{
-			gl.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT32, mapSize, mapSize);
-
-			int j = GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+		int j = GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 			
-			for (int i = j; i < j + 6; i++)
-				gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
-		}
+		for (int i = j; i < j + 6; i++)
+			gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
+		
+		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+	}
+	
+	public void setRefractionIndex(float eta)
+	{
+		if(eta > 1) eta = 1;
+		if(eta < 0) eta = 0;
+		
+		this.eta = eta;
+		reflectance = ((1 - eta) * (1 - eta)) / ((1 + eta) * (1 + eta));
+	}
+	
+	private boolean updateSize = false;
+	
+
+	public void updateSize(int size)
+	{
+		// environment map is limited by max supported renderbuffer size
+		if(size > maxSize) mapSize = maxSize;
+		mapSize = size;
+		
+		updateSize = true;
 	}
 }

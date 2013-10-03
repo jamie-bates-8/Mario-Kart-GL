@@ -184,6 +184,11 @@ public class Vec3
 		return this.multiply(1.0f / magnitude());
 	}
 	
+	public Vec3 negate()
+	{
+		return new Vec3(-x, -y, -z);
+	}
+	
 	public Vec3 cross(Vec3 v)
 	{
 		Vec3 w = new Vec3();

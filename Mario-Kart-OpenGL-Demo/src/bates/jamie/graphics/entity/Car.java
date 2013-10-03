@@ -37,6 +37,7 @@ import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
+import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Scene;
@@ -44,6 +45,7 @@ import bates.jamie.graphics.scene.SceneGraph;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
+import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
@@ -101,10 +103,10 @@ public class Car
 	
 	private Vec3[] offsets_Wheel =
 	{
-		new Vec3(+1.75f, -0.75f, +2.4f), // back-left
-		new Vec3(+1.75f, -0.75f, -2.4f), // front-left
-		new Vec3(-1.75f, -0.75f, +2.4f), // back-right
-		new Vec3(-1.75f, -0.75f, -2.4f)  // front-right
+		new Vec3(+1.75f, -0.55f, +2.4f), // back-left
+		new Vec3(+1.75f, -0.55f, -2.4f), // front-left
+		new Vec3(-1.75f, -0.55f, +2.4f), // back-right
+		new Vec3(-1.75f, -0.55f, -2.4f)  // front-right
 	}; 
 	
 	private Vec3 offsets_LeftDoor =  new Vec3(-1.43f, 0.21f,  1.74f);
@@ -137,6 +139,7 @@ public class Car
 	private boolean driftCounter = false;
 	private enum DriftState {YELLOW, RED, BLUE};
 	private DriftState driftState = DriftState.YELLOW;
+	public Light[] driftLights = new Light[2];
 	
 	public float distance = 0;
 	
@@ -186,6 +189,7 @@ public class Car
 	private int spectrum = 0;
 	private boolean whiten = true;
 	private static final int COLOR_INCREMENT = 17; //1, 3, 5, 15, 17, 51, 85, 255
+	public Light starLight;
 	
 	private boolean invisible = false;
 	private int booDuration = 0;
@@ -257,6 +261,30 @@ public class Car
 	    
 	    anchor = new AnchorPoint();
 	    
+	    starLight = new Light(gl, c, RGB.WHITE_3F, RGB.WHITE_3F, RGB.WHITE_3F);
+	    starLight.setConstantAttenuation(0.75f);
+	    starLight.setQuadraticAttenuation(0.04f);
+	    starLight.enableAttenuation = true;
+	    
+	    Light leftLight, rightLight;
+	    float[] sparkColor = new float[] {RGB.YELLOW[0]/255, RGB.YELLOW[1]/255, RGB.YELLOW[2]/255};
+	    leftLight = new Light(gl, c, sparkColor, sparkColor, sparkColor);
+	    
+	    leftLight.setConstantAttenuation(0.75f);
+	    leftLight.setQuadraticAttenuation(0.4f);
+	    leftLight.enableAttenuation = true;
+	    leftLight.disable(gl);
+	    
+	    rightLight = new Light(gl, c, sparkColor, sparkColor, sparkColor);
+	    rightLight.setConstantAttenuation(1.00f);
+	    rightLight.setLinearAttenuation(0.2f);
+	    rightLight.setQuadraticAttenuation(0.2f);
+	    rightLight.enableAttenuation = true;
+	    rightLight.disable(gl);
+	    
+	    driftLights[0] = leftLight;
+	    driftLights[1] = rightLight;
+	    
 	    resetGraph();
 	}
 	
@@ -272,7 +300,6 @@ public class Car
 		body.setTranslation(bound.c);
 		body.setOrientation(bound.u.toArray());
 		body.setScale(new Vec3(scale));
-		body.setBloom(true);
 		
 		if(enableChrome)
 		{
@@ -630,7 +657,8 @@ public class Car
 
 	public void render(GL2 gl)
 	{
-		updateColor();
+		if(!Scene.shadowMode && !Scene.reflectMode && !Scene.depthMode) updateColor();
+		updateLights(gl);
 		
 		if(renderMode == 1)
 		{
@@ -662,7 +690,7 @@ public class Car
 
 				graph.renderGhost(gl, booColor, shader);
 			}
-			else if(starPower) graph.renderColor(gl, _color);
+			else if(starPower) graph.renderColor(gl, _color, enableChrome ? scene.reflector : null);
 			else graph.render(gl);
 		}
 		
@@ -686,6 +714,32 @@ public class Car
 			
 			tag.render(gl, ry);
 		}
+	}
+
+	private void updateLights(GL2 gl)
+	{
+		starLight.setAmbience(new float[] {starColor[0]/255, starColor[1]/255, starColor[2]/255});
+		
+		if(starDuration < 1) starLight.disable(gl);
+		else starLight.enable(gl);
+		
+		float[] driftColor = RGB.YELLOW;
+		
+		switch(driftState)
+		{
+			case YELLOW : driftColor = RGB.YELLOW; break;
+			case RED    : driftColor = RGB.RED;    break;
+			case BLUE   : driftColor = RGB.BLUE;   break;
+		}
+		
+		if(drift != Direction.STRAIGHT) for(Light l : driftLights)
+		{
+			l.enable(gl);
+			l.setAmbience(new float[] {driftColor[0]/255, driftColor[1]/255, driftColor[2]/255});
+			l.setSpecular(new float[] {driftColor[0]/255, driftColor[1]/255, driftColor[2]/255});
+			l.setDiffuse (new float[] {driftColor[0]/255, driftColor[1]/255, driftColor[2]/255});
+		}
+		else for(Light l : driftLights) l.disable(gl);
 	}
 	
 	public boolean displayTag = false;
@@ -1038,6 +1092,8 @@ public class Car
 		else if(!slipping) setPosition(getPositionVector());
 		else setPosition(getSlipVector());
 		
+		starLight.setPosition(getPosition());
+		
 		detectCollisions();
 		if(colliding) resolveCollisions();
 		
@@ -1087,13 +1143,18 @@ public class Car
 		
 		if(drift != Direction.STRAIGHT && !falling)
 		{
-			for(Vec3 vector : getDriftVectors())
+			Vec3[] driftVectors = getDriftVectors();
+			
+			for(Vec3 vector : driftVectors)
 			{
 				Vec3 source = vector.add(getPosition());
 				
 				scene.addParticles(generator.generateDriftParticles(source, 10, driftState.ordinal(), miniature));
 				scene.addParticles(generator.generateSparkParticles(source, vector, 1, driftState.ordinal(), this));
 			}
+			
+			driftLights[0].setPosition(driftVectors[0].add(getPosition()));
+			driftLights[1].setPosition(driftVectors[1].add(getPosition()));
 		}
 		
 		if(scene.enableTerrain && !scene.getTerrain().enableQuadtree && patch != null && velocity != 0)
@@ -1154,8 +1215,9 @@ public class Car
 		else if(miniature)
 		{
 			miniature = false;
-			bound.e.multiply(2);
+			bound.e = bound.e.multiply(2);
 			scale *= 2;
+			high_graph.getRoot().setScale(new Vec3(scale));
 		}
 		
 		if(boostDuration > 0) boostDuration--;
@@ -1404,7 +1466,7 @@ public class Car
 	
 	public Vec3[] getDriftVectors()
 	{
-		Vec3 eu0 = bound.u.xAxis.multiply(bound.e.x * 1.25f);
+		Vec3 eu0 = bound.u.xAxis.multiply(bound.e.x * 1.20f);
 		Vec3 eu1 = bound.u.yAxis.multiply(bound.e.y * 0.75f);
 		Vec3 eu2 = bound.u.zAxis.multiply(bound.e.z * 0.75f);
 		
@@ -1497,6 +1559,7 @@ public class Car
 			{
 				bound.e = bound.e.multiply(0.5f);
 				scale /= 2;
+				high_graph.getRoot().setScale(new Vec3(scale));
 			}
 			
 			miniature = true;
@@ -1737,7 +1800,7 @@ public class Car
 			
 			default: break;	
 		}
-		
+
 		camera.setupView(gl, glu);
 	}
 	

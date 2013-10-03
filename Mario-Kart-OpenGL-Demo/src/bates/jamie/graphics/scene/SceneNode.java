@@ -38,8 +38,6 @@ public class SceneNode
 	private Material material;
 	private Reflector reflector;
 	
-	private boolean enableBloom = false;
-	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
 		children = new ArrayList<SceneNode>();
@@ -63,53 +61,59 @@ public class SceneNode
 			if(material != null) material.load(gl);
 			gl.glColor3fv(color, 0);
 			
+			switch(renderMode)
+			{
+				case TEXTURE:
+				{
+					Shader shader = Shader.enabled ? Shader.get("phong_texture") : null;
+					if(shader != null)
+					{
+						shader.enable(gl);
+						shader.setSampler(gl, "texture", 0);
+					}
+					break;      
+				}
+				case COLOR  :
+				{
+					Shader shader = Shader.enabled ? Shader.get("phong") : null;
+					if(shader != null) shader.enable(gl);
+					break;
+				}
+				case REFLECT:
+				{
+					Shader shader = Shader.enabled ? Shader.get("phong_cube") : null;
+					if(shader != null)
+					{
+						shader.enable(gl);
+						shader.setSampler(gl, "cubeMap", 0);
+						shader.setUniform(gl, "shininess", reflector.reflectivity);
+						
+						float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+						shader.loadMatrix(gl, "cameraMatrix", camera);
+					}
+					break;      
+				}
+				case GLASS  : break;
+			}
+			
+			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS) gl.glDrawBuffers(2, attachments, 0);
+			
 			if(model != null)
-			{	
+			{
 				switch(renderMode)
 				{
-					case TEXTURE:
-					{
-						Shader shader = Shader.enabled ? Shader.get("phong_texture") : null;
-						if(shader != null)
-						{
-							shader.enable(gl);
-							shader.setSampler(gl, "texture", 0);
-						}
-						model.render(gl); break;      
-					}
-					case COLOR  :
-					{
-						Shader shader = Shader.enabled ? Shader.get("phong") : null;
-						if(shader != null) shader.enable(gl);
-						model.render(gl); break;
-					}
+					case TEXTURE: 
+					case COLOR  : model.render(gl); break;
 					case REFLECT:
 					{
-						int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-						if(!Scene.reflectMode && enableBloom) gl.glDrawBuffers(2, attachments, 0);
-						
-						Shader shader = Shader.enabled ? Shader.get("phong_cube") : null;
-						if(shader != null)
-						{
-							shader.enable(gl);
-							shader.setSampler(gl, "cubeMap", 0);
-							shader.setUniform(gl, "shininess", reflector.reflectivity);
-						}
-						
 						if(reflector != null) reflector.enable(gl);
-						{
-							model.render(gl);
-						}
+						model.render(gl);
 						if(reflector != null) reflector.disable(gl);
-						
-						if(!Scene.reflectMode && enableBloom) gl.glDrawBuffers(1, attachments, 0);
-						
-						break;      
+						break;
 					}
 					case GLASS  : model.renderGlass(gl, color); break;
 				}
-				
-				Shader.disable(gl);
 			}
 			else if(displayList != -1) gl.glCallList(displayList);
 			else
@@ -122,6 +126,9 @@ public class SceneNode
 					case GLASS  : Renderer.displayGlassObject   (gl, geometry, color); break;
 				}
 			}
+			
+			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS) gl.glDrawBuffers(1, attachments, 0);
+			Shader.disable(gl);
 			
 			for(SceneNode child : children) child.render(gl);
 		}
@@ -138,15 +145,15 @@ public class SceneNode
 			{
 				shader.enable(gl);
 				shader.setSampler(gl, "cubeMap", 0);
-				// this is a bit sketchy since a Reflector is not enabled directly
-				gl.glDisable(GL_LIGHTING);
-				gl.glEnable (GL_BLEND   );
+				
+				shader.setUniform(gl, "eta", Scene.singleton.reflector.eta);
+				shader.setUniform(gl, "reflectance", Scene.singleton.reflector.reflectance);
+				
+				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+				shader.loadMatrix(gl, "cameraMatrix", camera);
 				
 				if(model != null) model.render(gl);
 				else Renderer.displayColoredObject(gl, geometry, fade);
-				
-				gl.glEnable (GL_LIGHTING);
-				gl.glDisable(GL_BLEND   );
 				
 				Shader.disable(gl);
 			}
@@ -174,21 +181,41 @@ public class SceneNode
 		gl.glPopMatrix();
 	}
 	
-	public void renderColor(GL2 gl, float[] color)
+	public void renderColor(GL2 gl, float[] color, Reflector reflector)
 	{
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
+			Shader shader = Shader.enabled ? (reflector != null ? Shader.get("star_power") : Shader.get("phong_cube")) : null;
+			if(shader != null && reflector != null)
+			{
+				shader.enable(gl);
+				
+				shader.setSampler(gl, "cubeMap", 0);
+				shader.setUniform(gl, "shininess", reflector.reflectivity);
+				
+				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+				shader.loadMatrix(gl, "cameraMatrix", camera);
+			}
+			
+			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+			if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
+			
 			if(model != null)
 			{
-				gl.glColor3f(color[0], color[1], color[2]);
+				gl.glColor3fv(color, 0);
+				if(reflector != null) reflector.enable(gl);
 				model.render(gl);
+				if(reflector != null) reflector.disable(gl);
 			}
 			else Renderer.displayColoredObject(gl, geometry, color);
 			
-			for(SceneNode child : children) child.renderColor(gl, color);
+			if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
+			Shader.disable(gl);
+			
+			for(SceneNode child : children) child.renderColor(gl, color, reflector);
 		}
 		gl.glPopMatrix();
 	}
@@ -336,8 +363,6 @@ public class SceneNode
 	public Reflector getReflector() { return reflector; }
 	
 	public void setReflector(Reflector reflector) { this.reflector = reflector; }
-	
-	public void setBloom(boolean bloom) { enableBloom = bloom; }
 
 	public enum MatrixOrder
 	{

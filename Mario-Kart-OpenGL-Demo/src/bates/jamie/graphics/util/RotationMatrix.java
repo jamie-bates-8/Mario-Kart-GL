@@ -119,16 +119,16 @@ public class RotationMatrix
 		};
 	}
 	
-//	public float[] toArray()
-//	{	
-//		return new float[]		
-//		{
-//			xAxis.x, yAxis.x, zAxis.x,   0   ,
-//			xAxis.y, yAxis.y, zAxis.y,   0   ,
-//		    xAxis.z, yAxis.z, zAxis.z,   0   ,
-//			   0   ,    0   ,    0   ,   1
-//		};
-//	}
+	public float[] toColumnArray()
+	{	
+		return new float[]		
+		{
+			xAxis.x, yAxis.x, zAxis.x,   0   ,
+			xAxis.y, yAxis.y, zAxis.y,   0   ,
+		    xAxis.z, yAxis.z, zAxis.z,   0   ,
+			   0   ,    0   ,    0   ,   1
+		};
+	}
 	
 	public static float sinf(double a) { return (float) sin(a); }
 	public static float cosf(double a) { return (float) cos(a); }

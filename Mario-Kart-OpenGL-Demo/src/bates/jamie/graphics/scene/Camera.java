@@ -4,10 +4,12 @@ import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
 import java.awt.event.MouseEvent;
+import java.util.Arrays;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
+import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Vec3;
 
 //TODO Zoom camera in when obscured by an obstacle
@@ -37,6 +39,8 @@ public class Camera extends AnchorPoint
 	
 	public float incline = (float) Math.toRadians(INCLINE);
 	public float azimuth = (float) Math.toRadians(AZIMUTH);
+	
+	private float[] viewMatrix = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 	
 	
 	
@@ -102,6 +106,10 @@ public class Camera extends AnchorPoint
 				position = getSphericalCoordinate();
 				
 				glu.gluLookAt(position.x, position.y, position.z, c.x, c.y, c.z, 0, 1, 0);
+				
+				u.yAxis = new Vec3(0, 1, 0);
+				u.zAxis = position.subtract(c).normalize();
+				u.xAxis = u.yAxis.cross(u.zAxis).normalize();
 
 				break;
 			}
@@ -155,6 +163,8 @@ public class Camera extends AnchorPoint
 			
 			default: break;
 		}
+		
+		gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, viewMatrix, 0);
 	}
 	
 	public float[] to3DPoint(int x, int y, int width, int height)
@@ -213,5 +223,14 @@ public class Camera extends AnchorPoint
 		
 		if(zoom < 1.00) zoom = 1.00f;
 		if(zoom > 2.50) zoom = 2.50f;
+	}
+	
+	public float[] getMatrix()
+	{
+		viewMatrix[ 3] = viewMatrix[ 7] = viewMatrix[11] = 0;
+		viewMatrix[12] = viewMatrix[13] = viewMatrix[14] = 0;
+		viewMatrix[15] = 1;
+		
+		return viewMatrix;
 	}
 }

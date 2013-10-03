@@ -3,7 +3,7 @@
 uniform mat4 ModelMatrix;
 
 varying vec4 shadowCoord;
-varying vec3 lightDir[4];
+varying vec3 lightDir[8];
 varying vec3 eyeDir;
 
 attribute vec3 tangent;
@@ -26,7 +26,7 @@ void main(void)
 	
 	vec3 light, v;
 	
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < 8; i++)
 	{
 		light = gl_LightSource[i].position.xyz - position;
 	

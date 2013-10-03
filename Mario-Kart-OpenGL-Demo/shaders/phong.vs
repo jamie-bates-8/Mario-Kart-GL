@@ -6,7 +6,6 @@ varying vec3 eyeDir;
 
 void main(void) 
 { 
-	// Don't forget to transform the geometry!
 	vec4 vertex = gl_ModelViewMatrix * gl_Vertex;
 	
 	gl_ClipVertex = vertex;

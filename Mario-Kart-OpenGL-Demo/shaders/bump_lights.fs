@@ -5,7 +5,7 @@
 uniform sampler2D texture;
 uniform sampler2D bumpmap;
 
-varying vec3 lightDir[4];
+varying vec3 lightDir[8];
 varying vec3 eyeDir;
 varying vec4 shadowCoord;
 
@@ -118,12 +118,19 @@ void main(void)
     specular = vec4(0.0);
     int i;
     
-    for(i = 0; i < 4; i++)
+    for(i = 0; i < 8; i++)
     {
     	pointLight(i, normal, textureColor, ambient, diffuse, specular);
     }
              						         
 	vec4 linearColor = shadowCoefficient * (ambient + diffuse + specular);
 	
-	gl_FragColor = vec4(linearColor.rgb, 1.0);
+	gl_FragData[0] = vec4(linearColor.rgb, 1.0);
+	
+	vec3 brightColor = max(linearColor.rgb - vec3(1.0), vec3(0.0));
+	
+    float bright = dot(brightColor, vec3(1.0));
+    bright = smoothstep(0.0, 0.5, bright);
+    
+    gl_FragData[1] = vec4(mix(vec3(0.0), linearColor.rgb, bright), 1.0);
 }

@@ -23,7 +23,6 @@ import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUquadric;
 
 import bates.jamie.graphics.util.Vec3;
-import bates.jamie.graphics.util.Vector;
 
 
 public class Light extends AnchorPoint
@@ -51,6 +50,8 @@ public class Light extends AnchorPoint
 	private float constantAttenuation  = 0.50f;
 	private float linearAttenuation    = 0.02f;
 	private float quadraticAttenuation = 0.00f;
+	
+	private float originalAttenuation = 0.020f;
 	
 	private int shininess = 128;
 
@@ -91,14 +92,17 @@ public class Light extends AnchorPoint
 		return GL2.GL_LIGHT0 + id;
 	}
 	
-	public void render(GL2 gl, GLU glu)
+	public void render(GL2 gl)
 	{
-		gl.glColor3f(0.2f, 0.2f, 0.2f);
+		GLU glu = new GLU();
 		
+		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+		
+		gl.glDrawBuffers(2, attachments, 0);
+		gl.glColor4f(diffuse[0], diffuse[1], diffuse[2], 1);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
 		GLUquadric sphere = glu.gluNewQuadric();
-		
 		glu.gluQuadricDrawStyle(sphere, GLU.GLU_FILL);
 		
 		gl.glPushMatrix();
@@ -107,12 +111,17 @@ public class Light extends AnchorPoint
 			gl.glTranslatef(p.x, p.y, p.z);
 			
 			glu.gluSphere(sphere, 2, 32, 32);
+			
+			gl.glColor4f(diffuse[0], diffuse[1], diffuse[2], .5f);
+			glu.gluQuadricDrawStyle(sphere, GLU.GLU_LINE);
+			glu.gluSphere(sphere, getRadius(), 32, 32);
+			
 		}
 		gl.glPopMatrix();
 		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
-		
-		gl.glColor3f(1, 1, 1);
+		gl.glColor4f(1, 1, 1, 1);
+		gl.glDrawBuffers(1, attachments, 0);
 	}
 	
 	public static void setupModel(GL2 gl)
@@ -150,6 +159,33 @@ public class Light extends AnchorPoint
 		gl.glMaterialfv(GL_FRONT, GL_SPECULAR,  specular, 0);
 		gl.glMateriali (GL_FRONT, GL_SHININESS, shininess  );
 		gl.glMaterialfv(GL_FRONT, GL_EMISSION,  emission, 0);
+	}
+	
+	public void enable(GL2 gl)
+	{
+		linearAttenuation = originalAttenuation;
+	}
+	
+	public void disable(GL2 gl)
+	{
+		if(linearAttenuation != 100) originalAttenuation = linearAttenuation;
+		linearAttenuation = 100;
+	}
+	
+	public float getRadius()
+	{
+		float radius = 1E-5f;
+		float attenuation = 1;
+		
+		while(attenuation > 0.1)
+		{
+			radius++;
+			attenuation = 1.0f / (constantAttenuation  +
+								  linearAttenuation    * radius +
+								  quadraticAttenuation * radius * radius);
+		}
+
+		return radius;
 	}
 	
 	public float[] getAmbience() { return ambience; }

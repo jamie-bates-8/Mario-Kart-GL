@@ -318,7 +318,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();   
 		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(    "opacity")) scene.opacity = cmd.nextFloat();
-		else if(_cmd.equalsIgnoreCase(  "reflector")) scene.reflector.reflectivity = cmd.nextFloat();    
+		else if(_cmd.equalsIgnoreCase(  "reflector")) parseReflector(cmd);    
 		else if(_cmd.equalsIgnoreCase(    "terrain"))
 		{
 			scene.enableTerrain = cmd.nextBoolean();
@@ -349,6 +349,15 @@ public class Console
 			
 			scene.skybox.setHorizonColor(new float[] {r, g, b});
 		} 
+	}
+	
+	private void parseReflector(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+		     if(_cmd.equalsIgnoreCase("reflectivity")) scene.reflector.reflectivity = cmd.nextFloat();
+		else if(_cmd.equalsIgnoreCase(         "eta")) scene.reflector.setRefractionIndex(cmd.nextFloat());
+		else if(_cmd.equalsIgnoreCase(  "resolution")) scene.reflector.updateSize(cmd.nextInt());
 	}
 	
 	private void parseLight(Scanner cmd)

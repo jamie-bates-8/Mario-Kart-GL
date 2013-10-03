@@ -1,8 +1,10 @@
-varying vec3 Reflect;
-varying vec3 RefractR;
-varying vec3 RefractG;
-varying vec3 RefractB;
-varying float Ratio;
+varying vec3 reflectDir;
+
+varying vec3 refractRed;
+varying vec3 refractGreen;
+varying vec3 refractBlue;
+
+varying float ratio;
 
 uniform samplerCube cubeMap;
 uniform float opacity;
@@ -11,11 +13,12 @@ void main()
 {
 	vec3 refractColor, reflectColor;
 	
-	refractColor.r = vec3(textureCube(cubeMap, RefractR)).r;
-	refractColor.g = vec3(textureCube(cubeMap, RefractG)).g;
-	refractColor.b = vec3(textureCube(cubeMap, RefractB)).b;
+	refractColor.r = vec3(textureCube(cubeMap, refractRed)).r;
+	refractColor.g = vec3(textureCube(cubeMap, refractGreen)).g;
+	refractColor.b = vec3(textureCube(cubeMap, refractBlue)).b;
 	
-	reflectColor = vec3(textureCube(cubeMap, Reflect));
-	vec3 color = mix(refractColor, reflectColor, Ratio);
-	gl_FragColor = vec4(color, opacity);
+	reflectColor = vec3(textureCube(cubeMap, reflectDir));
+	
+	vec3 color = mix(refractColor, reflectColor, ratio);
+	gl_FragColor = vec4(color, 1.0);
 }

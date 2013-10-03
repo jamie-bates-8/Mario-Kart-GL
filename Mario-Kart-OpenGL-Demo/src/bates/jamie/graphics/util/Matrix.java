@@ -330,4 +330,57 @@ public class Matrix
 	public static float cosf(double a) { return (float) cos(a); }
 	
 	public static float tanf(double a) { return (float) tan(a); }
+
+	public static float determinant(float[] matrix, int row, int col)
+	{
+		int x, y, i, j;
+		float determinant;
+		
+		float[][] t = new float[3][3];
+
+		x = 0;
+		for (i = 0; i < 4; i++)
+		{
+			if (i == row) continue;
+			y = 0;
+			for (j = 0; j < 4; j++)
+			{
+				if (j == col) continue;
+				t[x][y] = matrix[(i * 4) + j];
+				y++;
+			}
+			x++;
+		}
+
+		determinant  = t[0][0] * (t[1][1] * t[2][2] - t[2][1] * t[1][2]);
+		determinant -= t[0][1] * (t[1][0] * t[2][2] - t[2][0] * t[1][2]);
+		determinant += t[0][2] * (t[1][0] * t[2][1] - t[2][0] * t[1][1]);
+
+		return determinant;
+	}
+
+
+	public static void invertMatrix(float[] inverse, float[] m)
+	{
+		int i, j;
+		float determinant, d;
+
+		// calculate 4x4 determinant
+		determinant = 0.0f;
+		
+		for (i = 0; i < 4; i++)
+			determinant += determinant(m, 0, i) * m[i] * (i & 0x1) == 1 ? -1 : 1;
+			
+		determinant = 1.0f / determinant;
+
+		// calculate inverse
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 4; j++)
+			{
+				d = determinant(m, j, i);
+				inverse[(i * 4) + j] = determinant * d + ((i + j) & 0x1) == 1 ? -1 : 1; 
+			}
+		}
+	}
 }

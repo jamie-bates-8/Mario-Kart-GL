@@ -30,7 +30,7 @@ public class Quadtree
 {
 	private static final float HILL_INC = 2.5f;
 	
-	private static final float MIN_RADIUS = 10;
+	private static final float MIN_RADIUS = 30;
 	private static final float MAX_RADIUS = 60;
 	
 	private static final float MAX_TROUGH = 1.00f;
@@ -1399,7 +1399,7 @@ public class Quadtree
 				
 				if(enableCaustic && Shader.enabled && shader != null)
 				{
-					shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					shader.setUniform(gl, "timer", timer);
 					shader.setSampler(gl, "normalMap", 3);
 					shader.setUniform(gl, "magma", Scene.singleton.water.magma);
@@ -1409,7 +1409,7 @@ public class Quadtree
 				
 				if(Scene.enableShadow)
 				{
-					shader.loadMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					
 					shader.setSampler(gl, "shadowMap", 2);
 					

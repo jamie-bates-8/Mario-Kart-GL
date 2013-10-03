@@ -224,7 +224,7 @@ public class FocalBlur
 		shader.setSampler(gl, "depthSampler" , 2);
 		shader.setSampler(gl, "normalSampler", 3);
 		
-		shader.setUniform(gl, "timer", timer += 0.05);
+		if(enableMirage) shader.setUniform(gl, "timer", timer += 0.05);
 		
 		int offsetsLoc = -1;
 		

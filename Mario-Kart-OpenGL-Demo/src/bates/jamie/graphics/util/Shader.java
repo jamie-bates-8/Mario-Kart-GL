@@ -58,6 +58,7 @@ public class Shader
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
+		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
 		Shader water        = new Shader(gl, "water", "water", attributes);
 		Shader magma        = new Shader(gl, "water", "magma", attributes);
 		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", attributes);
@@ -83,6 +84,7 @@ public class Shader
 		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
+		if(   starPower.isValid()) shaders.put("star_power", starPower);
 		if(       water.isValid()) shaders.put("water", water);
 		if(       magma.isValid()) shaders.put("magma", magma);
 		if(    caustics.isValid()) shaders.put("water_caustics", caustics);
@@ -266,9 +268,15 @@ public class Shader
 		}
 	}
 	
-	public void loadMatrix(GL2 gl, float[] matrix)
+	public void loadModelMatrix(GL2 gl, float[] matrix)
 	{
 		int modelMatrix = gl.glGetUniformLocation(shaderID, "ModelMatrix");
 		gl.glUniformMatrix4fv(modelMatrix, 1, false, matrix, 0);
+	}
+	
+	public void loadMatrix(GL2 gl, String uniform, float[] matrix)
+	{
+		int matrixID = gl.glGetUniformLocation(shaderID, uniform);
+		gl.glUniformMatrix4fv(matrixID, 1, false, matrix, 0);
 	}
 }

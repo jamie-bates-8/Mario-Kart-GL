@@ -41,5 +41,12 @@ void main(void)
 	
 	vec4 linearColor = ambient + attenuation * (diffuse + specular);
 	
-	gl_FragColor = vec4(linearColor.rgb, 1.0);
+	gl_FragData[0] = vec4(linearColor.rgb, 1.0);
+	
+	vec3 brightColor = max(linearColor.rgb - vec3(1.0), vec3(0.0));
+	
+    float bright = dot(brightColor, vec3(1.0));
+    bright = smoothstep(0.0, 0.5, bright);
+    
+    gl_FragData[1] = vec4(mix(vec3(0.0), linearColor.rgb, bright), 1.0);	
 }

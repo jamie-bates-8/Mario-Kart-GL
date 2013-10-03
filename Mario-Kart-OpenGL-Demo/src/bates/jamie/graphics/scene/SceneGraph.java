@@ -21,5 +21,5 @@ public class SceneGraph
 	
 	public void renderGhost(GL2 gl, float fade, Shader shader) { root.renderGhost(gl, fade, shader); }
 	
-	public void renderColor(GL2 gl, float[] color) { root.renderColor(gl, color); }
+	public void renderColor(GL2 gl, float[] color, Reflector reflector) { root.renderColor(gl, color, reflector); }
 }

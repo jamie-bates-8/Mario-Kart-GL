@@ -30,6 +30,8 @@ public class DriftParticle extends Particle
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{
+//		flat = true;
+		
 		gl.glPushMatrix();
 		{	
 			gl.glTranslatef(c.x, c.y, c.z);
@@ -37,8 +39,8 @@ public class DriftParticle extends Particle
 			gl.glRotatef((flat) ? -90 : 0, 1, 0, 0);
 			gl.glRotatef(rotation, 0, 0, 1);
 			
-			if(miniature) gl.glScalef(0.4f, 1.5f, 0.4f);
-			else gl.glScalef(0.8f, 3.0f, 0.8f);
+			if(miniature) gl.glScalef(0.4f, 1.5f, 0);
+			else          gl.glScalef(0.8f, 3.0f, 0);
 			gl.glTranslatef(0, 0.2f, 0);
 			
 			gl.glDepthMask(false);

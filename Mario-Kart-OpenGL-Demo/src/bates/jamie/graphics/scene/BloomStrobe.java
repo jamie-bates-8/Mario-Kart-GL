@@ -150,6 +150,8 @@ public class BloomStrobe
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
 		
+		if(scene.displayLight) for(Light l : scene.lights) l.render(gl);
+		
 		gl.glDrawBuffers(2, attachments, 0);
 		
 		scene.renderParticles(gl, car);
