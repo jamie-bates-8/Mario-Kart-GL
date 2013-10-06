@@ -14,8 +14,10 @@ import javax.media.opengl.glu.GLUquadric;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
+import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
@@ -37,6 +39,8 @@ public class BlueShell extends Shell
 	private static Texture[] textures;
 	private static Texture shellTop;
 	private static Texture noiseSampler;
+	
+	public static Light blastLight;
 	
 	static
 	{
@@ -68,6 +72,16 @@ public class BlueShell extends Shell
 			gl.glNewList(shellList, GL2.GL_COMPILE);
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
+			
+			float[] blastColor = {RGB.INDIGO[0]/255, RGB.INDIGO[1]/255, RGB.INDIGO[2]/255};
+			
+			blastLight = new Light(gl, new Vec3(), blastColor, blastColor, blastColor);
+		    
+			blastLight.setConstantAttenuation(0.5f);
+			blastLight.setLinearAttenuation(0.001f);
+			blastLight.setQuadraticAttenuation(0.001f);
+			blastLight.enableAttenuation = true;
+			blastLight.disable(gl);
 		}
 		
 		if(spikeList == -1)
@@ -104,12 +118,12 @@ public class BlueShell extends Shell
 				gl.glRotatef(rotation, 0, -1, 0);
 				gl.glScalef(1.5f, 1.5f, 1.5f);
 				
-				Shader shader = Shader.enabled ? Shader.get("phong_texture") : null;
+				Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong_texture") : Shader.get("texture_lights")) : null;
 				if(shader != null) shader.enable(gl);
 				
 				gl.glCallList(shellList);
 				
-				shader = Shader.enabled ? Shader.get("phong") : null;
+				shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong") : Shader.get("phong_lights")) : null;
 				if(shader != null) shader.enable(gl);
 				
 				gl.glCallList(rimList);
@@ -124,50 +138,57 @@ public class BlueShell extends Shell
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 			if(!Scene.reflectMode) gl.glDrawBuffers(2, attachments, 0);
 
-//			BlastParticle.renderList(gl, blast);
-			
-			GLU glu = new GLU();
-			
-			Shader shader = Shader.enabled ? Shader.get("dissolve") : null;
-			if(shader != null)
-			{
-				shader.enable(gl);
-				
-				shader.setSampler(gl, "cloudSampler", 0);
-				shader.setUniform(gl, "dissolveFactor", 1.0f - ((float) blastDuration / 60.0f));
-			}
-			
-			gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-			gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-			
-			gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
-			gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
-			
-			gl.glEnable(GL2.GL_TEXTURE_2D);
-			
-			GLUquadric sphere = glu.gluNewQuadric();
-			
-			glu.gluQuadricDrawStyle(sphere, GLU.GLU_FILL);
-			glu.gluQuadricTexture  (sphere, true);
-			
-			gl.glPushMatrix();
-			{
-				noiseSampler.bind(gl);
-				noiseSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
-				
-				gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
-				
-				glu.gluSphere(sphere, blastRadius, 24, 24);
-			}
-			gl.glPopMatrix();
-			
-			gl.glDisable(GL2.GL_TEXTURE_GEN_S);
-			gl.glDisable(GL2.GL_TEXTURE_GEN_T);
+			if(Scene.singleton.enableBloom) renderBlast(gl);
+			else BlastParticle.renderList(gl, blast);
 			
 			if(!Scene.reflectMode) gl.glDrawBuffers(1, attachments, 0);
 			
 			Shader.disable(gl);
 		}
+		
+		if(blastDuration <= 1) blastLight.disable(gl); 
+		else blastLight.enable(gl);
+	}
+
+	private void renderBlast(GL2 gl)
+	{
+		GLU glu = new GLU();
+		
+		Shader shader = Shader.enabled ? Shader.get("dissolve") : null;
+		if(shader != null)
+		{
+			shader.enable(gl);
+			
+			shader.setSampler(gl, "cloudSampler", 0);
+			shader.setUniform(gl, "dissolveFactor", 1.0f - ((float) blastDuration / 60.0f));
+		}
+		
+		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
+		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
+		
+		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
+		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
+		
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		GLUquadric sphere = glu.gluNewQuadric();
+		
+		glu.gluQuadricDrawStyle(sphere, GLU.GLU_FILL);
+		glu.gluQuadricTexture  (sphere, true);
+		
+		gl.glPushMatrix();
+		{
+			noiseSampler.bind(gl);
+			noiseSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+			
+			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
+			
+			glu.gluSphere(sphere, blastRadius, 24, 24);
+		}
+		gl.glPopMatrix();
+		
+		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
+		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 	}
 	
 	@Override
@@ -201,6 +222,8 @@ public class BlueShell extends Shell
 			
 			for(Particle particle : blast) particle.update();
 			Particle.removeParticles(blast);
+			
+			blastLight.setPosition(getPosition());
 		}
 	}
 	

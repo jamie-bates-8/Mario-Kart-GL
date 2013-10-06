@@ -25,8 +25,8 @@ void main(void)
 
     if (afterGlow)
     {
-        temp *= 0.6;
-        temp += 0.4 * texture2D(sampler5, gl_TexCoord[0].st);
+        //temp *= 0.6;
+        //temp += 0.4 * texture2D(sampler5, gl_TexCoord[0].st);
     }
 
     gl_FragColor = vec4(temp.rgb, texture2D(sampler0, gl_TexCoord[0].st).a);

@@ -65,7 +65,7 @@ public class SceneNode
 			{
 				case TEXTURE:
 				{
-					Shader shader = Shader.enabled ? Shader.get("phong_texture") : null;
+					Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong_texture") : Shader.get("texture_lights")) : null;
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -75,13 +75,13 @@ public class SceneNode
 				}
 				case COLOR  :
 				{
-					Shader shader = Shader.enabled ? Shader.get("phong") : null;
+					Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong") : Shader.get("phong_lights")) : null;
 					if(shader != null) shader.enable(gl);
 					break;
 				}
 				case REFLECT:
 				{
-					Shader shader = Shader.enabled ? Shader.get("phong_cube") : null;
+					Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong_cube") : Shader.get("cube_lights")) : null;
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -188,7 +188,7 @@ public class SceneNode
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
-			Shader shader = Shader.enabled ? (reflector != null ? Shader.get("star_power") : Shader.get("phong_cube")) : null;
+			Shader shader = Shader.enabled ? (reflector != null ? Shader.get("star_power") : Shader.get("phong")) : null;
 			if(shader != null && reflector != null)
 			{
 				shader.enable(gl);

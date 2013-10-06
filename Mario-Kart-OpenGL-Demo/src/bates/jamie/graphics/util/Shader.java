@@ -50,12 +50,17 @@ public class Shader
 		
 		// load and compile shaders from file
 		Shader phong        = new Shader(gl, "phong", "phong");
+		Shader phongLights  = new Shader(gl, "phong_lights", "phong_lights");
 		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
+		Shader phongAlpha   = new Shader(gl, "phong_texture", "phong_alpha");
+		Shader texLights    = new Shader(gl, "texture_lights", "texture_lights");
 		Shader bump         = new Shader(gl, "bump", "bump", attributes);
 		Shader bumpLights   = new Shader(gl, "bump_lights", "bump_lights", attributes);
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
+		Shader shadowLights = new Shader(gl, "shadow_lights", "shadow_lights");
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
+		Shader cubeLights   = new Shader(gl, "cube_lights", "cube_lights");
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
@@ -76,12 +81,17 @@ public class Shader
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
+		if( phongLights.isValid()) shaders.put("phong_lights", phongLights);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
+		if(  phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
+		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
+		if(shadowLights.isValid()) shaders.put("shadow_lights", shadowLights);
 		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
+		if(  cubeLights.isValid()) shaders.put("cube_lights", cubeLights);
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
 		if(   starPower.isValid()) shaders.put("star_power", starPower);

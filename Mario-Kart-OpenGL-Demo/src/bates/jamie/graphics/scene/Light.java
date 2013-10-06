@@ -51,7 +51,7 @@ public class Light extends AnchorPoint
 	private float linearAttenuation    = 0.02f;
 	private float quadraticAttenuation = 0.00f;
 	
-	private float originalAttenuation = 0.020f;
+	private float originalAttenuation = 0.02f;
 	
 	private int shininess = 128;
 

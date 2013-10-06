@@ -17,7 +17,7 @@ public class Reflector
 	private int frameBuffer;
 	private int renderBuffer;
 	
-	private int mapSize = 640; // based on canvas height
+	private int mapSize = 320; // based on canvas height
 	private int maxSize;
 	
 	public float reflectivity;
@@ -186,6 +186,7 @@ public class Reflector
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 			
 			for(Light l : scene.lights) l.setup(gl);
+			for(Light l : scene.getCars().get(0).driftLights) l.setup(gl);
 			
 			Scene.environmentMode = true;
 			scene.renderWorld(gl);

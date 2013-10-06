@@ -326,6 +326,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public Light light;
 	public int lightID = 0;
 	
+	public boolean singleLight  = false;
 	public boolean enableLight  = true;
 	public boolean moveLight    = false;
 	public boolean displayLight = false;
@@ -1148,7 +1149,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    caster = new ShadowCaster(this, light);
 	    
-	    reflector = new Reflector(this, 0.00f);
+	    reflector = new Reflector(this, 0.75f);
 	    reflector.setup(gl);
 	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1163,7 +1164,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    floorList = gl.glGenLists(1);
 	    gl.glNewList(floorList, GL2.GL_COMPILE);
-//	    Renderer.displayTexturedObject(gl, floorFaces);
 	    Renderer.displayTexturedObject(gl, floorFaces);
 	    gl.glEndList();
 	    
@@ -1447,6 +1447,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			for(Light l : lights) l.setup(gl);
 			car.starLight.setup(gl);
 			for(Light l : car.driftLights) l.setup(gl);
+			BlueShell.blastLight.setup(gl);
 			
 			if(enableShadow && Shader.enabled)
 			{
@@ -1468,30 +1469,28 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			bananasRendered = 0;
 			
-//			if(enableBloom) bloom.render(gl);
-//			else
+			if(enableBloom) bloom.render(gl);
+			else
 			{
 				if(enableReflection) displayReflection(gl, car);
-				
+
 				if(terrain != null && terrain.enableWater) renderWater(gl, car);
-				
+
 				renderWorld(gl);
 				render3DModels(gl, car);
-				
+
 				renderTimes[frameIndex][4] = renderParticles(gl, car);
 				Particle.resetTexture();
-				
+
 				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 				else renderTimes[frameIndex][1] = 0;
-				
+
 				if(terrain != null && terrain.enableWater) 
 				{
 					water.setRefraction(gl);
 					water.render(gl, car.camera.getPosition());
 				}
 			}
-
-			if(enableBloom) bloom.render(gl);
 			
 			if(enableFocalBlur)
 			{
@@ -1926,15 +1925,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 //				gl.glScalef(40.0f, 40.0f, 40.0f);
 				
-				Shader shader = enableBump ? Shader.get("bump") : Shader.get("phong_shadow");
+				Shader shader = enableBump ? (singleLight ? Shader.get("bump") : Shader.get("bump_lights")) :
+					                         (singleLight ? Shader.get("phong_shadow") : Shader.get("shadow_lights"));
 				
 				shader.enable(gl);
 				shader.setSampler(gl, "texture", 0);
 				shader.setSampler(gl, "bumpmap", 1);
 				shader.setUniform(gl, "enableParallax", Scene.enableParallax);
-				
-//				Shader shader = Shader.get("phong_shadow");
-//				shader.enable(gl);
 				
 				if(enableShadow && shader != null)
 				{
@@ -2221,6 +2218,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		long start = System.nanoTime();
 		
+		Shader shader = Shader.enabled ? Shader.get("phong_alpha") : null;
+		if(shader != null)
+		{
+			shader.enable(gl);
+			shader.setUniform(gl, "alphaTest", 0.25f);
+		}
+		
 		switch(foliageMode)
 		{
 			case 0: 
@@ -2241,6 +2245,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case 2: BillBoard.renderQuads(gl, foliage, car.trajectory); break;
 		}
 		
+		Shader.disable(gl);
+		
 		return System.nanoTime() - start;
 	}
 
@@ -2249,7 +2255,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 		
 		gl.glDisable(GL_TEXTURE_2D);
-		test(gl);
+//		test(gl);
 		gl.glDisable(GL2.GL_LIGHTING);
 		
 		
@@ -2316,7 +2322,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	private void test(GL2 gl)
+	public void test(GL2 gl)
 	{		
 		Shader shader = Shader.enabled ? Shader.get("aberration") : null;
 		
@@ -2565,33 +2571,33 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	}
 	    }
 	    
-//	    for(int i = 0; i < 30; i++)
-//	    {
-//	    	int t = 4 + generator.nextInt(4);
-//	    	
-//	    	Vec3 p = new Vec3();
-//	    	
-//	    	p.x = generator.nextFloat() * 360 - 180;
-//	    	p.z = generator.nextFloat() * 360 - 180;
-//	    	
-//	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-//	    	
-//	    	foliage.add(new BillBoard(p, 30, t));
-//	    }
-//	    
-//	    for(int i = 0; i < 30; i++)
-//	    {
-//	    	int t = 8 + generator.nextInt(2);
-//	    	
-//	    	Vec3 p = new Vec3();
-//	    	
-//	    	p.x = generator.nextFloat() * 360 - 180;
-//	    	p.z = generator.nextFloat() * 360 - 180;
-//	    	
-//	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-//
-//	    	foliage.add(new BillBoard(p, 4, t));
-//	    }
+	    for(int i = 0; i < 30; i++)
+	    {
+	    	int t = 4 + generator.nextInt(4);
+	    	
+	    	Vec3 p = new Vec3();
+	    	
+	    	p.x = generator.nextFloat() * 360 - 180;
+	    	p.z = generator.nextFloat() * 360 - 180;
+	    	
+	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+	    	
+	    	foliage.add(new BillBoard(p, 30, t));
+	    }
+	    
+	    for(int i = 0; i < 30; i++)
+	    {
+	    	int t = 8 + generator.nextInt(2);
+	    	
+	    	Vec3 p = new Vec3();
+	    	
+	    	p.x = generator.nextFloat() * 360 - 180;
+	    	p.z = generator.nextFloat() * 360 - 180;
+	    	
+	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+
+	    	foliage.add(new BillBoard(p, 4, t));
+	    }
 	}
 	
 	public void updateFoliage()
@@ -2735,7 +2741,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 	
-	public static boolean occludeSphere = true;
+	public static boolean occludeSphere = false;
 	
 	public void shiftEvent(KeyEvent e)
 	{
@@ -2761,6 +2767,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_S: ShadowCaster.cycle(); break;
 			case KeyEvent.VK_Z: enableShadow = !enableShadow; break;
 			case KeyEvent.VK_L: lightID++; lightID %= 4; light = lights[lightID]; break;
+			case KeyEvent.VK_K: singleLight = !singleLight; break;
+			case KeyEvent.VK_J: displayLight = !displayLight; break;
 			
 			default: break;
 		}
@@ -2816,8 +2824,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		rightClick = SwingUtilities.isRightMouseButton(e);
 		mousePressed = true;
-		
-		bloom.increaseIncrement();
 	}
 
 	public void mouseReleased(MouseEvent e)

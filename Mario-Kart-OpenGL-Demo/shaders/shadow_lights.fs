@@ -1,14 +1,14 @@
-// bump.fs
-//
-// per-pixel bumpmapped Phong lighting
+// ADS Point Lighting
+// Phong Shading
+// Single Texture Map
+// Shadow Mapping
 
-uniform sampler2D texture;
-uniform sampler2D bumpmap;
-
+varying vec3 vertexNormal;
 varying vec3 lightDir[8];
 varying vec3 eyeDir;
 varying vec4 shadowCoord;
 
+uniform sampler2D texture;
 uniform sampler2DShadow shadowMap;
 
 uniform bool enableShadow;
@@ -18,7 +18,6 @@ const float epsilon = 0.05;
 float illumination = 0.5;
 
 uniform vec2 texScale;
-uniform bool enableParallax;
 
 float lookup(float x, float y)
 {
@@ -96,22 +95,10 @@ void pointLight(in int i, in vec3 normal, in vec4 textureColor, inout vec4 ambie
 }
 
 void main(void)
-{
-	float height, scale = 0.05, bias = 0.0125;
-	vec2 texCoord = gl_TexCoord[0].st;
-	
-	if(enableParallax)
-	{
-		height = scale * texture2D(bumpmap, texCoord).a - bias;
-		texCoord += height * normalize(eyeDir).xy;
-	}
-	
-    vec3 normal = texture2D(bumpmap, texCoord).rgb;
-    normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]
-             						        
-    float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
+{ 
+	float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
           						         
-    vec4 textureColor = texture2D(texture, texCoord);
+    vec4 textureColor = texture2D(texture, gl_TexCoord[0].st);
     vec4 ambient, diffuse, specular;
     ambient  = vec4(0.0);
     diffuse  = vec4(0.0);
@@ -119,7 +106,7 @@ void main(void)
     
     for(int i = 0; i < 8; i++)
     {
-    	pointLight(i, normal, textureColor, ambient, diffuse, specular);
+    	pointLight(i, vertexNormal, textureColor, ambient, diffuse, specular);
     }
              						         
 	vec4 linearColor = shadowCoefficient * (ambient + diffuse + specular);
