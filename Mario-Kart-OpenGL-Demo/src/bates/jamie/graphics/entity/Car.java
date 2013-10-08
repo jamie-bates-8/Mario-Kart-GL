@@ -1220,8 +1220,16 @@ public class Car
 			high_graph.getRoot().setScale(new Vec3(scale));
 		}
 		
-		if(boostDuration > 0) boostDuration--;
-		else boosting = false;
+		if(boostDuration > 0)
+		{
+			scene.focalBlur.blurFactor = (float) boostDuration / 60.0f;
+			boostDuration--;
+		}
+		else
+		{
+			boosting = false;
+			scene.focalBlur.enableRadial = false;
+		}
 		
 		if(boosting)
 		{
@@ -1277,6 +1285,7 @@ public class Car
 		if(driftState == DriftState.BLUE)
 		{
 			boosting = true;
+			scene.focalBlur.enableRadial = true;
 			boostDuration = 20;
 			velocity += 0.6;
 			
@@ -1529,6 +1538,7 @@ public class Car
 	public void boost()
 	{
 		boosting = true;
+		scene.focalBlur.enableRadial = true;
 		boostDuration = 60;
 		velocity = 2 * TOP_SPEED;
 	}

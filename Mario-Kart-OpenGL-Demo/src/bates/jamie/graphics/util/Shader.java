@@ -72,12 +72,12 @@ public class Shader
 		Shader grass        = new Shader(gl, "grass", "grass");
 		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
 		
-		Shader ball         = new Shader(gl, "hdr_ball", "hdr_ball");
 		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
 		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
 		Shader mirage       = new Shader(gl, "show_texture", "mirage");
 		Shader combine      = new Shader(gl, "show_texture", "combine");
 		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
+		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
@@ -103,12 +103,12 @@ public class Shader
 		if(       grass.isValid()) shaders.put("grass", grass);
 		if(    dissolve.isValid()) shaders.put("dissolve", dissolve);
 		
-		if(        ball.isValid()) shaders.put("ball", ball);
 		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
 		if(  depthField.isValid()) shaders.put("depth_field", depthField);
 		if(      mirage.isValid()) shaders.put("heat_haze", mirage);
 		if(     combine.isValid()) shaders.put("combine", combine);
 		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
+		if( crepuscular.isValid()) shaders.put("crepuscular", crepuscular);
 	}
 	
 	public static Shader get(String name) { return shaders.get(name); }

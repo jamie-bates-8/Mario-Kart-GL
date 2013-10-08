@@ -36,6 +36,18 @@ public class FocalBlur
 	public boolean enableMirage = false;
 	private float timer = 0;
 	
+	public boolean enableRadial = false;
+	
+	public float decay    = 0.75f;
+	public float exposure = 0.40f;
+	public float weight   = 0.50f;
+	public float density  = 0.01f;
+	
+	public float blurFactor = 0.0f;
+	
+	public int samples = 10;
+	
+	
 	public FocalBlur(Scene scene)
 	{
 		this.scene = scene;
@@ -215,7 +227,7 @@ public class FocalBlur
 		gl.glActiveTexture(GL2.GL_TEXTURE3);
 		mirageTexture.bind(gl);
 		
-		Shader shader = enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field");
+		Shader shader = (enableRadial && scene.enableRadial) ? Shader.get("crepuscular") : (enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field"));
 		if(shader == null) return;
 		
 		shader.enable(gl);
@@ -223,6 +235,16 @@ public class FocalBlur
 		shader.setSampler(gl, "sceneSampler" , 1);
 		shader.setSampler(gl, "depthSampler" , 2);
 		shader.setSampler(gl, "normalSampler", 3);
+		
+		if(enableRadial && scene.enableRadial)
+		{
+			shader.setUniform(gl, "decay"   , decay   );
+			shader.setUniform(gl, "exposure", exposure);
+			shader.setUniform(gl, "weight"  , weight  );
+			shader.setUniform(gl, "density" , density + blurFactor * 0.09f);
+			
+			shader.setUniform(gl, "samples", samples);
+		}
 		
 		if(enableMirage) shader.setUniform(gl, "timer", timer += 0.05);
 		

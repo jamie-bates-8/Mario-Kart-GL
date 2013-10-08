@@ -45,7 +45,7 @@ public class Light extends AnchorPoint
 	private float[] specular = {1.0f, 1.0f, 1.0f, 1.0f};
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
 	
-	public boolean enableAttenuation = false;
+	public boolean enableAttenuation = true;
 	
 	private float constantAttenuation  = 0.50f;
 	private float linearAttenuation    = 0.02f;

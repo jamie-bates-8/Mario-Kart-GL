@@ -21,8 +21,8 @@ public class Water
 	private float timer = 0;
 	private float increment = 0.05f;
 	
-	public boolean frozen = true;
-	public boolean magma = false;
+	public boolean frozen = false;
+	public boolean magma  = false;
 	
 	public Water(Scene scene)
 	{

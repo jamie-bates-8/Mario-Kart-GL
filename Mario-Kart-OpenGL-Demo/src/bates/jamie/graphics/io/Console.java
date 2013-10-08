@@ -90,12 +90,25 @@ public class Console
 		
 	         if(_cmd.equalsIgnoreCase("bloom")) scene.enableBloom = cmd.nextBoolean();
 	    else if(_cmd.equalsIgnoreCase("focalblur")) Scene.enableFocalBlur = cmd.nextBoolean();
+	    else if(_cmd.equalsIgnoreCase("radialblur")) parseRadial(cmd);    
 	    else if(_cmd.equalsIgnoreCase("mirage"))
 	    {
 	    	boolean enabled = cmd.nextBoolean();
 	    	if(enabled) Scene.enableFocalBlur = true;
 	    	scene.focalBlur.enableMirage = enabled;
 	    }
+	}
+	
+	private void parseRadial(Scanner cmd)
+	{
+		String _cmd = cmd.next();
+		
+	         if(_cmd.equalsIgnoreCase(   "decay")) scene.focalBlur.decay    = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase("exposure")) scene.focalBlur.exposure = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase( "density")) scene.focalBlur.density  = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase(  "weight")) scene.focalBlur.weight   = cmd.nextFloat();
+	         
+	    else if(_cmd.equalsIgnoreCase( "samples")) scene.focalBlur.samples = cmd.nextInt();
 	}
 	
 	private void parseGrass(Scanner cmd)

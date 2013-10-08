@@ -330,7 +330,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableLight  = true;
 	public boolean moveLight    = false;
 	public boolean displayLight = false;
-	public boolean synchLights  = false;
+	public boolean synchLights  = true;
 	
 	
 	/** Shadow Fields **/
@@ -384,7 +384,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	private int boostCounter = 0;
-	public boolean enableBlur = true;
+	
+	public boolean enableBlur   = false;
+	public boolean enableRadial = true;
 	
 	
 	public boolean enableTerrain = true;

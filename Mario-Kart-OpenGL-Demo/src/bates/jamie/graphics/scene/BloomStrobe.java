@@ -34,7 +34,6 @@ public class BloomStrobe
 	private int rboID; // render buffer object name
 	private int pboID; // pixel buffer object name 
 	
-	private float bloomLimit = 1.0f;
 	private float[][] offsets = new float[4][5 * 5 * 2]; // 5 based on size of gaussian
 	
 	private boolean afterGlowValid = false;
@@ -58,13 +57,9 @@ public class BloomStrobe
 	
 	public void setupShaders(GL2 gl)
 	{
-		Shader ball     = Shader.get("ball");
 		Shader gaussian = Shader.get("gaussian");
 		Shader combine  = Shader.get("combine");
 		Shader show2D   = Shader.get("show_texture");
-		
-		ball.enable(gl);
-	    ball.setUniform(gl, "bloomLimit", bloomLimit);
 	    
 	    gaussian.enable(gl);
 	    gaussian.setSampler(gl, "sampler0", 0);
