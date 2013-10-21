@@ -129,6 +129,10 @@ public class Vector
 		return w;
 	}
 	
+	/**
+	 * An explanation of this method can be found at:
+	 * http://en.wikipedia.org/wiki/Cross_product
+	 */
 	public static float[] cross(float[] u, float[] v)
 	{
 		float[] w = new float[3];
@@ -140,6 +144,10 @@ public class Vector
 		return w;
 	}
 	
+	/**
+	 * An explanation of this method can be found at:
+	 * http://www.terathon.com/code/tangent.html
+	 */
 	public static float[] tangent(float[] p1, float[] p2, float[] p3,
 			                      float[] t1, float[] t2, float[] t3)
 	{

@@ -350,6 +350,7 @@ public abstract class Item
 			falling = thrown = false;
 			fallRate = 0;
 		}
+		else falling = true;
 	}
 	
 	public float[] getHeights(Collection<Quadtree> trees)
@@ -359,19 +360,7 @@ public abstract class Item
 		Quadtree[] _trees = new Quadtree[4];
 		
 		for(int i = 0; i < 4; i++)
-		{
-			float max = 0;
-			float[] vertex = vertices[i].toArray();
-			
-			for(Quadtree tree : trees)
-			{
-				Quadtree cell = tree.getCell(vertex, tree.detail);
-				float h = (cell != null) ? cell.getHeight(vertex) : 0;
-				if(h > max && !tree.enableBlending) { max = h; _trees[i] = tree; }
-			}
-
-			heights[i] = max;
-		}
+			heights[i] = scene.getTerrain().getHeight(trees, vertices[i].toArray());
 		
 		setHeight();
 		

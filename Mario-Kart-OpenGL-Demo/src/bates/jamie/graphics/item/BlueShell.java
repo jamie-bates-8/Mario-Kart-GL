@@ -14,6 +14,7 @@ import javax.media.opengl.glu.GLUquadric;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
@@ -205,7 +206,9 @@ public class BlueShell extends Shell
 			
 			if(scene.enableTerrain)
 			{
-				float h = scene.getTerrain().getHeight(getPosition().toArray());
+				Terrain terrain = scene.getTerrain();
+				float h = terrain.getHeight(terrain.trees.values(), getPosition().toArray());
+				
 				if(bound.c.y - bound.getMaximumExtent() <= h) destroy();
 			}
 	
@@ -224,6 +227,9 @@ public class BlueShell extends Shell
 			Particle.removeParticles(blast);
 			
 			blastLight.setPosition(getPosition());
+			scene.focalBlur.blurCentre = blastLight.getPosition();
+			scene.focalBlur.enableRadial = true;
+			scene.focalBlur.blurFactor = (float) blastDuration / 60.0f;
 		}
 	}
 	

@@ -365,6 +365,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableObstacles = false;
 	
 	private List<OBB> wallBounds;
+	private OBB floorBound;
 	public BlockFort fort;
 	
 	
@@ -394,7 +395,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
 	public List<BillBoard> foliage;
-	public GrassPatch grassPatch;
+	public GrassPatch[] grassPatch;
 	
 	public String terrainCommand = "";
 	public static final String DEFAULT_TERRAIN = "128 1000 20 6 18 0.125 1.0";
@@ -1193,11 +1194,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    for(String tree : trees)
 				listModel.addElement(tree);
 		    
-		    grassPatch = new GrassPatch(gl, terrain.trees.get("Base"), ORIGIN, 128, 1.0f);
+		    generateFoliage(gl, 20);
 	    }
 	    
 	    if(enableShadow) caster.setup(gl);
 	    
+	    floorBound = new OBB(0, -15, 0, 0, 0, 0, 240, 15, 240);
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
 	    selecter = new ModelSelecter(this, glu);
@@ -1372,7 +1374,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition());
 //		reflector.update(gl, new Vec3(0, 20, 0));
 		
-		     if(sphereMap) reflector.displayMap(gl);
+		if(sphereMap) reflector.displayMap(gl);
 //		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
 		else render(gl);
 
@@ -1492,6 +1494,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					water.setRefraction(gl);
 					water.render(gl, car.camera.getPosition());
 				}
+				
+				if(displayLight && !moveLight)
+					for(Light l : lights) l.render(gl);
 			}
 			
 			if(enableFocalBlur)
@@ -1519,11 +1524,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				gl.glAccum(GL_RETURN, 1.0f);
 			}
 			else i--;
-			
-			if(displayLight && !moveLight)
-			{
-				for(Light l : lights) l.render(gl);
-			}
 			
 			renderTimes[frameIndex][5] = renderBounds(gl);
 			renderTimes[frameIndex][6] = car.renderHUD(gl, glu);
@@ -1644,6 +1644,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		long start = System.currentTimeMillis();
 		
+		focalBlur.enableRadial = false;
+		
 		if(mousePressed) modifyTerrain(gl);
 		
 		removeItems();
@@ -1710,7 +1712,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			float   h = (rightClick ? -0.5f : 0.5f);
 			
 			terrain.tree.deform(p, r, h);
-			grassPatch.updateHeights(gl);
+			for(GrassPatch patch : grassPatch) patch.updateHeights(gl);
 		}
 	}
 
@@ -2220,34 +2222,36 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		long start = System.nanoTime();
 		
-		Shader shader = Shader.enabled ? Shader.get("phong_alpha") : null;
-		if(shader != null)
-		{
-			shader.enable(gl);
-			shader.setUniform(gl, "alphaTest", 0.25f);
-		}
+//		Shader shader = Shader.enabled ? Shader.get("phong_alpha") : null;
+//		if(shader != null)
+//		{
+//			shader.enable(gl);
+//			shader.setUniform(gl, "alphaTest", 0.25f);
+//		}
+//		
+//		switch(foliageMode)
+//		{
+//			case 0: 
+//			{
+//				gl.glPushMatrix();
+//				{	
+//					for(BillBoard b : foliage)
+//					{
+//						if(car.isSlipping()) b.render(gl, car.slipTrajectory);
+//						else b.render(gl, car.trajectory);
+//					}
+//				}	
+//				gl.glPopMatrix();
+//				
+//				break;
+//			}
+//			case 1: BillBoard.renderPoints(gl, foliage); break;
+//			case 2: BillBoard.renderQuads(gl, foliage, car.trajectory); break;
+//		}
+//		
+//		Shader.disable(gl);
 		
-		switch(foliageMode)
-		{
-			case 0: 
-			{
-				gl.glPushMatrix();
-				{	
-					for(BillBoard b : foliage)
-					{
-						if(car.isSlipping()) b.render(gl, car.slipTrajectory);
-						else b.render(gl, car.trajectory);
-					}
-				}	
-				gl.glPopMatrix();
-				
-				break;
-			}
-			case 1: BillBoard.renderPoints(gl, foliage); break;
-			case 2: BillBoard.renderQuads(gl, foliage, car.trajectory); break;
-		}
-		
-		Shader.disable(gl);
+		for(GrassPatch patch : grassPatch) patch.render(gl);
 		
 		return System.nanoTime() - start;
 	}
@@ -2273,11 +2277,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				if(car.colliding)
 					 car.bound.displayVertices(gl, glut, RGB.PURE_RED_3F, smoothBound);
-				else car.bound.displayVertices(gl, glut, RGB.WHITE_3F, smoothBound);
+				else car.bound.displayVertices(gl, glut, RGB.WHITE_3F   , smoothBound);
 			}
 		
-			for(OBB wall : wallBounds) wall.displayVertices(gl, glut, RGB.WHITE_3F, smoothBound);
-			for(OBB wall : fort.getBounds()) wall.displayVertices(gl, glut, RGB.WHITE_3F, smoothBound);
+			for(Bound bound : bounds)
+			{
+				OBB obb = (OBB) bound;
+				obb.displayVertices(gl, glut, RGB.WHITE_3F, smoothBound);
+			}
 		}
 		
 		if(enableOBBWireframes)
@@ -2286,7 +2293,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				if(car.colliding)
 					 car.bound.displayWireframe(gl, RGB.PURE_RED_3F, smoothBound);
-				else car.bound.displayWireframe(gl, RGB.BLACK_3F, smoothBound);
+				else car.bound.displayWireframe(gl, RGB.BLACK_3F   , smoothBound);
 			}
 			
 			for(Bound bound : bounds)
@@ -2297,15 +2304,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 						 bound.displayWireframe(gl, RGB.PURE_RED_3F, smoothBound);
 						 break;
 					}
-					else bound.displayWireframe(gl, RGB.BLACK_3F, smoothBound);
+					else bound.displayWireframe(gl, RGB.BLACK_3F   , smoothBound);
 				}
 		}
 		
 		if(enableOBBAxes)
 		{
 			for(Car car : cars) car.bound.displayAxes(gl, 10);
-			for(OBB wall : wallBounds) wall.displayAxes(gl, 20);
-			for(OBB wall : fort.getBounds()) wall.displayAxes(gl, 20);
+			
+			for(Bound bound : bounds)
+			{
+				OBB obb = (OBB) bound;
+				obb.displayAxes(gl, 20);
+			}
 		}
 		
 		if(enableOBBSolids)
@@ -2461,8 +2472,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		List<Bound> bounds = new ArrayList<Bound>();
 		
-		bounds.addAll(wallBounds);
+		if(!enableTerrain ) bounds.add(floorBound);              
 		if(enableObstacles) bounds.addAll(fort.getBounds());
+							bounds.addAll(wallBounds);
 		
 		return bounds;
 	}
@@ -2530,6 +2542,26 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		System.out.printf("Foliage Generated: (%d) %d ms\n", foliage.size(), (System.currentTimeMillis() - start));
 	}
+	
+	public void generateFoliage(GL2 gl, int patches)
+	{
+		grassPatch = new GrassPatch[patches];
+		
+		Random generator = new Random();
+		
+		for(int i = 0; i < patches; i++)
+		{
+			int size = 2 + generator.nextInt(3);
+			
+			Vec3 centre = new Vec3();
+	    	
+			centre.x = generator.nextFloat() * 360 - 180;
+			centre.z = generator.nextFloat() * 360 - 180;
+			
+//			grassPatch[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), (int) Math.pow(2, size), 5 * size);
+			grassPatch[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), 8, 10);
+		}	
+	}
 
 	public void generateFoliage(int patches, float spread, int patchSize)
 	{
@@ -2573,33 +2605,33 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    	}
 	    }
 	    
-	    for(int i = 0; i < 30; i++)
-	    {
-	    	int t = 4 + generator.nextInt(4);
-	    	
-	    	Vec3 p = new Vec3();
-	    	
-	    	p.x = generator.nextFloat() * 360 - 180;
-	    	p.z = generator.nextFloat() * 360 - 180;
-	    	
-	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-	    	
-	    	foliage.add(new BillBoard(p, 30, t));
-	    }
-	    
-	    for(int i = 0; i < 30; i++)
-	    {
-	    	int t = 8 + generator.nextInt(2);
-	    	
-	    	Vec3 p = new Vec3();
-	    	
-	    	p.x = generator.nextFloat() * 360 - 180;
-	    	p.z = generator.nextFloat() * 360 - 180;
-	    	
-	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-
-	    	foliage.add(new BillBoard(p, 4, t));
-	    }
+//	    for(int i = 0; i < 30; i++)
+//	    {
+//	    	int t = 4 + generator.nextInt(4);
+//	    	
+//	    	Vec3 p = new Vec3();
+//	    	
+//	    	p.x = generator.nextFloat() * 360 - 180;
+//	    	p.z = generator.nextFloat() * 360 - 180;
+//	    	
+//	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+//	    	
+//	    	foliage.add(new BillBoard(p, 30, t));
+//	    }
+//	    
+//	    for(int i = 0; i < 30; i++)
+//	    {
+//	    	int t = 8 + generator.nextInt(2);
+//	    	
+//	    	Vec3 p = new Vec3();
+//	    	
+//	    	p.x = generator.nextFloat() * 360 - 180;
+//	    	p.z = generator.nextFloat() * 360 - 180;
+//	    	
+//	    	p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+//
+//	    	foliage.add(new BillBoard(p, 4, t));
+//	    }
 	}
 	
 	public void updateFoliage()
@@ -2771,6 +2803,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_L: lightID++; lightID %= 4; light = lights[lightID]; break;
 			case KeyEvent.VK_K: singleLight = !singleLight; break;
 			case KeyEvent.VK_J: displayLight = !displayLight; break;
+			
+			case KeyEvent.VK_V: Model.enableVBO = !Model.enableVBO; break;
 			
 			default: break;
 		}

@@ -122,7 +122,7 @@ void main(void)
     	pointLight(i, normal, textureColor, ambient, diffuse, specular);
     }
              						         
-	vec4 linearColor = shadowCoefficient * (ambient + diffuse + specular);
+	vec4 linearColor = shadowCoefficient * (ambient + diffuse + specular) * gl_Color;
 	
 	gl_FragData[0] = vec4(linearColor.rgb, 1.0);
 	

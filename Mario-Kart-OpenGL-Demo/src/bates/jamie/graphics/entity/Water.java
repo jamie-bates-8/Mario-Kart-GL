@@ -24,6 +24,8 @@ public class Water
 	public boolean frozen = false;
 	public boolean magma  = false;
 	
+	public float seaLevel = 0.0f;
+	
 	public Water(Scene scene)
 	{
 		this.scene = scene;
@@ -127,10 +129,10 @@ public class Water
 				gl.glVertexAttrib3f(1, 0, 0, 1);
 				gl.glNormal3f(0, 1, 0);
 				
-				gl.glVertex3f(+size, 0, +size);
-				gl.glVertex3f(+size, 0, -size);
-				gl.glVertex3f(-size, 0, -size);
-				gl.glVertex3f(-size, 0, +size);
+				gl.glVertex3f(+size, seaLevel, +size);
+				gl.glVertex3f(+size, seaLevel, -size);
+				gl.glVertex3f(-size, seaLevel, -size);
+				gl.glVertex3f(-size, seaLevel, +size);
 			}
 			gl.glEnd();
 			

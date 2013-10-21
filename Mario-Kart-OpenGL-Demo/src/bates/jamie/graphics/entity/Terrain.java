@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 
 import bates.jamie.graphics.entity.Quadtree.Material;
 import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.TextureLoader;
@@ -284,6 +285,7 @@ public class Terrain
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_mine.jpg"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_cave.tga"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "large_stone.jpg"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "paint.jpg"));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -516,7 +518,8 @@ public class Terrain
 	
 	public float getHeight(Collection<Quadtree> trees, float[] p)
 	{
-		float max = 0;
+		float max = Integer.MIN_VALUE;
+		if(enableWater && Scene.singleton.water.frozen) max = Scene.singleton.water.seaLevel;
 		
 		for(Quadtree tree : trees)
 		{
@@ -660,8 +663,8 @@ public class Terrain
 			
 			case KeyEvent.VK_PERIOD: resetQuadtrees(); break;
 			
-			case KeyEvent.VK_QUOTE      : trees.get("Pond").decreaseDetail(); break;
-			case KeyEvent.VK_NUMBER_SIGN: trees.get("Pond").increaseDetail(); break;
+			case KeyEvent.VK_QUOTE      : previousBumpmap(); break;
+			case KeyEvent.VK_NUMBER_SIGN: nextBumpmap(); break;
 			
 			case KeyEvent.VK_COMMA : enableQuadtree = !enableQuadtree; break;
 			
@@ -673,13 +676,7 @@ public class Terrain
 				break;
 			}
 			
-			case KeyEvent.VK_SLASH:
-			{
-				bumpmapID++;
-				bumpmapID %= bumpmaps.size();
-				tree.bumpmap = bumpmaps.get(bumpmapID);
-				break;
-			}
+			case KeyEvent.VK_SLASH: nextBumpmap(); break; // TODO duplicate command
 			
 			case KeyEvent.VK_K:
 			{
@@ -689,6 +686,20 @@ public class Terrain
 				break;
 			}
 		}
+	}
+
+	private void nextBumpmap()
+	{
+		bumpmapID++;
+		bumpmapID %= bumpmaps.size();
+		tree.bumpmap = bumpmaps.get(bumpmapID);
+	}
+	
+	private void previousBumpmap()
+	{
+		bumpmapID--;
+		if(bumpmapID < 0) bumpmapID = bumpmaps.size() - 1;
+		tree.bumpmap = bumpmaps.get(bumpmapID);
 	}
 	
 	public void render(GL2 gl, GLUT glut)

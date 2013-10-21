@@ -11,6 +11,7 @@ import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -44,6 +45,7 @@ public class FocalBlur
 	public float density  = 0.01f;
 	
 	public float blurFactor = 0.0f;
+	public Vec3  blurCentre = new Vec3();
 	
 	public int samples = 10;
 	
@@ -168,6 +170,9 @@ public class FocalBlur
 		
 		if(terrain != null && terrain.enableWater)
 			scene.water.render(gl, car.camera.getPosition());
+		
+		if(scene.displayLight && !scene.moveLight)
+			for(Light l : scene.lights) l.render(gl);
 	}
 	
 	private void depthMode(GL2 gl, boolean enable)
@@ -227,7 +232,8 @@ public class FocalBlur
 		gl.glActiveTexture(GL2.GL_TEXTURE3);
 		mirageTexture.bind(gl);
 		
-		Shader shader = (enableRadial && scene.enableRadial) ? Shader.get("crepuscular") : (enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field"));
+		Shader shader = (enableRadial && scene.enableRadial) ? Shader.get("radial_blur") :
+						(enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field"));
 		if(shader == null) return;
 		
 		shader.enable(gl);
@@ -244,6 +250,8 @@ public class FocalBlur
 			shader.setUniform(gl, "density" , density + blurFactor * 0.09f);
 			
 			shader.setUniform(gl, "samples", samples);
+			
+			shader.setUniform(gl, "focalPosition", blurCentre.toArray());
 		}
 		
 		if(enableMirage) shader.setUniform(gl, "timer", timer += 0.05);

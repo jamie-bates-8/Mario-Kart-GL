@@ -8,14 +8,14 @@ uniform float exposure;
 uniform float weight;
 uniform float density;
 
-varying vec4 lightPosition;
+varying vec4 focalCentre;
 varying vec4 fragPosition;
 
 void main(void)  
 {  
 	vec2 texCoord = gl_TexCoord[0].st;
 
-	vec2 deltaCoord = fragPosition.st - (lightPosition.st / lightPosition.q); 	// Calculate vector from pixel to light source in screen space.
+	vec2 deltaCoord = fragPosition.st - (focalCentre.st / focalCentre.q); 	// Calculate vector from pixel to light source in screen space.
 	deltaCoord *= 1.0 / float(samples) * density;  									// Divide by number of samples and scale by control factor.
 	deltaCoord = clamp(deltaCoord, -0.02, 0.02);
  

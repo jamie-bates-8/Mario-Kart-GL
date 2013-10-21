@@ -48,6 +48,7 @@ import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 
 /* TODO
@@ -654,11 +655,16 @@ public class Car
 	
 	public boolean enableAberration = true;
 	public float opacity = 0.25f;
+	
+	private TimeQuery timeQuery = new TimeQuery(TimeQuery.VEHICLE_ID);
 
 	public void render(GL2 gl)
 	{
 		if(!Scene.shadowMode && !Scene.reflectMode && !Scene.depthMode) updateColor();
 		updateLights(gl);
+		
+		timeQuery.getResult(gl);
+		timeQuery.begin(gl);
 		
 		if(renderMode == 1)
 		{
@@ -714,6 +720,8 @@ public class Car
 			
 			tag.render(gl, ry);
 		}
+		
+		timeQuery.end(gl);
 	}
 
 	private void updateLights(GL2 gl)
@@ -798,8 +806,6 @@ public class Car
 
 	public float[] getHeights()
 	{
-		falling = true;
-		
 		float[] _heights = heights;
 		heights = new float[] {0, 0, 0, 0};
 		
@@ -808,7 +814,11 @@ public class Car
 			if(collision instanceof OBB) setHeights((OBB) collision);
 		}
 		
-		if(collisions.isEmpty()) heights = _heights;
+		if(collisions.isEmpty())
+		{
+			heights = _heights;
+			falling = true;
+		}
 		
 		return heights;
 	}
@@ -905,8 +915,16 @@ public class Car
 		scene.updateTimes[Scene.frameIndex][3] = 0;
 		
 		float h = (heights[0] + heights[1] + heights[2] + heights[3]) / 4;
-		h += bound.e.y;
-		bound.c.y = h;
+		
+		if(bound.c.y - bound.getMaximumExtent() <= h)
+		{
+			h += bound.e.y;
+			bound.c.y = h;
+			
+			falling  = false;
+			fallRate = 0;
+		}
+		else falling = true;
 		
 		return heights;
 	}
@@ -1222,14 +1240,12 @@ public class Car
 		
 		if(boostDuration > 0)
 		{
+			scene.focalBlur.enableRadial = true;
 			scene.focalBlur.blurFactor = (float) boostDuration / 60.0f;
+			scene.focalBlur.blurCentre = getPosition();
 			boostDuration--;
 		}
-		else
-		{
-			boosting = false;
-			scene.focalBlur.enableRadial = false;
-		}
+		else boosting = false;
 		
 		if(boosting)
 		{
@@ -1739,10 +1755,11 @@ public class Car
 		{
 			switch(e)
 			{
-				case  5: camera.increaseSensitivity(); break;
-				case  7: camera.decreaseSensitivity(); break;
+//				case  5: camera.increaseSensitivity(); break;
+//				case  7: camera.decreaseSensitivity(); break;
 				
-				case  6: camera.setSpeed(15); break;
+				case  5: camera.setSpeed(15); break;
+				case  7: camera.setSpeed( 1); break;
 			}
 		}
 		
@@ -1770,7 +1787,8 @@ public class Car
 		{
 			switch(e)
 			{
-				case  6: camera.setSpeed(5); break;
+				case  5: camera.setSpeed(5); break;
+				case  7: camera.setSpeed(5); break;
 			}
 		}
 	}

@@ -285,6 +285,8 @@ public class HUD
 		renderer.draw("Azimuth: " + String.format("%.1f", Math.toDegrees(car.camera.azimuth)), x, 520);
 		renderer.draw("Incline: " + String.format("%.1f", Math.toDegrees(car.camera.incline)), x, 490);
 		
+		renderer.draw("Vehicle Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.VEHICLE_ID], x, 460);
+		
 		renderer.draw("Colliding: "   + car.colliding, x, 430);
 		renderer.draw("Falling: "     + car.falling,   x, 400);
 		

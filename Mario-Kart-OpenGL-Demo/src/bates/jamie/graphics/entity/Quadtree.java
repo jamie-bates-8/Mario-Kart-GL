@@ -1452,16 +1452,10 @@ public class Quadtree
 	{
 		Light.globalSpecular(gl, specular);
 		
-//		if(Scene.singleton != null)
-//		{
-//			Scene.singleton.light.setup(gl, false);
-//			System.out.println("Fail");
-//		}
-		
 		if(Shader.enabled)
 		{
-			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); bumpmap.bind(gl); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glEnable(GL2.GL_TEXTURE_2D); caustic.bind(gl); }
+			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); bumpmap.bind(gl); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); caustic.bind(gl); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
@@ -1525,8 +1519,8 @@ public class Quadtree
 		
 		if(Shader.enabled)
 		{
-			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glDisable(GL2.GL_TEXTURE_2D); }
+			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
