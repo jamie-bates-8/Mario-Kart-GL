@@ -233,7 +233,7 @@ public class FocalBlur
 		mirageTexture.bind(gl);
 		
 		Shader shader = (enableRadial && scene.enableRadial) ? Shader.get("radial_blur") :
-						(enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field"));
+						(enableMirage ? Shader.get("crepuscular") : Shader.get("depth_field"));
 		if(shader == null) return;
 		
 		shader.enable(gl);
@@ -254,7 +254,23 @@ public class FocalBlur
 			shader.setUniform(gl, "focalPosition", blurCentre.toArray());
 		}
 		
-		if(enableMirage) shader.setUniform(gl, "timer", timer += 0.05);
+		if(enableMirage)
+		{
+			shader.setUniform(gl, "timer", timer += 0.05);
+			
+			gl.glActiveTexture(GL2.GL_TEXTURE4);
+			scene.bloom.getTexture(1);
+			gl.glActiveTexture(GL2.GL_TEXTURE0);
+			
+			shader.setSampler(gl, "bloomSampler", 4);
+			
+			shader.setUniform(gl, "decay"   , decay   );
+			shader.setUniform(gl, "exposure", exposure);
+			shader.setUniform(gl, "weight"  , weight  );
+			shader.setUniform(gl, "density" , density + blurFactor * 0.09f);
+			
+			shader.setUniform(gl, "samples", samples);
+		}
 		
 		int offsetsLoc = -1;
 		

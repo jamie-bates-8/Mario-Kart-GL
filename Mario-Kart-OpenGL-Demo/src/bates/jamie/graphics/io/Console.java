@@ -114,7 +114,7 @@ public class Console
 	private void parseGrass(Scanner cmd)
 	{
 		String _cmd = cmd.next();
-		GrassPatch patch = scene.grassPatch;
+		GrassPatch patch = scene.grassPatches[0];
 		
 		if(_cmd.equalsIgnoreCase("spread"))
 		{

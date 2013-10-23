@@ -395,7 +395,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Terrain terrain;
 	private TerrainPatch[] terrainPatches;
 	public List<BillBoard> foliage;
-	public GrassPatch[] grassPatch;
+	public GrassPatch[] grassPatches;
 	
 	public String terrainCommand = "";
 	public static final String DEFAULT_TERRAIN = "128 1000 20 6 18 0.125 1.0";
@@ -1712,7 +1712,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			float   h = (rightClick ? -0.5f : 0.5f);
 			
 			terrain.tree.deform(p, r, h);
-			for(GrassPatch patch : grassPatch) patch.updateHeights(gl);
+			for(GrassPatch patch : grassPatches) patch.updateHeights(gl);
 		}
 	}
 
@@ -2251,7 +2251,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //		
 //		Shader.disable(gl);
 		
-		for(GrassPatch patch : grassPatch) patch.render(gl);
+		for(GrassPatch patch : grassPatches) patch.render(gl);
 		
 		return System.nanoTime() - start;
 	}
@@ -2545,7 +2545,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void generateFoliage(GL2 gl, int patches)
 	{
-		grassPatch = new GrassPatch[patches];
+		grassPatches = new GrassPatch[patches];
 		
 		Random generator = new Random();
 		
@@ -2559,7 +2559,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			centre.z = generator.nextFloat() * 360 - 180;
 			
 //			grassPatch[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), (int) Math.pow(2, size), 5 * size);
-			grassPatch[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), 8, 10);
+			grassPatches[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), 8, 10);
 		}	
 	}
 
