@@ -12,6 +12,16 @@ import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
 
+/* TODO Improve quality of boost particles and add dynamic lighting to boost effect
+ * 
+ * Quality may be improved by one or more of the following:
+ * 
+ * - creating a larger quantity of smaller particles
+ * - discarding particles fragments randomly to create a dynamic dissolving pattern
+ * - distorting the current effect using bloom, refraction and directional blur
+ * - set particle colour using a gradient for more colour variation (possibly in a shader)
+ */
+
 public class BoostParticle extends Particle
 {
 	private static Texture[] textures =

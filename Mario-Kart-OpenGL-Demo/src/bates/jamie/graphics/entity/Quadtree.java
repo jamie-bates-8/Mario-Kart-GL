@@ -26,6 +26,17 @@ import bates.jamie.graphics.util.Vector;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.texture.Texture;
 
+/*
+ * TODO Implement a means of storing and loading quadtrees
+ * using a unique file format.
+ * 
+ * This could be complex format, storing the recursive structure (e.g. XML) of the quadtree
+ * to reconstruct an actual instance (Quadtree Object). This format would include the details
+ * of any deformations.
+ * Alternatively, it could be a simple format storing a height map so that a newly subdivided
+ * surface can be sculpted to the heights of a previously generated surface. 
+ */
+
 public class Quadtree
 {
 	private static final float HILL_INC = 2.5f;

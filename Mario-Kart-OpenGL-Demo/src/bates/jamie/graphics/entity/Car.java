@@ -1,6 +1,5 @@
 package bates.jamie.graphics.entity;
 
-import static bates.jamie.graphics.util.Renderer.displayPartiallyTexturedObject;
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.asin;
@@ -69,11 +68,7 @@ import bates.jamie.graphics.util.Vec3;
 public class Car
 {
 	/** Model Fields **/
-	public  static List<Face> car_faces;
 	private static List<Face> wheel_faces;
-	private static List<Face> window_faces;
-	private static List<Face> door_window_faces;
-	private static List<Face> door_faces;
 	private static List<Face> base_faces;
 	
 	private static Model all_windows;
@@ -81,8 +76,6 @@ public class Car
 	private static Model head_lights;
 	
 	private static final float[] ORIGIN = {0, 1.8f, 0};
-	
-	private static int carList = -1;
 	
 	public TerrainPatch patch;
 	
@@ -109,9 +102,6 @@ public class Car
 		new Vec3(-1.75f, -0.55f, +2.4f), // back-right
 		new Vec3(-1.75f, -0.55f, -2.4f)  // front-right
 	}; 
-	
-	private Vec3 offsets_LeftDoor =  new Vec3(-1.43f, 0.21f,  1.74f);
-	private Vec3 offsets_RightDoor = new Vec3(-1.43f, 0.21f, -1.74f);
 	
 	
 	/** Motion Fields **/
@@ -214,29 +204,13 @@ public class Car
 	
 	public boolean smooth = false;
 	
-	public SceneGraph high_graph;
-	public SceneGraph low_graph;
-	
-	public boolean high_quality = true;
+	public SceneGraph graph;
 	
 	
 	public Car(GL2 gl, Vec3 c, float xrot, float yrot, float zrot, Scene scene)
 	{
-		if(carList == -1)
+		if(car_body == null)
 		{
-			if(scene.enableQuality)
-			{
-				car_faces         = OBJParser.parseTriangles("car");
-				window_faces      = OBJParser.parseTriangles("windows");
-				door_window_faces = OBJParser.parseTriangles("door_windows");
-				door_faces        = OBJParser.parseTriangles("door");
-				
-				carList = gl.glGenLists(1);
-				gl.glNewList(carList, GL2.GL_COMPILE);
-				displayPartiallyTexturedObject(gl, car_faces, color);
-				gl.glEndList();
-			}
-			
 			wheel_faces = OBJParser.parseTriangles("new_wheel");
 			base_faces  = OBJParser.parseTriangles("car_base");
 			
@@ -262,7 +236,15 @@ public class Car
 	    
 	    anchor = new AnchorPoint();
 	    
-	    starLight = new Light(gl, c, RGB.WHITE_3F, RGB.WHITE_3F, RGB.WHITE_3F);
+	    setupLights(gl);
+	    resetGraph();
+	}
+
+	private void setupLights(GL2 gl)
+	{
+		Vec3 c = getPosition();
+		
+		starLight = new Light(gl, c, RGB.WHITE_3F, RGB.WHITE_3F, RGB.WHITE_3F);
 	    starLight.setConstantAttenuation(0.75f);
 	    starLight.setQuadraticAttenuation(0.04f);
 	    starLight.enableAttenuation = true;
@@ -285,18 +267,16 @@ public class Car
 	    
 	    driftLights[0] = leftLight;
 	    driftLights[1] = rightLight;
-	    
-	    resetGraph();
 	}
 	
 	public boolean enableChrome = true;
 	
-	public void setupHighGraph()
+	public void setupGraph()
 	{
 		Material shiny = new Material(new float[] {1, 1, 1});
 		Material mat = new Material(new float[] {0, 0, 0});
 		
-		SceneNode body = new SceneNode(null, carList, car_body, SceneNode.MatrixOrder.T_M_S, shiny);
+		SceneNode body = new SceneNode(null, -1, car_body, SceneNode.MatrixOrder.T_M_S, shiny);
 		body.setColor(color);
 		body.setTranslation(bound.c);
 		body.setOrientation(bound.u.toArray());
@@ -322,7 +302,7 @@ public class Car
 		}
 		
 		
-		SceneNode headlights = new SceneNode(null, carList, head_lights, SceneNode.MatrixOrder.T, shiny);
+		SceneNode headlights = new SceneNode(null, -1, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
 		headlights.setTranslation(new Vec3());
 		headlights.setRenderMode(SceneNode.RenderMode.COLOR);
@@ -336,75 +316,16 @@ public class Car
 		
 		body.addChild(car_base);
 		
-		SceneNode windows = new SceneNode(window_faces, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
+		SceneNode windows = new SceneNode(null, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
 		
 		body.addChild(windows);
 		
-		high_graph = new SceneGraph(body);
+		graph = new SceneGraph(body);
 	}
 	
-	public void setupLowGraph()
-	{
-		Material shiny = new Material(new float[] {1, 1, 1});
-		Material mat = new Material(new float[] {0, 0, 0});
-		
-		SceneNode car_body = new SceneNode(car_faces, carList, null, SceneNode.MatrixOrder.T_M_S, shiny);
-		car_body.setColor(new float[] {1, 1, 1});
-		car_body.setTranslation(bound.c);
-		car_body.setOrientation(bound.u.toArray());
-		car_body.setRenderMode(SceneNode.RenderMode.TEXTURE);
-		car_body.setScale(new Vec3(scale));
-		
-		for(int i = 0; i < 4; i++)
-		{
-			SceneNode wheel = new SceneNode(wheel_faces, -1, null, SceneNode.MatrixOrder.T_RY_RX_RZ_S, mat);
-			wheel.setColor(new float[] {1, 1, 1});
-			wheel.setRenderMode(SceneNode.RenderMode.TEXTURE);
-			wheel.setTranslation(offsets_Wheel[i]);
-			wheel.setRotation(new Vec3());
-			wheel.setScale(new Vec3(0.6f));
-			
-			car_body.addChild(wheel);
-		}
-		
-		SceneNode left_door = new SceneNode(door_faces, -1, null, SceneNode.MatrixOrder.T_S, shiny);
-		left_door.setColor(color);
-		left_door.setRenderMode(SceneNode.RenderMode.COLOR);
-		left_door.setTranslation(offsets_LeftDoor);
-		
-		SceneNode left_window = new SceneNode(door_window_faces, -1, null, SceneNode.MatrixOrder.NONE, null);
-		left_window.setColor(windowColor);
-		left_window.setRenderMode(SceneNode.RenderMode.GLASS);
-			
-		left_door.addChild(left_window);
-		car_body.addChild(left_door);
-		
-		SceneNode right_door = new SceneNode(door_faces, -1, null, SceneNode.MatrixOrder.T_S, shiny);
-		right_door.setColor(color);
-		right_door.setRenderMode(SceneNode.RenderMode.COLOR);
-		right_door.setTranslation(offsets_RightDoor);
-		right_door.setScale(new Vec3(1, 1, -1));
-		
-		SceneNode right_window = new SceneNode(door_window_faces, -1, null, SceneNode.MatrixOrder.NONE, null);
-		right_window.setColor(windowColor);
-		right_window.setRenderMode(SceneNode.RenderMode.GLASS);
-			
-		right_door.addChild(right_window);
-		car_body.addChild(right_door);
-		
-		SceneNode windows = new SceneNode(window_faces, -1, null, SceneNode.MatrixOrder.T, null);
-		windows.setColor(windowColor);
-		windows.setRenderMode(SceneNode.RenderMode.GLASS);
-		windows.setTranslation(new Vec3(0.3f, -1.2f, 0));
-		
-		car_body.addChild(windows);
-		
-		low_graph = new SceneGraph(car_body);
-	}
-	
-	public void updateGraph(SceneGraph graph)
+	public void updateGraph()
 	{
 		SceneNode car_body = graph.getRoot();
 		
@@ -649,8 +570,7 @@ public class Car
 	
 	public void resetGraph()
 	{
-		setupHighGraph();
-	    if(scene.enableQuality) setupLowGraph();
+		setupGraph();
 	}
 	
 	public boolean enableAberration = true;
@@ -678,9 +598,7 @@ public class Car
 		}
 		
 		if(displayModel)
-		{	
-			SceneGraph graph = high_quality ? high_graph : low_graph;
-			
+		{			
 			if(invisible)
 			{
 				String name = enableAberration ? "aberration" : "ghost";
@@ -1188,11 +1106,8 @@ public class Car
 		tag.setPosition(p);
 		tag.displayPosition();
 		
-		if(high_quality) updateGraph(high_graph);
-		else updateGraph(low_graph);
-		
+		updateGraph();
 		updateStatus();
-		
 		updateController();
 	}
 	
@@ -1235,7 +1150,7 @@ public class Car
 			miniature = false;
 			bound.e = bound.e.multiply(2);
 			scale *= 2;
-			high_graph.getRoot().setScale(new Vec3(scale));
+			graph.getRoot().setScale(new Vec3(scale));
 		}
 		
 		if(boostDuration > 0)
@@ -1585,7 +1500,7 @@ public class Car
 			{
 				bound.e = bound.e.multiply(0.5f);
 				scale /= 2;
-				high_graph.getRoot().setScale(new Vec3(scale));
+				graph.getRoot().setScale(new Vec3(scale));
 			}
 			
 			miniature = true;
@@ -1697,8 +1612,6 @@ public class Car
 			case KeyEvent.VK_F6: hud.increaseStretch(); break; 
 			case KeyEvent.VK_F7: hud.cycleGraphMode(); break;
 			case KeyEvent.VK_F8: hud.nextComponent(); break;
-			
-			case KeyEvent.VK_F11: if(scene.enableQuality) high_quality = !high_quality; break;
 			
 			case KeyEvent.VK_BACK_SPACE: reset(); break;
 		}

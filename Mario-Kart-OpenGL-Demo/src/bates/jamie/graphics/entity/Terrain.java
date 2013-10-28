@@ -151,7 +151,7 @@ public class Terrain
 			
 		displayList(gl);
 			
-		toModel();
+//		toModel();
 		
 		generateQuadtree();
 	}

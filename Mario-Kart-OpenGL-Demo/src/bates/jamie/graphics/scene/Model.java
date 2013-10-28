@@ -4,6 +4,8 @@ import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
@@ -70,8 +72,6 @@ public class Model
 		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
 		
 		indices = Buffers.newDirectIntBuffer(vIndices);
-		
-//		this.enableVBO = enableVBO;
 	}
 	
 	public Model(List<float[]> vertices, int[] vIndices, int type)
@@ -110,6 +110,37 @@ public class Model
 		indices = Buffers.newDirectIntBuffer(vIndices);
 	}
 	
+	public void export(String fileName)
+	{
+		try
+		{	
+			FileWriter writer = new FileWriter("iva/" + fileName + ".iva");
+			BufferedWriter out = new BufferedWriter(writer);
+			
+			out.write("vertices ");
+			float[] vertexArray = vertices.array();
+			for(int v = 0; v < vertexArray.length; v++) out.write(vertexArray[v] + " ");
+			out.write("\r\n");
+			
+			out.write("normals ");
+			float[] normalArray = vertices.array();
+			for(int n = 0; n < normalArray.length; n++) out.write(normalArray[n] + " ");
+			out.write("\r\n");
+			
+			out.write("indices ");
+			float[] indexArray = vertices.array();
+			for(int i = 0; i < indexArray.length; i++) out.write(indexArray[i] + " ");
+			out.write("\r\n");
+	
+			out.close();
+		}
+		
+		catch(Exception e)
+		{
+			System.err.println(e.getMessage());
+		}
+	}
+	
 	private float[] reorderNormals(int vertices, List<float[]> normals, int[] vIndices, int[] nIndices)
 	{
 		// each vertex has a normal that requires 3 components
@@ -139,7 +170,7 @@ public class Model
 		{
 			float[] texCoord = texCoords.get(tIndices[i]);
 			
-			int offset = i * 2;
+			int offset = i * 2; // TODO this may be incorrect
 			
 			_texCoords[offset    ] = texCoord[0];
 			_texCoords[offset + 1] = texCoord[1];
