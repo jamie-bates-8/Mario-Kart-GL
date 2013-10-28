@@ -3,12 +3,17 @@ package bates.jamie.graphics.entity;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 
 import javax.media.opengl.GL2;
@@ -33,8 +38,6 @@ import com.jogamp.opengl.util.texture.Texture;
  * This could be complex format, storing the recursive structure (e.g. XML) of the quadtree
  * to reconstruct an actual instance (Quadtree Object). This format would include the details
  * of any deformations.
- * Alternatively, it could be a simple format storing a height map so that a newly subdivided
- * surface can be sculpted to the heights of a previously generated surface. 
  */
 
 public class Quadtree
@@ -943,6 +946,52 @@ public class Quadtree
 		for(int i = 0; i < vertices.size(); i++) heights.set(i, vertices.get(i)[1]);
 	}
 	
+	public void setHeights(String fileName)
+	{
+		Scanner _heights, _normals, _tangents;
+		_heights = _normals = _tangents = null;
+		
+		try
+		{
+			Scanner fileScanner = new Scanner(new File("surfaces/" + fileName + ".qth"));
+			
+			while(fileScanner.hasNextLine())
+			{
+				String line = fileScanner.nextLine();
+				
+				if(line.startsWith("heights" )) _heights  = new Scanner(line.replaceAll("heights", "").trim());
+				if(line.startsWith("normals" )) _normals  = new Scanner(line.replaceAll("normals", "").trim());
+				if(line.startsWith("tangents")) _tangents = new Scanner(line.replaceAll("tangents", "").trim());
+			}
+			fileScanner.close();
+		}
+		catch (IOException e) { e.printStackTrace(); }
+		
+		int position = vBuffer.position();
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			float[] vertex = vertices.get(i);
+			vertex[1] = _heights.nextFloat();
+			
+			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]); heights.set(i, vertex[1]);
+			
+			float[] normal  = {_normals .nextFloat(), _normals .nextFloat(), _normals .nextFloat()};
+			float[] tangent = {_tangents.nextFloat(), _tangents.nextFloat(), _tangents.nextFloat()};
+			
+			nBuffer.position(i * 3); nBuffer.put(normal);  normals .set(i, normal);
+			aBuffer.position(i * 3); aBuffer.put(tangent); tangents.set(i, tangent);
+		}
+		
+		_heights .close();
+		_normals .close();
+		_tangents.close();
+		
+		vBuffer.position(position);
+		nBuffer.position(position);
+		aBuffer.position(position);
+	}
+	
 	/**
 	 * Returns an array containing the minimum and maximum heights of this
 	 * Quadtree, in addition to the vertical heights between these two values
@@ -1082,13 +1131,18 @@ public class Quadtree
 		}
 	}
 
+	/**
+	 * This method updates the buffers corresponding to the <code>i</code><sup>th</sup>
+	 * vertex of this quadtree based on new position of the <code>vertex</code> passed
+	 * as a parameter.
+	 */
 	private void updateBuffers(int i, float[] vertex)
 	{
 		int position = vBuffer.position();
 		
 		if(root.malleable)
 		{
-			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
+			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]); // only update y-coordinate (height)
 			vBuffer.position(position);
 		}
 		
@@ -1622,8 +1676,6 @@ public class Quadtree
 		
 		gl.glBegin(GL2.GL_LINES);
 		
-		long start = System.nanoTime();
-		
 		for(int i = 0; i < vertices.size(); i++)
 		{
 			float[] p1 = vertices.get(i);
@@ -1633,8 +1685,6 @@ public class Quadtree
 			gl.glVertex3f(p2[0], p2[1], p2[2]);
 		}
 		gl.glEnd();
-		
-		System.out.println(System.nanoTime() - start);
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_POINT_SMOOTH);
@@ -1676,6 +1726,34 @@ public class Quadtree
 		
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL_TEXTURE_2D);	
+	}
+	
+	public void exportHeights(String fileName)
+	{
+		try
+		{	
+			FileWriter writer = new FileWriter("surfaces/" + fileName + ".qth"); // .qth stands for quadtree heights
+			BufferedWriter out = new BufferedWriter(writer);
+			
+			out.write("heights ");
+			for(Float h : heights) out.write(h + " ");
+			out.write("\r\n");
+			
+			out.write("normals ");
+			for(float[] n : normals) out.write(n[0] + " " + n[1] + " " + n[2] + " ");
+			out.write("\r\n");
+			
+			out.write("tangents ");
+			for(float[] t : tangents) out.write(t[0] + " " + t[1] + " " + t[2] + " ");
+			out.write("\r\n");
+	
+			out.close();
+		}
+		
+		catch(Exception e)
+		{
+			System.err.println(e.getMessage());
+		}
 	}
 	
 	public enum FallOff

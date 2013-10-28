@@ -2551,14 +2551,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		for(int i = 0; i < patches; i++)
 		{
-			int size = 2 + generator.nextInt(3);
-			
 			Vec3 centre = new Vec3();
 	    	
 			centre.x = generator.nextFloat() * 360 - 180;
 			centre.z = generator.nextFloat() * 360 - 180;
 			
-//			grassPatch[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), (int) Math.pow(2, size), 5 * size);
 			grassPatches[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), 8, 10);
 		}	
 	}
@@ -2639,8 +2636,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		for(BillBoard board : foliage)
 		{
 			Vec3 p = board.sphere.c;
-			board.sphere.c.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+			board.sphere.c.y = (terrain.enableQuadtree) ?
+					terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) :
+					terrain.getHeight(p.toArray());
 		}
+		
+		for(GrassPatch patch : grassPatches) patch.update = true;
 	}
 
 	public void printDataToFile(String file, String[] headers, long[][] data)
@@ -2762,6 +2763,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_I            :
 			case KeyEvent.VK_U            : // TODO temporary for demonstration
 			case KeyEvent.VK_O            :
+			case KeyEvent.VK_F11          :
 			case KeyEvent.VK_OPEN_BRACKET :
 			case KeyEvent.VK_CLOSE_BRACKET:
 			case KeyEvent.VK_QUOTE        :

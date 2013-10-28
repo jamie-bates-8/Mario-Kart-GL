@@ -75,13 +75,13 @@ public class GrassPatch
 		
 		createBuffers(gl);
 		createTexture(gl);
-		updateHeights(gl);
+		
+		initializeHeights(gl);
 	}
 	
 	public int getPositionMap() { return positionMap; }
 	
-	public void setSpread(float spread) { this.spread = spread; }
-	
+	public void setSpread(float   spread) { this.spread = spread; }
 	public void setOrigin(float[] origin) { this.origin = origin; }
 	
 	public void createBuffers(GL2 gl)
@@ -111,7 +111,7 @@ public class GrassPatch
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
-	public void updateHeights(GL2 gl)
+	public void initializeHeights(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, positionMap);
@@ -120,31 +120,54 @@ public class GrassPatch
 		
 		Random generator = new Random();
 		
-		for(int i = 0; i < length; i++)
+		for(int i = 0; i < length * length; i++)
 		{
-			for(int j = 0; j < length; j++)
-			{
-				Vec3 position = new Vec3(origin);
-	    		
-	    		double incline = Math.toRadians(generator.nextInt(3600) / 10.0);
-	    		double azimuth = Math.toRadians(generator.nextInt(3600) / 10.0);
-	    		
-	    		position.x += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
-	    		position.z += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
+			Vec3 position = new Vec3(origin);
 
-				Quadtree cell = surface != null ? surface.getCell(position.toArray(), Quadtree.MAXIMUM_LOD) : null;
-				position.y = (cell != null ? cell.getHeight(position.toArray()) : 0) - 0.5f;
-				
-				float yRotation = (float) (generator.nextFloat() * 2 * Math.PI);
-				
-				positions.put(position.toArray());
-				positions.put(yRotation); // fill alpha channel with rotation data
-			}
+			double incline = Math.toRadians(generator.nextInt(3600) / 10.0);
+			double azimuth = Math.toRadians(generator.nextInt(3600) / 10.0);
+
+			position.x += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
+			position.z += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
+
+			Quadtree cell = surface != null ? surface.getCell(position.toArray(), surface.detail) : null;
+			position.y = (cell != null ? cell.getHeight(position.toArray()) : 0) - 0.5f;
+
+			float yRotation = (float) (generator.nextFloat() * 2 * Math.PI);
+
+			positions.put(position.toArray());
+			positions.put(yRotation); // fill alpha channel with rotation data
 		}
 		positions.position(0);
 		
 		gl.glTexSubImage2D(GL2.GL_TEXTURE_2D, 0, 0, 0, length, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
+	}
+	
+	public void updateHeights(GL2 gl)
+	{
+		gl.glActiveTexture(GL2.GL_TEXTURE1);
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, positionMap);
 		
+		FloatBuffer positions = FloatBuffer.allocate(length * length * 4);
+		gl.glGetTexImage(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
+		
+		for(int i = 0; i < length * length; i++)
+		{
+			int index = positions.position();
+			
+			float[] p = new float[4];
+			positions.position(i * 4); positions.get(p);
+
+			Quadtree cell = surface != null ? surface.getCell(p, surface.detail) : null;
+			p[1] = (cell != null ? cell.getHeight(p) : 0) - 0.5f;
+
+			positions.position(index);
+			positions.put(p);
+		}
+		positions.position(0);
+		
+		gl.glTexSubImage2D(GL2.GL_TEXTURE_2D, 0, 0, 0, length, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
