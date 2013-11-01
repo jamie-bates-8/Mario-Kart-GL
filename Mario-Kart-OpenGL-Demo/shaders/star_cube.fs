@@ -6,6 +6,21 @@ varying vec3 eyeDir;
 uniform float shininess;
 uniform samplerCube cubeMap;
 
+const vec3  rim_color = vec3(0.75);
+const float rim_power = 3.0;
+
+vec3 rimLight()
+{
+    float d = dot(normalize(vertexNormal), normalize(-eyeDir));
+	vec3 normal = (d < 0.0) ? -vertexNormal : vertexNormal;
+    float f = 1.0 - dot(normalize(normal), normalize(-eyeDir));
+
+    f = smoothstep(0.0, 1.0, f);
+    f = pow(f, rim_power);
+
+    return f * rim_color;
+}
+
 void main(void)
 {
     float diffuseCoefficient = max(0.0, dot(normalize(vertexNormal), normalize(lightDir)));
@@ -31,7 +46,8 @@ void main(void)
         color.rgb += vec3(specularCoefficient);
     }
 	
-	color.rgba *= gl_Color.rgba;
+	color *= gl_Color;
+	color.rgb += rimLight();
 	
 	gl_FragData[0] = color;
 	

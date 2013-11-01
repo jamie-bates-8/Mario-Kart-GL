@@ -1,4 +1,3 @@
-// bump.vs
 
 uniform mat4 ModelMatrix;
 

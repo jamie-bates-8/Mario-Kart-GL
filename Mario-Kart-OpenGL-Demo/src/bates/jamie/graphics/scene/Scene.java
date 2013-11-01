@@ -327,10 +327,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public int lightID = 0;
 	
 	public boolean singleLight  = false;
-	public boolean enableLight  = true;
 	public boolean moveLight    = false;
 	public boolean displayLight = false;
 	public boolean synchLights  = true;
+	public boolean rimLighting  = true;
 	
 	
 	/** Shadow Fields **/
@@ -398,7 +398,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public GrassPatch[] grassPatches;
 	
 	public String terrainCommand = "";
-	public static final String DEFAULT_TERRAIN = "128 1000 20 6 18 0.125 1.0";
+	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
 	
 	public boolean enableReflection = false;
 	public float opacity = 0.50f;
@@ -407,8 +407,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean multisample = true;
 	
 	public boolean testMode = false;
-	public boolean printVersion = true;
-	public boolean printErrors = false;
+	public boolean printVersion = false;
+	public boolean printErrors  = false;
 	
 	public ModelSelecter selecter;
 	
@@ -1452,6 +1452,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			car.starLight.setup(gl);
 			for(Light l : car.driftLights) l.setup(gl);
 			BlueShell.blastLight.setup(gl);
+			
+			Light.setepRimLighting(gl);
 			
 			if(enableShadow && Shader.enabled)
 			{
@@ -2545,6 +2547,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void generateFoliage(GL2 gl, int patches)
 	{
+		long start = System.currentTimeMillis();
+		
 		grassPatches = new GrassPatch[patches];
 		
 		Random generator = new Random();
@@ -2556,8 +2560,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			centre.x = generator.nextFloat() * 360 - 180;
 			centre.z = generator.nextFloat() * 360 - 180;
 			
-			grassPatches[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), 8, 10);
+			grassPatches[i] = new GrassPatch(gl, terrain.tree, centre.toArray(), 64, 10);
 		}	
+		
+		System.out.printf("Foliage Generated: %d ms\n", (System.currentTimeMillis() - start));
 	}
 
 	public void generateFoliage(int patches, float spread, int patchSize)
@@ -2565,42 +2571,42 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		foliage = new ArrayList<BillBoard>();
 		Random generator = new Random(); 
 	    
-	    for(int i = 0; i < patches; i++)
-	    {
-	    	int t = (i < patches * 0.5) ? 3 : generator.nextInt(3);
-	    	
-	    	Vec3 p = new Vec3();
-	    	
-	    	p.x = generator.nextFloat() * 360 - 180;
-	    	p.z = generator.nextFloat() * 360 - 180;
-	    	
-	    	if(i > patches * 0.75)
-	    	{
-	    		p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
-	    		foliage.add(new BillBoard(p, 3, t));
-	    	}
-	    	else
-	    	{    	
-		    	int k = generator.nextInt(patchSize - 1) + 1; 
-		    	
-		    	for(int j = 0; j < k; j++)
-		    	{
-		    		Vec3 p0 = new Vec3(p);
-		    		
-		    		double incline = Math.toRadians(generator.nextInt(360));
-		    		double azimuth = Math.toRadians(generator.nextInt(360));
-		    		
-		    		p0.x += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
-		    		p0.z += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
-		    		
-		    		if(Math.abs(p0.x) < 200 && Math.abs(p0.z) < 200)
-		    		{
-		    			p0.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p0.toArray(), terrain.tree.detail).getHeight(p0.toArray()) : terrain.getHeight(p0.toArray());
-		    			foliage.add(new BillBoard(p0, 2, t));
-		    		}
-		    	}
-	    	}
-	    }
+//	    for(int i = 0; i < patches; i++)
+//	    {
+//	    	int t = (i < patches * 0.5) ? 3 : generator.nextInt(3);
+//	    	
+//	    	Vec3 p = new Vec3();
+//	    	
+//	    	p.x = generator.nextFloat() * 360 - 180;
+//	    	p.z = generator.nextFloat() * 360 - 180;
+//	    	
+//	    	if(i > patches * 0.75)
+//	    	{
+//	    		p.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p.toArray(), terrain.tree.detail).getHeight(p.toArray()) : terrain.getHeight(p.toArray());
+//	    		foliage.add(new BillBoard(p, 3, t));
+//	    	}
+//	    	else
+//	    	{    	
+//		    	int k = generator.nextInt(patchSize - 1) + 1; 
+//		    	
+//		    	for(int j = 0; j < k; j++)
+//		    	{
+//		    		Vec3 p0 = new Vec3(p);
+//		    		
+//		    		double incline = Math.toRadians(generator.nextInt(360));
+//		    		double azimuth = Math.toRadians(generator.nextInt(360));
+//		    		
+//		    		p0.x += (float) (Math.sin(incline) * Math.cos(azimuth) * spread);
+//		    		p0.z += (float) (Math.sin(incline) * Math.sin(azimuth) * spread);
+//		    		
+//		    		if(Math.abs(p0.x) < 200 && Math.abs(p0.z) < 200)
+//		    		{
+//		    			p0.y = (terrain.enableQuadtree) ? terrain.tree.getCell(p0.toArray(), terrain.tree.detail).getHeight(p0.toArray()) : terrain.getHeight(p0.toArray());
+//		    			foliage.add(new BillBoard(p0, 2, t));
+//		    		}
+//		    	}
+//	    	}
+//	    }
 	    
 //	    for(int i = 0; i < 30; i++)
 //	    {
@@ -2805,6 +2811,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_L: lightID++; lightID %= 4; light = lights[lightID]; break;
 			case KeyEvent.VK_K: singleLight = !singleLight; break;
 			case KeyEvent.VK_J: displayLight = !displayLight; break;
+			case KeyEvent.VK_R: rimLighting = !rimLighting; break;
 			
 			case KeyEvent.VK_V: Model.enableVBO = !Model.enableVBO; break;
 			

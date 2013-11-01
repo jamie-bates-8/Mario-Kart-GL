@@ -65,7 +65,7 @@ public class SceneNode
 			{
 				case TEXTURE:
 				{
-					Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong_texture") : Shader.get("texture_lights")) : null;
+					Shader shader = Shader.enabled ? Shader.getLightModel("texture") : null;
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -75,13 +75,13 @@ public class SceneNode
 				}
 				case COLOR  :
 				{
-					Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong") : Shader.get("phong_lights")) : null;
+					Shader shader = Shader.enabled ? Shader.getLightModel("phong") : null;
 					if(shader != null) shader.enable(gl);
 					break;
 				}
 				case REFLECT:
 				{
-					Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong_cube") : Shader.get("cube_lights")) : null;
+					Shader shader = Shader.enabled ? Shader.getLightModel("cube") : null;
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -188,16 +188,24 @@ public class SceneNode
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
-			Shader shader = Shader.enabled ? (reflector != null ? Shader.get("star_power") : Shader.get("phong")) : null;
-			if(shader != null && reflector != null)
+			Shader shader = Shader.enabled ? (reflector != null ? Shader.get("star_power") : Shader.get("phong_rim")) : null;
+			if(shader != null)
 			{
 				shader.enable(gl);
 				
-				shader.setSampler(gl, "cubeMap", 0);
-				shader.setUniform(gl, "shininess", reflector.reflectivity);
-				
-				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
-				shader.loadMatrix(gl, "cameraMatrix", camera);
+				if(reflector != null)
+				{
+					shader.setSampler(gl, "cubeMap", 0);
+					shader.setUniform(gl, "shininess", reflector.reflectivity);
+					
+					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+					shader.loadMatrix(gl, "cameraMatrix", camera);
+				}
+				else
+				{
+					shader.setUniform(gl, "rim_color", new float[] {1, 1, 1});
+					shader.setUniform(gl, "rim_power", 3.0f);
+				}
 			}
 			
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};

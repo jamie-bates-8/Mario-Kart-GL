@@ -30,6 +30,15 @@ public class Vec3
 		this.z = f;
 	}
 	
+	public Vec3(double f)
+	{
+		float _f = (float) f;
+		
+		this.x = _f;
+		this.y = _f;
+		this.z = _f;
+	}
+	
 	public Vec3(Vec3 v)
 	{
 		this.x = v.x;

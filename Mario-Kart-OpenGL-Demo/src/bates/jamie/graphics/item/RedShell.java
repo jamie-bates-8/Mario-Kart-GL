@@ -115,12 +115,12 @@ public class RedShell extends Shell
 			gl.glRotatef(rotation, 0, -1, 0);
 			gl.glScalef(1.5f, 1.5f, 1.5f);
 			
-			Shader shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong_texture") : Shader.get("texture_lights")) : null;
+			Shader shader = Shader.enabled ? Shader.getLightModel("texture") : null;
 			if(shader != null) shader.enable(gl);
 			
 			gl.glCallList(shellList);
 			
-			shader = Shader.enabled ? (Scene.singleton.singleLight ? Shader.get("phong") : Shader.get("phong_lights")) : null;
+			shader = Shader.enabled ? Shader.getLightModel("phong") : null;
 			if(shader != null) shader.enable(gl);
 			
 			gl.glCallList(rimList);

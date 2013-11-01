@@ -12,6 +12,8 @@ import java.util.Scanner;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.Scene;
+
 import com.jogamp.opengl.util.glsl.ShaderUtil;
 
 public class Shader
@@ -51,9 +53,11 @@ public class Shader
 		// load and compile shaders from file
 		Shader phong        = new Shader(gl, "phong", "phong");
 		Shader phongLights  = new Shader(gl, "phong_lights", "phong_lights");
+		Shader phongRim     = new Shader(gl, "phong_lights", "phong_rim");
 		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
 		Shader phongAlpha   = new Shader(gl, "phong_texture", "phong_alpha");
 		Shader texLights    = new Shader(gl, "texture_lights", "texture_lights");
+		Shader textureRim   = new Shader(gl, "texture_lights", "texture_rim");
 		Shader bump         = new Shader(gl, "bump", "bump", attributes);
 		Shader bumpLights   = new Shader(gl, "bump_lights", "bump_lights", attributes);
 		Shader shadow       = new Shader(gl, "shadow", "shadow");
@@ -61,6 +65,7 @@ public class Shader
 		Shader shadowLights = new Shader(gl, "shadow_lights", "shadow_lights");
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
 		Shader cubeLights   = new Shader(gl, "cube_lights", "cube_lights");
+		Shader cubeRim      = new Shader(gl, "cube_lights", "cube_rim");
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
@@ -83,9 +88,11 @@ public class Shader
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
 		if( phongLights.isValid()) shaders.put("phong_lights", phongLights);
+		if(    phongRim.isValid()) shaders.put("phong_rim", phongRim);
 		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(  phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
 		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
+		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
@@ -93,6 +100,7 @@ public class Shader
 		if(shadowLights.isValid()) shaders.put("shadow_lights", shadowLights);
 		if(   phongCube.isValid()) shaders.put("phong_cube", phongCube);
 		if(  cubeLights.isValid()) shaders.put("cube_lights", cubeLights);
+		if(     cubeRim.isValid()) shaders.put("cube_rim", cubeRim);
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
 		if(   starPower.isValid()) shaders.put("star_power", starPower);
@@ -114,6 +122,32 @@ public class Shader
 	}
 	
 	public static Shader get(String name) { return shaders.get(name); }
+	
+	public static Shader getLightModel(String name)
+	{
+		Scene scene = Scene.singleton;
+		
+		if(name.equalsIgnoreCase("phong"))
+		{
+			if(scene.singleLight) return get("phong");
+			else if(scene.rimLighting) return get("phong_rim");
+			else return get("phong_lights");
+		}
+		else if(name.equalsIgnoreCase("texture"))
+		{
+			if(scene.singleLight) return get("phong_texture");
+			else if(scene.rimLighting) return get("texture_rim");
+			else return get("texture_lights");
+		}
+		else if(name.equalsIgnoreCase("cube"))
+		{
+			if(scene.singleLight) return get("phong_cube");
+			else if(scene.rimLighting) return get("cube_rim");
+			else return get("cube_lights");
+		}
+		
+		return get("phong");
+	}
 	
 	public boolean isValid() { return valid; }
 

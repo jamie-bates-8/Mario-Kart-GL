@@ -397,6 +397,16 @@ public class Console
 			
 			scene.light.setEmission(new float[] {r, g, b, a});
 		}
+		else if(_cmd.equalsIgnoreCase("rim_color"))
+		{
+			float r = cmd.nextFloat();
+			float g = cmd.nextFloat();
+			float b = cmd.nextFloat();
+			
+			Light.rimColor = new float[] {r, g, b};
+		}
+		else if(_cmd.equalsIgnoreCase("rim_power")) Light.rimPower = cmd.nextFloat();
+		
 		else if(_cmd.equalsIgnoreCase("shininess")) scene.light.setShininess(cmd.nextInt());
 		else if(_cmd.equalsIgnoreCase( "parallel")) scene.light.parallel = cmd.nextBoolean();
 		

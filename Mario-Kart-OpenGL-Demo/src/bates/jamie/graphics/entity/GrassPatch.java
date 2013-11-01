@@ -1,6 +1,5 @@
 package bates.jamie.graphics.entity;
 
-import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.fixedfunc.GLPointerFunc.GL_VERTEX_ARRAY;
 
 import java.io.File;
@@ -98,15 +97,15 @@ public class GrassPatch
 		positionMap = id[0];
 
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		gl.glBindTexture(GL2.GL_TEXTURE_2D, positionMap);
+		gl.glBindTexture(GL2.GL_TEXTURE_1D, positionMap);
 		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+//		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
 		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
 		
-		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA32F, length, length, 0, GL2.GL_RGBA, GL2.GL_FLOAT, null);
+		gl.glTexImage1D(GL2.GL_TEXTURE_1D, 0, GL2.GL_RGBA32F, length, 0, GL2.GL_RGBA, GL2.GL_FLOAT, null);
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
@@ -114,13 +113,13 @@ public class GrassPatch
 	public void initializeHeights(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		gl.glBindTexture(GL2.GL_TEXTURE_2D, positionMap);
+		gl.glBindTexture(GL2.GL_TEXTURE_1D, positionMap);
 		
-		FloatBuffer positions = FloatBuffer.allocate(length * length * 4);
+		FloatBuffer positions = FloatBuffer.allocate(length * 4);
 		
 		Random generator = new Random();
 		
-		for(int i = 0; i < length * length; i++)
+		for(int i = 0; i < length; i++)
 		{
 			Vec3 position = new Vec3(origin);
 
@@ -140,19 +139,19 @@ public class GrassPatch
 		}
 		positions.position(0);
 		
-		gl.glTexSubImage2D(GL2.GL_TEXTURE_2D, 0, 0, 0, length, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
+		gl.glTexSubImage1D(GL2.GL_TEXTURE_1D, 0, 0, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
 	public void updateHeights(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
-		gl.glBindTexture(GL2.GL_TEXTURE_2D, positionMap);
+		gl.glBindTexture(GL2.GL_TEXTURE_1D, positionMap);
 		
-		FloatBuffer positions = FloatBuffer.allocate(length * length * 4);
-		gl.glGetTexImage(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
+		FloatBuffer positions = FloatBuffer.allocate(length * 4);
+		gl.glGetTexImage(GL2.GL_TEXTURE_1D, 0, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
 		
-		for(int i = 0; i < length * length; i++)
+		for(int i = 0; i < length; i++)
 		{
 			int index = positions.position();
 			
@@ -167,7 +166,7 @@ public class GrassPatch
 		}
 		positions.position(0);
 		
-		gl.glTexSubImage2D(GL2.GL_TEXTURE_2D, 0, 0, 0, length, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
+		gl.glTexSubImage1D(GL2.GL_TEXTURE_1D, 0, 0, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
@@ -188,7 +187,7 @@ public class GrassPatch
 		Shader shader = Shader.get("grass");
 		if(shader == null) return; else shader.enable(gl);
 		
-		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL2.GL_TEXTURE_2D, positionMap);
+		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL2.GL_TEXTURE_1D, positionMap);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); texture.bind(gl);
 		
 		shader.setSampler(gl, "texture", 0);
@@ -197,8 +196,7 @@ public class GrassPatch
 		shader.setUniform(gl, "length", length);
 		shader.setUniform(gl,  "timer",  timer);
 		
-//		gl.glDrawArraysInstanced(GL2.GL_TRIANGLE_STRIP, 0, 6, length * length);
-		gl.glDrawArraysInstanced(GL2.GL_QUADS, 0, 8, length * length);
+		gl.glDrawArraysInstanced(GL2.GL_QUADS, 0, 8, length);
 		
 		Shader.disable(gl);
 		

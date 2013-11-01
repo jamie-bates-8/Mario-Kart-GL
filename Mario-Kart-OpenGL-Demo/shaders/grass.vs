@@ -1,6 +1,6 @@
 #extension GL_EXT_gpu_shader4 : enable
 
-uniform sampler2D positionMap;
+uniform sampler1D positionMap;
 uniform sampler2D texture;
 
 uniform int   length;
@@ -29,18 +29,11 @@ void main(void)
     
     gl_TexCoord[0] = vec4(texCoord, 0.0, 1.0);
 
-
-	float l = float(length);
-	
-	float xOffset = float(gl_InstanceID >> int(log2(float(length))));
-	float zOffset = float(gl_InstanceID  & (length - 1));
-
-    vec2 posCoord = clamp(vec2(xOffset, zOffset) / l, 0.0, 1.0);
     
-    vec4 position  = texture2D(positionMap, posCoord);
+    vec4 position  = texture1D(positionMap, float(gl_InstanceID) / float(length));
     mat4 yRotation = get_Y_rotation(position.a);
     
-    vec4 windOffset = vec4(sin(timer + float(gl_InstanceID) / float(length * length)) * windDir, 0.0, 0.0);
+    vec4 windOffset = vec4(sin(timer + float(gl_InstanceID) / float(length)) * windDir, 0.0, 0.0);
     if(gl_Vertex.y <= 0.0) windOffset = vec4(0.0);
     
  	gl_FrontColor = vec4(1.0);

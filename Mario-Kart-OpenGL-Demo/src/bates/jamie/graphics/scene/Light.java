@@ -22,6 +22,7 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUquadric;
 
+import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
 
 
@@ -132,6 +133,23 @@ public class Light extends AnchorPoint
 		
 		gl.glLightModeli(GL2.GL_LIGHT_MODEL_LOCAL_VIEWER, localViewer ? GL2.GL_TRUE : GL2.GL_FALSE);
 		gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, seperateSpecular ? GL2.GL_SEPARATE_SPECULAR_COLOR : GL2.GL_SINGLE_COLOR);
+	}
+	
+	public static float[] rimColor = {0.7f, 0.7f, 0.7f};
+	public static float   rimPower = 5.0f;
+	
+	public static void setepRimLighting(GL2 gl)
+	{
+		Shader shaders[] = {Shader.get("phong_rim"), Shader.get("texture_rim"), Shader.get("cube_rim")};
+		
+		for(Shader shader : shaders)
+		{
+			shader.enable(gl);
+			
+			shader.setUniform(gl, "rim_color", rimColor);
+			shader.setUniform(gl, "rim_power", rimPower);
+		}
+		Shader.disable(gl);	
 	}
 
 	public void setup(GL2 gl)
