@@ -1,6 +1,9 @@
 
 varying vec3 worldPos;
 
+varying vec3 eyeDir;
+varying vec3 vertexNormal;
+
 uniform vec3 horizon;
 uniform vec3 skyColor;
 
@@ -11,5 +14,6 @@ void main(void)
 	
 	vec3 background = mix(horizon, skyColor, abs(h));
 	
-	gl_FragColor = vec4(background, 1.0);
+	gl_FragData[0] = vec4(background, 1.0);
+	gl_FragData[1] = vec4(vertexNormal, eyeDir.z);
 }

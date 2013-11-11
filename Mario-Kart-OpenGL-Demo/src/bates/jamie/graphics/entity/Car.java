@@ -269,7 +269,7 @@ public class Car
 	    driftLights[1] = rightLight;
 	}
 	
-	public boolean enableChrome = true;
+	public boolean enableChrome = false;
 	
 	public void setupGraph()
 	{

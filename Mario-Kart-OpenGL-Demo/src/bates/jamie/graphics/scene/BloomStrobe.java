@@ -14,12 +14,16 @@ import static javax.media.opengl.GL.GL_TEXTURE_WRAP_T;
 import static javax.media.opengl.GL2GL3.GL_TEXTURE_BASE_LEVEL;
 import static javax.media.opengl.GL2GL3.GL_TEXTURE_MAX_LEVEL;
 
+import java.nio.FloatBuffer;
+import java.util.Random;
+
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.Vec3;
 
 public class BloomStrobe
 {
@@ -29,7 +33,9 @@ public class BloomStrobe
 	private int fboHeight = 0;
 
 	private int[] textureID = new int[7]; // original scene, bright pass, and bloom results (4)
-	private int[] fboID     = new int[5]; // FBO names for 1st pass (1) and 2nd pass (4)                    
+	private int[] fboID     = new int[5]; // FBO names for 1st pass (1) and 2nd pass (4)  
+	
+	private int randomTexture;
 
 	private int rboID; // render buffer object name
 	private int pboID; // pixel buffer object name 
@@ -60,6 +66,7 @@ public class BloomStrobe
 		Shader gaussian = Shader.get("gaussian");
 		Shader combine  = Shader.get("combine");
 		Shader show2D   = Shader.get("show_texture");
+		Shader occlude  = Shader.get("ssao");
 	    
 	    gaussian.enable(gl);
 	    gaussian.setSampler(gl, "sampler0", 0);
@@ -74,6 +81,18 @@ public class BloomStrobe
 	    
 	    show2D.enable(gl);
 	    show2D.setSampler(gl, "sampler0", 0);
+	    
+	    occlude.enable(gl);
+	    occlude.setSampler(gl, "colourSampler", 0);
+	    occlude.setSampler(gl, "normalSampler", 1);
+	    occlude.setSampler(gl, "randomSampler", 6);
+	    
+	    occlude.setUniform(gl, "ssao_level", 1.0f);
+	    occlude.setUniform(gl, "object_level", 1.0f);
+	    occlude.setUniform(gl, "ssao_radius", 0.0025f);
+	    occlude.setUniform(gl, "weight_by_angle", true);
+	    occlude.setUniform(gl, "point_count", 10);
+	    occlude.setUniform(gl, "randomize_points", true);
 
 	    Shader.disable(gl);
 	}
@@ -87,17 +106,17 @@ public class BloomStrobe
 	
 		// Generate mipmaps of the bright pass results:
 		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
-		gl.glGenerateMipmap(GL_TEXTURE_2D);
+//		gl.glGenerateMipmap(GL_TEXTURE_2D);
 	
 		secondPass(gl);
 	
 		finalPass(gl);
 	
 		// Read back frame for afterglow effect
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
-		gl.glReadPixels(0, 0, fboWidth, fboHeight, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0); 
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
-		afterGlowValid = true;
+//		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
+//		gl.glReadPixels(0, 0, fboWidth, fboHeight, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0); 
+//		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+//		afterGlowValid = true;
 	
 		// Reset state
 		Shader.disable(gl);
@@ -162,12 +181,12 @@ public class BloomStrobe
 	 */
 	public void secondPass(GL2 gl)
 	{
-		Shader shader = Shader.get("gaussian");
+		Shader shader = Shader.get("show_texture");
 		if(shader != null) shader.enable(gl);
 
 		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
 
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < 1; i++)
 		{
 			gl.glBindFramebuffer(GL_FRAMEBUFFER, fboID[i + 1]);
 			gl.glViewport(0, 0, fboWidth >> i, fboHeight >> i);
@@ -178,11 +197,11 @@ public class BloomStrobe
 			if(status != GL2.GL_FRAMEBUFFER_COMPLETE)
 				System.out.println("Frame Buffer Error : Second Rendering Pass");
 
-			int offsetsLoc = gl.glGetUniformLocation(shader.shaderID, "tc_offset");
-			gl.glUniform2fv(offsetsLoc, 25, offsets[i], 0);
-
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, i);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , i);
+//			int offsetsLoc = gl.glGetUniformLocation(shader.shaderID, "tc_offset");
+//			gl.glUniform2fv(offsetsLoc, 25, offsets[i], 0);
+//
+//			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, i);
+//			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , i);
 
 			gl.glBegin(GL2.GL_QUADS);
 			{
@@ -193,28 +212,85 @@ public class BloomStrobe
 			}
 			gl.glEnd();
 		}
-
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 4);
+//
+//		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+//		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 4);
 	}
+	
+	private static boolean state = false;
+	public static float object_level = 1.0f;
+	public static int point_count = 10;
+	
+	public static float falloff = 0.000001f;
+	public static float area = 0.00f;
+	public static float radius = 0.002f;
+	public static float angle = 0.00f;
+	public static float offset = 1.0f;
+	public static float strength = 1.0f;
+	
+	public static final float[] OFFSETS =
+	{
+		 0.5381f, 0.1856f,-0.4319f,  0.1379f, 0.2486f, 0.4430f,
+      	 0.3371f, 0.5679f,-0.0057f, -0.6999f,-0.0451f,-0.0019f,
+     	 0.0689f,-0.1598f,-0.8547f,  0.0560f, 0.0069f,-0.1843f,
+     	-0.0146f, 0.1402f, 0.0762f,  0.0100f,-0.1924f,-0.0344f,
+      	-0.3577f,-0.5301f,-0.4358f, -0.3169f, 0.1063f, 0.0158f,
+     	 0.0103f,-0.5869f, 0.0046f, -0.0897f,-0.4940f, 0.3287f,
+     	 0.7119f,-0.0154f,-0.0918f, -0.0533f, 0.0596f,-0.5411f,
+     	 0.0352f,-0.0631f, 0.5460f, -0.4776f, 0.2847f,-0.0271f
+     };
 
 	// final pass:
 	// output the final image to the backbuffer
 	public void finalPass(GL2 gl)
 	{
-		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		gl.glViewport(0, 0, scene.getWidth(), scene.getHeight());
+		gl.glBindFramebuffer(GL_FRAMEBUFFER, fboID[1]);
+		gl.glViewport(0, 0, fboWidth, fboHeight);
+		
+		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+		
+//		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//		gl.glViewport(0, 0, scene.getWidth(), scene.getHeight());
+		
+		gl.glClampColor(GL2.GL_CLAMP_FRAGMENT_COLOR, GL2.GL_FALSE);
+		gl.glClampColor(GL2.GL_CLAMP_VERTEX_COLOR, GL2.GL_FALSE);
+		gl.glClampColor(GL2.GL_CLAMP_READ_COLOR, GL2.GL_FALSE);
 
 		// set up afterglow texture
 		gl.glActiveTexture(GL2.GL_TEXTURE5);
 		
-		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, pboID);
-		gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
-		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
+//		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, pboID);
+//		gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
+//		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
 		
 		gl.glActiveTexture(GL_TEXTURE0);
 		
+//		if(state == false)
+//		{
+//			gl.glActiveTexture(GL2.GL_TEXTURE1);
+//			gl.glBindTexture(GL2.GL_TEXTURE_2D, textureID[1]);
+//			
+//			FloatBuffer buffer = FloatBuffer.allocate(fboWidth * fboHeight * 4);
+//			gl.glGetTexImage(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA, GL2.GL_FLOAT, buffer);
+//			
+//			StringBuffer str = new StringBuffer();
+//			
+//			for(int i = 0; i < fboWidth * fboHeight; i++)
+//			{
+//				str.append(String.format("%.3f, %.3f, %.3f, %.11f\n", buffer.get(i*4), buffer.get(i*4+1), buffer.get(i*4+2), buffer.get(i*4+3)));
+//			}
+//			
+//			System.out.println(str.toString());
+//			
+//			gl.glActiveTexture(GL_TEXTURE0);
+//			
+//			state = true;
+//		}
+		
 		updateState(gl);
+		
+//		generateRandomVectors(gl);
 
 		switch(mode)
 		{
@@ -244,11 +320,29 @@ public class BloomStrobe
 			case JUST_AFTER_GLOW:
 			case FULL_SCENE:
 			{
-				Shader shader = Shader.get("combine");
+				Shader shader = Shader.get("ssao");
 				if(shader != null) shader.enable(gl);
+				
+				shader.setUniform(gl, "radius", radius);
+				shader.setUniform(gl, "area", area);
+				shader.setUniform(gl, "falloff", falloff);
+				shader.setUniform(gl, "angle", angle);
+				shader.setUniform(gl, "offset", offset);
+				shader.setUniform(gl, "strength", strength);
+				
+				shader.setSampler(gl, "colourSampler", 0); gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glBindTexture(GL_TEXTURE_2D, textureID[0]);
+				shader.setSampler(gl, "normalSampler", 1); gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
+				shader.setSampler(gl, "randomSampler", 6); gl.glActiveTexture(GL2.GL_TEXTURE6); gl.glBindTexture(GL_TEXTURE_2D, randomTexture);
+				
+				int offsetsLoc = gl.glGetUniformLocation(shader.shaderID, "sample_sphere");
+				gl.glUniform3fv(offsetsLoc, 16, OFFSETS, 0);
+				
+				gl.glActiveTexture(GL2.GL_TEXTURE0);
 
-				gl.glBindTexture(GL_TEXTURE_2D, 
-						((mode == DisplayMode.JUST_BLOOM) || (mode == DisplayMode.JUST_AFTER_GLOW)) ? 0 : textureID[0]);
+//				gl.glBindTexture(GL_TEXTURE_2D, 
+//						((mode == DisplayMode.JUST_BLOOM) || (mode == DisplayMode.JUST_AFTER_GLOW)) ? 0 : textureID[0]);
+				
+				gl.glBindTexture(GL_TEXTURE_2D, textureID[0]);
 
 				boolean afterGlow = mode.ordinal() >= DisplayMode.JUST_AFTER_GLOW.ordinal();
 				shader.setUniform(gl, "afterGlow", afterGlow && afterGlowValid ? 1 : 0);
@@ -342,6 +436,27 @@ public class BloomStrobe
 			}
 			gl.glEnd();
 		}
+		
+		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		gl.glViewport(0, 0, scene.getWidth(), scene.getHeight());
+		
+		Shader shader = Scene.enableParallax ? Shader.get("gaussian") : Shader.get("show_texture");
+		if(shader != null) shader.enable(gl);
+		
+		
+		gl.glBindTexture(GL_TEXTURE_2D, textureID[2]);
+
+		int offsetsLoc = gl.glGetUniformLocation(shader.shaderID, "tc_offset");
+		gl.glUniform2fv(offsetsLoc, 25, offsets[0], 0);
+
+			gl.glBegin(GL2.GL_QUADS);
+			{
+				gl.glMultiTexCoord2f(GL_TEXTURE0, 0.0f, 0.0f); gl.glVertex2f(-1.0f, -1.0f);
+				gl.glMultiTexCoord2f(GL_TEXTURE0, 0.0f, 1.0f); gl.glVertex2f(-1.0f, +1.0f);
+				gl.glMultiTexCoord2f(GL_TEXTURE0, 1.0f, 1.0f); gl.glVertex2f(+1.0f, +1.0f);
+				gl.glMultiTexCoord2f(GL_TEXTURE0, 1.0f, 0.0f); gl.glVertex2f(+1.0f, -1.0f);
+			}
+			gl.glEnd();
 	}
 
 	public void createTexture(GL2 gl)
@@ -357,8 +472,9 @@ public class BloomStrobe
 
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+			//gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_NONE);
 
 			gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA32F, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_FLOAT, null);
 		}
@@ -370,8 +486,9 @@ public class BloomStrobe
 
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+			gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_NONE);
 
 			if (i < 6)
 			{
@@ -383,6 +500,63 @@ public class BloomStrobe
 			}
 		}
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
+		
+		int[] textureID = new int[1];
+		gl.glGenTextures(1, textureID, 0);
+		randomTexture = textureID[0];
+		
+		generateRandomVectors(gl);
+	}
+	
+	private void generateRandomVectors(GL2 gl)
+	{	
+		gl.glActiveTexture(GL2.GL_TEXTURE6);
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, randomTexture);
+		
+		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_REPEAT);
+		
+		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+		
+		int length = 2048;
+		
+		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA32F, length, length, 0, GL2.GL_RGBA, GL2.GL_FLOAT, null);
+		
+		FloatBuffer positions = FloatBuffer.allocate(length * length * 4);
+		
+		Random generator = new Random();
+		
+		for(int i = 0; i < length * length; i++)
+		{
+			positions.put(getRandomDirection());
+			positions.put(0);	
+		}
+		positions.position(0);
+		
+		gl.glTexSubImage2D(GL2.GL_TEXTURE_2D, 0, 0, 0, length, length, GL2.GL_RGBA, GL2.GL_FLOAT, positions);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
+	}
+	
+	private float[] getRandomDirection()
+	{
+		Random g = new Random();
+		
+		Vec3 v = new Vec3();
+		
+		do
+		{
+			float x = g.nextBoolean() ? g.nextFloat() : -g.nextFloat();
+			float y = g.nextBoolean() ? g.nextFloat() : -g.nextFloat();
+			float z = g.nextFloat();
+			
+			v = new Vec3(x, y, z);
+			
+		} while (v.magnitude() > 1.0);
+		
+		v = v.normalize();
+		
+		return v.toArray(); 
 	}
 
 	public void createBuffers(GL2 gl)
@@ -393,9 +567,9 @@ public class BloomStrobe
 		gl.glGenBuffers(1, buffers, 0);
 		pboID = buffers[0];
 
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
-		gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, 1, null, GL2.GL_STREAM_COPY);
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+//		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
+//		gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, 1, null, GL2.GL_STREAM_COPY);
+//		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 
 		// Set up some renderbuffer state
 		gl.glGenRenderbuffers(1, buffers, 1);
@@ -434,11 +608,17 @@ public class BloomStrobe
 	    
 	    fboWidth  = scene.getWidth();
 	    fboHeight = scene.getHeight();
+	    
+	    fboWidth  = 2048;
+	    fboHeight = 2048;
+	    
+//	    fboWidth  = 400;
+//	    fboHeight = 400;
 
-	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
-	    gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fboHeight * fboWidth * 4, null, GL2.GL_STREAM_COPY);
-	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
-	    afterGlowValid = false;
+//	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
+//	    gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fboHeight * fboWidth * 4, null, GL2.GL_STREAM_COPY);
+//	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+//	    afterGlowValid = false;
 
 	    gl.glRenderbufferStorage(GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT32, fboWidth, fboHeight);
 
@@ -454,7 +634,7 @@ public class BloomStrobe
 	    	
 	    	if (i < 6)
 			{
-				gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth >> (i - 2), fboHeight >> (i - 2), 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
+				gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
 			}
 			else
 			{

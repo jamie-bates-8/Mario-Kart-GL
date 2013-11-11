@@ -1448,7 +1448,8 @@ public class Quadtree
 			
 			if(enableCaustic)
 				 shader = enableBumpmap ? Shader.get("bump_caustics") : Shader.get("water_caustics");
-			else shader = enableBumpmap ? (Scene.singleton.singleLight ? Shader.get("bump") : Shader.get("bump_lights")) : Shader.get("phong_shadow");
+			else shader = enableBumpmap ? (Scene.singleton.singleLight ? Shader.get("bump") : Shader.get("bump_lights")) :
+										  (Scene.singleton.singleLight ? Shader.get("phong_shadow") : Shader.get("shadow_lights"));
 			
 			shader.enable(gl);
 			

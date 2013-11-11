@@ -330,7 +330,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean moveLight    = false;
 	public boolean displayLight = false;
 	public boolean synchLights  = true;
-	public boolean rimLighting  = true;
+	public boolean rimLighting  = false;
 	
 	
 	/** Shadow Fields **/
@@ -407,7 +407,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean multisample = true;
 	
 	public boolean testMode = false;
-	public boolean printVersion = false;
+	public boolean printVersion = true;
 	public boolean printErrors  = false;
 	
 	public ModelSelecter selecter;
@@ -432,7 +432,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public boolean enableBloom = false;
 	public static boolean enableParallax = true;
-	public static boolean enableFocalBlur = true;
+	public static boolean enableFocalBlur = false;
 	
 	private LightingStrike[] bolts;
 	
@@ -1224,7 +1224,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    if(printVersion) printVersion(gl);
 	    
-	    console.parseCommand("profile project");
+	    console.parseCommand("profile game");
 	    
 	    long setupEnd = System.currentTimeMillis();
 	    System.out.println("\nSetup Time: " + (setupEnd - setupStart) + " ms" + "\n");
@@ -1275,7 +1275,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void loadPlayers(GL2 gl)
 	{
-		cars.add(new Car(gl, new Vec3( 78.75f, 1.8f, 0), 0,   0, 0, this));
+		cars.add(new Car(gl, new Vec3(0, 1.8f, 78.75f), 0,   0, 0, this));
 	    
 	    if(GamePad.numberOfGamepads() > 1)
 	    	cars.add(new Car(gl, new Vec3( -78.75f, 1.8f, 0), 0, 180, 0, this));
@@ -1932,7 +1932,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //				gl.glScalef(40.0f, 40.0f, 40.0f);
 				
 				Shader shader = enableBump ? (singleLight ? Shader.get("bump") : Shader.get("bump_lights")) :
-					                         (singleLight ? Shader.get("phong_shadow") : Shader.get("shadow_lights"));
+					                         Shader.getLightModel("shadow");
 				
 				shader.enable(gl);
 				shader.setSampler(gl, "texture", 0);
@@ -2055,7 +2055,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void renderWalls(GL2 gl)
 	{
-		Shader shader = Shader.get("phong_shadow");
+		Shader shader = Shader.get("texture_lights");
 		if(shader != null) shader.enable(gl);
 		
 		Texture[] textures = {cobble, brickWallTop, brickWall};
@@ -2111,6 +2111,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 
 		fort.render(gl);
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslatef(0, 5, 0);
+			glut.glutSolidTeapot(5);
+		}
+		gl.glPopMatrix();
 
 		return System.nanoTime() - start;
 	}
@@ -2425,8 +2432,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		switch(item)
 		{
-			case GreenShell.ID  : itemList.add(new  GreenShell(this, c, trajectory)); break;
-			case RedShell.ID    : itemList.add(new    RedShell(this, c, trajectory)); break;
+			case GreenShell.ID  : itemList.add(new  GreenShell(this, c, trajectory, true)); break;
+			case RedShell.ID    : itemList.add(new    RedShell(this, c, trajectory, true)); break;
 			case FakeItemBox.ID : itemList.add(new FakeItemBox(this, c, trajectory)); break;
 			case Banana.ID      : itemList.add(new      Banana(this, c)); break;
 			case BlueShell.ID   : itemList.add(new   BlueShell(this, c)); break;

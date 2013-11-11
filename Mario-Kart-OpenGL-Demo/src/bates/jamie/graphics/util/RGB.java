@@ -32,6 +32,18 @@ public class RGB
 	public static final float[] PURE_BLUE_3F  = {0, 0, 1};
 	public static final float[] WHITE_3F      = {1, 1, 1};
 	
+	public static void main(String[] args)
+	{
+		System.out.println("vec3" + Vector.print(Vector.multiply(DARK_RED, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(RED, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(ORANGE, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(YELLOW, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(LIME_GREEN, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(GREEN, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(BLUE, 1.0f / 255)) + ",");
+		System.out.println("vec3" + Vector.print(Vector.multiply(VIOLET, 1.0f / 255)) + ",");
+	}
+	
 	public static float[] toRGBAi(float[] color, float alpha)
 	{
 		return new float[] {color[0]/255, color[1]/255, color[2]/255, alpha};

@@ -82,6 +82,7 @@ public class Shader
 		Shader mirage       = new Shader(gl, "show_texture", "mirage");
 		Shader combine      = new Shader(gl, "show_texture", "combine");
 		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
+		Shader ambientOcc   = new Shader(gl, "show_texture", "ssao"); // screen-space ambient occlusion
 		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
 		Shader radialBlur   = new Shader(gl, "radial_blur", "radial_blur");
 		
@@ -117,6 +118,7 @@ public class Shader
 		if(      mirage.isValid()) shaders.put("heat_haze", mirage);
 		if(     combine.isValid()) shaders.put("combine", combine);
 		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
+		if(  ambientOcc.isValid()) shaders.put("ssao", ambientOcc);
 		if( crepuscular.isValid()) shaders.put("crepuscular", crepuscular);
 		if(  radialBlur.isValid()) shaders.put("radial_blur", radialBlur);
 	}
@@ -126,6 +128,8 @@ public class Shader
 	public static Shader getLightModel(String name)
 	{
 		Scene scene = Scene.singleton;
+		
+//		if(Scene.enableParallax) return get("phong_lights");
 		
 		if(name.equalsIgnoreCase("phong"))
 		{
@@ -144,6 +148,11 @@ public class Shader
 			if(scene.singleLight) return get("phong_cube");
 			else if(scene.rimLighting) return get("cube_rim");
 			else return get("cube_lights");
+		}
+		else if(name.equalsIgnoreCase("shadow"))
+		{
+			if(scene.singleLight) return get("phong_shadow");
+			else return get("shadow_lights");
 		}
 		
 		return get("phong");

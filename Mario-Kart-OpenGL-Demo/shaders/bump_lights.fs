@@ -131,5 +131,6 @@ void main(void)
     float bright = dot(brightColor, vec3(1.0));
     bright = smoothstep(0.0, 0.5, bright);
     
-    gl_FragData[1] = vec4(mix(vec3(0.0), linearColor.rgb, bright), 1.0);
+    //gl_FragData[1] = vec4(mix(vec3(0.0), linearColor.rgb, bright), 1.0);
+    gl_FragData[1] = vec4(normal, -eyeDir.z);
 }

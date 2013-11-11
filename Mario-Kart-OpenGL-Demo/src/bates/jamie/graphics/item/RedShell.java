@@ -66,14 +66,14 @@ public class RedShell extends Shell
 		target = seekTarget();
 	}
 
-	public RedShell(Scene scene, Vec3 c, float trajectory)
+	public RedShell(Scene scene, Vec3 c, float trajectory, boolean modelOnly)
 	{	
 		super(null, scene, null, trajectory);
 		
 		bound = new Sphere(c, RADIUS);
 		boundColor = RGB.toRGBAi(RGB.DARK_RED, BOUND_ALPHA);
 		
-		velocity = INITIAL_VELOCITY;
+		velocity = modelOnly ? 0 : INITIAL_VELOCITY;
 		
 		this.trajectory = trajectory;
 		setRotation(0, trajectory, 0);

@@ -1,3 +1,5 @@
+#version 120
+
 // ADS Point Lighting Shader (Phong)
 
 varying vec3 vertexNormal;
@@ -17,7 +19,7 @@ void main(void)
     // Get vertex position in eye coordinates
     vec3 position = (vertex / vertex.w).xyz;
     
-    eyeDir = vertex.xyz;
+    eyeDir = -vertex.xyz;
 
     // Get vector to light source
     for(int i = 0; i < 8; i++) lightDir[i] = gl_LightSource[i].position.xyz - position;

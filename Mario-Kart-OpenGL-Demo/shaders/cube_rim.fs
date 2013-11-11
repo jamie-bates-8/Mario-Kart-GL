@@ -11,9 +11,9 @@ uniform float rim_power;
 
 vec3 rimLight()
 {
-    float d = dot(normalize(vertexNormal), normalize(-eyeDir));
+    float d = dot(normalize(vertexNormal), normalize(eyeDir));
 	vec3 normal = (d < 0.0) ? -vertexNormal : vertexNormal;
-    float f = 1.0 - dot(normalize(normal), normalize(-eyeDir));
+    float f = 1.0 - dot(normalize(normal), normalize(eyeDir));
 
     f = smoothstep(0.0, 1.0, f);
     f = pow(f, rim_power);
@@ -77,5 +77,6 @@ void main(void)
     float bright = dot(brightColor, vec3(1.0));
     bright = smoothstep(0.0, 0.5, bright);
     
-    gl_FragData[1] = vec4(mix(vec3(0.0), linearColor.rgb, bright), 1.0);
+    //gl_FragData[1] = vec4(mix(vec3(0.0), linearColor.rgb, bright), 1.0);
+    gl_FragData[1] = vec4(normalize(vertexNormal), eyeDir.z);
 }

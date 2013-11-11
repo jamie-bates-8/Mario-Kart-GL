@@ -40,7 +40,7 @@ public class SkyBox
 	{
 		gl.glDisable(GL2.GL_LIGHTING);
 		
-		Shader shader = Shader.get("clear_sky");
+		Shader shader = Shader.get("phong_lights");
 		
 		if(Shader.enabled && shader != null) shader.enable(gl);
 		
