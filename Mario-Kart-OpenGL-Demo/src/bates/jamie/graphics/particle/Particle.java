@@ -35,7 +35,8 @@ public abstract class Particle
 	
 	protected static Texture whiteStar;
 	
-	protected static Texture cloud1;
+	protected static Texture fire;
+	protected static Texture fire2;
 	
 	static
 	{
@@ -56,6 +57,9 @@ public abstract class Particle
 			whiteSpark  = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "whiteSpark.png"), true);
 			
 			whiteStar   = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "whiteStar.png"), true);
+			
+			fire = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire.png"), true);
+			fire2 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire2.png"), true);
 			
 			reset       = TextureIO.newTexture(new File("tex/default.jpg"), true);
 			

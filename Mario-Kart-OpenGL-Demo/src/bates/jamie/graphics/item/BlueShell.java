@@ -24,6 +24,7 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
@@ -39,7 +40,7 @@ public class BlueShell extends Shell
 	
 	private static Texture[] textures;
 	private static Texture shellTop;
-	private static Texture noiseSampler;
+	public  static Texture noiseSampler;
 	
 	public static Light blastLight;
 	
@@ -48,7 +49,6 @@ public class BlueShell extends Shell
 		try
 		{
 			shellTop     = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "blueShellTop.jpg"), true);
-			noiseSampler = TextureIO.newTexture(new File("tex/blast_noise.png"), true);
 			
 			textures = new Texture[] {shellTop};
 		}
@@ -73,6 +73,8 @@ public class BlueShell extends Shell
 			gl.glNewList(shellList, GL2.GL_COMPILE);
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
+			
+			noiseSampler = TextureLoader.load(gl, "tex/blast_noise.png");
 			
 			float[] blastColor = {RGB.INDIGO[0]/255, RGB.INDIGO[1]/255, RGB.INDIGO[2]/255};
 			

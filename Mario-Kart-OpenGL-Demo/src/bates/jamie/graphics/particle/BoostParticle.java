@@ -71,6 +71,7 @@ public class BoostParticle extends Particle
 			int spectrum = (special) ? 3 : 3;
 			
 			textures[offset + generator.nextInt(spectrum)].bind(gl);
+			fire.bind(gl);
 			
 			gl.glBegin(GL_POINTS);
 			{

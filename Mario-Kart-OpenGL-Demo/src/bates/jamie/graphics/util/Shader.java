@@ -85,6 +85,7 @@ public class Shader
 		Shader ambientOcc   = new Shader(gl, "show_texture", "ssao"); // screen-space ambient occlusion
 		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
 		Shader radialBlur   = new Shader(gl, "radial_blur", "radial_blur");
+		Shader smoke        = new Shader(gl, "smoke", "smoke");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
@@ -121,6 +122,7 @@ public class Shader
 		if(  ambientOcc.isValid()) shaders.put("ssao", ambientOcc);
 		if( crepuscular.isValid()) shaders.put("crepuscular", crepuscular);
 		if(  radialBlur.isValid()) shaders.put("radial_blur", radialBlur);
+		if(  	  smoke.isValid()) shaders.put("smoke", smoke);
 	}
 	
 	public static Shader get(String name) { return shaders.get(name); }

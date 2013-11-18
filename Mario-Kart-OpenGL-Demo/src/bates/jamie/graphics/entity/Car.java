@@ -1165,7 +1165,7 @@ public class Car
 		if(boosting)
 		{
 			for(Vec3 source : getBoostVectors())
-				scene.addParticles(generator.generateBoostParticles(source, boostDuration / 4, superBoosting, miniature));
+				scene.addParticles(generator.generateBoostParticles(source, boostDuration / 4 * 2, superBoosting, miniature));
 		}
 		
 		if(curseDuration > 0) curseDuration--;

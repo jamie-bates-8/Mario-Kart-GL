@@ -20,7 +20,7 @@ import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.Blizzard;
 import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.scene.BloomStrobe;
+import bates.jamie.graphics.scene.AmbientOccluder;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vec3;
@@ -83,12 +83,12 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-	         if(_cmd.equalsIgnoreCase("radius")) BloomStrobe.radius = cmd.nextFloat();
-	    else if(_cmd.equalsIgnoreCase("falloff")) BloomStrobe.falloff = cmd.nextFloat();
-	    else if(_cmd.equalsIgnoreCase("area")) BloomStrobe.area = cmd.nextFloat();
-	    else if(_cmd.equalsIgnoreCase("angle")) BloomStrobe.angle = cmd.nextFloat();
-	    else if(_cmd.equalsIgnoreCase("offset")) BloomStrobe.offset = cmd.nextFloat();
-	    else if(_cmd.equalsIgnoreCase("strength")) BloomStrobe.strength = cmd.nextFloat();
+	         if(_cmd.equalsIgnoreCase("radius"  )) AmbientOccluder.radius = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase("falloff" )) AmbientOccluder.falloff = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase("area"    )) AmbientOccluder.area = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase("angle"   )) AmbientOccluder.angle = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase("offset"  )) AmbientOccluder.offset = cmd.nextFloat();
+	    else if(_cmd.equalsIgnoreCase("strength")) AmbientOccluder.strength = cmd.nextFloat();
 	}
 	
 	private void parseWater(Scanner cmd)

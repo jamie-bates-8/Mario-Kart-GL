@@ -53,6 +53,13 @@ public class Vec3
 		this.z = z;
 	}
 	
+	public Vec3(double x, double y, double z)
+	{
+		this.x = (float) x;
+		this.y = (float) y;
+		this.z = (float) z;
+	}
+	
 	public Vec3(float[] v)
 	{
 		x = v[0];

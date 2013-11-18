@@ -117,6 +117,7 @@ import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
+import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.StarParticle;
 import bates.jamie.graphics.scene.ShadowCaster.ShadowQuality;
@@ -435,6 +436,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static boolean enableFocalBlur = false;
 	
 	private LightingStrike[] bolts;
+	private ParticleEngine smokeCloud = new ParticleEngine(100);
 	
 	public Scene()
 	{
@@ -2112,12 +2114,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		fort.render(gl);
 		
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(0, 5, 0);
-			glut.glutSolidTeapot(5);
-		}
-		gl.glPopMatrix();
+//		gl.glPushMatrix();
+//		{
+//			gl.glTranslatef(0, 5, 0);
+//			glut.glutSolidTeapot(5);
+//		}
+//		gl.glPopMatrix();
 
 		return System.nanoTime() - start;
 	}
@@ -2217,7 +2219,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			else particle.render(gl, car.trajectory);
 		}
 		
+		smokeCloud.render(gl);
+		
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+		
+//		smokeCloud.render(gl);
 		
 		return System.nanoTime() - start;
 	}
@@ -2821,6 +2827,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_R: rimLighting = !rimLighting; break;
 			
 			case KeyEvent.VK_V: Model.enableVBO = !Model.enableVBO; break;
+			
+			case KeyEvent.VK_G: smokeCloud = new ParticleEngine(10000); break;
 			
 			default: break;
 		}
