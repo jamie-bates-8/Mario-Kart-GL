@@ -116,6 +116,8 @@ public class Water
 			shader.setSampler(gl, "normalSampler"    , 2);
 			shader.setSampler(gl, "iceSampler"       , 3);
 			
+			shader.setUniform(gl, "renderMode", renderMode);
+			
 			shader.setUniform(gl, "frozen", frozen);
 			
 			shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
@@ -148,5 +150,14 @@ public class Water
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		gl.glPopMatrix();
+	}
+	
+	static int renderMode = 1;
+	
+	public static void cycle()
+	{
+		renderMode++;
+		
+		if(renderMode > 4) renderMode = 1;
 	}
 }

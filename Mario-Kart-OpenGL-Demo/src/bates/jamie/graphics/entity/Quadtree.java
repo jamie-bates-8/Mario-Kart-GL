@@ -1442,6 +1442,8 @@ public class Quadtree
 		timeQuery.getResult(gl);
 		timeQuery.begin(gl);
 		
+		timer += 0.05;
+		
 		if(solid)
 		{
 			Shader shader = null;

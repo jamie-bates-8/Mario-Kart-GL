@@ -54,7 +54,7 @@ public class Light extends AnchorPoint
 	
 	private float originalAttenuation = 0.02f;
 	
-	private int shininess = 128;
+	public static int shininess = 128;
 
 	public Vec3 direction = Vec3.NEGATIVE_Y_AXIS;
 
@@ -140,7 +140,7 @@ public class Light extends AnchorPoint
 	
 	public static void setepRimLighting(GL2 gl)
 	{
-		Shader shaders[] = {Shader.get("phong_rim"), Shader.get("texture_rim"), Shader.get("cube_rim")};
+		Shader shaders[] = {Shader.get("phong_rim"), Shader.get("texture_rim"), Shader.get("cube_rim"), Shader.get("energy_field")};
 		
 		for(Shader shader : shaders)
 		{
@@ -175,7 +175,7 @@ public class Light extends AnchorPoint
 		gl.glLightfv(light, GL_POSITION, _p, 0);
 
 		gl.glMaterialfv(GL_FRONT, GL_SPECULAR,  specular, 0);
-		gl.glMateriali (GL_FRONT, GL_SHININESS, shininess  );
+		gl.glMateriali (GL_FRONT, GL_SHININESS, shininess);
 		gl.glMaterialfv(GL_FRONT, GL_EMISSION,  emission, 0);
 	}
 	
@@ -225,11 +225,11 @@ public class Light extends AnchorPoint
 		gl.glLightfv(GL_LIGHT0, GL_SPECULAR, specular, 0);
 	}
 
-	public void setShininess(int shininess)
+	public static void setShininess(int s)
 	{
+		shininess = s;
+		
 		if(shininess <   0) shininess =   0;
 		if(shininess > 128) shininess = 128;
-		
-		this.shininess = shininess;
 	}
 }

@@ -248,7 +248,7 @@ void main()
 		vec3 vReflection = normalize(reflect(normalize(-lightVec), normalize(normal)));
     	float specular = max(0.0, dot(normalize(-eyeDir), vReflection));
 	
-        specular = pow(specular, 128.0);
+        specular = pow(specular, gl_FrontMaterial.shininess);
         fogging.rgb += gl_LightSource[0].specular.rgb * specular;
     }
 	
@@ -269,5 +269,5 @@ void main()
 		float sIntensity = shadowIntensity();
 		gl_FragData[0] = vec4(sIntensity * fogging.rgb, 1.0);
 	}
-	else gl_FragData[0] = vec4(fogging, 1.0);
+	else gl_FragData[0] = vec4(causticR);
 }

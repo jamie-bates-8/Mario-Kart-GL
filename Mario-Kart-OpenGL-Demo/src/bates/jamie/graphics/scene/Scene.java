@@ -62,6 +62,7 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
+import javax.media.opengl.glu.GLUquadric;
 import javax.media.opengl.glu.gl2.GLUgl2;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
@@ -87,6 +88,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.BoundParser;
@@ -2102,6 +2104,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+	
+	static float timer = 0.0f;
 
 	/**
 	 * This method renders the 3D models that represent obstacles within the
@@ -2114,12 +2118,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		fort.render(gl);
 		
-//		gl.glPushMatrix();
-//		{
-//			gl.glTranslatef(0, 5, 0);
-//			glut.glutSolidTeapot(5);
-//		}
-//		gl.glPopMatrix();
+		Shader shader = Shader.get("phong_lights"); shader.enable(gl);
+		
+		timer += 0.025;
+		shader.setUniform(gl, "timer", timer);
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslatef(0, 5, 0);
+			glut.glutSolidTeapot(5);
+		}
+		gl.glPopMatrix();
+		
+		Shader.disable(gl);
 
 		return System.nanoTime() - start;
 	}
@@ -2219,11 +2230,42 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			else particle.render(gl, car.trajectory);
 		}
 		
-		smokeCloud.render(gl);
+//		smokeCloud.render(gl);
 		
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 //		smokeCloud.render(gl);
+		
+		Shader shader = Shader.get("energy_field"); shader.enable(gl);
+		
+		timer += 0.025;
+		shader.setUniform(gl, "timer", timer);
+		
+		terrain.tree.caustic.bind(gl);
+		shader.setSampler(gl, "normalSampler", 0);
+		
+		gl.glEnable(GL2.GL_BLEND);
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		GLUquadric sphere = glu.gluNewQuadric();
+		
+		glu.gluQuadricDrawStyle(sphere, GLU.GLU_FILL);
+		glu.gluQuadricTexture  (sphere, true);
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslatef(0, 0, 0);
+			gl.glRotatef( 90, 0, 0, 1);
+//			gl.glRotatef( 90, 0, 1, 0);
+			glu.gluSphere(sphere, 30, 64, 64);
+		}
+		gl.glPopMatrix();
+		
+		Shader.disable(gl);
+		
+		gl.glDisable(GL2.GL_BLEND);
 		
 		return System.nanoTime() - start;
 	}
@@ -2828,7 +2870,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_V: Model.enableVBO = !Model.enableVBO; break;
 			
-			case KeyEvent.VK_G: smokeCloud = new ParticleEngine(10000); break;
+//			case KeyEvent.VK_G: smokeCloud = new ParticleEngine(10000); break;
+			case KeyEvent.VK_G: Water.cycle(); break;
 			
 			default: break;
 		}
@@ -3043,6 +3086,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Object source = e.getSource();
 		JSlider slider = (JSlider) source;
 		
-		reflector.setRefractionIndex((float) slider.getValue() / 100.0f);
+//		reflector.setRefractionIndex((float) slider.getValue() / 100.0f);
+		Light.setShininess((int) (((float) slider.getValue() / 100.0f) * 128));
 	}
 }

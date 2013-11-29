@@ -22,7 +22,7 @@ float windSpeed = 0.2; //wind speed
 
 float visibility = 18.0;
 
-float scale = 1.0; //overall wave scale
+float scale = 0.5; //overall wave scale
 
 vec2 bWaves = vec2(0.30, 0.30); //strength of big waves
 vec2 mWaves = vec2(0.30, 0.15); //strength of middle sized waves
@@ -36,6 +36,8 @@ float aberration = 0.003; //chromatic aberration amount
 float bump = 1.5; //overall water surface bumpyness
 float reflBump = 0.20; //reflection distortion amount
 float refrBump = 0.08; //refraction distortion amount
+
+uniform int renderMode;
 
 vec3 sunPos = vec3(gl_ModelViewMatrixInverse * gl_LightSource[0].position);
 float sunSpec = 1000.0; //Sun specular hardness
@@ -186,9 +188,10 @@ void main()
 
 	vec3 final = color + (specColor * specular);
 
-    gl_FragData[0] = vec4(final, 1.0);
-    //gl_FragColor = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
-    //gl_FragColor = texture2D(reflectionSampler, fragCoord);
+    if(renderMode == 1) gl_FragData[0] = vec4(final, 1.0);
+    if(renderMode == 2) gl_FragData[0] = texture2D(reflectionSampler, fragCoord + (nVec.xz * reflBump * distortFade));
+    if(renderMode == 3) gl_FragData[0] = texture2D(reflectionSampler, fragCoord);
+    if(renderMode == 4) gl_FragData[0] = texture2D(refractionSampler, fragCoord);
     
     vec3 brightColor = max(final - vec3(bloomLimit), vec3(0.0));
     float bright = dot(brightColor, vec3(1.0));

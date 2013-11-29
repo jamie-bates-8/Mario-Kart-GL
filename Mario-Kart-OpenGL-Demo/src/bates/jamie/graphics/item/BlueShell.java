@@ -166,12 +166,6 @@ public class BlueShell extends Shell
 			shader.setUniform(gl, "dissolveFactor", 1.0f - ((float) blastDuration / 60.0f));
 		}
 		
-		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-		
-		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
-		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_SPHERE_MAP);
-		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		GLUquadric sphere = glu.gluNewQuadric();
@@ -189,9 +183,6 @@ public class BlueShell extends Shell
 			glu.gluSphere(sphere, blastRadius, 24, 24);
 		}
 		gl.glPopMatrix();
-		
-		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
-		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 	}
 	
 	@Override

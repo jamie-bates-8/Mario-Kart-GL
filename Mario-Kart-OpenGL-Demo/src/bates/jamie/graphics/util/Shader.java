@@ -76,6 +76,7 @@ public class Shader
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		Shader grass        = new Shader(gl, "grass", "grass");
 		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
+		Shader energyField  = new Shader(gl, "energy_field", "energy_field");
 		
 		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
 		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
@@ -86,6 +87,8 @@ public class Shader
 		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
 		Shader radialBlur   = new Shader(gl, "radial_blur", "radial_blur");
 		Shader smoke        = new Shader(gl, "smoke", "smoke");
+		
+		Shader pulsate      = new Shader(gl, "pulsate", "phong_lights");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       phong.isValid()) shaders.put("phong", phong);
@@ -113,6 +116,7 @@ public class Shader
 		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
 		if(       grass.isValid()) shaders.put("grass", grass);
 		if(    dissolve.isValid()) shaders.put("dissolve", dissolve);
+		if( energyField.isValid()) shaders.put("energy_field", energyField);
 		
 		if(    gaussian.isValid()) shaders.put("gaussian", gaussian);
 		if(  depthField.isValid()) shaders.put("depth_field", depthField);
@@ -123,6 +127,8 @@ public class Shader
 		if( crepuscular.isValid()) shaders.put("crepuscular", crepuscular);
 		if(  radialBlur.isValid()) shaders.put("radial_blur", radialBlur);
 		if(  	  smoke.isValid()) shaders.put("smoke", smoke);
+		
+		if(   pulsate.isValid()) shaders.put("pulsate", pulsate);
 	}
 	
 	public static Shader get(String name) { return shaders.get(name); }
