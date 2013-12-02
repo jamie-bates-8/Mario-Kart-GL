@@ -7,6 +7,9 @@ uniform vec3  rim_color;
 uniform float rim_power;
 
 uniform sampler2D normalSampler;
+uniform sampler2D runeSampler;
+
+uniform bool enableRunes;
 
 uniform float timer;
 
@@ -17,7 +20,7 @@ float rimLight()
     float f = 1.0 - dot(normalize(normal), normalize(-eyeDir));
 
     f = smoothstep(0.0, 1.0, f);
-    f = pow(f, 2.0);
+    f = pow(f, rim_power);
 
     return f;
 }
@@ -55,14 +58,18 @@ void main(void)
 {        	
 				
 	float textureColor = 1.0 - perturb(gl_TexCoord[0].st * 50.0).z;
-	vec3  fieldColor = clamp(pow(vec3(textureColor) * 5.5, vec3(5.5 * 1.0)), 0.0, 1.0);
+	vec3    fieldColor = clamp(pow(vec3(textureColor) * 5.5, vec3(5.5 * 1.0)), 0.0, 1.0);
+	
+	vec4 runeColor = texture2D(runeSampler, gl_TexCoord[0].st * 10.0 + 0.1 * timer);
 	
 	float rimFactor = rimLight();
              						         
-	vec4 linearColor = vec4((fieldColor + rimFactor) * vec3(0.4, 0.7, 0.9), 0.1 + fieldColor.r);
-	//vec4 linearColor = vec4((fieldColor + rimFactor) * rim_color, 0.4 + fieldColor.r);
+	vec4 linearColor1 = vec4((fieldColor + rimFactor) * rim_color, 0.1 + fieldColor.r);
+	vec4 linearColor2 = vec4(runeColor.rgb * rim_color, rimFactor * runeColor.a);
 	
-	gl_FragData[0] = linearColor;
-    gl_FragData[1] = linearColor;
+	vec4 linearColor = mix(linearColor1, linearColor2, 0.5);
+	
+	gl_FragData[0] = enableRunes ? linearColor : linearColor1;
+    gl_FragData[1] = enableRunes ? linearColor : linearColor1;
     gl_FragData[2] = vec4(normalize(vertexNormal), eyeDir.z);
 }

@@ -28,7 +28,7 @@ public class ParticleGenerator
 	{
 		BLAST,
 		SPARK,
-		SHINE,
+		SPARKLE,
 		STAR,
 		RAY;
 	}
@@ -49,8 +49,8 @@ public class ParticleGenerator
 	}
 	
 	public void setPulse(int pulse) { this.pulse = pulse; }
-	
 	public void setQuantity(int quantity) { this.quantity = quantity; }
+	public void setSource(Vec3 source) { this.source = source; }
 	
 	public boolean update()
 	{
@@ -64,11 +64,11 @@ public class ParticleGenerator
 	{
 		switch(type)
 		{
-			case BLAST: return generateBlastParticles(source, quantity);
-			case SPARK: return generateSparkParticles(source, getRandomVector(), quantity, 1, null);
-			case STAR : return generateStarParticles (source, quantity, true);
-			case RAY  : return generateRayParticles  (source, quantity);
-			case SHINE: return generateShineParticles(source, quantity);
+			case BLAST   : return generateBlastParticles  (source, quantity);
+			case SPARK   : return generateSparkParticles  (source, getRandomVector(), quantity, 1, null);
+			case STAR    : return generateStarParticles   (source, quantity, true);
+			case RAY     : return generateRayParticles    (source, quantity);
+			case SPARKLE : return generateSparkleParticles(source, quantity);
 			
 			default: return null;
 		}
@@ -108,7 +108,7 @@ public class ParticleGenerator
 			
 			Vec3 t1 = new Vec3(rayX, rayY, rayZ);
 			
-			particles.add(new RayParticle(source, t0.normalize(), t1.normalize(), _color, 120));
+			particles.add(new RayParticle(this, t0.normalize(), t1.normalize(), _color, 120));
 		}
 		
 		return particles;
@@ -208,7 +208,7 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateShineParticles(Vec3 source, int n)
+	public List<Particle> generateSparkleParticles(Vec3 source, int n)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -219,7 +219,7 @@ public class ParticleGenerator
 			
 			int duration = 30 + generator.nextInt(30);
 			
-			particles.add(new ShineParticle(source, t, duration));
+			particles.add(new SparkleParticle(source, t, duration));
 		}
 		
 		return particles;
@@ -283,4 +283,6 @@ public class ParticleGenerator
 		
 		return particles;
 	}
+
+	public Vec3 getSource() { return source; }
 }

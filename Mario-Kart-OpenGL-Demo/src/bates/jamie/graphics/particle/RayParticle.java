@@ -15,13 +15,17 @@ public class RayParticle extends Particle
 	
 	float offset;
 	
+	ParticleGenerator source;
+	
 
-	public RayParticle(Vec3 c, Vec3 t0, Vec3 t1, float[] color, int duration)
+	public RayParticle(ParticleGenerator source, Vec3 t0, Vec3 t1, float[] color, int duration)
 	{
-		super(c, new Vec3(), 0, duration);
+		super(new Vec3(), new Vec3(), 0, duration);
 		
 		Random generator = new Random();
 		offset = generator.nextFloat() * 0.1f;
+		
+		this.source = source;
 		
 		colors[0] = new float[] {1, 1, 1, 0};
 		colors[1] = new float[] {1, 1, 1, 0};
@@ -49,10 +53,11 @@ public class RayParticle extends Particle
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
 		float alpha = 1.0f - ((float) Math.abs(HALF_LIFE - duration) / HALF_LIFE);
+		Vec3 c = source.getSource();
 		
 		gl.glPushMatrix();
 		{
-			gl.glTranslatef(0, 40, 0);
+			gl.glTranslatef(c.x, c.y, c.z);
 			gl.glRotatef(trajectory, 0, -1, 0);
 			
 			gl.glBegin(GL2.GL_TRIANGLE_STRIP);

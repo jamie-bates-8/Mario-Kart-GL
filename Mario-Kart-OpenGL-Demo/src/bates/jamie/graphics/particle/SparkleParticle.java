@@ -21,7 +21,7 @@ import bates.jamie.graphics.util.Vec3;
 import com.jogamp.common.nio.Buffers;
 
 
-public class ShineParticle extends Particle
+public class SparkleParticle extends Particle
 {
 	public static boolean pointSprite = true;
 	
@@ -38,7 +38,7 @@ public class ShineParticle extends Particle
 		}
 	}
 	
-	public ShineParticle(Vec3 c, Vec3 t, int duration)
+	public SparkleParticle(Vec3 c, Vec3 t, int duration)
 	{
 		super(c, t, 0, duration);
 	}
