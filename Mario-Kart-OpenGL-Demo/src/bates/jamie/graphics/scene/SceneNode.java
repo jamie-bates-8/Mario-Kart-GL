@@ -390,4 +390,6 @@ public class SceneNode
 		REFLECT,
 		GLASS;
 	}
+
+	public Vec3 getPosition() { return t; }
 }

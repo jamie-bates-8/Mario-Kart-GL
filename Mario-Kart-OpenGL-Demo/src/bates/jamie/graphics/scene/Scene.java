@@ -1,6 +1,7 @@
 package bates.jamie.graphics.scene;
 
 import static bates.jamie.graphics.util.Renderer.displayTexturedCuboid;
+import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
@@ -11,6 +12,7 @@ import static javax.media.opengl.GL2.GL_ACCUM;
 import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
 import static javax.media.opengl.GL2.GL_LOAD;
 import static javax.media.opengl.GL2.GL_MULT;
+import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.GL2.GL_RETURN;
 import static javax.media.opengl.GL2ES1.GL_EXP2;
 import static javax.media.opengl.GL2ES1.GL_FOG;
@@ -88,7 +90,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.BoundParser;
@@ -122,6 +123,8 @@ import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.StarParticle;
+import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
+import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.ShadowCaster.ShadowQuality;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Face;
@@ -437,8 +440,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static boolean enableParallax = true;
 	public static boolean enableFocalBlur = false;
 	
-	private LightingStrike[] bolts;
-	private ParticleEngine smokeCloud = new ParticleEngine(100);
+	public LightingStrike[] bolts;
+	public ParticleEngine smokeCloud = new ParticleEngine(100);
 	
 	public Scene()
 	{
@@ -1274,7 +1277,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupGenerators()
 	{
-//		generators.add(new ParticleGenerator(1, 10, ParticleGenerator.GeneratorType.SPARK, new float[] {0, 30, 0}));
+//		generators.add(new ParticleGenerator(1, 10, ParticleGenerator.GeneratorType.SPARK, new Vec3(0, 40, 0)));
+		generators.add(new ParticleGenerator(20, 1, ParticleGenerator.GeneratorType.RAY,   new Vec3(0, 40, 0)));
+		generators.add(new ParticleGenerator( 3, 2, ParticleGenerator.GeneratorType.SHINE, new Vec3(0, 40, 0)));
 	}
 
 	private void loadPlayers(GL2 gl)
@@ -1375,8 +1380,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Car car = cars.get(0);
 		
-		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition());
-//		reflector.update(gl, new Vec3(0, 20, 0));
+//		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition());
+		if(shineNode != null) reflector.update(gl, shineNode.getPosition());
 		
 		if(sphereMap) reflector.displayMap(gl);
 //		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
@@ -2130,9 +2135,61 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		gl.glPopMatrix();
 		
+		gl.glColor3f(1, 1, 1);
+		
 		Shader.disable(gl);
+		
+		if(!environmentMode) renderShine(gl); 
 
 		return System.nanoTime() - start;
+	}
+	
+	Model shineSprite = OBJParser.parseTriangleMesh("shine_sprite");
+	Model shineEyes   = OBJParser.parseTriangleMesh("shine_eyes");
+	SceneNode shineNode;
+	SceneNode eyeNode;
+	
+	public void renderShine(GL2 gl)
+	{
+		if(shineNode == null)
+		{
+			shineNode = new SceneNode(null, -1, shineSprite, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+			shineNode.setTranslation(new Vec3(0, 40, 0));
+			shineNode.setScale(new Vec3(1.75));
+			shineNode.setReflector(reflector);
+			shineNode.setRenderMode(RenderMode.REFLECT);
+			shineNode.setColor(new float[] {1, 1, 0.2f});
+			
+			eyeNode = new SceneNode(null, -1, shineEyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+			eyeNode.setTranslation(new Vec3(0, 40, 0));
+			eyeNode.setScale(new Vec3(1.75));
+			eyeNode.setRenderMode(RenderMode.COLOR);
+			eyeNode.setColor(RGB.BLACK);
+		}
+		
+		float   rimPower = Light.rimPower;
+		float[] rimColor = Light.rimColor;
+		
+		Light.rimPower = 1.0f;
+		Light.rimColor = new float[] {.7f, .7f, .7f};
+		
+		Light.setepRimLighting(gl);
+		
+		shineNode.setRotation(new Vec3(0, timer * 25, 0));
+		shineNode.render(gl);
+//		shineNode.renderGhost(gl, 1, Shader.get("aberration"));
+		
+		eyeNode.setRotation(new Vec3(0, timer * 25, 0));
+		eyeNode.render(gl);
+		
+		Light.rimPower = rimPower;
+		Light.rimColor = rimColor;
+		
+		Light.setepRimLighting(gl);
+		
+		Shader.disable(gl);
+		
+		gl.glColor3f(1, 1, 1);
 	}
 
 	/**
@@ -2222,12 +2279,38 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 //		for(LightingStrike bolt : bolts) bolt.render(gl);
 		
+		renderEnergyField(gl);
+		
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		
+		gl.glPushMatrix();
+		{	
+			gl.glTranslatef(0, 40, 0);
+			gl.glRotatef(car.camera.isFree() ? car.camera.ry : car.trajectory, 0, -1, 0);
+			gl.glScalef(10, 10, 10);
+			
+			Particle.lens_flare_1.bind(gl);
+			
+			gl.glEnable(GL2.GL_TEXTURE_2D);
+			gl.glEnable(GL_BLEND);
+			
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex3f(-0.5f, -0.5f, 0.0f);
+				gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(-0.5f,  0.5f, 0.0f);
+				gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex3f( 0.5f,  0.5f, 0.0f);
+				gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex3f( 0.5f, -0.5f, 0.0f);
+			}
+			gl.glEnd();
+			
+			gl.glDisable(GL_BLEND);
+		}
+		gl.glPopMatrix();
 		
 		for(Particle particle : particles)
 		{
 			if(car.isSlipping()) particle.render(gl, car.slipTrajectory);
-			else particle.render(gl, car.trajectory);
+			else particle.render(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
 		}
 		
 //		smokeCloud.render(gl);
@@ -2236,6 +2319,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 //		smokeCloud.render(gl);
 		
+		return System.nanoTime() - start;
+	}
+
+	private void renderEnergyField(GL2 gl)
+	{
 		Shader shader = Shader.get("energy_field"); shader.enable(gl);
 		
 		timer += 0.025;
@@ -2266,8 +2354,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader.disable(gl);
 		
 		gl.glDisable(GL2.GL_BLEND);
-		
-		return System.nanoTime() - start;
 	}
 	
 	public boolean enableFoliage = true;
@@ -3086,7 +3172,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Object source = e.getSource();
 		JSlider slider = (JSlider) source;
 		
-//		reflector.setRefractionIndex((float) slider.getValue() / 100.0f);
-		Light.setShininess((int) (((float) slider.getValue() / 100.0f) * 128));
+		reflector.setRefractionIndex((float) slider.getValue() / 100.0f);
+//		Light.setShininess((int) (((float) slider.getValue() / 100.0f) * 128));
 	}
 }

@@ -421,7 +421,7 @@ public class Console
 		}
 		else if(_cmd.equalsIgnoreCase("rim_power")) Light.rimPower = cmd.nextFloat();
 		
-		else if(_cmd.equalsIgnoreCase("shininess")) scene.light.setShininess(cmd.nextInt());
+		else if(_cmd.equalsIgnoreCase("shininess")) Light.setShininess(cmd.nextInt());
 		else if(_cmd.equalsIgnoreCase( "parallel")) scene.light.parallel = cmd.nextBoolean();
 		
 		else if(_cmd.equalsIgnoreCase( "constant")) scene.light.setConstantAttenuation (cmd.nextFloat());

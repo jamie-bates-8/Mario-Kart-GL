@@ -27,7 +27,10 @@ public class ParticleGenerator
 	public enum GeneratorType
 	{
 		BLAST,
-		SPARK;
+		SPARK,
+		SHINE,
+		STAR,
+		RAY;
 	}
 	
 	private GeneratorType type;
@@ -63,9 +66,52 @@ public class ParticleGenerator
 		{
 			case BLAST: return generateBlastParticles(source, quantity);
 			case SPARK: return generateSparkParticles(source, getRandomVector(), quantity, 1, null);
+			case STAR : return generateStarParticles (source, quantity, true);
+			case RAY  : return generateRayParticles  (source, quantity);
+			case SHINE: return generateShineParticles(source, quantity);
 			
 			default: return null;
 		}
+	}
+	
+	private int colorID = 0;
+	
+	public List<Particle> generateRayParticles(Vec3 source, int n)
+	{
+		List<Particle> particles = new ArrayList<Particle>();
+		
+		float[][] colors = {RGB.WHITE, RGB.RED, RGB.ORANGE, RGB.YELLOW, RGB.GREEN, RGB.BLUE, RGB.INDIGO, RGB.VIOLET};
+		
+		for(int i = 0; i < n; i++)
+		{
+			colorID++;
+			colorID %= colors.length;
+			
+			float[]  color = colors[colorID];
+			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
+			
+			double incline = generator.nextFloat() * Math.PI * (generator.nextBoolean() ? 1 : -1);
+			double azimuth = 0;
+			
+			float rayX = (float) (Math.sin(incline) * Math.cos(azimuth));
+			float rayY = (float) (Math.cos(incline));
+			float rayZ = (float) (Math.sin(incline) * Math.sin(azimuth));
+			
+			Vec3 t0 = new Vec3(rayX, rayY, rayZ);
+			
+			incline += 0.15 + generator.nextFloat() * 0.05;
+//			azimuth += 0.15 + generator.nextFloat() * 0.05;
+			
+			rayX = (float) (Math.sin(incline) * Math.cos(azimuth));
+			rayY = (float) (Math.cos(incline));
+			rayZ = (float) (Math.sin(incline) * Math.sin(azimuth));
+			
+			Vec3 t1 = new Vec3(rayX, rayY, rayZ);
+			
+			particles.add(new RayParticle(source, t0.normalize(), t1.normalize(), _color, 120));
+		}
+		
+		return particles;
 	}
 	
 	public List<Particle> generateTerrainParticles(Vec3 source, int n, Texture texture)
@@ -157,6 +203,23 @@ public class ParticleGenerator
 			int duration = 30 + generator.nextInt(30);
 			
 			particles.add(new BlastParticle(source, t, 0, duration));
+		}
+		
+		return particles;
+	}
+	
+	public List<Particle> generateShineParticles(Vec3 source, int n)
+	{
+		List<Particle> particles = new ArrayList<Particle>();
+		
+		for(int i = 0; i < n; i++)
+		{
+			Vec3 t = getRandomVector();
+			t = t.normalize().multiply(0.5f);
+			
+			int duration = 30 + generator.nextInt(30);
+			
+			particles.add(new ShineParticle(source, t, duration));
 		}
 		
 		return particles;

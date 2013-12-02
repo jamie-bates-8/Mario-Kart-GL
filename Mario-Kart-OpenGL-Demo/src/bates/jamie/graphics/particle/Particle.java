@@ -38,6 +38,8 @@ public abstract class Particle
 	protected static Texture fire;
 	protected static Texture fire2;
 	
+	public static Texture lens_flare_1;
+	
 	static
 	{
 		try
@@ -60,6 +62,8 @@ public abstract class Particle
 			
 			fire = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire.png"), true);
 			fire2 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire2.png"), true);
+			
+			lens_flare_1 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "lens_flare_1.png"), true);
 			
 			reset       = TextureIO.newTexture(new File("tex/default.jpg"), true);
 			

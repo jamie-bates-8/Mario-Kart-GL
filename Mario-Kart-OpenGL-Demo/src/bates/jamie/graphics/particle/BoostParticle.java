@@ -66,6 +66,7 @@ public class BoostParticle extends Particle
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
+			gl.glEnable(GL2.GL_TEXTURE_2D);
 
 			int offset   = (special) ? 4 : 0;
 			int spectrum = (special) ? 3 : 3;
