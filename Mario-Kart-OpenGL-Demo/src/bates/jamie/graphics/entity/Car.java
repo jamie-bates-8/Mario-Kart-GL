@@ -25,6 +25,7 @@ import bates.jamie.graphics.io.HUD;
 import bates.jamie.graphics.io.HoloTag;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
+import bates.jamie.graphics.item.BobOmb;
 import bates.jamie.graphics.item.FakeItemBox;
 import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
@@ -39,6 +40,7 @@ import bates.jamie.graphics.scene.Camera;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
 import bates.jamie.graphics.scene.SceneNode;
@@ -206,6 +208,8 @@ public class Car
 	
 	public SceneGraph graph;
 	
+	public Reflector reflector;
+	
 	
 	public Car(GL2 gl, Vec3 c, float xrot, float yrot, float zrot, Scene scene)
 	{
@@ -216,6 +220,7 @@ public class Car
 			
 			all_windows = OBJParser.parseTriangleMesh("windows_all");
 			car_body    = OBJParser.parseTriangleMesh("car_body");
+
 			head_lights = OBJParser.parseTriangleMesh("head_lights");
 		}
 	    
@@ -285,6 +290,7 @@ public class Car
 		if(enableChrome)
 		{
 			body.setRenderMode(SceneNode.RenderMode.REFLECT);
+			body.setReflectivity(0.75f);
 			body.setReflector(scene.reflector);
 		}
 		else body.setRenderMode(SceneNode.RenderMode.COLOR);
@@ -441,6 +447,15 @@ public class Car
 				shell.throwUpwards();
 					
 				scene.addItem(shell);
+				break;
+			}
+			case 14:
+			{
+				BobOmb bomb = new BobOmb(new Vec3(), this);
+				
+				bomb.throwUpwards();
+					
+				scene.addItem(bomb);
 				break;
 			}
 			default: break;

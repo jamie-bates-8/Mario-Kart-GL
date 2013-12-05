@@ -21,7 +21,7 @@ public class OBJParser
 	 * This method parses a Wavefront (.obj) file for use in OpenGL.
 	 * Note that the faces represented by the file must be triangles.
 	 */
-	public static List<Face> parseTriangles(String filename)
+	public static List<Face> parseTriangles(String fileName)
 	{
 		long startTime = System.nanoTime();
 		
@@ -42,7 +42,7 @@ public class OBJParser
 			int wildcard  = -1;
 			int wildcards =  0; 
 
-			Scanner fs = new Scanner(new File("obj/" + filename + ".obj"));
+			Scanner fs = new Scanner(new File("obj/" + fileName + ".obj"));
 			
 			while (fs.hasNextLine())
 			{
@@ -155,12 +155,12 @@ public class OBJParser
 		
 		long endTime = System.nanoTime();
 		
-		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", filename, faces.size(), (endTime - startTime) / 1E6);
+		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, faces.size(), (endTime - startTime) / 1E6);
 
 		return faces;
 	}
 	
-	public static Model parseTriangleMesh(String filename)
+	public static Model parseTriangleMesh(String fileName)
 	{
 		long startTime = System.nanoTime();
 		
@@ -176,7 +176,7 @@ public class OBJParser
 
 		try
 		{
-			Scanner fs = new Scanner(new File("obj/" + filename + ".obj"));
+			Scanner fs = new Scanner(new File("obj/" + fileName + ".obj"));
 			
 			while (fs.hasNextLine())
 			{
@@ -217,11 +217,7 @@ public class OBJParser
 			}
 			fs.close();
 		}
-		catch (IOException e) { e.printStackTrace(); }
-		
-		long endTime = System.nanoTime();
-		
-		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", filename, polygonCount, (endTime - startTime) / 1E6);
+		catch (IOException ioe) { ioe.printStackTrace(); }
 		
 		int[] _vIndices = new int[vIndices.size()];
 		for(int i = 0; i < vIndices.size(); i++) _vIndices[i] = vIndices.get(i);
@@ -229,6 +225,10 @@ public class OBJParser
 		int[] _nIndices = new int[nIndices.size()];
 		for(int i = 0; i < nIndices.size(); i++) _nIndices[i] = nIndices.get(i);
 		
-		return new Model(vertices, normals, _vIndices, _nIndices, 3, true);
+		long endTime = System.nanoTime();
+		
+		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount, (endTime - startTime) / 1E6);
+		
+		return new Model(vertices, normals, _vIndices, _nIndices, 3);
 	}
 }

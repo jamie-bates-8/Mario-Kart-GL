@@ -12,6 +12,7 @@ import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
@@ -29,6 +30,8 @@ public class ShineSprite
 	SceneNode shineNode;
 	SceneNode eyeNode;
 	
+	public Reflector reflector;
+	
 	ParticleGenerator rayGenerator;
 	ParticleGenerator sparkleGenerator;
 	
@@ -41,10 +44,13 @@ public class ShineSprite
 	{
 		position = p;
 		
+		reflector = new Reflector(1.0f);
+		
 		shineNode = new SceneNode(null, -1, shineSprite, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		shineNode.setTranslation(p);
 		shineNode.setScale(new Vec3(1.75));
-		shineNode.setReflector(Scene.singleton.reflector);
+		shineNode.setReflector(reflector);
+		shineNode.setReflectivity(0.75f);
 		shineNode.setRenderMode(RenderMode.REFLECT);
 		shineNode.setColor(new float[] {1, 1, 0.2f});
 		
@@ -78,7 +84,7 @@ public class ShineSprite
 	
 	public void render(GL2 gl)
 	{	
-		rotation += 4.0;
+		if(Scene.enableAnimation) rotation += 4.0;
 		
 		float   rimPower = Light.rimPower;
 		float[] rimColor = Light.rimColor;
@@ -107,7 +113,7 @@ public class ShineSprite
 	}
 	
 	public void renderFlare(GL2 gl, float rotation)
-	{
+	{	
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
 		Car car = Scene.singleton.getCars().get(0);

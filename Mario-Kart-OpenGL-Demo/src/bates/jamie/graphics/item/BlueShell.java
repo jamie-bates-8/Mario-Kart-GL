@@ -48,7 +48,7 @@ public class BlueShell extends Shell
 	{
 		try
 		{
-			shellTop     = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "blueShellTop.jpg"), true);
+			shellTop = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "blueShellTop.jpg"), true);
 			
 			textures = new Texture[] {shellTop};
 		}
@@ -57,9 +57,9 @@ public class BlueShell extends Shell
 	
 	public ParticleGenerator generator;
 	
-	private int blastDuration = 0;
-	private float blastRadius = 0;
-	private float blastSpeed = 2.5f;
+	private int   blastDuration = 0;
+	private float blastRadius   = 0;
+	private float blastSpeed    = 2.5f;
 	
 	private List<Particle> blast = new ArrayList<Particle>();
 	

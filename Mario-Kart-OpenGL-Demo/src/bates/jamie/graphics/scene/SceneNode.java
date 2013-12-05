@@ -37,6 +37,7 @@ public class SceneNode
 	
 	private Material material;
 	private Reflector reflector;
+	private float reflectivity = 1.0f;
 	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
@@ -86,7 +87,7 @@ public class SceneNode
 					{
 						shader.enable(gl);
 						shader.setSampler(gl, "cubeMap", 0);
-						shader.setUniform(gl, "shininess", reflector.reflectivity);
+						shader.setUniform(gl, "shininess", reflectivity);
 						
 						float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 						shader.loadMatrix(gl, "cameraMatrix", camera);
@@ -146,8 +147,8 @@ public class SceneNode
 				shader.enable(gl);
 				shader.setSampler(gl, "cubeMap", 0);
 				
-				shader.setUniform(gl, "eta", Scene.singleton.reflector.eta);
-				shader.setUniform(gl, "reflectance", Scene.singleton.reflector.reflectance);
+				shader.setUniform(gl, "eta", reflector.eta);
+				shader.setUniform(gl, "reflectance", reflector.reflectance);
 				
 				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 				shader.loadMatrix(gl, "cameraMatrix", camera);
@@ -196,7 +197,7 @@ public class SceneNode
 				if(reflector != null)
 				{
 					shader.setSampler(gl, "cubeMap", 0);
-					shader.setUniform(gl, "shininess", reflector.reflectivity);
+					shader.setUniform(gl, "shininess", reflectivity);
 					
 					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 					shader.loadMatrix(gl, "cameraMatrix", camera);
@@ -371,6 +372,10 @@ public class SceneNode
 	public Reflector getReflector() { return reflector; }
 	
 	public void setReflector(Reflector reflector) { this.reflector = reflector; }
+	
+	public Vec3 getPosition() { return t; }
+
+	public void setReflectivity(float reflectivity) { this.reflectivity = reflectivity; }
 
 	public enum MatrixOrder
 	{
@@ -390,6 +395,4 @@ public class SceneNode
 		REFLECT,
 		GLASS;
 	}
-
-	public Vec3 getPosition() { return t; }
 }

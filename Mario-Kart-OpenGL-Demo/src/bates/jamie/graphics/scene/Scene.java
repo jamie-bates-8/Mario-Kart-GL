@@ -110,6 +110,7 @@ import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.ModelSelecter;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
+import bates.jamie.graphics.item.BobOmb;
 import bates.jamie.graphics.item.FakeItemBox;
 import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
@@ -1158,8 +1159,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    caster = new ShadowCaster(this, light);
 	    
-	    reflector = new Reflector(this, 0.75f);
-	    reflector.setup(gl);
+	    reflector = new Reflector(0.75f);
 	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
@@ -1169,7 +1169,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		/** Model Setup **/
 		skybox = new SkyBox(gl);
 		shine = new ShineSprite(new Vec3(0, 40, 0));
-		energyField = new EnergyField(new Vec3(), FieldType.SUPER);
+		energyField = new EnergyField(new Vec3(), FieldType.LIGHT);
+		bomb = new BobOmb(new Vec3(40, 1.6, 0), null);
 		
 		floorFaces = OBJParser.parseTriangles("floor");
 	    
@@ -1340,6 +1341,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    new BlueShell  (gl, this, null, 0);
 	    new FakeItemBox(gl, this, null);
 	    new Banana     (gl, this, null, 0);
+	    new BobOmb     (null, null);
 	}
 
 	public void display(GLAutoDrawable drawable)
@@ -1379,8 +1381,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Car car = cars.get(0);
 		
-//		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition());
-		if(shine != null) reflector.update(gl, shine.getPosition());
+		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition());
+		if(shine != null) shine.reflector.update(gl, shine.getPosition());
+		if(bomb  != null)  bomb.reflector.update(gl,  bomb.getPosition());
+		
+		for(Item item : itemList)
+		{
+			if(item instanceof BobOmb)
+			{
+				BobOmb bomb = (BobOmb) item;
+				bomb.reflector.update(gl,  bomb.getPosition());
+			}
+		}
 		
 		if(sphereMap) reflector.displayMap(gl);
 //		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
@@ -1945,6 +1957,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				shader.enable(gl);
 				shader.setSampler(gl, "texture", 0);
 				shader.setSampler(gl, "bumpmap", 1);
+//				shader.setSampler(gl, "reflectSampler", 2);
 				shader.setUniform(gl, "enableParallax", Scene.enableParallax);
 				
 				if(enableShadow && shader != null)
@@ -1963,9 +1976,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 //				gl.glCallList(floorList);
 				
-				
-				gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glEnable(GL2.GL_TEXTURE_2D); floorBump.bind(gl);
-				gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glEnable(GL2.GL_TEXTURE_2D); floorTex.bind(gl);
+//				gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glBindTexture(GL2.GL_TEXTURE_2D, water.reflectTexture);
+				gl.glActiveTexture(GL2.GL_TEXTURE1); floorBump.bind(gl);
+				gl.glActiveTexture(GL2.GL_TEXTURE0); floorTex.bind(gl);
 				
 				gl.glBegin(GL2.GL_QUADS);
 				{
@@ -1980,9 +1993,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					gl.glTexCoord2f(   0,    0); gl.glVertex3f(-250, -0.01f, +250);
 				}
 				gl.glEnd();
-				
-				gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D);
-				gl.glActiveTexture(GL2.GL_TEXTURE0);
 			}	
 			gl.glPopMatrix();
 		}
@@ -2122,18 +2132,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		fort.render(gl);
 		
-		Shader shader = Shader.get("phong_lights"); shader.enable(gl);
-		
-		timer += 0.025;
-		shader.setUniform(gl, "timer", timer);
-		
-		gl.glPushMatrix();
-		{
-			gl.glTranslatef(0, 5, 0);
-			glut.glutSolidTeapot(5);
-		}
-		gl.glPopMatrix();
-		
 		gl.glColor3f(1, 1, 1);
 		
 		Shader.disable(gl);
@@ -2144,6 +2142,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 	
 	private ShineSprite shine;
+	private BobOmb bomb;
 
 	/**
 	 * This method renders all of the dynamic 3D models within the world from the
@@ -2396,10 +2395,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glPushMatrix();
 		{
 		 	gl.glTranslatef(0, 20, 0);
-		 	
-			glut.glutSolidSphere(7, 64, 64);
-//			glut.glutSolidTeapot(7);
-//			glut.glutSolidCube(12);
+
+			glut.glutSolidTeapot(7);
 		}
 		gl.glPopMatrix();
 		
@@ -2466,6 +2463,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case FakeItemBox.ID : itemList.add(new FakeItemBox(this, c, trajectory)); break;
 			case Banana.ID      : itemList.add(new      Banana(this, c)); break;
 			case BlueShell.ID   : itemList.add(new   BlueShell(this, c)); break;
+			case BobOmb.ID      : itemList.add(new BobOmb(c, null)); break;
 			
 			default: break;
 		}
@@ -2830,6 +2828,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_3: spawnItemsInOBB(FakeItemBox.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			case KeyEvent.VK_4: spawnItemsInSphere(Banana.ID, 10, new Vec3(0, 100, 0), 50); break;
 			case KeyEvent.VK_5: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			case KeyEvent.VK_6: spawnItemsInOBB(BobOmb.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			
 			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform; break;
 			case KeyEvent.VK_P: enableParallax = !enableParallax; break;

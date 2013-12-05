@@ -44,8 +44,9 @@ public abstract class Item
 	protected Car car;
 	
 	protected float gravity = 0.05f;
-	protected boolean falling = true;
 	protected float fallRate = 0.0f;
+	
+	protected boolean falling = true;
 	protected static final float TOP_FALL_RATE = 5.0f;
 	
 	public float velocity = 0;

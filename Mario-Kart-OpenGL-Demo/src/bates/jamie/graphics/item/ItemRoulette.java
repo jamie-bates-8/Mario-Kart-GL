@@ -32,6 +32,7 @@ public class ItemRoulette
 	private Texture starIcon;
 	private Texture booIcon;
 	private Texture blueShellIcon;
+	private Texture bobOmbIcon;
 	
 	private Texture rouletteBorder;
 	private Texture noItemIcon;
@@ -74,6 +75,7 @@ public class ItemRoulette
 			starIcon             = TextureIO.newTexture(new File(ICON_DIRECTORY + "starIcon.jpg"), true);
 			booIcon              = TextureIO.newTexture(new File(ICON_DIRECTORY + "booIcon.jpg"), true);
 			blueShellIcon        = TextureIO.newTexture(new File(ICON_DIRECTORY + "blueShellIcon.jpg"), true);
+			bobOmbIcon           = TextureIO.newTexture(new File(ICON_DIRECTORY + "bobOmbIcon.jpg"), true);
 			
 			rouletteBorder       = TextureIO.newTexture(new File("tex/items/rouletteBorder.png"), true);
 			noItemIcon           = TextureIO.newTexture(new File("tex/items/noItemIcon.png"), true);
@@ -84,7 +86,7 @@ public class ItemRoulette
 			{greenShellIcon, tripleGreenShellIcon, redShellIcon, tripleRedShellIcon,
 			 mushroomIcon, tripleMushroomIcon, goldenMushroomIcon, fakeItemBoxIcon,
 			 bananaIcon, tripleBananaIcon, lightningBoltIcon, starIcon, booIcon,
-			 blueShellIcon};
+			 blueShellIcon, bobOmbIcon};
 	}
 	
 	public void spin()
@@ -136,7 +138,7 @@ public class ItemRoulette
 	{	
 		Random generator = new Random();
 		
-		double[] weights = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+		double[] weights = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 	
 		double total = 0.0;
 		
@@ -271,6 +273,7 @@ public class ItemRoulette
 			case POWER_STAR:				  starIcon.bind(gl); break;
 			case BOO:						  booIcon.bind(gl); break;
 			case BLUE_SHELL:                  blueShellIcon.bind(gl); break;
+			case BOB_OMB:                     bobOmbIcon.bind(gl); break;
 				
 			default: break; 
 		}

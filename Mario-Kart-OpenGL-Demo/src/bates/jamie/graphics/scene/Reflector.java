@@ -17,16 +17,18 @@ public class Reflector
 	private int frameBuffer;
 	private int renderBuffer;
 	
-	private int mapSize = 320; // based on canvas height
+	private int mapSize = 64; // based on canvas height
 	private int maxSize;
 	
 	public float reflectivity;
 	public float eta;
 	public float reflectance;
 	
-	public Reflector(Scene scene, float reflectivity)
+	private boolean initialized = false;
+	
+	public Reflector(float reflectivity)
 	{
-		this.scene = scene;
+		this.scene = Scene.singleton;
 		this.reflectivity = reflectivity;
 		
 		eta = 0.97f;
@@ -39,14 +41,11 @@ public class Reflector
 		gl.glGetIntegerv(GL2.GL_MAX_CUBE_MAP_TEXTURE_SIZE, sizes, 0);
 	    gl.glGetIntegerv(GL2.GL_MAX_RENDERBUFFER_SIZE    , sizes, 1);
 	    maxSize = (sizes[1] > sizes[0]) ? sizes[0] : sizes[1];
-	    
-	    System.out.println("Reflector\n{");
-	    System.out.println("\tMax Cube Map Texture Size: " + sizes[0]);
-	    System.out.println("\tMax Render Buffer Size: " + sizes[1]);
-	    System.out.println("}\n");
 		
 		createTexture(gl);
 		createBuffer (gl);
+		
+		initialized = true;
 	}
 
 	private void createBuffer(GL2 gl)
@@ -136,15 +135,12 @@ public class Reflector
 	{
 		GLUgl2 glu = new GLUgl2();
 		
-		if(updateSize)
-		{
-			changeSize(gl);
-			updateSize = false;
-		}
+		if(!initialized) setup(gl);
+		if( updateSize ) changeSize(gl);
 		
 		gl.glMatrixMode(GL2.GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluPerspective(90.0f, 1.0f, 1.0f, 1000.0f);
+		glu.gluPerspective(90.0f, 1.0f, 0.1f, 1000.0f);
 		gl.glViewport(0, 0, mapSize, mapSize);
 
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBuffer);
@@ -263,7 +259,7 @@ public class Reflector
 	
 	public void changeSize(GL2 gl)
 	{		
-		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBuffer);
+		gl.glBindFramebuffer (GL2.GL_FRAMEBUFFER , frameBuffer );
 		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBuffer);
 		
 		gl.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL2.GL_DEPTH_STENCIL, mapSize, mapSize);
@@ -277,6 +273,8 @@ public class Reflector
 			gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+		
+		updateSize = false;
 	}
 	
 	public void setRefractionIndex(float eta)

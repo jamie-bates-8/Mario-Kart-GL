@@ -23,7 +23,8 @@ public enum ItemState
 	LIGHTNING_BOLT,
 	POWER_STAR,
 	BOO,
-	BLUE_SHELL;
+	BLUE_SHELL,
+	BOB_OMB;
 	
 	public static ItemState get(int itemID)
 	{
@@ -43,6 +44,7 @@ public enum ItemState
 			case 11: return POWER_STAR;
 			case 12: return BOO;
 			case 13: return BLUE_SHELL;
+			case 14: return BOB_OMB;
 			default: return NO_ITEM;
 		}
 	}
@@ -97,6 +99,7 @@ public enum ItemState
 			case POWER_STAR:
 			case BOO:
 			case BLUE_SHELL:
+			case BOB_OMB:
 			
 			return true;
 			

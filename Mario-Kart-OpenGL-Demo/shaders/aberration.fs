@@ -20,5 +20,7 @@ void main()
 	reflectColor = vec3(textureCube(cubeMap, reflectDir));
 	
 	vec3 color = mix(refractColor, reflectColor, ratio);
-	gl_FragColor = vec4(color, 1.0);
+	
+	gl_FragData[0] = vec4(color, 1.0);
+	gl_FragData[1] = vec4(0.0);
 }

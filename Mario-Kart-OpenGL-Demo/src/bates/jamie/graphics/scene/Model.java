@@ -5,9 +5,17 @@ import static javax.media.opengl.GL.GL_TEXTURE_2D;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -19,8 +27,10 @@ import bates.jamie.graphics.util.Vector;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.texture.Texture;
 
-public class Model
+public class Model implements Serializable
 {
+	private static final long serialVersionUID = 2138514666222530425L;
+
 	private List<float[]> _vertices;
 	
 	private FloatBuffer vertices;
@@ -37,7 +47,7 @@ public class Model
 	Texture texture;
 	
 	
-	public static boolean enableVBO = true;
+	public static boolean enableVBO = false;
 	public boolean bufferCreated = false;
 	
 	private int[] bufferIDs = new int[5];
@@ -48,6 +58,16 @@ public class Model
 	private static final int COLOUR_BUFFER = 3;
 	
 	private static final int INDEX_BUFFER = 4;
+	
+	public Model(String fileName)
+	{
+		long start = System.currentTimeMillis();
+		
+		polygon = 3;
+		load(fileName);
+		
+		System.out.println("Model Loader: " + fileName + ", " + (System.currentTimeMillis() - start));
+	}
 	
 	
 	public Model(List<float[]> vertices, List<float[]> normals, int[] vIndices, int[] nIndices, int type, boolean enableVBO)
@@ -73,6 +93,125 @@ public class Model
 		
 		indices = Buffers.newDirectIntBuffer(vIndices);
 	}
+	
+	public Model(List<float[]> vertices, List<float[]> normals, int[] vIndices, int[] nIndices, int type)
+	{
+		if(type == 3) polygon = GL2.GL_TRIANGLES;
+		if(type == 4) polygon = GL2.GL_QUADS;
+		
+		List<float[]> vertexData = new ArrayList<float[]>();
+		List<float[]> normalData = new ArrayList<float[]>();
+		List<Integer> offsetData  = new ArrayList<Integer>();
+		
+		int index = 0;
+		
+		for(int i = 0; i < vIndices.length; i++)
+		{
+			float[] vertex = vertices.get(vIndices[i]);
+			float[] normal = normals.get(nIndices[i]);
+			
+			boolean unique = true;
+			int k = index;
+			
+			for(int j = 0; j < vertexData.size(); j++)
+			{
+				if( Vector.equal(vertex, vertexData.get(j)) &&
+					Vector.equal(normal, normalData.get(j))    )
+				{
+					k = j;
+					unique = false;
+					break;
+				}
+			}
+			
+			if(unique)
+			{
+				offsetData.add(k);
+				vertexData.add(vertex);
+				normalData.add(normal);
+				index++;
+			}
+			else offsetData.add(k);
+		}
+		
+		_vertices = vertexData;
+		
+		indexCount = vIndices.length;
+		
+		this.vertices = Buffers.newDirectFloatBuffer(vertexData.size() * 3);
+		for(float[] vertex : vertexData) this.vertices.put(vertex);
+		this.vertices.position(0);  
+		
+		this.normals = Buffers.newDirectFloatBuffer(normalData.size() * 3);
+		for(float[] normal : normalData) this.normals.put(normal);
+		this.normals.position(0);
+		
+		indices = Buffers.newDirectIntBuffer(offsetData.size());
+		for(int i : offsetData) indices.put(i);
+		indices.position(0);
+		
+		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
+	}
+	
+	public boolean save(String fileName)
+	{
+        try
+        {
+            FileOutputStream   fos = new FileOutputStream(new File("obj/" + fileName + ".model"));
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            
+            List<Float>   vertexData = new ArrayList<Float>();
+            List<Float>   normalData = new ArrayList<Float>();
+            List<Integer> offsetData = new ArrayList<Integer>();
+            
+            for(int i = 0; i < vertices.capacity(); i++) vertexData.add(vertices.get(i));
+            for(int i = 0; i <  normals.capacity(); i++) normalData.add(normals.get(i));
+            for(int i = 0; i <  indices.capacity(); i++) offsetData.add(indices.get(i));
+            
+            oos.writeObject(vertexData);
+            oos.writeObject(normalData);
+            oos.writeObject(offsetData);
+            oos.writeObject(indexCount);
+            
+            oos.close();
+            fos.close(); 
+        }
+        catch (IOException e) { e.printStackTrace(); }
+        
+        return true;
+    }
+	
+	@SuppressWarnings("unchecked")
+	public boolean load(String fileName)
+	{
+        try
+        {
+            FileInputStream   fis = new FileInputStream(new File("obj/" + fileName + ".model"));
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            
+            List<Float>   vertexData = (ArrayList<Float>)   ois.readObject();
+            List<Float>   normalData = (ArrayList<Float>)   ois.readObject();
+            List<Integer> offsetData = (ArrayList<Integer>) ois.readObject();
+            indexCount = (Integer) ois.readObject();
+            
+            this.vertices = Buffers.newDirectFloatBuffer(vertexData.size() * 3);
+    		for(float v : vertexData) this.vertices.put(v);
+    		this.vertices.position(0);  
+    		
+    		this.normals = Buffers.newDirectFloatBuffer(normalData.size() * 3);
+    		for(float n : normalData) this.normals.put(n);
+    		this.normals.position(0);
+    		
+    		indices = Buffers.newDirectIntBuffer(offsetData.size());
+    		for(int i : offsetData) indices.put(i);
+    		indices.position(0);
+
+            ois.close();
+            fis.close();
+        }
+        catch (Exception e) { e.printStackTrace(); }
+        return true;
+    }
 	
 	public Model(List<float[]> vertices, int[] vIndices, int type)
 	{
@@ -244,8 +383,8 @@ public class Model
 		float[] c = RGB.BLUE;
 		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
 
-		gl.glEnable(GL2.GL_BLEND);
-		gl.glEnable(GL2.GL_LINE_SMOOTH);
+//		gl.glEnable(GL2.GL_BLEND);
+//		gl.glEnable(GL2.GL_LINE_SMOOTH);
 		gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
 		
 		gl.glBegin(GL2.GL_LINES);
