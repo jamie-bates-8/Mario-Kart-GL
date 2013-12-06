@@ -721,7 +721,17 @@ public class Car
 	}
 
 	public long renderHUD(GL2 gl, GLU glu) { return hud.render(gl, glu); }
-
+	
+	public Aim getAiming()
+	{
+		return aiming;
+	}
+	
+	public void setAiming(Aim aim)
+	{
+		aiming = aim;
+	}
+	
 	public float[] getHeights()
 	{
 		float[] _heights = heights;
@@ -1755,4 +1765,65 @@ public class Car
 			return values()[(mode.ordinal() + 1) % values().length];
 		}
 	}
+
+	public Scene getScene() {
+		return this.scene;
+	}
+
+	public void setStarPower(boolean starPower) {
+		this.starPower = starPower;
+	}
+
+	public void setCursed(boolean cursed) {
+		this.cursed = cursed;
+	}
+
+	public void setStarDuration(int starDuration) {
+		this.starDuration = starDuration;
+	}
+
+	public void setTurnIncrement(float turnIncrement) {
+		this.turnIncrement = turnIncrement;
+	}
+
+	public float getScale() {
+		return this.scale;
+	}
+
+	public void setScale(float scale) {
+		this.scale = scale;
+	}
+
+	public void setMiniature(boolean miniature) {
+		this.miniature = miniature;
+	}
+
+	public void setMiniatureDuration(int miniatureDuration) {
+		this.miniatureDuration = miniatureDuration;
+	}
+
+	public int getSlipDuration() {
+		return this.slipDuration;
+	}
+
+	public void setSlipDuration(int slipDuration) {
+		this.slipDuration = slipDuration;
+	}
+
+	public void setInvisible(boolean invisible) {
+		this.invisible = invisible;
+	}
+
+	public void setBooDuration(int booDuration) {
+		this.booDuration = booDuration;
+	}
+
+	public void setBoosting(boolean boosting) {
+		this.boosting = boosting;
+	}
+
+	public void setBoostDuration(int boostDuration) {
+		this.boostDuration = boostDuration;
+	}
+
 }
