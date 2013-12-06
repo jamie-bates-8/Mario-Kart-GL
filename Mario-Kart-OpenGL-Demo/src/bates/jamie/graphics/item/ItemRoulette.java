@@ -280,7 +280,7 @@ public class ItemRoulette
 	
 	public void setTimer() { duration = 400; state = State.ON_TIMER; }
 	
-	public IItem getIItem() 
+	public IItem getIItem()
 	{
 		switch (itemID) {
 			case  0: return new GreenShell(null, null, 0, false);

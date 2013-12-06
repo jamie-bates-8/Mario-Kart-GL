@@ -451,61 +451,7 @@ public class Car
 	
 	public void pressItem()
 	{
-		switch(itemState)
-		{
-			case THREE_ORBITING_GREEN_SHELLS:
-			case TWO_ORBITING_GREEN_SHELLS:
-			case ONE_ORBITING_GREEN_SHELL:
-			case THREE_ORBITING_RED_SHELLS:
-			case TWO_ORBITING_RED_SHELLS:
-			case ONE_ORBITING_RED_SHELL:
-			{			
-				Shell shell = (Shell) items.remove();
-					
-				switch(aiming)
-				{
-					case FORWARDS:
-					case DEFAULT:   shell.throwForwards();  break;
-					case BACKWARDS: shell.throwBackwards(); break;
-				}
-					
-				scene.addItem(shell);
-				break;
-			}
-			
-			case ONE_MUSHROOM:
-			case TWO_MUSHROOMS:
-			case THREE_MUSHROOMS:
-			{
-				//TO-DO	
-				boost(); break;
-			}
-
-			case GOLDEN_MUSHROOM: superBoosting = true; break;
-			
-			case ONE_BANANA:
-			case TWO_BANANAS:
-			case THREE_BANANAS:
-			{
-				///TO-UNDO
-				Banana banana = (Banana) items.remove();
-					
-				switch(aiming)
-				{
-					case FORWARDS: banana.throwUpwards(); break;
-					case BACKWARDS: banana.throwBackwards(); break;
-					default: break;
-				}
-					
-				scene.addItem(banana);
-			} break;
-			case LIGHTNING_BOLT: useLightningBolt(); break;
-			case POWER_STAR: usePowerStar(); break;
-			case BOO: useBoo(); break;
-			
-			default: break;
-		}
-		
+		item.pressItem(this);
 		itemState = ItemState.press(itemState);
 	}
 
