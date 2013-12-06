@@ -279,4 +279,25 @@ public class ItemRoulette
 	public void destroy() { state = State.DEAD; }
 	
 	public void setTimer() { duration = 400; state = State.ON_TIMER; }
+	
+	public IItem getIItem() 
+	{
+		switch (itemID) {
+			case  0: return new GreenShell(null, null, 0, false);
+			case  1: return new GreenShell(null, null, 0, false);
+			case  2: return new RedShell(null, null, 0, false);
+			case  3: return new RedShell(null, null, 0, false);
+			case  4: return new Mushroom();
+			case  5: return new Mushroom();
+			case  6: return new Mushroom();
+			case  7: return new FakeItemBox(null,  null, null);
+			case  8: return new Banana(null, null);
+			case  9: return new Banana(null, null);
+			case 10: return new LightningBolt();
+			case 11: return new PowerStar();
+			case 12: return new Boo();
+			case 13: return new BlueShell(null, null);
+		}
+		return null;
+	}
  }

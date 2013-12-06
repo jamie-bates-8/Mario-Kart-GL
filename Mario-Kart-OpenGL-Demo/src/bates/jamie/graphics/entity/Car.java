@@ -28,6 +28,7 @@ import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
 import bates.jamie.graphics.item.FakeItemBox;
 import bates.jamie.graphics.item.GreenShell;
+import bates.jamie.graphics.item.IItem;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.item.ItemState;
@@ -154,6 +155,7 @@ public class Car
 	/** Item Fields **/
 	private ItemRoulette roulette = new ItemRoulette();
 	private ItemState itemState = ItemState.NO_ITEM;
+	private IItem item;
 	private Queue<Item> items = new LinkedList<Item>();
 	private Queue<Integer> itemCommands = new ArrayBlockingQueue<Integer>(100);
 	
@@ -367,7 +369,7 @@ public class Car
 			roulette.secondary = false;
 			ItemState state = ItemState.get(itemID);
 			setItemState(state);
-			
+			item = roulette.getIItem();
 			itemCommands.add(itemID);
 			
 			if(ItemState.isTimed(state)) roulette.setTimer();
