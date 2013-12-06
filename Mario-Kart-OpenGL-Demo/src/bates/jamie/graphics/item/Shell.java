@@ -90,4 +90,17 @@ public abstract class Shell extends Item
 			item.destroy();
 		}
 	}
+	
+	public void pressItem(Car car) {
+		Shell shell = (Shell) car.getItems().remove();
+		
+		switch(car.getAiming())
+		{
+			case FORWARDS: shell.throwForwards(); break;
+			case BACKWARDS: shell.throwBackwards(); break;
+			default: break;
+		}
+			
+		scene.addItem(shell);	
+	}
 }
