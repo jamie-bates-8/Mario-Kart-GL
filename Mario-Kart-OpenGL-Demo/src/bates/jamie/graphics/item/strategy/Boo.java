@@ -1,5 +1,14 @@
 package bates.jamie.graphics.item.strategy;
 
-public class Boo implements IItem {
+import bates.jamie.graphics.entity.Car;
+
+public class Boo implements IItem
+{
+
+	public void pressItem(Car car)
+	{
+		car.setInvisible(true);
+		car.setBooDuration(400);
+	}
 
 }
