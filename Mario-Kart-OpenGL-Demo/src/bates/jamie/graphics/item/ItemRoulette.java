@@ -10,6 +10,7 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.item.strategy.BananaP;
 import bates.jamie.graphics.item.strategy.Boo;
 import bates.jamie.graphics.item.strategy.FakeItemBoxP;
+import bates.jamie.graphics.item.strategy.IItem;
 import bates.jamie.graphics.item.strategy.LightningBolt;
 import bates.jamie.graphics.item.strategy.Mushroom;
 import bates.jamie.graphics.item.strategy.PowerStar;

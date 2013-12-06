@@ -1,4 +1,4 @@
-package bates.jamie.graphics.item;
+package bates.jamie.graphics.item.strategy;
 
 import bates.jamie.graphics.entity.Car;
 

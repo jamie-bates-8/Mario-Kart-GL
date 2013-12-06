@@ -1,7 +1,6 @@
 package bates.jamie.graphics.item.strategy;
 
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.item.IItem;
 import bates.jamie.graphics.item.Shell;
 
 public class ShellP implements IItem 

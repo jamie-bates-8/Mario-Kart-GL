@@ -2,7 +2,6 @@ package bates.jamie.graphics.item.strategy;
 
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.item.Banana;
-import bates.jamie.graphics.item.IItem;
 
 public class BananaP implements IItem 
 {

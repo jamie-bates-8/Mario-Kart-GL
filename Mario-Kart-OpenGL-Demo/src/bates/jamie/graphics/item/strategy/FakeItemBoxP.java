@@ -2,7 +2,6 @@ package bates.jamie.graphics.item.strategy;
 
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.item.FakeItemBox;
-import bates.jamie.graphics.item.IItem;
 
 public class FakeItemBoxP implements IItem {
 
