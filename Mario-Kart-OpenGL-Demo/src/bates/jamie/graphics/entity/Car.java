@@ -34,7 +34,6 @@ import bates.jamie.graphics.item.ItemState;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.item.Shell;
 import bates.jamie.graphics.item.strategy.IItem;
-import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
@@ -1380,11 +1379,6 @@ public class Car
 		};
 	}
 	
-	public Vec3 getLightningVector()
-	{
-		return bound.c.add(bound.u.yAxis.multiply(20));
-	}
-	
 	public Vec3 getBackwardItemVector(Item item, int iteration)
 	{
 		float radius = item.getMaximumExtent() * 1.5f * iteration;
@@ -1431,10 +1425,7 @@ public class Car
 	
 	public void boost()
 	{
-		boosting = true;
-		scene.focalBlur.enableRadial = true;
-		boostDuration = 60;
-		velocity = 2 * TOP_SPEED;
+		
 	}
 
 	public void spin()
@@ -1449,54 +1440,11 @@ public class Car
 		}
 	}
 	
-	public void useLightningBolt() // TODO
-	{
-		for(Car car : scene.getCars()) car.struckByLightning();
-//			if(!car.equals(this)) car.struckByLightning();
-	}
-	
-	public void struckByLightning()
-	{
-		if(!starPower && !invisible)
-		{
-			if(!miniature)
-			{
-				bound.e = bound.e.multiply(0.5f);
-				scale /= 2;
-				graph.getRoot().setScale(new Vec3(scale));
-			}
-			
-			miniature = true;
-			miniatureDuration = 400;
-			velocity = 0;
-			
-			if(slipping) slipDuration += 24;
-			else spin();
-		}
-		
-		Vec3 source = getLightningVector(); 
-		scene.addParticle(new LightningParticle(source));
-	}
-	
 	public void curse()
 	{
 		cursed = true;
 		curseDuration = 500;
 		itemDuration = 0; 
-	}
-	
-	public void useBoo()
-	{
-		invisible = true;
-		booDuration = 400;
-	}
-
-	public void usePowerStar()
-	{
-		starPower = true;
-		cursed = false;
-		starDuration = 500;
-		turnIncrement = 0.15f;
 	}
 	
 	public boolean isSlipping()   { return slipping;  }
@@ -1722,4 +1670,61 @@ public class Car
 	public Scene getScene() {
 		return this.scene;
 	}
+
+	public void setStarPower(boolean starPower) {
+		this.starPower = starPower;
+	}
+
+	public void setCursed(boolean cursed) {
+		this.cursed = cursed;
+	}
+
+	public void setStarDuration(int starDuration) {
+		this.starDuration = starDuration;
+	}
+
+	public void setTurnIncrement(float turnIncrement) {
+		this.turnIncrement = turnIncrement;
+	}
+
+	public float getScale() {
+		return this.scale;
+	}
+
+	public void setScale(float scale) {
+		this.scale = scale;
+	}
+
+	public void setMiniature(boolean miniature) {
+		this.miniature = miniature;
+	}
+
+	public void setMiniatureDuration(int miniatureDuration) {
+		this.miniatureDuration = miniatureDuration;
+	}
+
+	public int getSlipDuration() {
+		return this.slipDuration;
+	}
+
+	public void setSlipDuration(int slipDuration) {
+		this.slipDuration = slipDuration;
+	}
+
+	public void setInvisible(boolean invisible) {
+		this.invisible = invisible;
+	}
+
+	public void setBooDuration(int booDuration) {
+		this.booDuration = booDuration;
+	}
+
+	public void setBoosting(boolean boosting) {
+		this.boosting = boosting;
+	}
+
+	public void setBoostDuration(int boostDuration) {
+		this.boostDuration = boostDuration;
+	}
+
 }

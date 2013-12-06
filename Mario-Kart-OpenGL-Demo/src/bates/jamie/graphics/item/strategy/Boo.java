@@ -7,8 +7,8 @@ public class Boo implements IItem
 
 	public void pressItem(Car car)
 	{
-		car.useBoo();
-		
+		car.setInvisible(true);
+		car.setBooDuration(400);
 	}
 
 }

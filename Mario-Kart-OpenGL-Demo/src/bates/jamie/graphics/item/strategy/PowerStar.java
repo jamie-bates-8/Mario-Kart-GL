@@ -7,8 +7,9 @@ public class PowerStar implements IItem
 
 	public void pressItem(Car car)
 	{
-		car.usePowerStar();
-		
+		car.setStarPower(true);
+		car.setCursed(false);
+		car.setStarDuration(500);
+		car.setTurnIncrement(0.15f);
 	}
-
 }
