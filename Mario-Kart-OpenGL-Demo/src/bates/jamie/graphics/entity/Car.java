@@ -530,6 +530,7 @@ public class Car
 			case FAKE_ITEM_BOX:
 			case HOLDING_BANANA:
 			{
+				//Fake item and banana both have teh pressItem method
 				Item item = items.remove();
 					
 				switch(aiming)
@@ -1536,7 +1537,7 @@ public class Car
 		itemDuration = 0; 
 	}
 	
-	private void useBoo()
+	public void useBoo()
 	{
 		invisible = true;
 		booDuration = 400;
