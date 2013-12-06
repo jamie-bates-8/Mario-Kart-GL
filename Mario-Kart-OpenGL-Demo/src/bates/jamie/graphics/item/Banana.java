@@ -25,7 +25,7 @@ import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 
 
-public class Banana extends Item
+public class Banana extends Item implements IItem
 {
 	public static final int ID = 8;
 	
@@ -210,4 +210,19 @@ public class Banana extends Item
 	
 	@Override
 	public float getMaximumExtent() { return bound.getMaximumExtent() * 0.85f; }
+	
+	public void pressItem(Car car)
+	{
+		Banana banana = (Banana) car.getItems().remove();
+		
+		switch(car.getAiming())
+		{
+			case FORWARDS: banana.throwUpwards(); break;
+			case BACKWARDS: banana.throwBackwards(); break;
+			default: break;
+		}
+			
+		scene.addItem(banana);	
+	
+	}
 }

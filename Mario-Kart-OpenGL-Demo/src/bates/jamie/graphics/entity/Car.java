@@ -23,6 +23,7 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.HUD;
 import bates.jamie.graphics.io.HoloTag;
+import bates.jamie.graphics.item.Aim;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
 import bates.jamie.graphics.item.FakeItemBox;
@@ -189,7 +190,6 @@ public class Car
 	
 	public int itemDuration = 0;
 	
-	private enum Aim {FORWARDS, DEFAULT, BACKWARDS};
 	private Aim aiming = Aim.DEFAULT;
 	
 	/** Scene Fields **/
@@ -473,7 +473,11 @@ public class Car
 			
 			case ONE_MUSHROOM:
 			case TWO_MUSHROOMS:
-			case THREE_MUSHROOMS: boost(); break;
+			case THREE_MUSHROOMS:
+			{
+				//TO-DO	
+				boost(); break;
+			}
 
 			case GOLDEN_MUSHROOM: superBoosting = true; break;
 			
@@ -481,18 +485,18 @@ public class Car
 			case TWO_BANANAS:
 			case THREE_BANANAS:
 			{
+				///TO-UNDO
 				Banana banana = (Banana) items.remove();
 					
 				switch(aiming)
 				{
 					case FORWARDS: banana.throwUpwards(); break;
+					case BACKWARDS: banana.throwBackwards(); break;
 					default: break;
 				}
 					
 				scene.addItem(banana);
-				break;
-			}
-			
+			} break;
 			case LIGHTNING_BOLT: useLightningBolt(); break;
 			case POWER_STAR: usePowerStar(); break;
 			case BOO: useBoo(); break;
@@ -845,6 +849,16 @@ public class Car
 		else falling = true;
 		
 		return heights;
+	}
+	
+	public Aim getAiming()
+	{
+		return aiming;
+	}
+	
+	public void setAiming(Aim aim)
+	{
+		aiming = aim;
 	}
 	
 	public float[] getHeights(Terrain map)
