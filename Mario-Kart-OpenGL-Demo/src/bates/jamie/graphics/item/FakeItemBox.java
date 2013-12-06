@@ -27,7 +27,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 //TODO Fake Item Boxes should rebound off slopes
 
-public class FakeItemBox extends Item implements IItem
+public class FakeItemBox extends Item
 {
 	public static final int ID = 7;
 	
@@ -255,21 +255,6 @@ public class FakeItemBox extends Item implements IItem
 	{
 		car.curse();
 		destroy();
-	}
-
-	public void pressItem(Car car)
-	{
-		FakeItemBox fakeBox = (FakeItemBox) car.getItems().remove();
-		
-		switch(car.getAiming())
-		{
-			case FORWARDS: fakeBox.throwUpwards(); break;
-			case BACKWARDS: fakeBox.throwBackwards(); break;
-			default: break;
-		}
-				
-		scene.addItem(fakeBox);
-		
 	}
 }
 

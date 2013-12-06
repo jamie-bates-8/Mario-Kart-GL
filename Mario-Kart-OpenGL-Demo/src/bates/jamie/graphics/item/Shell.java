@@ -17,7 +17,7 @@ import bates.jamie.graphics.util.Vec3;
 
 //TODO Add Shell fragments when a Shell is destroyed
 
-public abstract class Shell extends Item implements IItem
+public abstract class Shell extends Item
 {
 	protected static final List<Face> SHELL_FACES = OBJParser.parseTriangles("shell");
 	protected static final List<Face> RIM_FACES   = OBJParser.parseTriangles("shell_rim");
@@ -89,18 +89,5 @@ public abstract class Shell extends Item implements IItem
 			this.destroy();
 			item.destroy();
 		}
-	}
-	
-	public void pressItem(Car car) {
-		Shell shell = (Shell) car.getItems().remove();
-		
-		switch(car.getAiming())
-		{
-			case FORWARDS: shell.throwForwards(); break;
-			case BACKWARDS: shell.throwBackwards(); break;
-			default: break;
-		}
-			
-		scene.addItem(shell);	
 	}
 }

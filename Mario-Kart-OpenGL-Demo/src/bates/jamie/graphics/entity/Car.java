@@ -1718,4 +1718,8 @@ public class Car
 			return values()[(mode.ordinal() + 1) % values().length];
 		}
 	}
+
+	public Scene getScene() {
+		return this.scene;
+	}
 }
