@@ -17,7 +17,7 @@ import bates.jamie.graphics.util.Vec3;
 
 //TODO Add Shell fragments when a Shell is destroyed
 
-public abstract class Shell extends Item
+public abstract class Shell extends Item implements IItem
 {
 	protected static final List<Face> SHELL_FACES = OBJParser.parseTriangles("shell");
 	protected static final List<Face> RIM_FACES   = OBJParser.parseTriangles("shell_rim");
