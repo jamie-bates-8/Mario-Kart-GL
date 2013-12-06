@@ -23,6 +23,7 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.HUD;
 import bates.jamie.graphics.io.HoloTag;
+import bates.jamie.graphics.item.Aim;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
 import bates.jamie.graphics.item.FakeItemBox;
@@ -189,7 +190,6 @@ public class Car
 	
 	public int itemDuration = 0;
 	
-	private enum Aim {FORWARDS, DEFAULT, BACKWARDS};
 	private Aim aiming = Aim.DEFAULT;
 	
 	/** Scene Fields **/
