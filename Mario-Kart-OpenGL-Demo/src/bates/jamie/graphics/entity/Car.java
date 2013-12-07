@@ -23,7 +23,6 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.HUD;
 import bates.jamie.graphics.io.HoloTag;
-import bates.jamie.graphics.item.Aim;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
 import bates.jamie.graphics.item.FakeItemBox;
@@ -33,7 +32,7 @@ import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.item.ItemState;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.item.Shell;
-import bates.jamie.graphics.item.strategy.IItem;
+import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
@@ -154,7 +153,6 @@ public class Car
 	/** Item Fields **/
 	private ItemRoulette roulette = new ItemRoulette();
 	private ItemState itemState = ItemState.NO_ITEM;
-	private IItem item;
 	private Queue<Item> items = new LinkedList<Item>();
 	private Queue<Integer> itemCommands = new ArrayBlockingQueue<Integer>(100);
 	
@@ -191,6 +189,7 @@ public class Car
 	
 	public int itemDuration = 0;
 	
+	private enum Aim {FORWARDS, DEFAULT, BACKWARDS};
 	private Aim aiming = Aim.DEFAULT;
 	
 	/** Scene Fields **/
@@ -368,7 +367,7 @@ public class Car
 			roulette.secondary = false;
 			ItemState state = ItemState.get(itemID);
 			setItemState(state);
-			item = roulette.getIItem();
+			
 			itemCommands.add(itemID);
 			
 			if(ItemState.isTimed(state)) roulette.setTimer();
@@ -450,7 +449,57 @@ public class Car
 	
 	public void pressItem()
 	{
-		item.pressItem(this);
+		switch(itemState)
+		{
+			case THREE_ORBITING_GREEN_SHELLS:
+			case TWO_ORBITING_GREEN_SHELLS:
+			case ONE_ORBITING_GREEN_SHELL:
+			case THREE_ORBITING_RED_SHELLS:
+			case TWO_ORBITING_RED_SHELLS:
+			case ONE_ORBITING_RED_SHELL:
+			{			
+				Shell shell = (Shell) items.remove();
+					
+				switch(aiming)
+				{
+					case FORWARDS:
+					case DEFAULT:   shell.throwForwards();  break;
+					case BACKWARDS: shell.throwBackwards(); break;
+				}
+					
+				scene.addItem(shell);
+				break;
+			}
+			
+			case ONE_MUSHROOM:
+			case TWO_MUSHROOMS:
+			case THREE_MUSHROOMS: boost(); break;
+
+			case GOLDEN_MUSHROOM: superBoosting = true; break;
+			
+			case ONE_BANANA:
+			case TWO_BANANAS:
+			case THREE_BANANAS:
+			{
+				Banana banana = (Banana) items.remove();
+					
+				switch(aiming)
+				{
+					case FORWARDS: banana.throwUpwards(); break;
+					default: break;
+				}
+					
+				scene.addItem(banana);
+				break;
+			}
+			
+			case LIGHTNING_BOLT: useLightningBolt(); break;
+			case POWER_STAR: usePowerStar(); break;
+			case BOO: useBoo(); break;
+			
+			default: break;
+		}
+		
 		itemState = ItemState.press(itemState);
 	}
 
@@ -477,7 +526,6 @@ public class Car
 			case FAKE_ITEM_BOX:
 			case HOLDING_BANANA:
 			{
-				//Fake item and banana both have teh pressItem method
 				Item item = items.remove();
 					
 				switch(aiming)
@@ -797,16 +845,6 @@ public class Car
 		else falling = true;
 		
 		return heights;
-	}
-	
-	public Aim getAiming()
-	{
-		return aiming;
-	}
-	
-	public void setAiming(Aim aim)
-	{
-		aiming = aim;
 	}
 	
 	public float[] getHeights(Terrain map)
@@ -1379,6 +1417,11 @@ public class Car
 		};
 	}
 	
+	public Vec3 getLightningVector()
+	{
+		return bound.c.add(bound.u.yAxis.multiply(20));
+	}
+	
 	public Vec3 getBackwardItemVector(Item item, int iteration)
 	{
 		float radius = item.getMaximumExtent() * 1.5f * iteration;
@@ -1425,7 +1468,10 @@ public class Car
 	
 	public void boost()
 	{
-		
+		boosting = true;
+		scene.focalBlur.enableRadial = true;
+		boostDuration = 60;
+		velocity = 2 * TOP_SPEED;
 	}
 
 	public void spin()
@@ -1440,11 +1486,54 @@ public class Car
 		}
 	}
 	
+	public void useLightningBolt() // TODO
+	{
+		for(Car car : scene.getCars()) car.struckByLightning();
+//			if(!car.equals(this)) car.struckByLightning();
+	}
+	
+	public void struckByLightning()
+	{
+		if(!starPower && !invisible)
+		{
+			if(!miniature)
+			{
+				bound.e = bound.e.multiply(0.5f);
+				scale /= 2;
+				graph.getRoot().setScale(new Vec3(scale));
+			}
+			
+			miniature = true;
+			miniatureDuration = 400;
+			velocity = 0;
+			
+			if(slipping) slipDuration += 24;
+			else spin();
+		}
+		
+		Vec3 source = getLightningVector(); 
+		scene.addParticle(new LightningParticle(source));
+	}
+	
 	public void curse()
 	{
 		cursed = true;
 		curseDuration = 500;
 		itemDuration = 0; 
+	}
+	
+	private void useBoo()
+	{
+		invisible = true;
+		booDuration = 400;
+	}
+
+	public void usePowerStar()
+	{
+		starPower = true;
+		cursed = false;
+		starDuration = 500;
+		turnIncrement = 0.15f;
 	}
 	
 	public boolean isSlipping()   { return slipping;  }
@@ -1666,65 +1755,4 @@ public class Car
 			return values()[(mode.ordinal() + 1) % values().length];
 		}
 	}
-
-	public Scene getScene() {
-		return this.scene;
-	}
-
-	public void setStarPower(boolean starPower) {
-		this.starPower = starPower;
-	}
-
-	public void setCursed(boolean cursed) {
-		this.cursed = cursed;
-	}
-
-	public void setStarDuration(int starDuration) {
-		this.starDuration = starDuration;
-	}
-
-	public void setTurnIncrement(float turnIncrement) {
-		this.turnIncrement = turnIncrement;
-	}
-
-	public float getScale() {
-		return this.scale;
-	}
-
-	public void setScale(float scale) {
-		this.scale = scale;
-	}
-
-	public void setMiniature(boolean miniature) {
-		this.miniature = miniature;
-	}
-
-	public void setMiniatureDuration(int miniatureDuration) {
-		this.miniatureDuration = miniatureDuration;
-	}
-
-	public int getSlipDuration() {
-		return this.slipDuration;
-	}
-
-	public void setSlipDuration(int slipDuration) {
-		this.slipDuration = slipDuration;
-	}
-
-	public void setInvisible(boolean invisible) {
-		this.invisible = invisible;
-	}
-
-	public void setBooDuration(int booDuration) {
-		this.booDuration = booDuration;
-	}
-
-	public void setBoosting(boolean boosting) {
-		this.boosting = boosting;
-	}
-
-	public void setBoostDuration(int boostDuration) {
-		this.boostDuration = boostDuration;
-	}
-
 }

@@ -4,17 +4,8 @@ import static javax.media.opengl.GL.GL_BLEND;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
-
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.item.strategy.BananaP;
-import bates.jamie.graphics.item.strategy.Boo;
-import bates.jamie.graphics.item.strategy.FakeItemBoxP;
-import bates.jamie.graphics.item.strategy.IItem;
-import bates.jamie.graphics.item.strategy.LightningBolt;
-import bates.jamie.graphics.item.strategy.Mushroom;
-import bates.jamie.graphics.item.strategy.PowerStar;
-import bates.jamie.graphics.item.strategy.ShellP;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -288,25 +279,4 @@ public class ItemRoulette
 	public void destroy() { state = State.DEAD; }
 	
 	public void setTimer() { duration = 400; state = State.ON_TIMER; }
-	
-	public IItem getIItem()
-	{
-		switch (itemID) {
-			case  0: return new ShellP();
-			case  1: return new ShellP();
-			case  2: return new ShellP();
-			case  3: return new ShellP();
-			case  4: return new Mushroom();
-			case  5: return new Mushroom();
-			case  6: return new Mushroom();
-			case  7: return new FakeItemBoxP();
-			case  8: return new BananaP();
-			case  9: return new BananaP();
-			case 10: return new LightningBolt();
-			case 11: return new PowerStar();
-			case 12: return new Boo();
-			case 13: return new ShellP();
-		}
-		return null;
-	}
  }
