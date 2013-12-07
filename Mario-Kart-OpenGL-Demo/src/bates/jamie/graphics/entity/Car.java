@@ -673,7 +673,17 @@ public class Car
 	}
 
 	public long renderHUD(GL2 gl, GLU glu) { return hud.render(gl, glu); }
-
+	
+	public Aim getAiming()
+	{
+		return aiming;
+	}
+	
+	public void setAiming(Aim aim)
+	{
+		aiming = aim;
+	}
+	
 	public float[] getHeights()
 	{
 		float[] _heights = heights;
@@ -797,16 +807,6 @@ public class Car
 		else falling = true;
 		
 		return heights;
-	}
-	
-	public Aim getAiming()
-	{
-		return aiming;
-	}
-	
-	public void setAiming(Aim aim)
-	{
-		aiming = aim;
 	}
 	
 	public float[] getHeights(Terrain map)
