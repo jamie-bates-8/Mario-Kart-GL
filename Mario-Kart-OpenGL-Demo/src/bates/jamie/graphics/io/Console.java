@@ -13,6 +13,7 @@ import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
+import bates.jamie.graphics.item.BobOmb;
 import bates.jamie.graphics.item.FakeItemBox;
 import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
@@ -595,6 +596,7 @@ public class Console
 		else if(itemID.equalsIgnoreCase("FakeItemBox")) return FakeItemBox.ID;
 		else if(itemID.equalsIgnoreCase(     "Banana")) return Banana.ID;
 		else if(itemID.equalsIgnoreCase(  "BlueShell")) return BlueShell.ID;
+		else if(itemID.equalsIgnoreCase(     "BobOmb")) return BobOmb.ID;
 		
 		else return -1;	
 	}

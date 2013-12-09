@@ -17,7 +17,7 @@ public class Reflector
 	private int frameBuffer;
 	private int renderBuffer;
 	
-	private int mapSize = 64; // based on canvas height
+	private int mapSize = 320; // based on canvas height
 	private int maxSize;
 	
 	public float reflectivity;

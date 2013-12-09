@@ -11,6 +11,7 @@ public class SceneGraph
 	public SceneGraph(SceneNode root)
 	{
 		this.setRoot(root);
+		root.setRoot(root);
 	}
 
 	public SceneNode getRoot() { return root; }

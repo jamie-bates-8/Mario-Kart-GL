@@ -593,4 +593,89 @@ public class Renderer
 		}
 		gl.glPopMatrix();
 	}
+	
+	public static void displayBumpMappedCuboid(GL2 gl, Vec3 centre, Vec3 scale, float rotation,
+											   Texture[] textures, Texture bumpmap, float textureScale)
+	{
+		Shader shader = Shader.get("bump_lights"); shader.enable(gl);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE1); bumpmap.bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
+		
+		float s = textureScale;
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslated(centre.x, centre.y, centre.z);
+			gl.glRotatef(rotation, 0, 1, 0);
+			gl.glScalef(scale.x, scale.y, scale.z);
+
+			textures[0].bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{	
+				gl.glVertexAttrib3f(1, 0, 0, -1);
+				gl.glNormal3f(+1, 0, 0);
+				
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(+1, -1, -1);
+				gl.glTexCoord2f(s, s); gl.glVertex3f(+1, +1, -1);
+				gl.glTexCoord2f(0, s); gl.glVertex3f(+1, +1, +1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(+1, -1, +1);
+				
+				gl.glVertexAttrib3f(1, 0, 0, +1);
+				gl.glNormal3f(-1, 0, 0);
+
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(s, s); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(0, s); gl.glVertex3f(-1, +1, -1);
+			}
+			gl.glEnd();
+
+			textures[1].bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{		
+				gl.glVertexAttrib3f(1, +1, 0, 0);
+				gl.glNormal3f(0, +1, 0);
+				
+				gl.glTexCoord2f(0, s); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(s, s); gl.glVertex3f( 1, +1, -1);
+				
+				gl.glVertexAttrib3f(1, -1, 0, 0);
+				gl.glNormal3f(0, -1, 0); 
+
+				gl.glTexCoord2f(s, s); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(0, s); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, +1);
+			}
+			gl.glEnd();
+
+			textures[2].bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glVertexAttrib3f(1, +1, 0, 0);
+				gl.glNormal3f(0, 0, +1);
+				
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(s, s); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(0, s); gl.glVertex3f(-1, +1, +1);
+				
+				gl.glVertexAttrib3f(1, -1, 0, 0);
+				gl.glNormal3f(0, 0, -1);
+				
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(s, s); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(0, s); gl.glVertex3f( 1, +1, -1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, -1);
+			}    
+			gl.glEnd();
+		}
+		gl.glPopMatrix();
+	}
 }

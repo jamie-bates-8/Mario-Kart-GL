@@ -47,7 +47,7 @@ public class Model implements Serializable
 	Texture texture;
 	
 	
-	public static boolean enableVBO = false;
+	public static boolean enableVBO = true;
 	public boolean bufferCreated = false;
 	
 	private int[] bufferIDs = new int[5];

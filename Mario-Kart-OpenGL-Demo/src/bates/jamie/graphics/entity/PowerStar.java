@@ -22,13 +22,13 @@ import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
 
-public class ShineSprite
+public class PowerStar
 {
-	static Model shineSprite = OBJParser.parseTriangleMesh("shine_sprite");
-	static Model shineEyes   = OBJParser.parseTriangleMesh("shine_eyes");
+	static Model power_star_body = OBJParser.parseTriangleMesh("power_star_body");
+	static Model power_star_eyes = OBJParser.parseTriangleMesh("power_star_eyes");
 	
-	SceneNode shineNode;
-	SceneNode eyeNode;
+	SceneNode bodyNode;
+	SceneNode eyesNode;
 	
 	public Reflector reflector;
 	
@@ -40,25 +40,25 @@ public class ShineSprite
 	
 	boolean collected = false;
 	
-	public ShineSprite(Vec3 p)
+	public PowerStar(Vec3 p)
 	{
 		position = p;
 		
 		reflector = new Reflector(1.0f);
 		
-		shineNode = new SceneNode(null, -1, shineSprite, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		shineNode.setTranslation(p);
-		shineNode.setScale(new Vec3(1.75));
-		shineNode.setReflector(reflector);
-		shineNode.setReflectivity(0.75f);
-		shineNode.setRenderMode(RenderMode.REFLECT);
-		shineNode.setColor(new float[] {1, 1, 0.2f});
+		bodyNode = new SceneNode(null, -1, power_star_body, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		bodyNode.setTranslation(p);
+		bodyNode.setScale(new Vec3(0.75));
+		bodyNode.setReflector(reflector);
+		bodyNode.setReflectivity(0.75f);
+		bodyNode.setRenderMode(RenderMode.REFLECT);
+		bodyNode.setColor(new float[] {1, 1, 0.2f});
 		
-		eyeNode = new SceneNode(null, -1, shineEyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		eyeNode.setTranslation(p);
-		eyeNode.setScale(new Vec3(1.75));
-		eyeNode.setRenderMode(RenderMode.COLOR);
-		eyeNode.setColor(RGB.BLACK);
+		eyesNode = new SceneNode(null, -1, power_star_eyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		eyesNode.setTranslation(p);
+		eyesNode.setScale(new Vec3(0.75));
+		eyesNode.setRenderMode(RenderMode.COLOR);
+		eyesNode.setColor(RGB.BLACK);
 		
 		List<ParticleGenerator> generators = Scene.singleton.generators;
 		
@@ -73,8 +73,8 @@ public class ShineSprite
 	{
 		position = p;
 		
-		shineNode.setTranslation(p);
-		eyeNode.setTranslation(p);
+		bodyNode.setTranslation(p);
+		eyesNode.setTranslation(p);
 		
 		rayGenerator.setSource(p);
 		sparkleGenerator.setSource(p);
@@ -89,18 +89,19 @@ public class ShineSprite
 		float   rimPower = Light.rimPower;
 		float[] rimColor = Light.rimColor;
 		
-		Light.rimPower = 1.0f;
-		Light.rimColor = new float[] {.7f, .7f, .7f};
+//		Light.rimPower = 1.0f;
+//		Light.rimColor = new float[] {.7f, .7f, .7f};
+//		
+//		Light.setepRimLighting(gl);
 		
-		Light.setepRimLighting(gl);
+		bodyNode.setRotation(new Vec3(0, rotation, 0));
+		bodyNode.setColor(Scene.singleton.getCars().get(0).getColor());
 		
-		shineNode.setRotation(new Vec3(0, rotation, 0));
+		if(collected) bodyNode.renderGhost(gl, 1, Shader.get("aberration"));
+		else          bodyNode.render(gl);
 		
-		if(collected) shineNode.renderGhost(gl, 1, Shader.get("aberration"));
-		else          shineNode.render(gl);
-		
-		eyeNode.setRotation(new Vec3(0, rotation, 0));
-		eyeNode.render(gl);
+		eyesNode.setRotation(new Vec3(0, rotation, 0));
+		eyesNode.render(gl);
 		
 		Light.rimPower = rimPower;
 		Light.rimColor = rimColor;

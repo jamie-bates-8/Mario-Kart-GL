@@ -280,7 +280,8 @@ public class HUD
 		
 		renderer.draw("Bananas: " + Scene.bananasRendered, x, 610);
 		
-		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, 580);
+		renderer.draw("Parallax: " + Scene.enableParallax, x, 580);
+		
 		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, 550);
 		renderer.draw("Azimuth: " + String.format("%.1f", Math.toDegrees(car.camera.azimuth)), x, 520);
 		renderer.draw("Incline: " + String.format("%.1f", Math.toDegrees(car.camera.incline)), x, 490);

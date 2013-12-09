@@ -11,6 +11,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
+import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
@@ -19,6 +20,9 @@ import bates.jamie.graphics.util.Vec3;
 public class SceneNode
 {
 	private List<SceneNode> children;
+	
+	private SceneNode parent;
+	private SceneNode root;
 	
 	private List<Face> geometry;
 	private Model model;
@@ -136,14 +140,17 @@ public class SceneNode
 		gl.glPopMatrix();
 	}
 
-	public void renderGhost(GL2 gl, float fade, Shader shader)
+	public void renderGhost(GL2 gl, float fade, Shader shader, float[] color)
 	{
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
+			gl.glColor3fv(color, 0);
 			
 			if(Shader.enabled && shader != null)
-			{
+			{	
+				Reflector reflector = this.reflector == null ? root.getReflector() : this.reflector;
+				
 				shader.enable(gl);
 				shader.setSampler(gl, "cubeMap", 0);
 				
@@ -153,7 +160,12 @@ public class SceneNode
 				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 				shader.loadMatrix(gl, "cameraMatrix", camera);
 				
-				if(model != null) model.render(gl);
+				if(model != null)
+				{
+					if(reflector != null) reflector.enable(gl);
+					model.render(gl);
+					if(reflector != null) reflector.disable(gl);
+				}
 				else Renderer.displayColoredObject(gl, geometry, fade);
 				
 				Shader.disable(gl);
@@ -177,9 +189,14 @@ public class SceneNode
 				else Renderer.displayTransparentObject(gl, geometry, fade);
 			}
 			
-			for(SceneNode child : children) child.renderGhost(gl, fade, shader);
+			for(SceneNode child : children) child.renderGhost(gl, fade, shader, color);
 		}
 		gl.glPopMatrix();
+	}
+	
+	public void renderGhost(GL2 gl, float fade, Shader shader)
+	{
+		renderGhost(gl, fade, shader, RGB.WHITE_3F);
 	}
 	
 	public void renderColor(GL2 gl, float[] color, Reflector reflector)
@@ -235,7 +252,12 @@ public class SceneNode
 	
 	public void setChildren(List<SceneNode> children) { this.children = children; }
 	
-	public void addChild(SceneNode child) { children.add(child); }
+	public void addChild(SceneNode child)
+	{
+		child.setParent(this);
+		child.setRoot(root);
+		children.add(child);
+	}
 
 	public List<Face> getGeometry() { return geometry; }
 
@@ -376,6 +398,14 @@ public class SceneNode
 	public Vec3 getPosition() { return t; }
 
 	public void setReflectivity(float reflectivity) { this.reflectivity = reflectivity; }
+
+	public SceneNode getParent() { return parent; }
+
+	public void setParent(SceneNode parent) { this.parent = parent; }
+	
+	public SceneNode getRoot() { return root; }
+
+	public void setRoot(SceneNode root) { this.root = root; }
 
 	public enum MatrixOrder
 	{

@@ -286,14 +286,16 @@ public class Car
 		body.setTranslation(bound.c);
 		body.setOrientation(bound.u.toArray());
 		body.setScale(new Vec3(scale));
+		body.setReflector(scene.reflector);
 		
 		if(enableChrome)
 		{
 			body.setRenderMode(SceneNode.RenderMode.REFLECT);
 			body.setReflectivity(0.75f);
-			body.setReflector(scene.reflector);
 		}
 		else body.setRenderMode(SceneNode.RenderMode.COLOR);
+		
+		graph = new SceneGraph(body);
 		
 		for(int i = 0; i < 4; i++)
 		{
@@ -328,7 +330,7 @@ public class Car
 		
 		body.addChild(windows);
 		
-		graph = new SceneGraph(body);
+		
 	}
 	
 	public void updateGraph()
@@ -451,7 +453,7 @@ public class Car
 			}
 			case 14:
 			{
-				BobOmb bomb = new BobOmb(new Vec3(), this);
+				BobOmb bomb = new BobOmb(new Vec3(), this, false);
 				
 				bomb.throwUpwards();
 					

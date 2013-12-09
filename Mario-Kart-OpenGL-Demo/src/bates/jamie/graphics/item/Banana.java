@@ -50,7 +50,7 @@ public class Banana extends Item
 		gradient.addStop(90, GREEN);
 	}
 	
-	public static final float RADIUS = 1.6f;
+	public static final float RADIUS = 1.7f;
 	
 	private int bananaID = 0;
 	
@@ -116,6 +116,7 @@ public class Banana extends Item
 			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 			if(thrown) gl.glRotatef(trajectory, 0, -1, 0);
 			else gl.glMultMatrixf(u.toArray(), 0);
+			gl.glScalef(1.1f, 1.1f, 1.1f);
 			
 			Shader shader = Shader.enabled ? Shader.getLightModel("phong") : null;
 			if(shader != null) shader.enable(gl);

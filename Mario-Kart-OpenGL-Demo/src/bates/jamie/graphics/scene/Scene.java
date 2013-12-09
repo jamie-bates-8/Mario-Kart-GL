@@ -1,6 +1,8 @@
 package bates.jamie.graphics.scene;
 
 import static bates.jamie.graphics.util.Renderer.displayTexturedCuboid;
+import static bates.jamie.graphics.util.Renderer.displayBumpMappedCuboid;
+
 import static javax.media.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
@@ -98,6 +100,8 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.LightingStrike;
+import bates.jamie.graphics.entity.Mushroom;
+import bates.jamie.graphics.entity.PowerStar;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.ShineSprite;
 import bates.jamie.graphics.entity.SkyBox;
@@ -1168,9 +1172,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		/** Model Setup **/
 		skybox = new SkyBox(gl);
-		shine = new ShineSprite(new Vec3(0, 40, 0));
+		shine = new ShineSprite(new Vec3(20, 40, 0));
+		star = new PowerStar(new Vec3(-20, 40, 0));
+		mushroom = new Mushroom(gl, new Vec3(40, 1.5, 0));
 		energyField = new EnergyField(new Vec3(), FieldType.LIGHT);
-		bomb = new BobOmb(new Vec3(40, 1.6, 0), null);
 		
 		floorFaces = OBJParser.parseTriangles("floor");
 	    
@@ -1341,7 +1346,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    new BlueShell  (gl, this, null, 0);
 	    new FakeItemBox(gl, this, null);
 	    new Banana     (gl, this, null, 0);
-	    new BobOmb     (null, null);
+	    new BobOmb     (null, null, false);
 	}
 
 	public void display(GLAutoDrawable drawable)
@@ -1381,9 +1386,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Car car = cars.get(0);
 		
-		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition());
+		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 2, 0)));
 		if(shine != null) shine.reflector.update(gl, shine.getPosition());
-		if(bomb  != null)  bomb.reflector.update(gl,  bomb.getPosition());
+		if(star  != null)  star.reflector.update(gl,  star.getPosition());
+		
+		for(ItemBox box : itemBoxes)
+		{
+			if(!box.initialized)
+			{
+				box.reflector.update(gl, box.getPosition());
+				box.initialized = true;
+			}
+		}
 		
 		for(Item item : itemList)
 		{
@@ -1466,14 +1480,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			Car car = cars.get(index);
 			
 			setupViewport(gl, index);
-			
 			car.setupCamera(gl, glu);
-			for(Light l : lights) l.setup(gl);
-			car.starLight.setup(gl);
-			for(Light l : car.driftLights) l.setup(gl);
-			BlueShell.blastLight.setup(gl);
 			
-			Light.setepRimLighting(gl);
+			setupLights(gl, car);
 			
 			if(enableShadow && Shader.enabled)
 			{
@@ -1560,6 +1569,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		boostCounter = _i;
 		
 		if(shadowMap) displayMap(gl, focalBlur.getDepthTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
+	}
+
+	private void setupLights(GL2 gl, Car car)
+	{
+		for(Light l : lights) l.setup(gl);
+		car.starLight.setup(gl);
+		for(Light l : car.driftLights) l.setup(gl);
+		BlueShell.blastLight.setup(gl);
+		
+		Light.setepRimLighting(gl);
 	}
 	
 	public static boolean shadowMode = false;
@@ -1982,7 +2001,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				
 				gl.glBegin(GL2.GL_QUADS);
 				{
-					gl.glVertexAttrib3f(1, 0, 0, 1);
+					gl.glVertexAttrib3f(1, 1, 0, 0);
 					gl.glNormal3f(0, 1, 0);
 					
 					float size = 30.0f;
@@ -2087,6 +2106,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		gl.glPopMatrix();
 		
+		textures = new Texture[] {floorTex, floorTex, floorTex};
+		
+		gl.glPushMatrix();
+		{
+			displayBumpMappedCuboid(gl, new Vec3(0, 10, 0), new Vec3(5, 5, 5),  0, textures, floorBump, 4);
+		}
+		gl.glPopMatrix();
+		
 		Shader.disable(gl);
 	}
 
@@ -2136,13 +2163,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader.disable(gl);
 		
-		if(!environmentMode) shine.render(gl); 
+		if(!environmentMode)
+		{
+			shine.render(gl); 
+			 star.render(gl);
+		}
+		
+		mushroom.render(gl);
 
 		return System.nanoTime() - start;
 	}
 	
 	private ShineSprite shine;
-	private BobOmb bomb;
+	private PowerStar star;
+	private Mushroom mushroom;
 
 	/**
 	 * This method renders all of the dynamic 3D models within the world from the
@@ -2234,6 +2268,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		energyField.render(gl);
 		
 		shine.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
+		 star.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
 		
 		for(Particle particle : particles)
 		{
@@ -2463,7 +2498,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case FakeItemBox.ID : itemList.add(new FakeItemBox(this, c, trajectory)); break;
 			case Banana.ID      : itemList.add(new      Banana(this, c)); break;
 			case BlueShell.ID   : itemList.add(new   BlueShell(this, c)); break;
-			case BobOmb.ID      : itemList.add(new BobOmb(c, null)); break;
+			case BobOmb.ID      : itemList.add(new BobOmb(c, null, true)); break;
 			
 			default: break;
 		}
@@ -2853,7 +2888,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //			case KeyEvent.VK_G: smokeCloud = new ParticleEngine(10000); break;
 			case KeyEvent.VK_G: Water.cycle(); break;
 			
-			case KeyEvent.VK_T: shine.setCollected(!shine.isCollected()); break;
+			case KeyEvent.VK_T:
+			{
+				star.setCollected(!star.isCollected());
+				shine.setCollected(!shine.isCollected());
+				break;
+			}
 			case KeyEvent.VK_E: energyField.cycle(); break;
 			
 			default: break;

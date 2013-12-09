@@ -66,17 +66,20 @@ public class BobOmb extends Item
 	
 	private List<Particle> blast = new ArrayList<Particle>();
 	
-	public BobOmb(Vec3 p, Car car)
+	private boolean dud;
+	
+	public BobOmb(Vec3 p, Car car, boolean dud)
 	{
 		bound = new Sphere(p, RADIUS);
 		
 		this.car = car;
+		this.dud = dud;
 		
 		reflector = new Reflector(1.0f);
 		
 		bodyNode = new SceneNode(null, -1, bob_omb_body, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		bodyNode.setTranslation(p);
-		bodyNode.setScale(new Vec3(0.75));
+		bodyNode.setScale(new Vec3(0.60));
 		bodyNode.setReflector(reflector);
 		bodyNode.setReflectivity(0.9f);
 		bodyNode.setRenderMode(RenderMode.REFLECT);
@@ -250,18 +253,31 @@ public class BobOmb extends Item
 		{
 			setPosition(getPositionVector());
 			if(falling) fall();
-	
-			for(Bound bound : scene.getBounds())
-				if(bound.testBound(this.bound))
-					{ destroy(); break; }
 			
-			if(scene.enableTerrain)
+			if(!dud)
 			{
-				Terrain terrain = scene.getTerrain();
-				float h = terrain.getHeight(terrain.trees.values(), getPosition().toArray());
+				for(Bound bound : scene.getBounds())
+					if(bound.testBound(this.bound))
+						{ destroy(); break; }
 				
-				if(bound.c.y - bound.getMaximumExtent() <= h) destroy();
+				if(scene.enableTerrain)
+				{
+					Terrain terrain = scene.getTerrain();
+					float h = terrain.getHeight(terrain.trees.values(), getPosition().toArray());
+				
+					if(bound.c.y - bound.getMaximumExtent() <= h) destroy();
+				}
 			}
+			else
+			{
+				detectCollisions();
+				resolveCollisions();
+				
+				float[] heights = scene.enableTerrain ? getHeights(scene.getTerrain()) : getHeights();
+
+				setRotation(getRotationAngles(heights));
+				if(thrown) setRotation(-45, trajectory, 0);
+			}	
 		}
 		else if(blastDuration > 0)
 		{
