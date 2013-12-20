@@ -20,6 +20,9 @@ float illumination = 0.5;
 uniform vec2 texScale;
 uniform bool enableParallax;
 
+uniform float scale;
+uniform float bias;
+
 float lookup(float x, float y)
 {
 	vec2 offset = vec2(mod(floor(gl_FragCoord.xy), 2.0));
@@ -97,7 +100,7 @@ void pointLight(in int i, in vec3 normal, in vec4 textureColor, inout vec4 ambie
 
 void main(void)
 {
-	float height, scale = 0.05, bias = 0.0125;
+	float height; // scale = 0.05, bias = 0.0125;
 	vec2 texCoord = gl_TexCoord[0].st;
 	
 	if(enableParallax)

@@ -334,40 +334,92 @@ public class Model implements Serializable
 		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-							  gl.glEnableClientState(GL2.GL_VERTEX_ARRAY       );
-		if(normals   != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY       );
-		if(texCoords != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
-		if(colors    != null) gl.glEnableClientState(GL2.GL_COLOR_ARRAY        );
+		if(texture != null) texture.bind(gl);
+		
+		enableState(gl);
 		
 		if(enableVBO)
 		{
-									gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[VERTEX_BUFFER]); gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, 0);
-			if(normals   != null)   gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[NORMAL_BUFFER]); gl.glNormalPointer  (   GL2.GL_FLOAT, 0, 0);
-			if(colors    != null)   gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[COLOUR_BUFFER]); gl.glColorPointer   (3, GL2.GL_FLOAT, 0, 0);
-			if(texCoords != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD_BUFFER]); gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0); texture.bind(gl); }
-			
-			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, bufferIDs[INDEX_BUFFER]);
+			bindArrays(gl);
 			gl.glDrawElements(polygon, indexCount, GL2.GL_UNSIGNED_INT, 0);
-			
-			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER        , 0);
-			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
+			unbindArrays(gl);
 		}
 		else
 		{
-									gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, vertices );
-			if(normals   != null)   gl.glNormalPointer  (   GL2.GL_FLOAT, 0, normals  );
-			if(colors    != null)   gl.glColorPointer   (3, GL2.GL_FLOAT, 0, colors   );
-			if(texCoords != null) { gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, texCoords); texture.bind(gl); }
-			
+			setupPointers(gl);
 			gl.glDrawElements(polygon, indexCount, GL2.GL_UNSIGNED_INT, indices);
 		}
 		
-		                      gl.glDisableClientState(GL2.GL_VERTEX_ARRAY       );
+		disableState(gl);
+		
+		gl.glEnable(GL_TEXTURE_2D);	
+	}
+
+	private void unbindArrays(GL2 gl)
+	{
+		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER        , 0);
+		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+
+	private void setupPointers(GL2 gl)
+	{
+								gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, vertices );
+		if(normals   != null)   gl.glNormalPointer  (   GL2.GL_FLOAT, 0, normals  );
+		if(colors    != null)   gl.glColorPointer   (3, GL2.GL_FLOAT, 0, colors   );
+		if(texCoords != null) { gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, texCoords); texture.bind(gl); }
+	}
+
+	private void bindArrays(GL2 gl)
+	{
+		                      gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[VERTEX_BUFFER]); gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, 0);
+		if(normals   != null) gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[NORMAL_BUFFER]); gl.glNormalPointer  (   GL2.GL_FLOAT, 0, 0);
+		if(colors    != null) gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[COLOUR_BUFFER]); gl.glColorPointer   (3, GL2.GL_FLOAT, 0, 0);
+		if(texCoords != null) gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD_BUFFER]); gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0);
+
+		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, bufferIDs[INDEX_BUFFER]);
+	}
+
+	private void disableState(GL2 gl)
+	{
+							  gl.glDisableClientState(GL2.GL_VERTEX_ARRAY       );
 		if(normals   != null) gl.glDisableClientState(GL2.GL_NORMAL_ARRAY       );
 		if(texCoords != null) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		if(colors    != null) gl.glDisableClientState(GL2.GL_COLOR_ARRAY        );
+	}
+
+	private void enableState(GL2 gl)
+	{
+		                      gl.glEnableClientState(GL2.GL_VERTEX_ARRAY       );
+		if(normals   != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY       );
+		if(texCoords != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+		if(colors    != null) gl.glEnableClientState(GL2.GL_COLOR_ARRAY        );
+	}
+	
+	public void renderInstanced(GL2 gl, int count, int dataID)
+	{
+		if(!bufferCreated && enableVBO) createBuffers(gl);
 		
-//		renderNormals(gl, true, 0.20f);
+		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
+		else gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL2.GL_TEXTURE_1D, dataID);
+		gl.glActiveTexture(GL2.GL_TEXTURE0); if(texture != null) texture.bind(gl);
+		
+		enableState(gl);
+		
+		if(enableVBO)
+		{
+			bindArrays(gl);
+			gl.glDrawElementsInstanced(polygon, indexCount, GL2.GL_UNSIGNED_INT, null, count);
+			unbindArrays(gl);
+		}
+		else
+		{
+			setupPointers(gl);
+			gl.glDrawElementsInstanced(polygon, indexCount, GL2.GL_UNSIGNED_INT, indices, count);
+		}
+		
+		disableState(gl);
 		
 		gl.glEnable(GL_TEXTURE_2D);	
 	}
@@ -444,9 +496,7 @@ public class Model implements Serializable
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, bufferIDs[INDEX_BUFFER]);
 		gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Integer.SIZE / 8 * indexCount, indices, GL2.GL_STATIC_DRAW);
 		
-		// Unbind buffers
-		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER        , 0);
-		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
+		unbindArrays(gl);
 		
 		bufferCreated = true;
 	}

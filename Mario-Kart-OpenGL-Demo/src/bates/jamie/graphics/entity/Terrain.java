@@ -74,9 +74,10 @@ public class Terrain
 	float[][] normals;
 	float[][] texCoords;
 	
-	public List<Texture > textures  = new ArrayList<Texture >();
-	public List<Texture > bumpmaps  = new ArrayList<Texture >();
-	public List<Gradient> gradients = new ArrayList<Gradient>();
+	public List<Texture > textures   = new ArrayList<Texture >();
+	public List<Texture > bumpmaps   = new ArrayList<Texture >();
+	public List<Texture > heightmaps = new ArrayList<Texture >();
+	public List<Gradient> gradients  = new ArrayList<Gradient>();
 	
 	public int  textureID = 0;
 	public int  bumpmapID = 0;
@@ -287,6 +288,8 @@ public class Terrain
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_cave.tga"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "large_stone.jpg"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "paint.jpg"));
+			
+			heightmaps.add(TextureLoader.load(gl, BUMP_MAPS + "large_stone_height.jpg"));
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}

@@ -31,11 +31,11 @@ vec2 sWaves = vec2(0.15, 0.10); //strength of small waves
 vec3 waterColor = vec3(0.2, 0.4, 0.5); //color of the water
 float waterDensity = 0.0; //water density (0.0 - 1.0)
     
-float choppy = 0.15; //wave choppyness
-float aberration = 0.003; //chromatic aberration amount
+float choppy = 0.05; //wave choppyness
+float aberration = 0.000; //chromatic aberration amount
 float bump = 1.5; //overall water surface bumpyness
-float reflBump = 0.20; //reflection distortion amount
-float refrBump = 0.08; //refraction distortion amount
+float reflBump = 0.05; //reflection distortion amount
+float refrBump = 0.05; //refraction distortion amount
 
 uniform int renderMode;
 

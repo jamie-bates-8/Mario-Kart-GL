@@ -139,6 +139,7 @@ public class PowerStar
 			}
 			gl.glEnd();
 			
+			gl.glDisable(GL2.GL_TEXTURE_2D);
 			gl.glDisable(GL_BLEND);
 		}
 		gl.glPopMatrix();

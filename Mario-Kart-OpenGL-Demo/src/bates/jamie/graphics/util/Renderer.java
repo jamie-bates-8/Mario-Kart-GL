@@ -522,135 +522,56 @@ public class Renderer
 		gl.glColor3f(1, 1, 1);
 	}
 	
-	public static void displayTexturedCuboid(GL2 gl, float x, float y, float z,
-			float xScale, float yScale, float zScale, float rotation, Texture[] t)
+	public static void displayTexturedCuboid(GL2 gl, Vec3 centre, Vec3 scale,
+			float rotation, Texture[] textures, float textureScale)
 	{
-		gl.glPushMatrix();
-		{
-			gl.glTranslated(x, y, z);
-			gl.glRotatef(rotation, 0, 1, 0);
-			gl.glScaled(xScale, yScale, zScale);
-
-			t[0].bind(gl);
-
-			gl.glBegin(GL_QUADS);
-			{	
-				gl.glNormal3f(+1, 0, 0);
-				
-				gl.glTexCoord2f(1, 0); gl.glVertex3f(+1, -1, -1);
-				gl.glTexCoord2f(1, 1); gl.glVertex3f(+1, +1, -1);
-				gl.glTexCoord2f(0, 1); gl.glVertex3f(+1, +1, +1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(+1, -1, +1);
-				
-				gl.glNormal3f(-1, 0, 0);
-
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, +1);
-				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, +1, +1);
-				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, -1);
-			}
-			gl.glEnd();
-
-			t[1].bind(gl);
-
-			gl.glBegin(GL_QUADS);
-			{		 
-				gl.glNormal3f(0, +1, 0);
-				
-				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, -1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, +1, +1);
-				gl.glTexCoord2f(1, 0); gl.glVertex3f( 1, +1, +1);
-				gl.glTexCoord2f(1, 1); gl.glVertex3f( 1, +1, -1);
-				
-				gl.glNormal3f(0, -1, 0); 
-
-				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(0, 1); gl.glVertex3f( 1, -1, -1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, +1);
-				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, +1);
-			}
-			gl.glEnd();
-
-			t[2].bind(gl);
-
-			gl.glBegin(GL_QUADS);
-			{
-				gl.glNormal3f(0, 0, +1);
-				
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, +1);
-				gl.glTexCoord2f(1, 0); gl.glVertex3f( 1, -1, +1);
-				gl.glTexCoord2f(1, 1); gl.glVertex3f( 1, +1, +1);
-				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, +1);
-				
-				gl.glNormal3f(0, 0, -1);
-				
-				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, +1, -1);
-				gl.glTexCoord2f(0, 1); gl.glVertex3f( 1, +1, -1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, -1);
-			}    
-			gl.glEnd();
-		}
-		gl.glPopMatrix();
-	}
-	
-	public static void displayBumpMappedCuboid(GL2 gl, Vec3 centre, Vec3 scale, float rotation,
-											   Texture[] textures, Texture bumpmap, float textureScale)
-	{
-		Shader shader = Shader.get("bump_lights"); shader.enable(gl);
-		
-		gl.glActiveTexture(GL2.GL_TEXTURE1); bumpmap.bind(gl);
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		
-		float s = textureScale;
-		
 		gl.glPushMatrix();
 		{
 			gl.glTranslated(centre.x, centre.y, centre.z);
 			gl.glRotatef(rotation, 0, 1, 0);
-			gl.glScalef(scale.x, scale.y, scale.z);
+			gl.glScaled(scale.x, scale.y, scale.z);
 
 			textures[0].bind(gl);
+			
+			Vec3 t = new Vec3((int) (scale.x / textureScale),
+					          (int) (scale.y / textureScale),
+					          (int) (scale.z / textureScale));
 
 			gl.glBegin(GL_QUADS);
 			{	
-				gl.glVertexAttrib3f(1, 0, 0, -1);
-				gl.glNormal3f(+1, 0, 0);
+				gl.glNormal3f(+1, 0, 0); // right
 				
-				gl.glTexCoord2f(s, 0); gl.glVertex3f(+1, -1, -1);
-				gl.glTexCoord2f(s, s); gl.glVertex3f(+1, +1, -1);
-				gl.glTexCoord2f(0, s); gl.glVertex3f(+1, +1, +1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(+1, -1, +1);
+				gl.glTexCoord2f(t.z,   0); gl.glVertex3f(+1, -1, -1);
+				gl.glTexCoord2f(t.z, t.y); gl.glVertex3f(+1, +1, -1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f(+1, +1, +1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(+1, -1, +1);
 				
-				gl.glVertexAttrib3f(1, 0, 0, +1);
-				gl.glNormal3f(-1, 0, 0);
+				gl.glNormal3f(-1, 0, 0); // left
 
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, +1);
-				gl.glTexCoord2f(s, s); gl.glVertex3f(-1, +1, +1);
-				gl.glTexCoord2f(0, s); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(t.z,   0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(t.z, t.y); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f(-1, +1, -1);
 			}
 			gl.glEnd();
 
 			textures[1].bind(gl);
 
 			gl.glBegin(GL_QUADS);
-			{		
-				gl.glVertexAttrib3f(1, +1, 0, 0);
-				gl.glNormal3f(0, +1, 0);
+			{		 
+				gl.glNormal3f(0, +1, 0); // up
 				
-				gl.glTexCoord2f(0, s); gl.glVertex3f(-1, +1, -1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, +1, +1);
-				gl.glTexCoord2f(s, 0); gl.glVertex3f( 1, +1, +1);
-				gl.glTexCoord2f(s, s); gl.glVertex3f( 1, +1, -1);
+				gl.glTexCoord2f(  0, t.z); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(t.x, t.z); gl.glVertex3f( 1, +1, -1);
 				
-				gl.glVertexAttrib3f(1, -1, 0, 0);
-				gl.glNormal3f(0, -1, 0); 
+				gl.glNormal3f(0, -1, 0); // down
 
-				gl.glTexCoord2f(s, s); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(0, s); gl.glVertex3f( 1, -1, -1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, +1);
-				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(t.x, t.z); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(  0, t.z); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f(-1, -1, +1);
 			}
 			gl.glEnd();
 
@@ -658,21 +579,107 @@ public class Renderer
 
 			gl.glBegin(GL_QUADS);
 			{
-				gl.glVertexAttrib3f(1, +1, 0, 0);
-				gl.glNormal3f(0, 0, +1);
+				gl.glNormal3f(0, 0, +1); // front
 				
-				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, +1);
-				gl.glTexCoord2f(s, 0); gl.glVertex3f( 1, -1, +1);
-				gl.glTexCoord2f(s, s); gl.glVertex3f( 1, +1, +1);
-				gl.glTexCoord2f(0, s); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(t.x, t.y); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f(-1, +1, +1);
+				
+				gl.glNormal3f(0, 0, -1); // back
+				 
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(t.x, t.y); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f( 1, +1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f( 1, -1, -1);
+			}    
+			gl.glEnd();
+		}
+		gl.glPopMatrix();
+	}
+	
+	public static void displayBumpMappedCuboid(GL2 gl, Vec3 centre, Vec3 scale, float rotation,
+			Texture[] colourMaps, Texture[] normalMaps, Texture[] heightMaps, float textureScale)
+	{
+		Vec3 t = new Vec3((int) (scale.x / textureScale),
+		          		  (int) (scale.y / textureScale),
+		          		  (int) (scale.z / textureScale));
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslated(centre.x, centre.y, centre.z);
+			gl.glRotatef(rotation, 0, 1, 0);
+			gl.glScalef(scale.x, scale.y, scale.z);
+			
+			gl.glActiveTexture(GL2.GL_TEXTURE2); heightMaps[0].bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[0].bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[0].bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{	
+				gl.glVertexAttrib3f(1, 0, 0, -1);
+				gl.glNormal3f(+1, 0, 0); // right
+				
+				gl.glTexCoord2f(t.z,   0); gl.glVertex3f(+1, -1, -1);
+				gl.glTexCoord2f(t.z, t.y); gl.glVertex3f(+1, +1, -1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f(+1, +1, +1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(+1, -1, +1);
+				
+				gl.glVertexAttrib3f(1, 0, 0, +1);
+				gl.glNormal3f(-1, 0, 0); // left
+
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(t.z,   0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(t.z, t.y); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f(-1, +1, -1);
+			}
+			gl.glEnd();
+
+			gl.glActiveTexture(GL2.GL_TEXTURE2); heightMaps[1].bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[1].bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[1].bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{		
+				gl.glVertexAttrib3f(1, +1, 0, 0);
+				gl.glNormal3f(0, +1, 0); // up
+				
+				gl.glTexCoord2f(  0, t.z); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(t.x, t.z); gl.glVertex3f( 1, +1, -1);
 				
 				gl.glVertexAttrib3f(1, -1, 0, 0);
-				gl.glNormal3f(0, 0, -1);
+				gl.glNormal3f(0, -1, 0); // down
+
+				gl.glTexCoord2f(t.x, t.z); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(  0, t.z); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f(-1, -1, +1);
+			}
+			gl.glEnd();
+
+			gl.glActiveTexture(GL2.GL_TEXTURE2); heightMaps[2].bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[2].bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[2].bind(gl);
+
+			gl.glBegin(GL_QUADS);
+			{
+				gl.glVertexAttrib3f(1, +1, 0, 0);
+				gl.glNormal3f(0, 0, +1); // front
 				
-				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, -1);
-				gl.glTexCoord2f(s, s); gl.glVertex3f(-1, +1, -1);
-				gl.glTexCoord2f(0, s); gl.glVertex3f( 1, +1, -1);
-				gl.glTexCoord2f(0, 0); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(t.x, t.y); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f(-1, +1, +1);
+				
+				gl.glVertexAttrib3f(1, -1, 0, 0);
+				gl.glNormal3f(0, 0, -1); // back
+				
+				gl.glTexCoord2f(t.x,   0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(t.x, t.y); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(  0, t.y); gl.glVertex3f( 1, +1, -1);
+				gl.glTexCoord2f(  0,   0); gl.glVertex3f( 1, -1, -1);
 			}    
 			gl.glEnd();
 		}

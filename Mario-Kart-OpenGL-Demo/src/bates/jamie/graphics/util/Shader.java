@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,6 +20,26 @@ public class Shader
 	public static boolean enabled = true;
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
+	
+	public Map<String, UniformType> uniforms = new HashMap<String, UniformType>();
+	
+	private enum UniformType
+	{
+		BOOL,
+		VEC3,
+		FLOAT,
+		
+		UNDEFINED;
+		
+		public static UniformType getType(String type)
+		{
+			     if(type.equals("bool" )) return BOOL;
+			else if(type.equals("vec3" )) return VEC3;
+			else if(type.equals("float")) return FLOAT;
+			     
+			else return UNDEFINED; 
+		}
+	}
 	
 	public int shaderID;
 	 
@@ -51,29 +70,38 @@ public class Shader
 		attributes.put(1, "tangent");
 		
 		// load and compile shaders from file
-		Shader phong        = new Shader(gl, "phong", "phong");
-		Shader phongLights  = new Shader(gl, "phong_lights", "phong_lights");
-		Shader phongRim     = new Shader(gl, "phong_lights", "phong_rim");
-		Shader phongTexture = new Shader(gl, "phong_texture", "phong_texture");
-		Shader phongAlpha   = new Shader(gl, "phong_texture", "phong_alpha");
-		Shader texLights    = new Shader(gl, "texture_lights", "texture_lights");
-		Shader textureRim   = new Shader(gl, "texture_lights", "texture_rim");
-		Shader bump         = new Shader(gl, "bump", "bump", attributes);
-		Shader bumpLights   = new Shader(gl, "bump_lights", "bump_lights", attributes);
-		Shader bumpReflect  = new Shader(gl, "bump_reflect", "bump_reflect", attributes);
-		Shader shadow       = new Shader(gl, "shadow", "shadow");
-		Shader phongShadow  = new Shader(gl, "phong_shadow", "phong_shadow");
-		Shader shadowLights = new Shader(gl, "shadow_lights", "shadow_lights");
+		Shader phong         = new Shader(gl, "phong", "phong");
+		Shader phongLights   = new Shader(gl, "phong_lights", "phong_lights");
+		Shader phongInstance = new Shader(gl, "phong_instance", "phong_lights");
+		Shader phongRim      = new Shader(gl, "phong_lights", "phong_rim");
+		Shader phongTexture  = new Shader(gl, "phong_texture", "phong_texture");
+		Shader phongAlpha    = new Shader(gl, "phong_texture", "phong_alpha");
+		
+		Shader texLights     = new Shader(gl, "texture_lights", "texture_lights");
+		Shader textureRim    = new Shader(gl, "texture_lights", "texture_rim");
+		
+		Shader bump          = new Shader(gl, "bump", "bump", attributes);
+		Shader bumpLights    = new Shader(gl, "bump_lights", "bump_lights", attributes);
+		Shader parallax      = new Shader(gl, "bump_lights", "parallax_lights", attributes);
+		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", attributes);
+		
+		Shader shadow        = new Shader(gl, "shadow", "shadow");
+		Shader phongShadow   = new Shader(gl, "phong_shadow", "phong_shadow");
+		Shader shadowLights  = new Shader(gl, "shadow_lights", "shadow_lights");
+		
 		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
 		Shader cubeLights   = new Shader(gl, "cube_lights", "cube_lights");
 		Shader cubeRim      = new Shader(gl, "cube_lights", "cube_rim");
+		
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
+		
 		Shader water        = new Shader(gl, "water", "water", attributes);
 		Shader magma        = new Shader(gl, "water", "magma", attributes);
 		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", attributes);
 		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", attributes);
+		
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		Shader grass        = new Shader(gl, "grass", "grass");
 		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
@@ -92,15 +120,18 @@ public class Shader
 		Shader pulsate      = new Shader(gl, "pulsate", "phong_lights");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
-		if(       phong.isValid()) shaders.put("phong", phong);
-		if( phongLights.isValid()) shaders.put("phong_lights", phongLights);
-		if(    phongRim.isValid()) shaders.put("phong_rim", phongRim);
-		if(phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
-		if(  phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
+		if(        phong.isValid()) shaders.put("phong", phong);
+		if(  phongLights.isValid()) shaders.put("phong_lights", phongLights);
+		if(phongInstance.isValid()) shaders.put("phong_instance", phongInstance);
+		if(     phongRim.isValid()) shaders.put("phong_rim", phongRim);
+		if( phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
+		if(   phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
+		
 		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
+		if(    parallax.isValid()) shaders.put("parallax_lights", parallax);
 		if( bumpReflect.isValid()) shaders.put("bump_reflect", bumpReflect);
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
@@ -131,6 +162,34 @@ public class Shader
 		if(  	  smoke.isValid()) shaders.put("smoke", smoke);
 		
 		if(   pulsate.isValid()) shaders.put("pulsate", pulsate);
+		
+		for(Shader shader : shaders.values()) shader.mapUniforms();
+	}
+	
+	private void mapUniforms()
+	{	
+		parseUniforms(vertSource[0]);
+		parseUniforms(fragSource[0]);
+	}
+
+	private void parseUniforms(String source)
+	{
+		Scanner scanner = new Scanner(source);
+		
+		while(scanner.hasNextLine())
+		{
+			String line = scanner.nextLine();
+			if(line.startsWith("uniform"))
+			{
+				String[] tokens = line.trim().split("\\s++");
+				
+				String identifier = tokens[2].replace(";", "").replaceAll("\\[\\d+\\]", "");
+				UniformType type  = UniformType.getType(tokens[1]);
+				
+				uniforms.put(identifier, type);
+			}
+		}
+		scanner.close();
 	}
 	
 	public static Shader get(String name) { return shaders.get(name); }

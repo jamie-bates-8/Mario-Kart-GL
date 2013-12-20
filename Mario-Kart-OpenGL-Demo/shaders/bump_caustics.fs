@@ -255,19 +255,15 @@ void main()
 	
 	fogging.rgb *= gl_Color.rgb;
 	
-	
-	if(magma)
-	{
-		vec3 brightColor = max(fogging.rgb - vec3(0.8), vec3(0.0));
-    	float bright = dot(brightColor, vec3(1.0));
-    	bright = smoothstep(0.0, 0.5, bright);
-    	gl_FragData[1] = vec4(mix(vec3(0.0), fogging.rgb, bright), 1.0);
-	}
+	vec3 brightColor = max(fogging.rgb - vec3(1.0), vec3(0.0));
+    float bright = dot(brightColor, vec3(1.0));
+    bright = smoothstep(0.0, 0.5, bright);
+    gl_FragData[1] = vec4(mix(vec3(0.0), fogging.rgb, bright), 1.0);
 	
 	if(enableShadow)
 	{
 		float sIntensity = shadowIntensity();
 		gl_FragData[0] = vec4(sIntensity * fogging.rgb, 1.0);
 	}
-	else gl_FragData[0] = vec4(causticR);
+	else gl_FragData[0] = vec4(fogging.rgb, 1.0);
 }

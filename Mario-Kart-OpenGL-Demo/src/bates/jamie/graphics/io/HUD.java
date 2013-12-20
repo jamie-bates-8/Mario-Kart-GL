@@ -317,6 +317,9 @@ public class HUD
 		int frame = Scene.frameIndex;
 		long[] times = scene.frameTimes;
 		
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		gl.glDisable(GL2.GL_LIGHTING);
+		
 		gl.glBegin(GL_LINES);
 		{
 			for(int i = 0; i < times.length; i++)
@@ -352,6 +355,9 @@ public class HUD
 	
 	private void renderFrameTimeComponents(GL2 gl)
 	{
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		gl.glDisable(GL2.GL_LIGHTING);
+		
 		int frameIndex = Scene.frameIndex;
 		long[][] renderTimes = scene.renderTimes;
 		
