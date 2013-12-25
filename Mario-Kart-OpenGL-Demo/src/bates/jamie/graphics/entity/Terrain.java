@@ -24,7 +24,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import bates.jamie.graphics.entity.Quadtree.Material;
-import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.IndexedModel;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
@@ -91,7 +91,7 @@ public class Terrain
 	int qBuffer = 0;
 	int rBuffer = 0;
 	
-	Model model;
+	IndexedModel indexedModel;
 	
 	public HashMap<String, Quadtree> trees = new HashMap<String, Quadtree>();
 	public Quadtree tree;
@@ -237,7 +237,7 @@ public class Terrain
 			_vertices.set(i, new float[] {vertex[0] * sx, vertex[1] * sy, vertex[2] * sz});
 		}
 		
-		model = new Model(_vertices, _texCoords, indices, indices, baseTexture, 4);
+		indexedModel = new IndexedModel(_vertices, _texCoords, indices, indices, baseTexture, 4);
 		
 		System.out.println("Terrain Model Indexed: " + (System.currentTimeMillis() - start) + " ms");
 	}
@@ -724,10 +724,10 @@ public class Terrain
 			switch(renderMode)
 			{
 				case 0: renderWireframe(gl, glut); break;
-				case 1: if(model != null)
+				case 1: if(indexedModel != null)
 				{
 					gl.glColor3f(1, 1, 1);
-					model.render(gl); break;
+					indexedModel.render(gl); break;
 				}
 				case 2:
 				{

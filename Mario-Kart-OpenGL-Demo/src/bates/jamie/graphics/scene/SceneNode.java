@@ -25,7 +25,7 @@ public class SceneNode
 	private SceneNode root;
 	
 	private List<Face> geometry;
-	private Model model;
+	private IndexedModel indexedModel;
 	private int displayList;
 	
 	private float[] color = {1, 1, 1};
@@ -43,13 +43,13 @@ public class SceneNode
 	private Reflector reflector;
 	private float reflectivity = 1.0f;
 	
-	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
+	public SceneNode(List<Face> geometry, int displayList, IndexedModel indexedModel, MatrixOrder order, Material material)
 	{
 		children = new ArrayList<SceneNode>();
 		
 		this.geometry = geometry;
 		this.displayList = displayList;
-		this.model = model;
+		this.indexedModel = indexedModel;
 		
 		color = new float[4];
 		
@@ -104,20 +104,20 @@ public class SceneNode
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS) gl.glDrawBuffers(2, attachments, 0);
 			
-			if(model != null)
+			if(indexedModel != null)
 			{
 				switch(renderMode)
 				{
 					case TEXTURE: 
-					case COLOR  : model.render(gl); break;
+					case COLOR  : indexedModel.render(gl); break;
 					case REFLECT:
 					{
 						if(reflector != null) reflector.enable(gl);
-						model.render(gl);
+						indexedModel.render(gl);
 						if(reflector != null) reflector.disable(gl);
 						break;
 					}
-					case GLASS  : model.renderGlass(gl, color); break;
+					case GLASS  : indexedModel.renderGlass(gl, color); break;
 				}
 			}
 			else if(displayList != -1) gl.glCallList(displayList);
@@ -160,10 +160,10 @@ public class SceneNode
 				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 				shader.loadMatrix(gl, "cameraMatrix", camera);
 				
-				if(model != null)
+				if(indexedModel != null)
 				{
 					if(reflector != null) reflector.enable(gl);
-					model.render(gl);
+					indexedModel.render(gl);
 					if(reflector != null) reflector.disable(gl);
 				}
 				else Renderer.displayColoredObject(gl, geometry, fade);
@@ -172,7 +172,7 @@ public class SceneNode
 			}
 			else
 			{
-				if(model != null)
+				if(indexedModel != null)
 				{
 					gl.glColor3f(fade, fade, fade);
 						
@@ -180,7 +180,7 @@ public class SceneNode
 					gl.glEnable(GL_BLEND);
 					gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 						
-					model.render(gl);
+					indexedModel.render(gl);
 						
 					gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 					gl.glDisable(GL_BLEND);
@@ -229,11 +229,11 @@ public class SceneNode
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 			if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
 			
-			if(model != null)
+			if(indexedModel != null)
 			{
 				gl.glColor3fv(color, 0);
 				if(reflector != null) reflector.enable(gl);
-				model.render(gl);
+				indexedModel.render(gl);
 				if(reflector != null) reflector.disable(gl);
 			}
 			else Renderer.displayColoredObject(gl, geometry, color);

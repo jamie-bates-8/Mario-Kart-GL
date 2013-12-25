@@ -10,6 +10,7 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
+import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
@@ -25,7 +26,11 @@ public class BrickWall
 	static Texture[] normalMaps = new Texture[3];
 	static Texture[] heightMaps = new Texture[3];
 	
+	static Texture colourMap, normalMap, heightMap;	
+	
 	RenderMode mode = RenderMode.SIMPLE_MODEL_PARALLAX;
+	
+	TimeQuery timeQuery = new TimeQuery(TimeQuery.FOLIAGE_ID);
 	
 	public BrickWall(GL2 gl, List<BrickBlock> blocks, float scale)
 	{
@@ -45,6 +50,10 @@ public class BrickWall
 				colourMaps = new Texture[] {right_colour, front_colour, front_colour};
 				normalMaps = new Texture[] {right_normal, front_normal, front_normal};
 				heightMaps = new Texture[] {right_height, front_height, front_height};
+				
+				colourMap = TextureLoader.load(gl, "tex/brick_colour.png");
+				normalMap = TextureLoader.load(gl, "tex/brick_normal.png");
+				heightMap = TextureLoader.load(gl, "tex/brick_height.png");
 			}
 			catch (Exception e) { e.printStackTrace(); }
 		}
@@ -100,6 +109,9 @@ public class BrickWall
 	
 	public void render(GL2 gl)
 	{
+		timeQuery.getResult(gl);
+		timeQuery.begin(gl);
+		
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 		if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
 		
@@ -114,21 +126,44 @@ public class BrickWall
 		if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(1, attachments, 0);
 		
 		Shader.disable(gl);
+		
+		timeQuery.end(gl);
 	}
 
 	private void renderInstancedModels(GL2 gl)
 	{
-		gl.glColor3f(0.636f, 0.201f, 0.031f);
-		
-		Shader shader = Shader.enabled ? Shader.get("phong_instance") : null;
-		if(shader != null) shader.enable(gl);
-		
-		shader.setSampler(gl, "dataMap", 1);
-		shader.setUniform(gl, "count", brickBlocks.size());
-		
-		BrickBlock.brick_block.renderInstanced(gl, brickBlocks.size(), dataID);
-		gl.glColor3f(0.1f, 0.1f, 0.1f);
-		BrickBlock.mortar_block.renderInstanced(gl, brickBlocks.size(), dataID);
+		if(Scene.enableParallax)
+		{
+			gl.glColor3f(0.636f, 0.201f, 0.031f);
+			
+			Shader shader = Shader.enabled ? Shader.get("phong_instance") : null;
+			if(shader != null) shader.enable(gl);
+			
+			shader.setSampler(gl, "dataMap", 1);
+			shader.setUniform(gl, "count", brickBlocks.size());
+			
+			BrickBlock.brick_block.renderInstanced(gl, brickBlocks.size(), dataID);
+			gl.glColor3f(0.1f, 0.1f, 0.1f);
+			BrickBlock.mortar_block.renderInstanced(gl, brickBlocks.size(), dataID);
+		}
+		else
+		{
+			Shader shader = Shader.enabled ? Shader.get("bump_instance") : null;
+			if(shader != null) shader.enable(gl);
+			
+			shader.setSampler(gl, "dataMap", 1);
+			shader.setUniform(gl, "count", brickBlocks.size());
+			
+			shader.setSampler(gl, "texture"  , 0);
+			shader.setSampler(gl, "bumpmap"  , 3);
+			shader.setSampler(gl, "heightmap", 2);
+			
+			gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE3); normalMap.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
+			
+			Renderer.cube_model.renderInstanced(gl, brickBlocks.size(), dataID);
+		}
 	}
 	
 	private void renderComplexModels(GL2 gl)
@@ -140,6 +175,8 @@ public class BrickWall
 	private void renderSimpleModels(GL2 gl)
 	{
 		Shader shader = Shader.getLightModel("texture"); shader.enable(gl);
+		
+		colourMaps[0].bind(gl);
 		
 		for(BrickBlock block : brickBlocks)
 			Renderer.displayTexturedCuboid(gl, block.position, new Vec3(scale),
@@ -154,13 +191,37 @@ public class BrickWall
 		shader.setSampler(gl, "bumpmap"  , 1);
 		shader.setSampler(gl, "heightmap", 2);
 		
-		for(BrickBlock block : brickBlocks)
-			Renderer.displayBumpMappedCuboid(gl, block.position, new Vec3(scale), 0,
-					colourMaps, normalMaps, heightMaps, scale);
+//		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMaps[0].bind(gl);
+//		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[0].bind(gl);
+//		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[0].bind(gl);
+		
+//		for(BrickBlock block : brickBlocks)
+//			Renderer.displayBumpMappedCuboid(gl, block.position, new Vec3(scale), 0,
+//					colourMaps, normalMaps, heightMaps, scale);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
+		
+		if(Scene.enableParallax)
+		{
+			for(BrickBlock block : brickBlocks)
+				Renderer.displayBumpMappedCube(gl, block.position, scale, 0);
+		}
+		else
+		{
+			for(BrickBlock block : brickBlocks)
+				Renderer.displayBumpMappedCubeAccelerated(gl, block.position, scale, 0);
+		}
 	}
 	
 	
-	public void cycleMode() { mode = RenderMode.cycle(mode); }
+	public void cycleMode()
+	{
+		mode = RenderMode.cycle(mode);
+		timeQuery.reset();
+		TimeQuery.resetCache();
+	}
 	
 	public enum RenderMode
 	{

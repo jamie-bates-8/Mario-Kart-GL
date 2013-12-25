@@ -16,7 +16,7 @@ import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.IndexedModel;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
@@ -38,7 +38,7 @@ public class ItemBox
 	public static final float SCALE = 3.0f;
 	public static final int RESPAWN_TIME = 60;
 	
-	static Model item_box = OBJParser.parseTriangleMesh("item_box_2");
+	static IndexedModel item_box = OBJParser.parseTriangleMesh("item_box_2");
 	
 	SceneNode boxNode;
 	

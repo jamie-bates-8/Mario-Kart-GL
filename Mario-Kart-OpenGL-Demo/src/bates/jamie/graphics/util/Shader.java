@@ -84,6 +84,7 @@ public class Shader
 		Shader bumpLights    = new Shader(gl, "bump_lights", "bump_lights", attributes);
 		Shader parallax      = new Shader(gl, "bump_lights", "parallax_lights", attributes);
 		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", attributes);
+		Shader bumpInstance  = new Shader(gl, "bump_instance", "bump_lights", attributes);
 		
 		Shader shadow        = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow   = new Shader(gl, "phong_shadow", "phong_shadow");
@@ -129,10 +130,13 @@ public class Shader
 		
 		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
+		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
 		if(    parallax.isValid()) shaders.put("parallax_lights", parallax);
 		if( bumpReflect.isValid()) shaders.put("bump_reflect", bumpReflect);
+		if(bumpInstance.isValid()) shaders.put("bump_instance", bumpInstance);
+		
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
 		if(shadowLights.isValid()) shaders.put("shadow_lights", shadowLights);

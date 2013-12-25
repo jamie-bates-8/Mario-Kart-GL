@@ -69,4 +69,10 @@ public class TimeQuery
 		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
 	}
+	
+	public void reset()
+	{
+		counter = 0;
+		average = 0;
+	}
 }

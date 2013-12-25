@@ -1298,8 +1298,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			for(int j = 0; j < 8; j++)
 			{
-				if(generator.nextFloat() > 0.15) brickBlocks.add(new BrickBlock(new Vec3(p.x, p.y, -p.z), brickScale));
-				if(generator.nextFloat() > 0.15) brickBlocks.add(new BrickBlock(new Vec3(p), brickScale));
+				if(generator.nextFloat() > -0.15) brickBlocks.add(new BrickBlock(new Vec3(p.x, p.y, -p.z), brickScale));
+				if(generator.nextFloat() > -0.15) brickBlocks.add(new BrickBlock(new Vec3(p), brickScale));
 				p.y += 2 * brickScale + EPSILON;
 			}
 			p.y  = brickScale;
@@ -1312,8 +1312,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			for(int j = 0; j < 8; j++)
 			{
-				if(generator.nextFloat() > 0.15) brickBlocks.add(new BrickBlock(new Vec3(-p.x, p.y, -p.z), brickScale));
-				if(generator.nextFloat() > 0.15) brickBlocks.add(new BrickBlock(new Vec3( p), brickScale));
+				if(generator.nextFloat() > -0.15) brickBlocks.add(new BrickBlock(new Vec3(-p.x, p.y, -p.z), brickScale));
+				if(generator.nextFloat() > -0.15) brickBlocks.add(new BrickBlock(new Vec3( p), brickScale));
 				p.y += 2 * brickScale + EPSILON;
 			}
 			p.y  = brickScale;
@@ -2989,7 +2989,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_J: displayLight = !displayLight; break;
 			case KeyEvent.VK_R: rimLighting = !rimLighting; break;
 			
-			case KeyEvent.VK_V: Model.enableVBO = !Model.enableVBO; break;
+			case KeyEvent.VK_V: IndexedModel.enableVBO = !IndexedModel.enableVBO; break;
 			
 			case KeyEvent.VK_0: brickWall.cycleMode(); break;
 			

@@ -49,7 +49,7 @@ public class HUD
 	private static Texture speedometer;
 	
 	private TextRenderer renderer;
-	private Color textColor = Color.BLACK;
+	private Color textColor = Color.WHITE;
 	
 	private float yStretch = 1; //stretching factor for y-axis of FT graph
 	
@@ -99,18 +99,18 @@ public class HUD
 		
 		ortho2DBegin(gl, glu);
 		
-		if(visible)
-		{
-			gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_LIGHTING);
 	
-			renderSpeedometer(gl, car);
+		renderSpeedometer(gl, car);
 			
-			ItemRoulette roulette = car.getRoulette();
-			roulette.cursed = car.isCursed();
-			if(roulette.isAlive()) roulette.render(gl);
+		ItemRoulette roulette = car.getRoulette();
+		roulette.cursed = car.isCursed();
+		if(roulette.isAlive()) roulette.render(gl);
 			
-			if(scene.enableRetical && car.camera.isAerial()) renderRetical(gl);
+		if(scene.enableRetical && car.camera.isAerial()) renderRetical(gl);
 			
+		if(visible)	
+		{
 			renderText(car);
 			
 			switch(mode)
@@ -120,14 +120,13 @@ public class HUD
 				case UPDATE_TIMES: renderUpdateTimes(gl); break;
 				case UPDATE_TIME_COMPONENTS: renderUpdateTimeComponents(gl); break;
 			}
-			
-			gl.glEnable(GL_LIGHTING);
 		}
 		
 		gl.glColor3f(1.0f, 1.0f, 1.0f);
 		
 		ortho2DEnd(gl);
 		
+		gl.glEnable (GL_LIGHTING);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
 		
 		return System.nanoTime() - start;
@@ -270,7 +269,9 @@ public class HUD
 		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), 40, y - 430);
 		
 		renderer.draw("Quadtree Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.TERRAIN_ID], 40, y - 460);
-		renderer.draw("Banana Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.ITEM_ID], 40, y - 490);
+//		renderer.draw("Banana Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.ITEM_ID], 40, y - 490);
+		if(Scene.frameIndex % 10 == 0) cachedTime = TimeQuery.getCache()[Scene.frameIndex][TimeQuery.FOLIAGE_ID];
+		renderer.draw("Brick Render: " + cachedTime, 40, y - 490);
 		renderer.draw("Occlusion: " + (Scene.enableOcclusion ? "Enabled" : "Disabled"), 40, y - 520);
 		renderer.draw("Light: " + scene.lightID, 40, y - 550);
 		
@@ -311,6 +312,8 @@ public class HUD
 		
 		renderer.endRendering();
 	}
+	
+	long cachedTime = 0;
 
 	private void renderFrameTimes(GL2 gl)
 	{

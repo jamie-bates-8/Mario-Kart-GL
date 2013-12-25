@@ -39,7 +39,7 @@ import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.IndexedModel;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
@@ -73,9 +73,9 @@ public class Car
 	private static List<Face> wheel_faces;
 	private static List<Face> base_faces;
 	
-	private static Model all_windows;
-	private static Model car_body;
-	private static Model head_lights;
+	private static IndexedModel all_windows;
+	private static IndexedModel car_body;
+	private static IndexedModel head_lights;
 	
 	private static final float[] ORIGIN = {0, 1.8f, 0};
 	

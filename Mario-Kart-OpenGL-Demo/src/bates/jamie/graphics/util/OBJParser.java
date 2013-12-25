@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.IndexedModel;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -160,7 +160,7 @@ public class OBJParser
 		return faces;
 	}
 	
-	public static Model parseTriangleMesh(String fileName)
+	public static IndexedModel parseTriangleMesh(String fileName)
 	{
 		long startTime = System.nanoTime();
 		
@@ -229,6 +229,6 @@ public class OBJParser
 		
 		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount, (endTime - startTime) / 1E6);
 		
-		return new Model(vertices, normals, _vIndices, _nIndices, 3);
+		return new IndexedModel(vertices, normals, _vIndices, _nIndices, 3);
 	}
 }

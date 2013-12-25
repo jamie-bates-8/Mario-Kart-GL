@@ -13,6 +13,8 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.Model;
+
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -531,7 +533,7 @@ public class Renderer
 			gl.glRotatef(rotation, 0, 1, 0);
 			gl.glScaled(scale.x, scale.y, scale.z);
 
-			textures[0].bind(gl);
+//			textures[0].bind(gl);
 			
 			Vec3 t = new Vec3((int) (scale.x / textureScale),
 					          (int) (scale.y / textureScale),
@@ -555,7 +557,7 @@ public class Renderer
 			}
 			gl.glEnd();
 
-			textures[1].bind(gl);
+//			textures[1].bind(gl);
 
 			gl.glBegin(GL_QUADS);
 			{		 
@@ -575,7 +577,7 @@ public class Renderer
 			}
 			gl.glEnd();
 
-			textures[2].bind(gl);
+//			textures[2].bind(gl);
 
 			gl.glBegin(GL_QUADS);
 			{
@@ -663,6 +665,7 @@ public class Renderer
 			gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[2].bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[2].bind(gl);
 
+			
 			gl.glBegin(GL_QUADS);
 			{
 				gl.glVertexAttrib3f(1, +1, 0, 0);
@@ -685,4 +688,132 @@ public class Renderer
 		}
 		gl.glPopMatrix();
 	}
+	
+	private static final float ONE_THIRD = 1.0f / 3.0f;
+	private static final float TWO_THIRD = 2.0f / 3.0f;
+	
+	public static void displayBumpMappedCube(GL2 gl, Vec3 centre, float scale, float rotation)
+	{	
+		float s = ONE_THIRD;
+		float t = TWO_THIRD;
+		
+		gl.glPushMatrix();
+		{
+			gl.glTranslated(centre.x, centre.y, centre.z);
+			gl.glRotatef(rotation, 0, 1, 0);
+			gl.glScalef(scale, scale, scale);
+
+			gl.glBegin(GL_QUADS);
+			{	
+				gl.glVertexAttrib3f(1, 0, 0, -1);
+				gl.glNormal3f(+1, 0, 0); // right
+				
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(+1, -1, -1);
+				gl.glTexCoord2f(s, 1); gl.glVertex3f(+1, +1, -1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f(+1, +1, +1);
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(+1, -1, +1);
+				
+				gl.glVertexAttrib3f(1, 0, 0, +1);
+				gl.glNormal3f(-1, 0, 0); // left
+
+				gl.glTexCoord2f(0, 0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(s, 1); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(0, 1); gl.glVertex3f(-1, +1, -1);
+				
+				//-----------------------------------------------
+	
+				gl.glVertexAttrib3f(1, +1, 0, 0);
+				gl.glNormal3f(0, +1, 0); // up
+				
+				gl.glTexCoord2f(s, 1); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f(-1, +1, +1);
+				gl.glTexCoord2f(t, 0); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(t, 1); gl.glVertex3f( 1, +1, -1);
+				
+				gl.glVertexAttrib3f(1, -1, 0, 0);
+				gl.glNormal3f(0, -1, 0); // down
+
+				gl.glTexCoord2f(t, 1); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(s, 1); gl.glVertex3f( 1, -1, -1);
+				gl.glTexCoord2f(s, 0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(t, 0); gl.glVertex3f(-1, -1, +1);
+				
+				//-----------------------------------------------
+
+				gl.glVertexAttrib3f(1, +1, 0, 0);
+				gl.glNormal3f(0, 0, +1); // front
+				
+				gl.glTexCoord2f(t, 0); gl.glVertex3f(-1, -1, +1);
+				gl.glTexCoord2f(1, 0); gl.glVertex3f( 1, -1, +1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f( 1, +1, +1);
+				gl.glTexCoord2f(t, 1); gl.glVertex3f(-1, +1, +1);
+				
+				gl.glVertexAttrib3f(1, -1, 0, 0);
+				gl.glNormal3f(0, 0, -1); // back
+				
+				gl.glTexCoord2f(1, 0); gl.glVertex3f(-1, -1, -1);
+				gl.glTexCoord2f(1, 1); gl.glVertex3f(-1, +1, -1);
+				gl.glTexCoord2f(t, 1); gl.glVertex3f( 1, +1, -1);
+				gl.glTexCoord2f(t, 0); gl.glVertex3f( 1, -1, -1);
+			}    
+			gl.glEnd();
+		}
+		gl.glPopMatrix();
+	}
+	
+	public static void displayBumpMappedCubeAccelerated(GL2 gl, Vec3 centre, float scale, float rotation)
+	{	
+		gl.glPushMatrix();
+		{
+			gl.glTranslated(centre.x, centre.y, centre.z);
+			gl.glRotatef(rotation, 0, 1, 0);
+			gl.glScalef(scale, scale, scale);
+
+			cube_model.render(gl);
+		}
+		gl.glPopMatrix();
+	}
+	
+	private static final float[] VERTEX_ARRAY =
+	{
+		+1, -1, -1, +1, +1, -1, +1, +1, +1, +1, -1, +1,
+		-1, -1, -1, -1, -1, +1, -1, +1, +1, -1, +1, -1,
+		-1, +1, -1, -1, +1, +1, +1, +1, +1, +1, +1, -1,
+		-1, -1, -1, +1, -1, -1, +1, -1, +1, -1, -1, +1,
+		-1, -1, +1, +1, -1, +1, +1, +1, +1, -1, +1, +1,
+		-1, -1, -1, -1, +1, -1, +1, +1, -1, +1, -1, -1
+	};
+
+	private static final float[] NORMAL_ARRAY =
+	{
+		+1, 0, 0, +1, 0, 0, +1, 0, 0, +1, 0, 0,
+		-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+		0, +1, 0, 0, +1, 0, 0, +1, 0, 0, +1, 0,
+		0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
+		0, 0, +1, 0, 0, +1, 0, 0, +1, 0, 0, +1,
+		0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1
+	};
+
+	private static final float[] TANGENT_ARRAY =
+	{
+		0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
+		0, 0, +1, 0, 0, +1, 0, 0, +1, 0, 0, +1,
+		+1, 0, 0, +1, 0, 0, +1, 0, 0, +1, 0, 0,
+		-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+		+1, 0, 0, +1, 0, 0, +1, 0, 0, +1, 0, 0,
+		-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0
+	};
+
+	private static final float[] TCOORD_ARRAY =
+	{
+		ONE_THIRD, 0, ONE_THIRD, 1, 0, 1, 0, 0,
+		0, 0, ONE_THIRD, 0, ONE_THIRD, 1, 0, 1,
+		ONE_THIRD, 1, ONE_THIRD, 0, TWO_THIRD, 0, TWO_THIRD, 1,
+		TWO_THIRD, 1, ONE_THIRD, 1, ONE_THIRD, 0, TWO_THIRD, 0,
+		TWO_THIRD, 0, 1, 0, 1, 1, TWO_THIRD, 1,
+		1, 0, 1, 1, TWO_THIRD, 1, TWO_THIRD, 0
+	};
+
+	public static Model cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY, TANGENT_ARRAY, 4);
 }
