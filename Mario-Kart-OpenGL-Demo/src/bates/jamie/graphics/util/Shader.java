@@ -66,13 +66,20 @@ public class Shader
 	
 	public static void loadShaders(GL2 gl)
 	{
-		HashMap<Integer, String> attributes = new HashMap<Integer, String>();
-		attributes.put(1, "tangent");
+		HashMap<Integer, String> bump_attr = new HashMap<Integer, String>();
+		bump_attr.put(1, "tangent");
+		
+		HashMap<Integer, String> bump_inst_attr = new HashMap<Integer, String>();
+		bump_inst_attr.put(1, "tangent");
+		bump_inst_attr.put(4, "instance_data");
+		
+		HashMap<Integer, String> inst_attr = new HashMap<Integer, String>();
+		inst_attr.put(4, "instance_data");
 		
 		// load and compile shaders from file
 		Shader phong         = new Shader(gl, "phong", "phong");
 		Shader phongLights   = new Shader(gl, "phong_lights", "phong_lights");
-		Shader phongInstance = new Shader(gl, "phong_instance", "phong_lights");
+		Shader phongInstance = new Shader(gl, "phong_instance", "phong_lights", inst_attr);
 		Shader phongRim      = new Shader(gl, "phong_lights", "phong_rim");
 		Shader phongTexture  = new Shader(gl, "phong_texture", "phong_texture");
 		Shader phongAlpha    = new Shader(gl, "phong_texture", "phong_alpha");
@@ -80,11 +87,16 @@ public class Shader
 		Shader texLights     = new Shader(gl, "texture_lights", "texture_lights");
 		Shader textureRim    = new Shader(gl, "texture_lights", "texture_rim");
 		
-		Shader bump          = new Shader(gl, "bump", "bump", attributes);
-		Shader bumpLights    = new Shader(gl, "bump_lights", "bump_lights", attributes);
-		Shader parallax      = new Shader(gl, "bump_lights", "parallax_lights", attributes);
-		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", attributes);
-		Shader bumpInstance  = new Shader(gl, "bump_instance", "bump_lights", attributes);
+		Shader bump          = new Shader(gl, "bump", "bump", bump_attr);
+		Shader bumpPhong     = new Shader(gl, "bump_lights", "bump_phong", bump_attr);
+		Shader bumpLights    = new Shader(gl, "bump_lights", "bump_lights", bump_attr);
+		Shader parallax      = new Shader(gl, "bump_lights", "parallax_lights", bump_attr);
+		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", bump_attr);
+		Shader bumpCube      = new Shader(gl, "bump_cube", "bump_cube", bump_attr);
+		Shader bumpRain      = new Shader(gl, "bump_cube", "bump_rain", bump_attr);
+		Shader bumpInstance  = new Shader(gl, "bump_instance", "parallax_lights", bump_inst_attr);
+		
+		Shader heightMap     = new Shader(gl, "height_map", "height_map");
 		
 		Shader shadow        = new Shader(gl, "shadow", "shadow");
 		Shader phongShadow   = new Shader(gl, "phong_shadow", "phong_shadow");
@@ -98,10 +110,10 @@ public class Shader
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
 		
-		Shader water        = new Shader(gl, "water", "water", attributes);
-		Shader magma        = new Shader(gl, "water", "magma", attributes);
-		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", attributes);
-		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", attributes);
+		Shader water        = new Shader(gl, "water", "water", bump_attr);
+		Shader magma        = new Shader(gl, "water", "magma", bump_attr);
+		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", bump_attr);
+		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", bump_attr);
 		
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
 		Shader grass        = new Shader(gl, "grass", "grass");
@@ -117,6 +129,7 @@ public class Shader
 		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
 		Shader radialBlur   = new Shader(gl, "radial_blur", "radial_blur");
 		Shader smoke        = new Shader(gl, "smoke", "smoke");
+		Shader fire         = new Shader(gl, "fire", "fire");
 		
 		Shader pulsate      = new Shader(gl, "pulsate", "phong_lights");
 		
@@ -132,10 +145,15 @@ public class Shader
 		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
 		
 		if(        bump.isValid()) shaders.put("bump", bump);
+		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
 		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
 		if(    parallax.isValid()) shaders.put("parallax_lights", parallax);
 		if( bumpReflect.isValid()) shaders.put("bump_reflect", bumpReflect);
+		if(    bumpCube.isValid()) shaders.put("bump_cube", bumpCube);
+		if(    bumpRain.isValid()) shaders.put("bump_rain", bumpRain);
 		if(bumpInstance.isValid()) shaders.put("bump_instance", bumpInstance);
+		
+		if(   heightMap.isValid()) shaders.put("height_map", heightMap);
 		
 		if(      shadow.isValid()) shaders.put("shadow", shadow);
 		if( phongShadow.isValid()) shaders.put("phong_shadow", phongShadow);
@@ -164,6 +182,7 @@ public class Shader
 		if( crepuscular.isValid()) shaders.put("crepuscular", crepuscular);
 		if(  radialBlur.isValid()) shaders.put("radial_blur", radialBlur);
 		if(  	  smoke.isValid()) shaders.put("smoke", smoke);
+		if(  	   fire.isValid()) shaders.put("fire", fire);
 		
 		if(   pulsate.isValid()) shaders.put("pulsate", pulsate);
 		

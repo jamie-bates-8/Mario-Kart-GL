@@ -11,7 +11,7 @@ import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.IndexedModel;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
@@ -24,8 +24,8 @@ import bates.jamie.graphics.util.Vec3;
 
 public class ShineSprite
 {
-	static IndexedModel shineSprite = OBJParser.parseTriangleMesh("shine_sprite");
-	static IndexedModel shineEyes   = OBJParser.parseTriangleMesh("shine_eyes");
+	static Model shineSprite = OBJParser.parseTriangleMesh("shine_sprite");
+	static Model shineEyes   = OBJParser.parseTriangleMesh("shine_eyes");
 	
 	SceneNode shineNode;
 	SceneNode eyeNode;

@@ -7,7 +7,7 @@ import java.util.List;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.IndexedModel;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
@@ -22,8 +22,8 @@ public class Mushroom
 {
 	private static final List<Face> CAP_FACES = OBJParser.parseTriangles("mushroom_cap");
 	
-	static IndexedModel mushroom_base = OBJParser.parseTriangleMesh("mushroom_base");
-	static IndexedModel mushroom_eyes = OBJParser.parseTriangleMesh("mushroom_eyes");
+	static Model mushroom_base = OBJParser.parseTriangleMesh("mushroom_base");
+	static Model mushroom_eyes = OBJParser.parseTriangleMesh("mushroom_eyes");
 	
 	private static int mushroom_cap = -1;
 	

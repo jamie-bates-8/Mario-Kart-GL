@@ -16,7 +16,7 @@ import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.IndexedModel;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
@@ -38,12 +38,12 @@ public class BobOmb extends Item
 	
 	private static Texture noiseSampler;
 	
-	static IndexedModel bob_omb_body = OBJParser.parseTriangleMesh("bob_omb_body");
-	static IndexedModel bob_omb_eyes = OBJParser.parseTriangleMesh("bob_omb_eyes");
-	static IndexedModel bob_omb_cap  = OBJParser.parseTriangleMesh("bob_omb_cap");
-	static IndexedModel bob_omb_fuse = OBJParser.parseTriangleMesh("bob_omb_fuse");
-	static IndexedModel bob_omb_legs = OBJParser.parseTriangleMesh("bob_omb_legs");
-	static IndexedModel bob_omb_key  = OBJParser.parseTriangleMesh("bob_omb_key");
+	static Model bob_omb_body = OBJParser.parseTriangleMesh("bob_omb_body");
+	static Model bob_omb_eyes = OBJParser.parseTriangleMesh("bob_omb_eyes");
+	static Model bob_omb_cap  = OBJParser.parseTriangleMesh("bob_omb_cap");
+	static Model bob_omb_fuse = OBJParser.parseTriangleMesh("bob_omb_fuse");
+	static Model bob_omb_legs = OBJParser.parseTriangleMesh("bob_omb_legs");
+	static Model bob_omb_key  = OBJParser.parseTriangleMesh("bob_omb_key");
 	
 	SceneNode bodyNode;
 	SceneNode eyeNode;

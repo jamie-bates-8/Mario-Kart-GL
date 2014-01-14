@@ -13,15 +13,17 @@ public class TimeQuery
 	public static final int PARTICLE_ID = 4;
 	public static final int BOUND_ID = 5;
 	public static final int HUD_ID = 6;
+	public static final int NULL_ID = 7;
 	
 	private static int cacheSize = 240;
-	private static int[][] cache = new int[cacheSize][7]; 
+	private static int[][] cache = new int[cacheSize][8]; 
 	
 	private int queryID = -1;
 	private int queryType;
 	
-	private   int counter = 0;
-	private float average = 0;
+	private   int counter  = 0;
+	private float average  = 0;
+	private   int previous = 0;
 	
 	public TimeQuery(int type) { queryType = type; }
 	
@@ -45,7 +47,9 @@ public class TimeQuery
 			gl.glDeleteQueries(1, new int[] {queryID}, 0);
 			
 			cache[Scene.frameIndex][queryType] += results[0];
-			average = (float) (average * counter + results[0]) / ++counter;
+			
+			average  = (float) (average * counter + results[0]) / ++counter;
+			previous = results[0];
 			
 			return results[0];
 		}
@@ -69,6 +73,8 @@ public class TimeQuery
 		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
 	}
+	
+	public int getPrevious() { return previous; }
 	
 	public void reset()
 	{

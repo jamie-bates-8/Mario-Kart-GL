@@ -30,6 +30,7 @@ public class ParticleGenerator
 		SPARK,
 		SPARKLE,
 		STAR,
+		FIRE,
 		RAY;
 	}
 	
@@ -69,12 +70,47 @@ public class ParticleGenerator
 			case STAR    : return generateStarParticles   (source, quantity, true);
 			case RAY     : return generateRayParticles    (source, quantity);
 			case SPARKLE : return generateSparkleParticles(source, quantity);
+			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 1, 0), null, 0);
 			
 			default: return null;
 		}
 	}
 	
 	private int colorID = 0;
+	
+	public List<Particle> generateFireParticles(Vec3 source, int n, Vec3 direction, Car car, int sourceID)
+	{
+		List<Particle> particles = new ArrayList<Particle>();
+		
+		Random generator = new Random();
+		
+		for(int i = 0; i < n; i++)
+		{	
+			Vec3 t = getRandomVector(getRandomVector(), 0.25f, generator.nextFloat() * 0.25f);
+			int duration = 30 + generator.nextInt(70) + (generator.nextFloat() < 0.05 ? 5 : 0);
+			int textureID = generator.nextInt(5);
+			
+			boolean spark = false;
+			
+			if(generator.nextFloat() < 0.05)
+			{
+				t = getRandomVector(direction, 0.5f, 0.25f + generator.nextFloat() * 0.25f);
+				textureID = 0;
+				spark = true;
+				duration += 45;
+			}
+//			else if(generator.nextFloat() < 0.25) t = t.multiply(0.5f);
+			
+			float scale = 1 - t.magnitude();
+			
+			scale *= 1.5;
+			duration *= 0.5;
+			
+			particles.add(new FireParticle(car != null ? getRandomVector(0.1f) : source, t, direction, 0, duration, textureID, scale, spark, car, sourceID));
+		}
+		
+		return particles;
+	}
 	
 	public List<Particle> generateRayParticles(Vec3 source, int n)
 	{

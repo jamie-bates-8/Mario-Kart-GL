@@ -97,6 +97,16 @@ public class Vec3
 		return v.multiply(k);
 	}
 	
+	public static Vec3 getRandomVector(Vec3 dir, float angle, float scale)
+	{
+		Vec3 v = getRandomVector();
+			
+		if (v.dot(dir) < 0.0)   v = v.negate();
+		if (v.dot(dir) < angle) v = v.add(dir).normalize();
+		
+		return v.multiply(scale);
+	}
+	
 	public static Vec3 getRandomVector() { return getRandomVector(1); }
 	
 	public Vec3 add(Vec3 v)

@@ -100,7 +100,6 @@ public class Camera extends AnchorPoint
 					
 					incline = (float) Math.toRadians(INCLINE);
 					azimuth = (float) Math.toRadians(rear + ry);
-					   zoom = 1.5f;
 				}
 				
 				position = getSphericalCoordinate();

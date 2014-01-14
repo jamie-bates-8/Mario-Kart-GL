@@ -2,7 +2,7 @@ package bates.jamie.graphics.entity;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.IndexedModel;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
@@ -12,8 +12,8 @@ import bates.jamie.graphics.util.Vec3;
 
 public class BrickBlock
 {
-	static IndexedModel brick_block  = OBJParser.parseTriangleMesh("brick_block");
-	static IndexedModel mortar_block = OBJParser.parseTriangleMesh("mortar_block");
+	static Model brick_block  = OBJParser.parseTriangleMesh("brick_block");
+	static Model mortar_block = OBJParser.parseTriangleMesh("mortar_block");
 	
 	SceneNode brickNode;
 	SceneNode mortarNode;
@@ -26,8 +26,6 @@ public class BrickBlock
 	public BrickBlock(Vec3 p, float scale)
 	{
 		position = p;
-		
-//		this.rotation = rotation;
 		
 		brickNode = new SceneNode(null, -1, brick_block, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		brickNode.setTranslation(p);

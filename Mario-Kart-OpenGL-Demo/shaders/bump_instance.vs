@@ -1,9 +1,5 @@
 #extension GL_EXT_gpu_shader4 : enable
 
-uniform sampler1D dataMap;
-
-uniform int count;
-
 uniform mat4 ModelMatrix;
 
 varying vec4 shadowCoord;
@@ -11,10 +7,11 @@ varying vec3 lightDir[8];
 varying vec3 eyeDir;
 
 attribute vec3 tangent;
+attribute vec4 instance_data;
 
 void main(void) 
 { 
-	vec4 offset = texture1D(dataMap, float(gl_InstanceID) / count);
+	vec4 offset = instance_data;
 	
 	vec3 model_vertex = gl_Vertex.xyz * offset.a;
 	vec4 world_vertex = vec4(model_vertex + offset.xyz, gl_Vertex.a);

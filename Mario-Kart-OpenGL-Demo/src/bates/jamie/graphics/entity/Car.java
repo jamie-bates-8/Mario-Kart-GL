@@ -39,7 +39,7 @@ import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
-import bates.jamie.graphics.scene.IndexedModel;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
@@ -73,9 +73,9 @@ public class Car
 	private static List<Face> wheel_faces;
 	private static List<Face> base_faces;
 	
-	private static IndexedModel all_windows;
-	private static IndexedModel car_body;
-	private static IndexedModel head_lights;
+	private static Model all_windows;
+	private static Model car_body;
+	private static Model head_lights;
 	
 	private static final float[] ORIGIN = {0, 1.8f, 0};
 	
@@ -1181,8 +1181,13 @@ public class Car
 		
 		if(boosting)
 		{
+//			for(Vec3 source : getBoostVectors())
+//				scene.addParticles(generator.generateBoostParticles(source, boostDuration / 4 * 2, superBoosting, miniature));
+			
+			int i = 0;
+			
 			for(Vec3 source : getBoostVectors())
-				scene.addParticles(generator.generateBoostParticles(source, boostDuration / 4 * 2, superBoosting, miniature));
+				scene.addParticles(generator.generateFireParticles(getBoostVectors()[i], 5, getForwardVector(), this, i++));
 		}
 		
 		if(curseDuration > 0) curseDuration--;
@@ -1398,8 +1403,8 @@ public class Car
 
 	public Vec3[] getBoostVectors()
 	{	
-		Vec3 eu0 = bound.u.xAxis.multiply(bound.e.x * 0.75f);
-		Vec3 eu2 = bound.u.zAxis.multiply(bound.e.z);
+		Vec3 eu0 = bound.u.xAxis.multiply(bound.e.x * 0.65f);
+		Vec3 eu2 = bound.u.zAxis.multiply(bound.e.z * 1.15f);
 		
 		return new Vec3[]
 		{

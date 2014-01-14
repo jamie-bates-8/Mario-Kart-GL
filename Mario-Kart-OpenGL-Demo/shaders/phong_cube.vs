@@ -21,9 +21,9 @@ void main()
     // Get vertex position in eye coordinates
     vec3 position = (vertex / vertex.w).xyz;
     
-    vec4 coord = vec4(reflect(position, vertexNormal), 1.0);
+    vec4 coord = vec4(reflect(normalize(position), vertexNormal), 1.0);
     coord = inverse(cameraMatrix) * coord;
-    reflectDir = normalize(coord.xyz);
+    reflectDir = coord.xyz;
     
     eyeDir = vertex.xyz;
 

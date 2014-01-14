@@ -1435,7 +1435,7 @@ public class Quadtree
 	public int normalCount() { return normals.size();  }
 	
 	public static float timer  = 1.0f;
-	private TimeQuery timeQuery = new TimeQuery(TimeQuery.TERRAIN_ID);
+	public TimeQuery timeQuery = new TimeQuery(TimeQuery.TERRAIN_ID);
 	
 	public void render(GL2 gl)
 	{

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import bates.jamie.graphics.scene.IndexedModel;
+import bates.jamie.graphics.scene.Model;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -160,7 +160,7 @@ public class OBJParser
 		return faces;
 	}
 	
-	public static IndexedModel parseTriangleMesh(String fileName)
+	public static Model parseTriangleMesh(String fileName)
 	{
 		long startTime = System.nanoTime();
 		
@@ -229,6 +229,93 @@ public class OBJParser
 		
 		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount, (endTime - startTime) / 1E6);
 		
-		return new IndexedModel(vertices, normals, _vIndices, _nIndices, 3);
+		return new Model(vertices, normals, _vIndices, _nIndices, 3);
+	}
+	
+	public static Model parseTexturedTriangleMesh(String fileName)
+	{
+		long startTime = System.nanoTime();
+		
+		int polygonCount = 0;
+		
+		List<Face> faces = new ArrayList<Face>();
+		
+		List<float[]> vertices  = new ArrayList<float[]>();
+		List<float[]> normals   = new ArrayList<float[]>();
+		List<float[]> texCoords = new ArrayList<float[]>(); 
+		
+		List<Integer> vIndices  = new ArrayList<Integer>();
+		List<Integer> nIndices  = new ArrayList<Integer>();
+		List<Integer> tIndices  = new ArrayList<Integer>();
+
+		try
+		{
+			Scanner fs = new Scanner(new File("obj/" + fileName + ".obj"));
+			
+			while (fs.hasNextLine())
+			{
+				String line = fs.nextLine();
+				
+				if (line.startsWith("v "))
+				{
+					Scanner ls = new Scanner(line.replaceAll("v", "").trim());
+					vertices.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("vt"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
+					texCoords.add(new float[] {ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("vn"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vn", "").trim());
+					normals.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("f"))
+				{
+					polygonCount++;
+					
+					Scanner ls = new Scanner(line.replaceAll("f", "").trim().replaceAll("/", " "));
+
+					int[] v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					
+					vIndices.add(v1[0] - 1);
+					vIndices.add(v2[0] - 1);
+					vIndices.add(v3[0] - 1);
+					
+					tIndices.add(v1[1] - 1);
+					tIndices.add(v2[1] - 1);
+					tIndices.add(v3[1] - 1);
+					
+					nIndices.add(v1[2] - 1);
+					nIndices.add(v2[2] - 1);
+					nIndices.add(v3[2] - 1);
+					
+					ls.close();
+				}
+			}
+			fs.close();
+		}
+		catch (IOException ioe) { ioe.printStackTrace(); }
+		
+		int[] _vIndices = new int[vIndices.size()];
+		for(int i = 0; i < vIndices.size(); i++) _vIndices[i] = vIndices.get(i);
+		
+		int[] _tIndices = new int[tIndices.size()];
+		for(int i = 0; i < tIndices.size(); i++) _tIndices[i] = tIndices.get(i);
+		
+		int[] _nIndices = new int[nIndices.size()];
+		for(int i = 0; i < nIndices.size(); i++) _nIndices[i] = nIndices.get(i);
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount, (endTime - startTime) / 1E6);
+		
+		return new Model(vertices, texCoords, normals, _vIndices, _tIndices, _nIndices, 3);
 	}
 }

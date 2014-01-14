@@ -109,9 +109,12 @@ import bates.jamie.graphics.entity.BrickWall;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.EnergyField.FieldType;
+import bates.jamie.graphics.entity.GoldCoin;
+import bates.jamie.graphics.entity.GoldCoin.CoinType;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.LightingStrike;
 import bates.jamie.graphics.entity.Mushroom;
+import bates.jamie.graphics.entity.PlaneMesh;
 import bates.jamie.graphics.entity.PowerStar;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.ShineSprite;
@@ -139,6 +142,8 @@ import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.StarParticle;
+import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
+import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.ShadowCaster.ShadowQuality;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Matrix;
@@ -329,9 +334,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Texture floorBump;
 	private Texture floorTex;
 	
-	Texture rockColour;
-	Texture rockNormal;
-	Texture rockHeight;
+	public Texture rain_normal;
+	
+	public Texture brickColour;
+	public Texture brickNormal;
+	public Texture brickHeight;
 	
 	
 	
@@ -424,6 +431,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public List<BillBoard> foliage;
 	public GrassPatch[] grassPatches;
 	
+	public PlaneMesh planeMesh = new PlaneMesh(new Vec3(0, 20, 0), 420, 420, 128, 128, true);
+	
 	public String terrainCommand = "";
 	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
 	
@@ -433,7 +442,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean smoothBound = false;
 	public boolean multisample = true;
 	
-	public boolean testMode = false;
+	public static boolean testMode = false;
 	public boolean printVersion = true;
 	public boolean printErrors  = false;
 	
@@ -473,8 +482,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	Volume volume;
 	
 	List<BrickBlock> brickBlocks = new ArrayList<BrickBlock>();
-	BrickWall brickWall;
+	public BrickWall brickWall;
 	float brickScale = 3.75f;
+	
+	List<GoldCoin> coins = new ArrayList<GoldCoin>();
+	
+	
+	
 	
 	public Scene()
 	{
@@ -1147,6 +1161,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			error = gl.glGetError();
 		}
 	}
+	
+	public SceneNode cubeNode;
+	public Reflector cubeReflector;
 
 	public void init(GLAutoDrawable drawable)
 	{
@@ -1218,8 +1235,24 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		mushroom = new Mushroom(gl, new Vec3(40, 1.5, 0));
 		energyField = new EnergyField(new Vec3(), FieldType.LIGHT);
 		
+		setupCoinStacks();
+	
 		setupBrickBlocks();
 		brickWall = new BrickWall(gl, brickBlocks, brickScale);
+		
+		cubeReflector = new Reflector(1.0f);
+		
+		Renderer.cube_model.colourMap = brickColour;
+		Renderer.cube_model.normalMap = brickNormal;
+		Renderer.cube_model.heightMap = brickHeight;
+		
+		cubeNode = new SceneNode(null, -1, Renderer.cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		cubeNode.setTranslation(new Vec3(0, 30, 0));
+		cubeNode.setScale(new Vec3(5));
+		cubeNode.setReflector(cubeReflector);
+		cubeNode.setReflectivity(0.85f);
+		cubeNode.setRenderMode(RenderMode.BUMP_RAIN);
+		cubeNode.setColor(new float[] {1.0f, .4f, .4f});
 	    
 	    if(enableItems) loadItems(gl);
 	    loadParticles();
@@ -1253,7 +1286,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    floorBound = new OBB(0, -15, 0, 0, 0, 0, 240, 15, 240);
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
-	    volume = new Volume(gl, 512, 512, 512);
+//	    volume = new Volume(gl, 512, 512, 512);
 	    
 	    selecter = new ModelSelecter(this, glu);
 	    
@@ -1284,6 +1317,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
+	}
+
+	private void setupCoinStacks()
+	{
+		Random r = new Random();
+		
+		double theta = 2 * Math.PI / 8;
+		
+		for(int i = 0; i < 8; i++)
+		{
+			coins.add(new GoldCoin(new Vec3(Math.sin(theta * i) * 10, 3, Math.cos(theta * i) * 10), CoinType.RED_COIN, true));
+		}
+		for(int i = 0; i < 30; i++)	coins.add(new GoldCoin(new Vec3(     r.nextFloat() * .1, .2 + .4 * i,     r.nextFloat() * .1), CoinType.GOLD_COIN, false));
+		for(int i = 0; i < 40; i++)	coins.add(new GoldCoin(new Vec3(+3 + r.nextFloat() * .1, .2 + .4 * i, 2 + r.nextFloat() * .1), CoinType.GOLD_COIN, false));
+		for(int i = 0; i < 20; i++)	coins.add(new GoldCoin(new Vec3(-2 + r.nextFloat() * .1, .2 + .4 * i, 3 + r.nextFloat() * .1), CoinType.GOLD_COIN, false));
 	}
 	
 	private static final float EPSILON = 1E-5f;
@@ -1373,10 +1421,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_attenuate.setSelected(light.enableAttenuation);
 	    menuItem_secondary.setSelected(Light.seperateSpecular);
 	}
+	
+	public static List<Particle> fire_particles = new ArrayList<Particle>();
+	public static ParticleGenerator  fire_generator;
 
 	private void setupGenerators()
 	{
-//		generators.add(new ParticleGenerator(1, 10, ParticleGenerator.GeneratorType.SPARK, new Vec3(0, 40, 0)));
+//		generators.add(new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE, new Vec3(5, 2, 5)));
+		
+//		fire_generator = new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE, new Vec3(5, 2, 5));
 	}
 
 	private void loadPlayers(GL2 gl)
@@ -1403,20 +1456,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			brick_front_normal = TextureLoader.load(gl, "tex/brick_front_normal.png");
 			brick_side_normal  = TextureLoader.load(gl, "tex/brick_side_normal.png");
 			
-			brick_front_height = TextureLoader.load(gl, "tex/brick_front_height.png");
+			brick_front_height = TextureLoader.load(gl, "tex/brick_front_height.png"); 
 			brick_side_height  = TextureLoader.load(gl, "tex/brick_side_height.png");
-			
-			
-			
-//			floorBump = TextureLoader.load(gl, "tex/bump_maps/tile.png");
-//			floorTex = TextureLoader.load(gl, "tex/tile.jpg");
 			
 			floorBump = TextureLoader.load(gl, "tex/bump_maps/brick_parallax.png");
 			floorTex  = TextureLoader.load(gl, "tex/brick_color.jpg");
 			
-			rockColour = TextureLoader.load(gl, "tex/dirt3.jpg");
-			rockNormal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
-			rockHeight = TextureLoader.load(gl, "tex/bump_maps/large_stone_height.jpg");
+			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
+			
+			brickColour = TextureLoader.load(gl, "tex/brick_colour.png");
+			brickNormal = TextureLoader.load(gl, "tex/brick_normal.png");
+			brickHeight = TextureLoader.load(gl, "tex/brick_height.png");
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -1492,12 +1542,27 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(shine != null) shine.reflector.update(gl, shine.getPosition());
 		if(star  != null)  star.reflector.update(gl,  star.getPosition());
 		
+		if(!cubeReflector.initialized)
+		{
+			cubeReflector.update(gl, cubeNode.getPosition());
+			cubeReflector.initialized = true;
+		}
+		
 		for(ItemBox box : itemBoxes)
 		{
 			if(!box.initialized)
 			{
 				box.reflector.update(gl, box.getPosition());
 				box.initialized = true;
+			}
+		}
+		
+		for(GoldCoin coin : coins)
+		{
+			if(!coin.initialized)
+			{
+				coin.reflector.update(gl, coin.getPosition());
+				coin.initialized = true;
 			}
 		}
 		
@@ -1805,6 +1870,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Particle.removeParticles(particles);
 		
+//		Particle.removeParticles(fire_particles);
+		
 		if(enableItemBoxes)
 			{ for(ItemBox box : itemBoxes) box.update(cars); } 
 		
@@ -1813,8 +1880,17 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    ItemBox.increaseRotation();
 		FakeItemBox.increaseRotation();
 		
+//		timer += 0.1;
+		
+//		generators.get(4).setSource(new Vec3(Math.cos(timer) * 15, 2, Math.sin(timer) * 15));
+		
 		for(ParticleGenerator generator : generators)
 			if(generator.update()) particles.addAll(generator.generate());
+		
+//		for(Particle p : fire_generator.generate())
+//			fire_particles.add((FireParticle) p);
+//		
+//		for(Particle p : fire_particles) p.update();
 		
 		for(Particle p : particles) p.update();
 		
@@ -2174,6 +2250,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 		if(displaySkybox) renderWalls(gl);
 		
+//		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+//		planeMesh.render(gl);
+//		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+		
 		return System.nanoTime() - start;
 	}
 
@@ -2200,6 +2280,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			Shader shader = Shader.get("parallax_lights");
 			if(shader != null) shader.enable(gl);
 			
+			shader.setSampler(gl, "texture", 0);
+			shader.setSampler(gl, "bumpmap", 1);
+			shader.setSampler(gl, "heightmap", 2);
+			
+			shader.setUniform(gl, "timer", timer);
+			timer += 0.0004f;
+			
+			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+
+			shader.loadModelMatrix(gl, model);
+
+//			shader.setSampler(gl, "shadowMap", 2);
+
+			shader.setUniform(gl, "enableShadow", 1);
+			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+			
 			Texture[] colourMaps = {brick_side, brick_front, brick_front};
 			Texture[] normalMaps = {brick_side_normal, brick_front_normal, brick_front_normal};
 			Texture[] heightMaps = {brick_side_height, brick_front_height, brick_front_height};
@@ -2210,8 +2307,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				Renderer.displayBumpMappedCuboid(gl, new Vec3(0, 45, -206.25f), new Vec3(202.5f, 45, 3.75f), 0, colourMaps, normalMaps, heightMaps, 3.75f);
 				Renderer.displayBumpMappedCuboid(gl, new Vec3( 206.25f, 45, 0), new Vec3(3.75f, 45, 202.5f), 0, colourMaps, normalMaps, heightMaps, 3.75f);
 				Renderer.displayBumpMappedCuboid(gl, new Vec3(-206.25f, 45, 0), new Vec3(3.75f, 45, 202.5f), 0, colourMaps, normalMaps, heightMaps, 3.75f);
-				
-				Renderer.displayBumpMappedCuboid(gl, new Vec3(0, 10, 0), new Vec3(10, 6, 6), 0, colourMaps, normalMaps, heightMaps, 2);
 			}
 			gl.glPopMatrix();
 		}
@@ -2269,8 +2364,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			shine.render(gl); 
 			 star.render(gl);
+		 cubeNode.render(gl);
 			 
-			 if(!shadowMode && !displaySkybox)  brickWall.render(gl);
+			for(GoldCoin coin : coins) coin.render(gl);
+			 
+			if(!shadowMode && !displaySkybox)  brickWall.render(gl);
 		}
 		
 		mushroom.render(gl);
@@ -2373,12 +2471,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		shine.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
 		 star.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
-		
+		 
 		for(Particle particle : particles)
 		{
 			if(car.isSlipping()) particle.render(gl, car.slipTrajectory);
 			else particle.render(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
 		}
+		
+//		FireParticle.renderList(gl, fire_particles);
 		
 //		volume.render(gl);
 		
@@ -2521,7 +2621,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			shader.enable(gl);
 			
-			shader.setSampler(gl, "cubeMap", 0);
+			shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
 			shader.setUniform(gl, "opacity", reflector.reflectivity);
 			
 			shader.setUniform(gl, "eta", reflector.eta);
@@ -2556,6 +2656,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glLoadIdentity();
 	    gl.glViewport(0, 0, canvasWidth, canvasHeight);
 	}
+	
+	public static int sceneTimer = 0;
 
 	/**
 	 * This method calculates the frames per second (FPS) of the application by
@@ -2567,6 +2669,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		frames++;
 		frameIndex++;
+		sceneTimer++;
 		
 		long currentTime = System.currentTimeMillis();
 		long timeElapsed = currentTime - startTime;
@@ -2989,7 +3092,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_J: displayLight = !displayLight; break;
 			case KeyEvent.VK_R: rimLighting = !rimLighting; break;
 			
-			case KeyEvent.VK_V: IndexedModel.enableVBO = !IndexedModel.enableVBO; break;
+			case KeyEvent.VK_V: Model.enableVBO = !Model.enableVBO; break;
 			
 			case KeyEvent.VK_0: brickWall.cycleMode(); break;
 			
@@ -3003,6 +3106,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				break;
 			}
 			case KeyEvent.VK_E: energyField.cycle(); break;
+			
+			case KeyEvent.VK_F1: testMode = !testMode; break;
 			
 			default: break;
 		}

@@ -57,6 +57,9 @@ public class HUD
 	private static final float MIN_STRETCH = 0.25f;
 	private static final float MAX_STRETCH = 8.00f;
 	
+	private static final int LINE_SPACING = 20;
+	private static final int LEFT_MARGIN  = 20;
+	
 	public GraphMode mode = GraphMode.RENDER_TIMES;
 	public int emphasizedComponent = 0; 
 	
@@ -71,7 +74,7 @@ public class HUD
 		this.scene = scene;
 		this.car = car;
 		
-		Font font = new Font("Calibri", Font.BOLD, 16);
+		Font font = new Font("Calibri", Font.PLAIN, 15);
 		renderer = new TextRenderer(font, true, false);
 	}
 	
@@ -245,35 +248,36 @@ public class HUD
 		
 		int y = scene.getHeight();
 		
-		renderer.draw("FPS: " + scene.getFrameRate(), 40, y - 160);
+		renderer.draw("FPS: " + scene.getFrameRate(), LEFT_MARGIN, y - 160);
 		
 		Terrain terrain = scene.getTerrain();
 		
-		renderer.draw("Items: "    + scene.getItems().size(),     40, y - 220);
-		renderer.draw("Particle: " + scene.getParticles().size(), 40, y - 250);
+		renderer.draw("Items: "    + scene.getItems().size(),     LEFT_MARGIN, y - 200);
+		renderer.draw("Particle: " + scene.getParticles().size(), LEFT_MARGIN, y - 200 - LINE_SPACING * 1);
 		
 		if(scene.enableTerrain)
 		{
-			renderer.draw("Foliage: "  + scene.foliage.size(),        40, y - 280);
-			renderer.draw("LOD: "      + terrain.tree.detail,         40, y - 310);
-			renderer.draw("Cells: "    + terrain.tree.cellCount(),    40, y - 340);
-			renderer.draw("Vertices: " + terrain.tree.vertexCount(),  40, y - 370);
+			renderer.draw("Foliage: "  + scene.foliage.size(),        LEFT_MARGIN, y - 200 - LINE_SPACING * 2);
+			renderer.draw("LOD: "      + terrain.tree.detail,         LEFT_MARGIN, y - 200 - LINE_SPACING * 3);
+			renderer.draw("Cells: "    + terrain.tree.cellCount(),    LEFT_MARGIN, y - 200 - LINE_SPACING * 4);
+			renderer.draw("Vertices: " + terrain.tree.vertexCount(),  LEFT_MARGIN, y - 200 - LINE_SPACING * 5);
 		}
 		
 		String weather = scene.enableBlizzard ? scene.blizzard.type.toString() : "Off";
 		if(scene.enableBlizzard)
 			weather += String.format(" (%d%%)", (scene.blizzard.flakes.size() * 100) / scene.blizzard.flakeLimit);
 		
-		renderer.draw("Weather: " + weather, 40, y - 400);
+		renderer.draw("Weather: " + weather, LEFT_MARGIN, y - 200 - LINE_SPACING * 6);
 		
-		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), 40, y - 430);
+		renderer.draw("Bloom Mode: " + scene.bloom.getDisplayMode(), LEFT_MARGIN, y - 200 - LINE_SPACING * 7);
 		
-		renderer.draw("Quadtree Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.TERRAIN_ID], 40, y - 460);
+		renderer.draw("Quadtree Render: " + scene.getTerrain().tree.timeQuery.getPrevious(), LEFT_MARGIN, y - 200 - LINE_SPACING * 8);
 //		renderer.draw("Banana Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.ITEM_ID], 40, y - 490);
-		if(Scene.frameIndex % 10 == 0) cachedTime = TimeQuery.getCache()[Scene.frameIndex][TimeQuery.FOLIAGE_ID];
-		renderer.draw("Brick Render: " + cachedTime, 40, y - 490);
-		renderer.draw("Occlusion: " + (Scene.enableOcclusion ? "Enabled" : "Disabled"), 40, y - 520);
-		renderer.draw("Light: " + scene.lightID, 40, y - 550);
+		renderer.draw("Brick Render: " + scene.brickWall.timeQuery.getPrevious(), LEFT_MARGIN, y - 200 - LINE_SPACING * 9);
+		renderer.draw("Occlusion: " + (Scene.enableOcclusion ? "Enabled" : "Disabled"), LEFT_MARGIN, y - 200 - LINE_SPACING * 10);
+		renderer.draw("Light: " + scene.lightID, LEFT_MARGIN, y - 200 - LINE_SPACING * 11);
+		
+		renderer.draw("Plane Render: " + scene.planeMesh.timeQuery.getPrevious(), LEFT_MARGIN, y - 200 - LINE_SPACING * 12);
 		
 		Vec3 p = car.getPosition();
 		
@@ -312,8 +316,6 @@ public class HUD
 		
 		renderer.endRendering();
 	}
-	
-	long cachedTime = 0;
 
 	private void renderFrameTimes(GL2 gl)
 	{

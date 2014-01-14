@@ -61,7 +61,7 @@ public class BoostParticle extends Particle
 			Vec3 _t = new Vec3((float) (r * Math.sin(rotation)), 0, (float) (-r * Math.cos(rotation)));
 			Vec3 _c = c.subtract(_t);
 			
-			gl.glPointSize(30 * scale);
+			gl.glPointSize(20 * scale);
 			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
@@ -72,7 +72,6 @@ public class BoostParticle extends Particle
 			int spectrum = (special) ? 3 : 3;
 			
 			textures[offset + generator.nextInt(spectrum)].bind(gl);
-			fire.bind(gl);
 			
 			gl.glBegin(GL_POINTS);
 			{

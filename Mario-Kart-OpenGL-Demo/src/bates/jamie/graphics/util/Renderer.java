@@ -533,7 +533,7 @@ public class Renderer
 			gl.glRotatef(rotation, 0, 1, 0);
 			gl.glScaled(scale.x, scale.y, scale.z);
 
-//			textures[0].bind(gl);
+			textures[0].bind(gl);
 			
 			Vec3 t = new Vec3((int) (scale.x / textureScale),
 					          (int) (scale.y / textureScale),
@@ -557,7 +557,7 @@ public class Renderer
 			}
 			gl.glEnd();
 
-//			textures[1].bind(gl);
+			textures[1].bind(gl);
 
 			gl.glBegin(GL_QUADS);
 			{		 
@@ -577,7 +577,7 @@ public class Renderer
 			}
 			gl.glEnd();
 
-//			textures[2].bind(gl);
+			textures[2].bind(gl);
 
 			gl.glBegin(GL_QUADS);
 			{
@@ -815,5 +815,5 @@ public class Renderer
 		1, 0, 1, 1, TWO_THIRD, 1, TWO_THIRD, 0
 	};
 
-	public static Model cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY, TANGENT_ARRAY, 4);
+	public static Model cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY, TANGENT_ARRAY, null, 4);
 }

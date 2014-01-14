@@ -10,8 +10,8 @@ public class Gradient
 	private List<Stop> stops = new ArrayList<Stop>();
 	
 	public static final Gradient GRAYSCALE = new Gradient(RGB.WHITE_3F, RGB.GRAY);
-	public static final Gradient MUD = new Gradient(new float[][] {RGB.WHITE_3F, RGB.LIGHT_BROWN, RGB.DARK_BROWN}); 
-	public static final Gradient TROPICAL = new Gradient(new float[][] {RGB.WHITE_3F, RGB.BLUE, RGB.INDIGO}); 
+	public static final Gradient MUD       = new Gradient(new float[][] {RGB.WHITE_3F, RGB.LIGHT_BROWN, RGB.DARK_BROWN}); 
+	public static final Gradient TROPICAL  = new Gradient(new float[][] {RGB.WHITE_3F, RGB.BLUE,        RGB.INDIGO    }); 
 	
 	public Gradient(float[] color1, float[] color2)
 	{
@@ -57,6 +57,19 @@ public class Gradient
 		else return stops.get(index + 1).color;
 	}
 	
+	public float[][] getColors(int location)
+	{
+		int index = 0;
+		
+		while(stops.get(index + 1).location < location) index++;
+		
+		// index <-- lower -- location -- upper --> index + 1
+		int lower = location - stops.get(index).location;
+		int upper = stops.get(index + 1).location - location;
+		
+		return new float[][] {stops.get(index).color, stops.get(index + 1).color};
+	}
+	
 	public float[] interpolate(int location)
 	{
 		if(location > 100) location = 100;
@@ -66,26 +79,21 @@ public class Gradient
 		
 		while(stops.get(index + 1).location < location) index++;
 		
-		Stop _stop = stops.get(index);
-		Stop stop_ = stops.get(index + 1);
+		Stop lower_stop = stops.get(index);
+		Stop upper_stop = stops.get(index + 1);
 		
-		int _location = _stop.location;
-		int location_ = stop_.location;
+		int location0 = lower_stop.location; // x interpolation
+		int location1 = upper_stop.location;
 		
-		// index <-- lower -- location -- upper --> index + 1
-		int lower = location  - _location;
-		int upper = location_ -  location;
+		float fraction = (float) (location - location0) / (location1 - location0);
 		
-		float[] _color = _stop.color;
-		float[] color_ = stop_.color;
+		float[] color0 = lower_stop.color;
+		float[] color1 = upper_stop.color;
 		
 		float[] color = {0, 0, 0};
 		
 		for(int i = 0; i < 3; i++)
-		{
-			color[i] += ((float) upper / (location_ - _location)) * _color[i];
-			color[i] += ((float) lower / (location_ - _location)) * color_[i];
-		}
+			color[i] = color0[i] + (color1[i] - color0[i]) * fraction;
 		
 		return color;
 	}

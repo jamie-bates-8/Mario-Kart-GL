@@ -25,6 +25,8 @@ public class RGB
 
 	public static final float[] DARK_BROWN  = { 44,  29,   9};
 	public static final float[] LIGHT_BROWN = { 93,  63,  19};
+	
+	public static final float[] BRIGHT_YELLOW = {255, 255, 102};
 
 	public static final float[] BLACK_3F      = {0, 0, 0};
 	public static final float[] PURE_RED_3F   = {1, 0, 0};

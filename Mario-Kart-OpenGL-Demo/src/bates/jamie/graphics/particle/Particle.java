@@ -38,6 +38,11 @@ public abstract class Particle
 	protected static Texture fire;
 	protected static Texture fire2;
 	
+	public static Texture fire_alpha_1;
+	protected static Texture fire_alpha_2;
+	protected static Texture fire_alpha_3;
+	protected static Texture fire_alpha_4;
+	
 	public static Texture lens_flare_1;
 	
 	static
@@ -62,6 +67,11 @@ public abstract class Particle
 			
 			fire = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire.png"), true);
 			fire2 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire2.png"), true);
+			
+			fire_alpha_1 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire_alpha_1.png"), true);
+			fire_alpha_2 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire_alpha_2.png"), true);
+			fire_alpha_3 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire_alpha_3.png"), true);
+			fire_alpha_4 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "fire_alpha_4.png"), true);
 			
 			lens_flare_1 = TextureIO.newTexture(new File(TEXTURE_DIRECTORY + "lens_flare_1.png"), true);
 			

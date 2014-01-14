@@ -207,7 +207,7 @@ public class Blizzard
 			{
 				Vec3 source = getSource();
 				Vec3 vector = type == StormType.SNOW ? getRandomVector() : getRandomVector(0.25f);
-				float alpha = type == StormType.SNOW ? generator.nextFloat() : generator.nextFloat() * 0.40f;
+				float alpha = type == StormType.SNOW ? generator.nextFloat() : generator.nextFloat() * 0.10f;
 				
 				flakes.add(new WeatherParticle(source, vector, alpha));
 				

@@ -9,6 +9,8 @@ import bates.jamie.graphics.util.Vec3;
 
 public class Reflector
 {
+	public static final int CUBE_MAP_TEXTURE_UNIT = 7;
+	
 	private Scene scene;
 	
 	private int textureID;
@@ -24,12 +26,23 @@ public class Reflector
 	public float eta;
 	public float reflectance;
 	
-	private boolean initialized = false;
+	public boolean initialized = false;
 	
 	public Reflector(float reflectivity)
 	{
 		this.scene = Scene.singleton;
 		this.reflectivity = reflectivity;
+		
+		eta = 0.97f;
+		reflectance = ((1 - eta) * (1 - eta)) / ((1 + eta) * (1 + eta));
+	}
+	
+	public Reflector(float reflectivity, int mapSize)
+	{
+		this.scene = Scene.singleton;
+		this.reflectivity = reflectivity;
+		
+		this.mapSize = mapSize;
 		
 		eta = 0.97f;
 		reflectance = ((1 - eta) * (1 - eta)) / ((1 + eta) * (1 + eta));
@@ -108,6 +121,8 @@ public class Reflector
 	
 	public void enable(GL2 gl)
 	{
+		gl.glActiveTexture(GL2.GL_TEXTURE0 + CUBE_MAP_TEXTURE_UNIT);
+		
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		gl.glEnable (GL2.GL_TEXTURE_CUBE_MAP);
 		gl.glEnable (GL2.GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -117,10 +132,14 @@ public class Reflector
 		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
 		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
 		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
 	public void disable(GL2 gl)
 	{
+		gl.glActiveTexture(GL2.GL_TEXTURE0 + CUBE_MAP_TEXTURE_UNIT);
+		
 		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP);
 		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		
@@ -129,6 +148,8 @@ public class Reflector
 		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
 		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 	
 	public void update(GL2 gl, Vec3 p)

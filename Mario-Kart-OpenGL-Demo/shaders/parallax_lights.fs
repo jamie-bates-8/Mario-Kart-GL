@@ -1,6 +1,4 @@
-// bump.fs
-//
-// per-pixel bumpmapped Phong lighting
+
 
 uniform sampler2D texture;
 uniform sampler2D bumpmap;
@@ -97,7 +95,7 @@ void pointLight(in int i, in vec3 normal, in vec4 textureColor, inout vec4 ambie
 
 void main(void)
 {
-	float height, scale = 0.05, bias = 0.0125;
+	float height, scale = 0.05, bias = 0.0;
 	vec2 texCoord = gl_TexCoord[0].st;
 	
 	height = scale * (texture2D(heightmap, texCoord).r) - bias;
