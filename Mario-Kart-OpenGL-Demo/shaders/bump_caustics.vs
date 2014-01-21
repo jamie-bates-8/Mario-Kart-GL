@@ -36,7 +36,7 @@ void main(void)
 {
 	worldPos = vec3(ModelMatrix * gl_Vertex);  
 	
-	shadowCoord = gl_TextureMatrix[2] * (ModelMatrix * gl_Vertex);
+	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
 	
 	vTangent  = getRotation(ModelMatrix) * tangent;
 	vBinormal = getRotation(ModelMatrix) * cross(gl_Normal, tangent);

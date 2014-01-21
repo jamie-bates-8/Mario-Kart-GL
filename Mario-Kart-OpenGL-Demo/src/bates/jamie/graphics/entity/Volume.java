@@ -1,10 +1,15 @@
 package bates.jamie.graphics.entity;
 
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.Scanner;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.common.nio.Buffers;
@@ -14,7 +19,7 @@ public class Volume
 	private int imageWidth, imageHeight, imageDepth;
 	private int textureID;
 	
-	private float orthoSize = 50.0f;
+	private float orthoSize = 15.0f;
 	
 	public Volume(GL2 gl, int width, int height, int depth)
 	{
@@ -57,13 +62,13 @@ public class Volume
 	    // Here we are simply putting the same value to R, G, B and A channels.
 	    // Usually for raw data, the alpha value will be constructed by a threshold value given by the user 
 
-	    for(int index = 0; index < imageWidth * imageHeight * imageDepth; ++index)
-	    {
-	    	cBuffer.put(index * 4 + 0, iBuffer.get(index));
-	    	cBuffer.put(index * 4 + 1, iBuffer.get(index));
-	    	cBuffer.put(index * 4 + 2, iBuffer.get(index));
-	    	cBuffer.put(index * 4 + 3, iBuffer.get(index));
-	    }
+//	    for(int index = 0; index < imageWidth * imageHeight * imageDepth; ++index)
+//	    {
+//	    	cBuffer.put(index * 4 + 0, iBuffer.get(index));
+//	    	cBuffer.put(index * 4 + 1, iBuffer.get(index));
+//	    	cBuffer.put(index * 4 + 2, iBuffer.get(index));
+//	    	cBuffer.put(index * 4 + 3, iBuffer.get(index));
+//	    }
 
 	    int[] textureIDs = new int[1];
 	    gl.glGenTextures(1, textureIDs, 0);
@@ -79,12 +84,79 @@ public class Volume
 	    
 	    gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
 	    gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR);
-
+	    
+//	    gl.glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL2.GL_RGBA, imageWidth, imageHeight, imageDepth, 0,
+//				GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, cBuffer);
+//
+//	    gl.glBindTexture(GL2.GL_TEXTURE_3D, 0);
+	    
+	    ByteBuffer fileBuffer = readBytes("head256x256x109");
+	    System.out.println(fileBuffer == null);
+	    fileBuffer.position(0);
+	    
+	    ByteBuffer completeBuffer = Buffers.newDirectByteBuffer(fileBuffer.capacity() * 4);
+	    
+	    for(int index = 0; index < fileBuffer.capacity(); ++index)
+	    {
+	    	completeBuffer.put(index * 4 + 0, fileBuffer.get(index));
+	    	completeBuffer.put(index * 4 + 1, fileBuffer.get(index));
+	    	completeBuffer.put(index * 4 + 2, fileBuffer.get(index));
+	    	completeBuffer.put(index * 4 + 3, fileBuffer.get(index));
+	    }
+	    completeBuffer.position(0);
+	    
+	    imageWidth = imageHeight = 256;
+	    imageDepth = 109;
 
 	    gl.glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL2.GL_RGBA, imageWidth, imageHeight, imageDepth, 0,
-	    				GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, cBuffer);
+	    				GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, completeBuffer);
 	    
 	    gl.glBindTexture(GL2.GL_TEXTURE_3D, 0);
+	}
+	
+	private ByteBuffer readBytes(String fileName)
+	{
+		Scanner fs;
+		ByteBuffer byteBuffer = null;
+		
+		try
+		{
+//			fs = new Scanner(new File("volume/" + fileName));
+//			
+//			char[] raw_data = new char[100000000];
+//			
+//			int index = 0;
+//			
+//			while (fs.hasNext())
+//			{
+//				raw_data[index] = (char) fs.nextByte(8);
+//				index++;
+//			}
+//			fs.close();
+//			
+//			System.out.println(index);
+//			
+//			byteBuffer = Buffers.newDirectCharBuffer(index);
+//			byteBuffer.put(raw_data, 0, index);
+			
+		    File file = new File("volume/" + fileName);
+			byte[] fileData = new byte[(int) file.length()];
+			DataInputStream dis = new DataInputStream(new FileInputStream(file));
+			dis.readFully(fileData);
+			dis.close();
+			
+			byteBuffer = Buffers.newDirectByteBuffer(fileData.length);
+			byteBuffer.put(fileData, 0, fileData.length);
+			
+			
+		}
+		catch(Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return byteBuffer;
 	}
 	
 	public void render(GL2 gl)
@@ -114,17 +186,19 @@ public class Volume
 	    int minimumDimension = imageWidth < imageHeight ? imageWidth : imageHeight;
 	        minimumDimension = imageDepth < minimumDimension ? imageDepth : minimumDimension;
 	    
-	    gl.glScalef( (float) imageWidth  / (float) minimumDimension, 
-	         -1.0f * (float) imageHeight / (float) minimumDimension, 
-	                 (float) imageDepth  / (float) minimumDimension );
+//	    gl.glScalef( (float) imageWidth / (float) minimumDimension, 
+//	         -1.0f * (float) imageHeight / (float) minimumDimension, 
+//	                 (float) imageDepth / (float) minimumDimension );
 	    
+	    gl.glScalef(1, -1, 1);
+	    gl.glRotated(Scene.sceneTimer, 0, 1.0 ,0 );
 	    gl.glTranslatef(-0.5f,-0.5f, -0.5f);
 	    
-	    gl.glMatrixMode(GL2.GL_MODELVIEW_MATRIX);
+	    gl.glMatrixMode(GL2.GL_MODELVIEW);
 	    
 	    gl.glPushMatrix();
 	    {
-//	    	gl.glTranslatef(0, 25, 0);
+	    	gl.glTranslatef(0, 15, 0);
 
 	    	gl.glBindTexture(GL2.GL_TEXTURE_3D, textureID);
 
@@ -150,7 +224,7 @@ public class Volume
 	    
 	    gl.glMatrixMode(GL2.GL_TEXTURE);
 	    gl.glLoadIdentity();
-	    gl.glMatrixMode(GL2.GL_MODELVIEW_MATRIX);
+	    gl.glMatrixMode(GL2.GL_MODELVIEW);
 	    
 	    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 	    

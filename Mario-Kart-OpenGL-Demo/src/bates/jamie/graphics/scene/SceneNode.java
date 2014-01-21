@@ -43,6 +43,8 @@ public class SceneNode
 	private Reflector reflector;
 	private float reflectivity = 1.0f;
 	
+	private boolean enableParallax = true;
+	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
 		children = new ArrayList<SceneNode>();
@@ -84,8 +86,8 @@ public class SceneNode
 					if(shader != null)
 					{
 						shader.enable(gl);
-						shader.setSampler(gl, "rainMap", 4);
-						shader.setSampler(gl, "heightmap", 3);
+						shader.setSampler(gl, "rainMap", 3);
+						shader.setSampler(gl, "heightmap", 2);
 						
 						shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
 						shader.setUniform(gl, "shininess", reflectivity);
@@ -93,7 +95,7 @@ public class SceneNode
 						shader.setSampler(gl, "colourMap", 0);
 						shader.setSampler(gl, "bumpmap", 1);
 						
-						gl.glActiveTexture(GL2.GL_TEXTURE4); Scene.singleton.rain_normal.bind(gl);
+						gl.glActiveTexture(GL2.GL_TEXTURE3); Scene.singleton.rain_normal.bind(gl);
 						gl.glActiveTexture(GL2.GL_TEXTURE0);
 						
 						shader.setUniform(gl, "timer", (float) Scene.sceneTimer);
@@ -131,6 +133,19 @@ public class SceneNode
 					}
 					break;      
 				}
+				case BUMP_TEXTURE:
+				{
+					Shader shader = Shader.enabled ? (enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights")) : null;
+					if(shader != null)
+					{
+						shader.enable(gl);
+				
+						shader.setSampler(gl, "texture"  , 0);
+						shader.setSampler(gl, "bumpmap"  , 1);
+						shader.setSampler(gl, "heightmap", 2);
+					}
+					break;      
+				}
 				case COLOR  :
 				{
 					Shader shader = Shader.enabled ? Shader.getLightModel("phong") : null;
@@ -161,11 +176,12 @@ public class SceneNode
 			{
 				switch(renderMode)
 				{
-					case TEXTURE    : 
-					case BUMP_COLOR :
-					case COLOR      : model.render(gl); break;
-					case BUMP_RAIN :
-					case BUMP_REFLECT:
+					case TEXTURE      : 
+					case BUMP_COLOR   :
+					case COLOR        : 
+					case BUMP_TEXTURE : model.render(gl); break;
+					case BUMP_RAIN    :
+					case BUMP_REFLECT :
 					case REFLECT:
 					{
 						if(reflector != null) reflector.enable(gl);
@@ -182,6 +198,7 @@ public class SceneNode
 				switch(renderMode)
 				{
 					case BUMP_RAIN    :
+					case BUMP_TEXTURE :
 					case TEXTURE      : Renderer.displayTexturedObject(gl, geometry);        break;
 					case REFLECT      :
 					case BUMP_REFLECT :
@@ -304,6 +321,22 @@ public class SceneNode
 		}
 		gl.glPopMatrix();
 	}
+	
+	public void updateReflection(GL2 gl)
+	{
+		if(reflector != null)
+		{
+			if(!reflector.initialized)
+			{
+				reflector.update(gl, t);
+				reflector.initialized = true;
+			}
+		}
+		
+		for(SceneNode child : children) child.updateReflection(gl);
+	}
+	
+	public void useParallax(boolean enabled) { enableParallax = enabled; }
 	
 	public void setRenderMode(RenderMode mode) { renderMode = mode; }
 	
@@ -483,6 +516,7 @@ public class SceneNode
 		COLOR,
 		BUMP_COLOR,
 		BUMP_REFLECT,
+		BUMP_TEXTURE,
 		BUMP_RAIN,
 		REFLECT,
 		GLASS;

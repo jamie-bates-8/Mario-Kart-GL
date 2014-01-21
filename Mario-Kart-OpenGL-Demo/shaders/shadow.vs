@@ -30,6 +30,6 @@ void main(void)
 	
 	gl_FrontColor = gl_Color;
 	
-	shadowCoord = gl_TextureMatrix[2] * (ModelMatrix * gl_Vertex);
+	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }

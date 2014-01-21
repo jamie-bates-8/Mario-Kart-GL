@@ -79,7 +79,7 @@ public class BrickWall
 		}
 		positions.position(0);
 		
-		Renderer.cube_model.setInstanceData(positions);
+		Renderer.multi_tex_cube_model.setInstanceData(positions);
 		BrickBlock.brick_block.setInstanceData(positions);
 		BrickBlock.mortar_block.setInstanceData(positions);
 	}
@@ -133,7 +133,7 @@ public class BrickWall
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
 		
-		Renderer.cube_model.renderInstanced(gl, brickBlocks.size());
+		Renderer.multi_tex_cube_model.renderInstanced(gl, brickBlocks.size());
 	}
 	
 	private void renderComplexModel(GL2 gl)
@@ -161,20 +161,36 @@ public class BrickWall
 		shader.setSampler(gl, "bumpmap"  , 1);
 		shader.setSampler(gl, "heightmap", 2);
 		
+//		Shader shader = Shader.enabled ? Shader.get("bump_rain") : null;
+//
+//		shader.enable(gl);
+//		
+//		shader.setSampler(gl, "colourMap", 0);
+//		shader.setSampler(gl, "bumpmap", 1);
+//		shader.setSampler(gl, "heightmap", 2);
+//		shader.setSampler(gl, "rainMap", 3);
+//			
+//		shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
+//		shader.setUniform(gl, "shininess", 0.75f);
+//			
+//		shader.setUniform(gl, "timer", (float) Scene.sceneTimer);
+//			
+//		float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+//		shader.loadMatrix(gl, "cameraMatrix", camera);
+//		
+//		gl.glActiveTexture(GL2.GL_TEXTURE3); Scene.singleton.rain_normal.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
 		
 		if(Scene.enableParallax)
 		{
+			Scene.singleton.cubeReflector.enable(gl);
+			
 			for(BrickBlock block : brickBlocks)
-			{
-//				Renderer.displayBumpMappedCube(gl, block.position, scale, 0);
-				
-				Scene.singleton.cubeNode.setTranslation(block.position);
-				Scene.singleton.cubeNode.setScale(new Vec3(scale));
-				Scene.singleton.cubeNode.render(gl);
-			}
+				Renderer.displayBumpMappedCube(gl, block.position, scale, 0);
+			
+			Scene.singleton.cubeReflector.disable(gl);
 		}
 		else
 		{

@@ -457,7 +457,7 @@ public class Model
 		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		if(heightMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE3); heightMap.bind(gl); }
+		if(heightMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl); }
 		if(normalMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl); }
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		

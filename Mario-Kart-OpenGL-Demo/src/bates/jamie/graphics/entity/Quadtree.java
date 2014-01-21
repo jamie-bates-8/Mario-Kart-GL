@@ -1469,7 +1469,7 @@ public class Quadtree
 				{
 					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					shader.setUniform(gl, "timer", timer);
-					shader.setSampler(gl, "normalMap", 3);
+					shader.setSampler(gl, "normalMap", 2);
 					shader.setUniform(gl, "magma", Scene.singleton.water.magma);
 					
 					if(Scene.enableAnimation) timer += 0.05;
@@ -1479,7 +1479,7 @@ public class Quadtree
 				{
 					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					
-					shader.setSampler(gl, "shadowMap", 2);
+					shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
 					
 					shader.setUniform(gl, "enableShadow", 1);
 					shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
@@ -1523,7 +1523,7 @@ public class Quadtree
 		if(Shader.enabled)
 		{
 			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); bumpmap.bind(gl); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); caustic.bind(gl); }
+			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); caustic.bind(gl); }
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 		
@@ -1585,12 +1585,7 @@ public class Quadtree
 		gl.glEnable(GL2.GL_LIGHTING);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		if(Shader.enabled)
-		{
-			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE3); }
-			gl.glActiveTexture(GL2.GL_TEXTURE0);
-		}
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		
 		Scene.singleton.light.setSpecular(Scene.singleton.light.getSpecular());
 	}

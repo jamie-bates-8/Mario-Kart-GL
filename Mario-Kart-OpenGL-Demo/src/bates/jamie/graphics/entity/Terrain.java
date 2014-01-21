@@ -288,6 +288,7 @@ public class Terrain
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "rock_cave.tga"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "large_stone.jpg"));
 			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "paint.jpg"));
+			bumpmaps.add(TextureLoader.load(gl, BUMP_MAPS + "wood_normal.jpg"));
 			
 			heightmaps.add(TextureLoader.load(gl, BUMP_MAPS + "large_stone_height.jpg"));
 		}

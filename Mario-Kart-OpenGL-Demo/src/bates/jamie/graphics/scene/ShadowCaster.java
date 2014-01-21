@@ -14,6 +14,8 @@ import bates.jamie.graphics.util.Vec3;
 
 public class ShadowCaster
 {
+	public static final int SHADOW_MAP_TEXTURE_UNIT = 6;
+	
 	public static final double[] SHADOW_BIAS =
 	 {	
 		0.5, 0.0, 0.0, 0.0, 
@@ -88,7 +90,7 @@ public class ShadowCaster
 		gl.glGenTextures(1, id, 0);
 		shadowTexture = id[0];
 
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
+		gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
 		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
 		
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
@@ -114,7 +116,7 @@ public class ShadowCaster
 	    gl.glGenTextures(1, texID, 0);
 	    shadowTexture = texID[0];
 	    
-	    gl.glActiveTexture(GL2.GL_TEXTURE2);
+	    gl.glActiveTexture(GL2.GL_TEXTURE + SHADOW_MAP_TEXTURE_UNIT);
 		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
 	
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
@@ -200,7 +202,7 @@ public class ShadowCaster
 	    
 	    renderCasters(gl);
 	    
-	    gl.glActiveTexture(GL2.GL_TEXTURE2);
+	    gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
 
 	    // Copy depth values into depth texture
 	    if(!enableBuffer)
@@ -296,7 +298,7 @@ public class ShadowCaster
 	{
 		enable(gl);
 		
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
+		gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
 		
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_COMPARE_MODE, GL2.GL_COMPARE_R_TO_TEXTURE);
@@ -305,22 +307,13 @@ public class ShadowCaster
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 
-	public void disable(GL2 gl)
-	{
-		gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-	}
-
 	public void enable(GL2 gl)
 	{
 		// fixed-functionality shadows no longer supported
 		if(Shader.enabled)
 		{
-			gl.glActiveTexture(GL2.GL_TEXTURE2);
-			gl.glEnable(GL2.GL_TEXTURE_2D);
-			gl.glBindTexture(GL2.GL_TEXTURE_2D, shadowTexture);
-			
+			gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
+			gl.glBindTexture  (GL2.GL_TEXTURE_2D, shadowTexture);
 			gl.glActiveTexture(GL2.GL_TEXTURE0);
 		}
 	}

@@ -770,7 +770,7 @@ public class Renderer
 			gl.glRotatef(rotation, 0, 1, 0);
 			gl.glScalef(scale, scale, scale);
 
-			cube_model.render(gl);
+			multi_tex_cube_model.render(gl);
 		}
 		gl.glPopMatrix();
 	}
@@ -805,7 +805,7 @@ public class Renderer
 		-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0
 	};
 
-	private static final float[] TCOORD_ARRAY =
+	private static final float[] TCOORD_ARRAY_MULTI_TEX =
 	{
 		ONE_THIRD, 0, ONE_THIRD, 1, 0, 1, 0, 0,
 		0, 0, ONE_THIRD, 0, ONE_THIRD, 1, 0, 1,
@@ -814,6 +814,18 @@ public class Renderer
 		TWO_THIRD, 0, 1, 0, 1, 1, TWO_THIRD, 1,
 		1, 0, 1, 1, TWO_THIRD, 1, TWO_THIRD, 0
 	};
+	
+	private static final float[] TCOORD_ARRAY =
+	{
+		1, 0, 1, 1, 0, 1, 0, 0,
+		0, 0, 1, 0, 1, 1, 0, 1,
+		0, 1, 0, 0, 1, 0, 1, 1,
+		1, 1, 0, 1, 0, 0, 1, 0,
+		0, 0, 1, 0, 1, 1, 0, 1,
+		1, 0, 1, 1, 0, 1, 0, 0
+	};
 
 	public static Model cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY, TANGENT_ARRAY, null, 4);
+	public static Model multi_tex_cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY_MULTI_TEX, TANGENT_ARRAY, null, 4);
+	public static Model bevelled_cube_model = OBJParser.parseTexturedTriangleMesh("bevelled_block");
 }

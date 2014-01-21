@@ -104,7 +104,7 @@ public class HUD
 		
 		gl.glDisable(GL_LIGHTING);
 	
-		renderSpeedometer(gl, car);
+//		renderSpeedometer(gl, car);
 			
 		ItemRoulette roulette = car.getRoulette();
 		roulette.cursed = car.isCursed();

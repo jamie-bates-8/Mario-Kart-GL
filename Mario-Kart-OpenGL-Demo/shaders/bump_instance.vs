@@ -52,5 +52,5 @@ void main(void)
     gl_FrontColor = gl_Color;
     
     gl_TexCoord[0] = gl_MultiTexCoord0;
-	shadowCoord = gl_TextureMatrix[2] * (ModelMatrix * world_vertex);
+	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * world_vertex);
 }
