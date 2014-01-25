@@ -21,7 +21,7 @@ void main(void)
     temp += texture2D(sampler1, gl_TexCoord[0].st);
     temp += texture2D(sampler2, gl_TexCoord[0].st);
     temp += texture2D(sampler3, gl_TexCoord[0].st);
-    temp += texture2D(sampler4, gl_TexCoord[0].st);
+    //temp += texture2D(sampler4, gl_TexCoord[0].st);
 
     if (afterGlow)
     {

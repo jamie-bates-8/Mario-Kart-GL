@@ -80,6 +80,23 @@ public class Model
 		
 	}
 	
+	public Model(float[] vertices, float[] normals, float[] texCoords, float[] colors, float[] tangents, float[] positions, int type)
+	{
+		if(type == 3) polygon = GL2.GL_TRIANGLES;
+		if(type == 4) polygon = GL2.GL_QUADS;
+		
+		indexCount = vertices.length / 3; // three values per coordinate (x, y, z)
+		
+		this.vertices  = Buffers.newDirectFloatBuffer(vertices);
+		this.normals   = Buffers.newDirectFloatBuffer(normals); 
+		
+		if(colors    != null) this.colors    = Buffers.newDirectFloatBuffer(colors);
+		if(texCoords != null) this.texCoords = Buffers.newDirectFloatBuffer(texCoords); 
+		if(tangents  != null) this.tangents  = Buffers.newDirectFloatBuffer(tangents);
+		if(positions != null) this.positions = Buffers.newDirectFloatBuffer(positions);
+		
+	}
+	
 	public Model(String fileName)
 	{
 		long start = System.currentTimeMillis();
@@ -88,30 +105,6 @@ public class Model
 		load(fileName);
 		
 		System.out.println("Model Loader: " + fileName + ", " + (System.currentTimeMillis() - start));
-	}
-	
-	public Model(List<float[]> vertices, List<float[]> normals, int[] vIndices, int[] nIndices, int type, boolean enableVBO)
-	{
-		if(type == 3) polygon = GL2.GL_TRIANGLES;
-		if(type == 4) polygon = GL2.GL_QUADS;
-		
-		float[] _normals = reorderNormals(vertices.size(), normals, vIndices, nIndices);
-		
-		this.vertices = Buffers.newDirectFloatBuffer(vertices.size() * 3);
-		for(float[] vertex : vertices) this.vertices.put(vertex);
-		this.vertices.position(0);  
-		
-		_vertices = vertices;
-		
-		indexCount = vIndices.length;
-		
-		this.normals = Buffers.newDirectFloatBuffer(vertices.size() * 3);
-		this.normals.put(_normals);
-		this.normals.position(0);
-		
-		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
-		
-		indices = Buffers.newDirectIntBuffer(vIndices);
 	}
 	
 	public Model(List<float[]> vertices, List<float[]> normals, int[] vIndices, int[] nIndices, int type)
@@ -398,44 +391,6 @@ public class Model
 		{
 			System.err.println(e.getMessage());
 		}
-	}
-	
-	private float[] reorderNormals(int vertices, List<float[]> normals, int[] vIndices, int[] nIndices)
-	{
-		// each vertex has a normal that requires 3 components
-		float[] _normals = new float[vertices * 3];
-		
-		// for each vertex
-		for(int i = 0; i < nIndices.length; i++)
-		{
-			float[] normal = normals.get(nIndices[i]);
-			
-			int offset = vIndices[i] * 3;
-			
-			_normals[offset    ] = normal[0];
-			_normals[offset + 1] = normal[1];
-			_normals[offset + 2] = normal[2];
-		}
-		
-		return _normals;
-	}
-	
-	public float[] reorderTexCoords(int vertices, List<float[]> texCoords, int[] vIndices, int[] tIndices)
-	{
-		//each vertex has a texture coordinate that requires 2 components
-		float[] _texCoords = new float[vertices * 2];
-		
-		for(int i = 0; i < vertices; i++)
-		{
-			float[] texCoord = texCoords.get(tIndices[i]);
-			
-			int offset = i * 2; // TODO this may be incorrect
-			
-			_texCoords[offset    ] = texCoord[0];
-			_texCoords[offset + 1] = texCoord[1];
-		}
-		
-		return _texCoords;
 	}
 	
 	public List<float[]> getVertices() { return _vertices; }

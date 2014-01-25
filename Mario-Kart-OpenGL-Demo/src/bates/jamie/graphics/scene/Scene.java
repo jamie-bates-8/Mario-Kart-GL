@@ -131,6 +131,7 @@ import bates.jamie.graphics.item.Banana;
 import bates.jamie.graphics.item.BlueShell;
 import bates.jamie.graphics.item.BobOmb;
 import bates.jamie.graphics.item.FakeItemBox;
+import bates.jamie.graphics.item.FireBall;
 import bates.jamie.graphics.item.GreenShell;
 import bates.jamie.graphics.item.Item;
 import bates.jamie.graphics.item.ItemBox;
@@ -1243,19 +1244,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		setupBrickBlocks();
 		brickWall = new BrickWall(gl, brickBlocks, brickScale);
 		
-		questionBlock = new QuestionBlock(new Vec3(0, 20, 0), 3.75f);
+		questionBlock = new QuestionBlock(new Vec3(0, 40, -2), 2);
 		
 		cubeReflector = new Reflector(1.0f);
 		
-		Renderer.bevelled_cube_model.colourMap = brickColour;
-		Renderer.bevelled_cube_model.normalMap = brickNormal;
-		Renderer.bevelled_cube_model.heightMap = brickHeight;
-		
-		Renderer.bevelled_cube_model.calculateTangents();
-		
 		cubeNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		cubeNode.setTranslation(new Vec3(0, 30, 0));
-		cubeNode.setScale(new Vec3(3.75f));
+		cubeNode.setTranslation(new Vec3(0, 40, 2));
+		cubeNode.setScale(new Vec3(2));
 		cubeNode.setReflector(cubeReflector);
 		cubeNode.setReflectivity(0.85f);
 		cubeNode.setRenderMode(RenderMode.BUMP_TEXTURE);
@@ -1294,9 +1289,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    floorBound = new OBB(0, -15, 0, 0, 0, 0, 240, 15, 240);
 	    wallBounds = BoundParser.parseOBBs("bound/environment.bound");
 	    
-	    volume = new Volume(gl, 512, 512, 512);
+//	    volume = new Volume(gl, 512, 512, 512);
 	    
-	    selecter = new ModelSelecter(this, glu);
+	    selecter = new ModelSelecter(this, glu); 
 	    
 	    bloom = new BloomStrobe(gl, this);
 	    
@@ -1472,17 +1467,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
 			
-//			brickColour = TextureLoader.load(gl, "tex/brick_colour.png");
-//			brickNormal = TextureLoader.load(gl, "tex/brick_normal.png");
-//			brickHeight = TextureLoader.load(gl, "tex/brick_height.png");
-			
-			brickColour = TextureLoader.load(gl, "tex/question_block_colour_2.png");
-			brickNormal = TextureLoader.load(gl, "tex/question_block_normal_2.png");
-			brickHeight = TextureLoader.load(gl, "tex/question_block_height_2.png");
-			
-//			brickColour = TextureLoader.load(gl, "tex/question_block_colour.png");
-//			brickNormal = TextureLoader.load(gl, "tex/question_block_normal.png");
-//			brickHeight = TextureLoader.load(gl, "tex/question_block_height.png");
+			brickColour = TextureLoader.load(gl, "tex/brick_colour.png");
+			brickNormal = TextureLoader.load(gl, "tex/brick_normal.png");
+			brickHeight = TextureLoader.load(gl, "tex/brick_height.png");
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}
@@ -2402,6 +2389,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public void render3DModels(GL2 gl, Car car)
 	{	
 		renderTimes[frameIndex][2] = renderVehicles(gl, car, false);
+		
+		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+		
+		gl.glDrawBuffers(2, attachments, 0);
 	
 		if(enableItemBoxes)
 	    {
@@ -2409,9 +2400,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				if(!box.isDead()) box.render(gl, car.trajectory);
 	    }
 		
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		
-		gl.glDrawBuffers(2, attachments, 0);
 		renderTimes[frameIndex][3] = renderItems(gl, car);
 		gl.glDrawBuffers(1, attachments, 0);
 	}
@@ -2721,6 +2709,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case Banana.ID      : itemList.add(new      Banana(this, c)); break;
 			case BlueShell.ID   : itemList.add(new   BlueShell(this, c)); break;
 			case BobOmb.ID      : itemList.add(new BobOmb(c, null, true)); break;
+			case FireBall.ID    : itemList.add(new FireBall(this, c, trajectory)); break;
 			
 			default: break;
 		}
@@ -2746,7 +2735,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		spawnItemsInBound(item, quantity, new OBB(c, u, e, null));
 	}
 
-	public void clearItems() { itemList.clear(); }
+	public void clearItems()
+	{
+		for(Item item : itemList) item.destroy();
+		
+		itemList.clear();
+	}
 
 	public List<Item> getItems() { return itemList; }
 	
@@ -3086,6 +3080,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_4: spawnItemsInSphere(Banana.ID, 10, new Vec3(0, 100, 0), 50); break;
 			case KeyEvent.VK_5: spawnItemsInOBB(BlueShell.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
 			case KeyEvent.VK_6: spawnItemsInOBB(BobOmb.ID, 10, new float[] {0, 100, 0}, ORIGIN, new float[] {150, 50, 150}); break;
+			case KeyEvent.VK_7: addItem(FireBall.ID, new Vec3(0, 10, 0), 30);
 			
 			case KeyEvent.VK_D: cars.get(0).enableDeform = !cars.get(0).enableDeform; break;
 			case KeyEvent.VK_P: enableParallax = !enableParallax; break;

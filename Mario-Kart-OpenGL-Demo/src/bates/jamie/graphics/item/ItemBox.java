@@ -1,6 +1,5 @@
 package bates.jamie.graphics.item;
 
-import static bates.jamie.graphics.util.Renderer.displayPartiallyTexturedObject;
 import static javax.media.opengl.GL.GL_BLEND;
 import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
@@ -18,10 +17,10 @@ import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
@@ -32,19 +31,22 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class ItemBox
 {
-	private static final List<Face> BOX_FACES = OBJParser.parseTriangles("item_box");
 	private static float rotation = 45.0f; 
-//	public static final float SCALE = 1.75f;
-	public static final float SCALE = 3.0f;
+	
+	public static final float SCALE = 1.8f;
 	public static final int RESPAWN_TIME = 60;
 	
-	static Model item_box = OBJParser.parseTriangleMesh("item_box_2");
+	static Model item_box = OBJParser.parseTriangleMesh("item_box");
+	static Model question_mark = OBJParser.parseTriangleMesh("question_mark");
 	
 	SceneNode boxNode;
+	SceneNode symbolNode;
+	
+	private boolean simplify = false;
+	public boolean initialized = false;
 	
 	public Reflector reflector;
 	
-	public boolean initialized = false;
 	
 	private static Texture questionMark;
 	
@@ -76,6 +78,16 @@ public class ItemBox
 		boxNode.setRenderMode(RenderMode.REFLECT);
 		boxNode.setColor(new float[] {1, 1, 1});
 		
+		symbolNode = new SceneNode(null, -1, question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		symbolNode.setTranslation(c);
+		symbolNode.setScale(new Vec3(1.25));
+		symbolNode.setReflector(reflector);
+		symbolNode.setReflectivity(0.75f);
+		symbolNode.setRenderMode(RenderMode.COLOR);
+		symbolNode.setColor(new float[] {1, 1, 1});
+		
+		boxNode.addChild(symbolNode);
+		
 		this.particles = particles;
 	}
 	
@@ -86,12 +98,21 @@ public class ItemBox
 		reflector = new Reflector(1.0f);
 		
 		boxNode = new SceneNode(null, -1, item_box, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
-		boxNode.setTranslation(new Vec3(x, y, z));
+		boxNode.setTranslation(new Vec3(x, y + 3, z));
 		boxNode.setScale(new Vec3(4.0));
 		boxNode.setReflector(reflector);
 		boxNode.setReflectivity(0.75f);
 		boxNode.setRenderMode(RenderMode.REFLECT);
 		boxNode.setColor(new float[] {1, 1, 1});
+		
+		symbolNode = new SceneNode(null, -1, question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		symbolNode.setTranslation(new Vec3(x, y + 3, z));
+		symbolNode.setScale(new Vec3(1.25));
+		symbolNode.setReflector(reflector);
+		symbolNode.setReflectivity(0.75f);
+		symbolNode.setRenderMode(RenderMode.BLOOM_COLOR);
+		symbolNode.setColor(new float[] {1, 1, 1});
+		symbolNode.enableBloom(false);
 		
 		this.particles = particles;
 	}
@@ -101,36 +122,47 @@ public class ItemBox
 	public static void increaseRotation() { rotation += 4; }
 	
 	public void render(GL2 gl, float trajectory)
-	{
-//		renderSymbol(gl, trajectory);
+	{	
+		if(simplify) renderSymbol(gl, trajectory);
+		else
+		{
+			symbolNode.setRotation(new Vec3(0, -trajectory, 0));
+			symbolNode.render(gl);
+		}
 		
 		gl.glPushMatrix();
 		{
 			gl.glDisable(GL_LIGHTING);
-//			gl.glEnable(GL_BLEND);
-			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+			gl.glEnable(GL_BLEND);
+			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			
 			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
-			gl.glRotatef(rotation, 1, 1, 1);
+			gl.glRotated(rotation, 0.0, -Math.cos(Scene.sceneTimer * (Math.PI / 90.0)), Math.sin(Scene.sceneTimer * (Math.PI / 90.0)));
 			gl.glScalef(SCALE, SCALE, SCALE);
 			
-			boxNode.renderGhost(gl, 1.0f, Shader.get("aberration"), new float[] {1, 0.7f, 0.7f});
-
-//			displayPartiallyTexturedObject(gl, BOX_FACES, new float[] {0.5f, 0.5f, 0.5f});
+			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+			gl.glDrawBuffers(2, attachments, 0);
+			
+			Shader shader = Shader.get("item_box");
+			shader.enable(gl);
+			
+			shader.setUniform(gl, "timer", (float) Scene.sceneTimer % 1000);
+			
+			boxNode.renderGhost(gl, 1.0f, shader);
+			
+			Shader.disable(gl);
 			
 			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDisable(GL_BLEND);
 			gl.glEnable(GL_LIGHTING);
 		}
 		gl.glPopMatrix();
-		
-		renderSymbol(gl, trajectory);
 	}
-
+	
 	private void renderSymbol(GL2 gl, float trajectory)
 	{
 		gl.glPushMatrix();
-		{
+		{	
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			gl.glDepthMask(false);

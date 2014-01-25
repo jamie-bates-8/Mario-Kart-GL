@@ -92,9 +92,7 @@ public class FireParticle extends Particle
 
 	@Override
 	public void render(GL2 gl, float trajectory)
-	{
-//		if(!spark) return;
-		
+	{		
 		Shader shader = Shader.get("fire");
 		shader.enable(gl);
 		shader.setSampler(gl, "texture", 0);
@@ -125,7 +123,7 @@ public class FireParticle extends Particle
 			shader.setUniform(gl, "spark", spark);
 			shader.setUniform(gl, "smoke", age < 0.2);
 			
-			gl.glColor4f(color[0], color[1], color[2], age * 1.00f);
+			gl.glColor4f(color[0], color[1], color[2], age);
 			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);

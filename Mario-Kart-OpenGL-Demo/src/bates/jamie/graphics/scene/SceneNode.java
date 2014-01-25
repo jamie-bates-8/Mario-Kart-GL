@@ -44,6 +44,7 @@ public class SceneNode
 	private float reflectivity = 1.0f;
 	
 	private boolean enableParallax = true;
+	private boolean enableBloom = true;
 	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
@@ -146,7 +147,13 @@ public class SceneNode
 					}
 					break;      
 				}
-				case COLOR  :
+				case BLOOM_COLOR:
+				{
+					Shader shader = Shader.enabled ? Shader.get("bloom_color") : null;
+					if(shader != null) shader.enable(gl);
+					break;
+				}
+				case COLOR:
 				{
 					Shader shader = Shader.enabled ? Shader.getLightModel("phong") : null;
 					if(shader != null) shader.enable(gl);
@@ -170,7 +177,7 @@ public class SceneNode
 			}
 			
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS) gl.glDrawBuffers(2, attachments, 0);
+			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS && enableBloom) gl.glDrawBuffers(2, attachments, 0);
 			
 			if(model != null)
 			{
@@ -178,7 +185,8 @@ public class SceneNode
 				{
 					case TEXTURE      : 
 					case BUMP_COLOR   :
-					case COLOR        : 
+					case COLOR        :
+					case BLOOM_COLOR  :
 					case BUMP_TEXTURE : model.render(gl); break;
 					case BUMP_RAIN    :
 					case BUMP_REFLECT :
@@ -203,6 +211,7 @@ public class SceneNode
 					case REFLECT      :
 					case BUMP_REFLECT :
 					case BUMP_COLOR   :
+					case BLOOM_COLOR  :
 					case COLOR        : Renderer.displayColoredObject (gl, geometry, color); break;
 					case GLASS        : Renderer.displayGlassObject   (gl, geometry, color); break;
 				}
@@ -337,6 +346,8 @@ public class SceneNode
 	}
 	
 	public void useParallax(boolean enabled) { enableParallax = enabled; }
+	
+	public void enableBloom(boolean enabled) { enableBloom = enabled; }
 	
 	public void setRenderMode(RenderMode mode) { renderMode = mode; }
 	
@@ -514,6 +525,7 @@ public class SceneNode
 	{
 		TEXTURE,
 		COLOR,
+		BLOOM_COLOR,
 		BUMP_COLOR,
 		BUMP_REFLECT,
 		BUMP_TEXTURE,

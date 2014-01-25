@@ -160,25 +160,7 @@ public class BrickWall
 		shader.setSampler(gl, "texture"  , 0);
 		shader.setSampler(gl, "bumpmap"  , 1);
 		shader.setSampler(gl, "heightmap", 2);
-		
-//		Shader shader = Shader.enabled ? Shader.get("bump_rain") : null;
-//
-//		shader.enable(gl);
-//		
-//		shader.setSampler(gl, "colourMap", 0);
-//		shader.setSampler(gl, "bumpmap", 1);
-//		shader.setSampler(gl, "heightmap", 2);
-//		shader.setSampler(gl, "rainMap", 3);
-//			
-//		shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
-//		shader.setUniform(gl, "shininess", 0.75f);
-//			
-//		shader.setUniform(gl, "timer", (float) Scene.sceneTimer);
-//			
-//		float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
-//		shader.loadMatrix(gl, "cameraMatrix", camera);
-//		
-//		gl.glActiveTexture(GL2.GL_TEXTURE3); Scene.singleton.rain_normal.bind(gl);
+
 		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);

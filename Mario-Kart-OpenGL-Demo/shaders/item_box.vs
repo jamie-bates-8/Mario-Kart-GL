@@ -3,10 +3,7 @@
 const float FRESNEL_POWER = 5.0;
 
 varying vec3 reflectDir;
-
-varying vec3 refractRed;
-varying vec3 refractGreen;
-varying vec3 refractBlue;
+varying vec3 refractDir;
 
 varying float ratio;
 
@@ -36,11 +33,13 @@ void main()
 	normal  = (inverse(cameraMatrix) * vec4(normal, 0.0)).xyz;
 	
 	reflectDir = reflect(viewDir, normal);
+	refractDir = refract(viewDir, normal, eta);
 	
-	refractRed   = refract(viewDir, normal, eta - 0.01);
-	refractGreen = refract(viewDir, normal, eta);
-	refractBlue  = refract(viewDir, normal, eta + 0.01);
+	vec4 texCoord = (gl_Vertex + 1.0) * 0.5;
+	gl_TexCoord[0].xyz = texCoord.xyz;
+	float dist = (texCoord.x + texCoord.y + texCoord.z) / 3.0;
 	
-	gl_FrontColor = gl_Color;
+	gl_FrontColor = vec4(dist * 0.167, 1.0, 1.0, 1.0);
+
 	gl_Position = ftransform();
 }

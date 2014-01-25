@@ -70,7 +70,7 @@ public class ParticleGenerator
 			case STAR    : return generateStarParticles   (source, quantity, true);
 			case RAY     : return generateRayParticles    (source, quantity);
 			case SPARKLE : return generateSparkleParticles(source, quantity);
-			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 1, 0), null, 0);
+			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 0.9, 0), null, 0);
 			
 			default: return null;
 		}
@@ -99,11 +99,10 @@ public class ParticleGenerator
 				spark = true;
 				duration += 45;
 			}
-//			else if(generator.nextFloat() < 0.25) t = t.multiply(0.5f);
 			
 			float scale = 1 - t.magnitude();
 			
-			scale *= 1.5;
+			scale *= 2.5;
 			duration *= 0.5;
 			
 			particles.add(new FireParticle(car != null ? getRandomVector(0.1f) : source, t, direction, 0, duration, textureID, scale, spark, car, sourceID));

@@ -84,6 +84,8 @@ public class Shader
 		Shader phongTexture  = new Shader(gl, "phong_texture", "phong_texture");
 		Shader phongAlpha    = new Shader(gl, "phong_texture", "phong_alpha");
 		
+		Shader bloomColor    = new Shader(gl, "bloom_color", "bloom_color");
+		
 		Shader texLights     = new Shader(gl, "texture_lights", "texture_lights");
 		Shader textureRim    = new Shader(gl, "texture_lights", "texture_rim");
 		
@@ -109,6 +111,8 @@ public class Shader
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
+		
+		Shader itemBox      = new Shader(gl, "item_box", "item_box");
 		
 		Shader water        = new Shader(gl, "water", "water", bump_attr);
 		Shader magma        = new Shader(gl, "water", "magma", bump_attr);
@@ -141,6 +145,8 @@ public class Shader
 		if( phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(   phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
 		
+		if(   bloomColor.isValid()) shaders.put("bloom_color", bloomColor);
+		
 		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
 		
@@ -152,6 +158,8 @@ public class Shader
 		if(    bumpCube.isValid()) shaders.put("bump_cube", bumpCube);
 		if(    bumpRain.isValid()) shaders.put("bump_rain", bumpRain);
 		if(bumpInstance.isValid()) shaders.put("bump_instance", bumpInstance);
+		
+		if(     itemBox.isValid()) shaders.put("item_box", itemBox);
 		
 		if(   heightMap.isValid()) shaders.put("height_map", heightMap);
 		
@@ -279,6 +287,7 @@ public class Shader
 		{
 			System.err.println("Vertex Shader: " + vShader + ".vs, cannot be compiled");
 			System.err.println(ShaderUtil.getShaderInfoLog(gl, vertProgram));
+			System.exit(0);
 			return false;
 		}
 		
@@ -287,6 +296,7 @@ public class Shader
 		{
 			System.err.println("Fragment Shader: " + fShader + ".fs, cannot be compiled");
 			System.err.println(ShaderUtil.getShaderInfoLog(gl, fragProgram));
+			System.exit(0);
 			return false;
 		}
 	
