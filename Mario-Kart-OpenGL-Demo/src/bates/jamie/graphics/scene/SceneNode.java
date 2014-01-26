@@ -333,14 +333,7 @@ public class SceneNode
 	
 	public void updateReflection(GL2 gl)
 	{
-		if(reflector != null)
-		{
-			if(!reflector.initialized)
-			{
-				reflector.update(gl, t);
-				reflector.initialized = true;
-			}
-		}
+		if(reflector != null) reflector.update(gl, t);
 		
 		for(SceneNode child : children) child.updateReflection(gl);
 	}

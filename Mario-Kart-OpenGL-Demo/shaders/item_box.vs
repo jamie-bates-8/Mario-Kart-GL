@@ -14,6 +14,7 @@ uniform float reflectance;
 
 varying vec3 vertexNormal;
 varying vec3 eyeDir;
+varying float eyeDist;
 
 
 void main()
@@ -23,6 +24,8 @@ void main()
 	
 	vec3 viewDir = normalize(vertex.xyz);
 	vec3 normal  = normalize(gl_NormalMatrix * gl_Normal);
+	
+	eyeDist = length(vertex.xyz);
 	
 	eyeDir = -viewDir;
 	vertexNormal = normal;

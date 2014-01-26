@@ -206,7 +206,7 @@ public class Car
 	
 	public boolean smooth = false;
 	
-	public SceneGraph graph;
+	private SceneGraph graph;
 	
 	public Reflector reflector;
 	
@@ -278,6 +278,8 @@ public class Car
 	
 	public void setupGraph()
 	{
+		Reflector reflector = new Reflector(0.75f, 320, true);
+		
 		Material shiny = new Material(new float[] {1, 1, 1});
 		Material mat = new Material(new float[] {0, 0, 0});
 		
@@ -286,7 +288,7 @@ public class Car
 		body.setTranslation(bound.c);
 		body.setOrientation(bound.u.toArray());
 		body.setScale(new Vec3(scale));
-		body.setReflector(scene.reflector);
+		body.setReflector(reflector);
 		
 		if(enableChrome)
 		{
@@ -631,7 +633,7 @@ public class Car
 
 				graph.renderGhost(gl, booColor, shader);
 			}
-			else if(starPower) graph.renderColor(gl, _color, enableChrome ? scene.reflector : null);
+			else if(starPower) graph.renderColor(gl, _color, enableChrome ? reflector : null);
 			else graph.render(gl);
 		}
 		

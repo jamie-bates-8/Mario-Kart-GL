@@ -388,7 +388,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
     /** Environment Fields **/
     public SkyBox skybox;
     public boolean displaySkybox = true;
-    public Reflector reflector;
 	public boolean sphereMap = false;
 	
 	/** Collision Detection Fields **/	
@@ -1225,8 +1224,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    caster = new ShadowCaster(this, light);
 	    
-	    reflector = new Reflector(0.75f);
-	    
 		gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
@@ -1538,47 +1535,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		renderTime = System.currentTimeMillis();
 		
 		Car car = cars.get(0);
+		updateReflectors(gl, car);
 		
-		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 2, 0)));
-		if(shine != null) shine.reflector.update(gl, shine.getPosition());
-		if(star  != null)  star.reflector.update(gl,  star.getPosition());
-		
-		questionBlock.updateReflection(gl);
-		
-		if(!cubeReflector.initialized)
-		{
-			cubeReflector.update(gl, cubeNode.getPosition());
-			cubeReflector.initialized = true;
-		}
-		
-		for(ItemBox box : itemBoxes)
-		{
-			if(!box.initialized)
-			{
-				box.reflector.update(gl, box.getPosition());
-				box.initialized = true;
-			}
-		}
-		
-		for(GoldCoin coin : coins)
-		{
-			if(!coin.initialized)
-			{
-				coin.reflector.update(gl, coin.getPosition());
-				coin.initialized = true;
-			}
-		}
-		
-		for(Item item : itemList)
-		{
-			if(item instanceof BobOmb)
-			{
-				BobOmb bomb = (BobOmb) item;
-				bomb.reflector.update(gl,  bomb.getPosition());
-			}
-		}
-		
-		if(sphereMap) reflector.displayMap(gl);
+		if(sphereMap) car.reflector.displayMap(gl);
 //		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
 		else render(gl);
 
@@ -1589,6 +1548,35 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		calculateFPS();
 
 		if(enableShadow) caster.update(gl);
+	}
+
+	private void updateReflectors(GL2 gl, Car car)
+	{
+		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) car.reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 2, 0)));
+		if(shine != null) shine.reflector.update(gl, shine.getPosition());
+		if(star  != null)  star.reflector.update(gl,  star.getPosition());
+		
+		questionBlock.updateReflection(gl);
+		
+		cubeReflector.update(gl, cubeNode.getPosition());
+		
+		for(ItemBox box : itemBoxes) box.reflector.update(gl, box.getPosition());
+		
+		for(GoldCoin coin : coins) coin.reflector.update(gl, coin.getPosition());
+		
+		for(Item item : itemList)
+		{
+			if(item instanceof BobOmb)
+			{
+				BobOmb bomb = (BobOmb) item;
+				bomb.reflector.update(gl,  bomb.getPosition());
+			}
+			else if(item instanceof FakeItemBox)
+			{
+				FakeItemBox box = (FakeItemBox) item;
+				box.reflector.update(gl,  box.getPosition());
+			}
+		}
 	}
 	
 	public void displayMap(GL2 gl, int texture, float x, float y, float w, float h)
@@ -1880,8 +1868,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		    ItemBox.increaseRotation();
 		FakeItemBox.increaseRotation();
-		
-//		timer += 0.1;
 		
 //		generators.get(4).setSource(new Vec3(Math.cos(timer) * 15, 2, Math.sin(timer) * 15));
 		
@@ -2283,9 +2269,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			shader.setSampler(gl, "bumpmap", 1);
 			shader.setSampler(gl, "heightmap", 2);
 			
-			shader.setUniform(gl, "timer", timer);
-			timer += 0.0004f;
-			
 			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 
 //			shader.loadModelMatrix(gl, model);
@@ -2341,8 +2324,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
-	
-	static float timer = 0.0f;
 
 	/**
 	 * This method renders the 3D models that represent obstacles within the
@@ -2388,11 +2369,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 */
 	public void render3DModels(GL2 gl, Car car)
 	{	
-		renderTimes[frameIndex][2] = renderVehicles(gl, car, false);
-		
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 		
 		gl.glDrawBuffers(2, attachments, 0);
+		
+		renderTimes[frameIndex][2] = renderVehicles(gl, car, false);
 	
 		if(enableItemBoxes)
 	    {
@@ -2616,35 +2597,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void test(GL2 gl)
 	{		
-		Shader shader = Shader.enabled ? Shader.get("aberration") : null;
 		
-		if(shader != null)
-		{
-			shader.enable(gl);
-			
-			shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
-			shader.setUniform(gl, "opacity", reflector.reflectivity);
-			
-			shader.setUniform(gl, "eta", reflector.eta);
-			shader.setUniform(gl, "reflectance", reflector.reflectance);
-			
-			float[] camera = cars.get(0).camera.getMatrix();
-			shader.loadMatrix(gl, "cameraMatrix", camera);
-		}
-		
-		reflector.enable(gl);
-		
-		gl.glPushMatrix();
-		{
-		 	gl.glTranslatef(0, 20, 0);
-
-			glut.glutSolidTeapot(7);
-		}
-		gl.glPopMatrix();
-		
-		reflector.disable(gl);
-		 		
-		Shader.disable(gl);
 	}
 
 	public void resetView(GL2 gl)
@@ -3341,7 +3294,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			float value = (float) slider.getValue() / 100.0f;
 			
-			reflector.setRefractionIndex(value);
 			Light.setShininess((int) (value * 128));
 		}
 		else if(source.equals(shaderSpinner))

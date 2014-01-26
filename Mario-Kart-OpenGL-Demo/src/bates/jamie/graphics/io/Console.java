@@ -383,9 +383,9 @@ public class Console
 	{
 		String _cmd = cmd.next();
 		
-		     if(_cmd.equalsIgnoreCase("reflectivity")) scene.reflector.reflectivity = cmd.nextFloat();
-		else if(_cmd.equalsIgnoreCase(         "eta")) scene.reflector.setRefractionIndex(cmd.nextFloat());
-		else if(_cmd.equalsIgnoreCase(  "resolution")) scene.reflector.updateSize(cmd.nextInt());
+		     if(_cmd.equalsIgnoreCase("reflectivity")) scene.getCars().get(0).reflector.reflectivity = cmd.nextFloat();
+		else if(_cmd.equalsIgnoreCase(         "eta")) scene.getCars().get(0).reflector.setRefractionIndex(cmd.nextFloat());
+		else if(_cmd.equalsIgnoreCase(  "resolution")) scene.getCars().get(0).reflector.updateSize(cmd.nextInt());
 	}
 	
 	private void parseLight(Scanner cmd)

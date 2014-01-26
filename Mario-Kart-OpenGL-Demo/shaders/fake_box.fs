@@ -65,17 +65,32 @@ void main()
 	
 	vec3 hsv = gl_Color.rgb;
 	
-	float hue = hsv.r;
-	hue += 0.001 * timer;
-	if(drawDot) hue += 0.0333;
+	float real_hue = hsv.r;
+	float fake_hue = real_hue + 0.833;
 	
-	hsv.r = hue;
+	real_hue += 0.001 * timer;
+	if(drawDot)
+	{
+		real_hue += 0.0333;
+		fake_hue += 0.0333;
+	}
 	
-	vec3 rgb = hsv_to_rgb(vec3(hsv.rgb));
+	hsv.r = real_hue;
+	vec3 real_rgb = hsv_to_rgb(vec3(hsv.rgb));
+	hsv.r = fake_hue;
+	vec3 fake_rgb = hsv_to_rgb(vec3(hsv.rgb));
 	
-	vec3 color = mix(refractColor, reflectColor, ratio);
-	color = mix(color, rgb, drawDot ? 0.66 : 0.33);
+	vec3 base_color = mix(refractColor, reflectColor, ratio);
+	vec3 real_color = mix(base_color, real_rgb, drawDot ? 0.66 : 0.33);
+	vec3 fake_color = mix(base_color, fake_rgb, drawDot ? 0.66 : 0.33);
 	
-	gl_FragData[0] = vec4(color + rimLight(), 1.0);
+	vec3 rim_color = rimLight();
+	
+	real_color += rim_color;
+	fake_color *= 1.0 - rim_color;
+	
+	float illusion = clamp((eyeDist - 50.0) / 100.0, 0.0, 1.0);
+	
+	gl_FragData[0] = vec4(mix(fake_color, real_color, illusion), 1.0);
 	gl_FragData[1] = vec4(0.0);
 }

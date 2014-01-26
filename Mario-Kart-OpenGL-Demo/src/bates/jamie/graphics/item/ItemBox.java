@@ -36,17 +36,15 @@ public class ItemBox
 	public static final float SCALE = 1.8f;
 	public static final int RESPAWN_TIME = 60;
 	
-	static Model item_box = OBJParser.parseTriangleMesh("item_box");
-	static Model question_mark = OBJParser.parseTriangleMesh("question_mark");
+	public static Model item_box = OBJParser.parseTriangleMesh("item_box");
+	public static Model question_mark = OBJParser.parseTriangleMesh("question_mark");
 	
 	SceneNode boxNode;
 	SceneNode symbolNode;
 	
 	private boolean simplify = false;
-	public boolean initialized = false;
 	
 	public Reflector reflector;
-	
 	
 	private static Texture questionMark;
 	
@@ -68,11 +66,27 @@ public class ItemBox
 		
 		bound = new Sphere(c, 2.5f);
 		
+		setupGraph(c);
+		
+		this.particles = particles;
+	}
+	
+	public ItemBox(float x, float y, float z, List<Particle> particles)
+	{
+		bound = new Sphere(x, y + 3, z, 2.5f);
+		
+		setupGraph(new Vec3(x, y + 3, z));
+		
+		this.particles = particles;
+	}
+
+	private void setupGraph(Vec3 c)
+	{
 		reflector = new Reflector(1.0f);
 		
 		boxNode = new SceneNode(null, -1, item_box, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
 		boxNode.setTranslation(c);
-		boxNode.setScale(new Vec3(0.75));
+		boxNode.setScale(new Vec3(SCALE));
 		boxNode.setReflector(reflector);
 		boxNode.setReflectivity(0.75f);
 		boxNode.setRenderMode(RenderMode.REFLECT);
@@ -83,38 +97,9 @@ public class ItemBox
 		symbolNode.setScale(new Vec3(1.25));
 		symbolNode.setReflector(reflector);
 		symbolNode.setReflectivity(0.75f);
-		symbolNode.setRenderMode(RenderMode.COLOR);
-		symbolNode.setColor(new float[] {1, 1, 1});
-		
-		boxNode.addChild(symbolNode);
-		
-		this.particles = particles;
-	}
-	
-	public ItemBox(float x, float y, float z, List<Particle> particles)
-	{
-		bound = new Sphere(x, y + 3, z, 2.5f);
-		
-		reflector = new Reflector(1.0f);
-		
-		boxNode = new SceneNode(null, -1, item_box, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
-		boxNode.setTranslation(new Vec3(x, y + 3, z));
-		boxNode.setScale(new Vec3(4.0));
-		boxNode.setReflector(reflector);
-		boxNode.setReflectivity(0.75f);
-		boxNode.setRenderMode(RenderMode.REFLECT);
-		boxNode.setColor(new float[] {1, 1, 1});
-		
-		symbolNode = new SceneNode(null, -1, question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		symbolNode.setTranslation(new Vec3(x, y + 3, z));
-		symbolNode.setScale(new Vec3(1.25));
-		symbolNode.setReflector(reflector);
-		symbolNode.setReflectivity(0.75f);
 		symbolNode.setRenderMode(RenderMode.BLOOM_COLOR);
 		symbolNode.setColor(new float[] {1, 1, 1});
-		symbolNode.enableBloom(false);
-		
-		this.particles = particles;
+		symbolNode.enableBloom(true);
 	}
 	
 	public Vec3 getPosition() { return bound.c; }

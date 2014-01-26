@@ -26,7 +26,8 @@ public class Reflector
 	public float eta;
 	public float reflectance;
 	
-	public boolean initialized = false;
+	private boolean initialized = false;
+	private boolean dynamic = false;
 	
 	public Reflector(float reflectivity)
 	{
@@ -37,16 +38,19 @@ public class Reflector
 		reflectance = ((1 - eta) * (1 - eta)) / ((1 + eta) * (1 + eta));
 	}
 	
-	public Reflector(float reflectivity, int mapSize)
+	public Reflector(float reflectivity, int mapSize, boolean dynamic)
 	{
 		this.scene = Scene.singleton;
 		this.reflectivity = reflectivity;
 		
 		this.mapSize = mapSize;
+		this.dynamic = dynamic;
 		
 		eta = 0.97f;
 		reflectance = ((1 - eta) * (1 - eta)) / ((1 + eta) * (1 + eta));
 	}
+	
+	public void isDynamic(boolean dynamic) { this.dynamic = dynamic; }
 	
 	public void setup(GL2 gl)
 	{
@@ -57,8 +61,6 @@ public class Reflector
 		
 		createTexture(gl);
 		createBuffer (gl);
-		
-		initialized = true;
 	}
 
 	private void createBuffer(GL2 gl)
@@ -156,6 +158,8 @@ public class Reflector
 	{
 		GLUgl2 glu = new GLUgl2();
 		
+		if(initialized && !dynamic) return;
+		
 		if(!initialized) setup(gl);
 		if( updateSize ) changeSize(gl);
 		
@@ -212,6 +216,8 @@ public class Reflector
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
 		scene.resetView(gl);
+		
+		initialized = true;
 	}
 	
 	public void displayMap(GL2 gl)

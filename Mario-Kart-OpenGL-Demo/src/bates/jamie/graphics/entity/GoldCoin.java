@@ -70,8 +70,6 @@ public class GoldCoin
 	boolean collected = false;
 	boolean spin = true;
 	
-	public boolean initialized = false;
-	
 	public GoldCoin(Vec3 p, CoinType type, boolean spin)
 	{
 		position = p;

@@ -113,6 +113,7 @@ public class Shader
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
 		
 		Shader itemBox      = new Shader(gl, "item_box", "item_box");
+		Shader fakeBox      = new Shader(gl, "item_box", "fake_box");
 		
 		Shader water        = new Shader(gl, "water", "water", bump_attr);
 		Shader magma        = new Shader(gl, "water", "magma", bump_attr);
@@ -160,6 +161,7 @@ public class Shader
 		if(bumpInstance.isValid()) shaders.put("bump_instance", bumpInstance);
 		
 		if(     itemBox.isValid()) shaders.put("item_box", itemBox);
+		if(     fakeBox.isValid()) shaders.put("fake_box", fakeBox);
 		
 		if(   heightMap.isValid()) shaders.put("height_map", heightMap);
 		
