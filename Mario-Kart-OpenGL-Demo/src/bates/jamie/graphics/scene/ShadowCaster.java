@@ -24,6 +24,8 @@ public class ShadowCaster
 		0.5, 0.5, 0.5, 1.0
 	};
 	
+	private static int maxSize;
+	
 	private Scene scene;
 	private Light light;
 	
@@ -106,8 +108,16 @@ public class ShadowCaster
 	
 	private void createBuffer(GL2 gl)
 	{
+		int[] sizes = new int[2];
+		gl.glGetIntegerv(GL2.GL_MAX_TEXTURE_SIZE     , sizes, 0);
+	    gl.glGetIntegerv(GL2.GL_MAX_RENDERBUFFER_SIZE, sizes, 1);
+	    maxSize = (sizes[1] > sizes[0]) ? sizes[0] : sizes[1];
+		
 		int shadowWidth  = scene.getWidth () * shadowQuality;
 		int shadowHeight = scene.getHeight() * shadowQuality;
+		
+		if(shadowWidth  > maxSize) shadowWidth  = maxSize;
+		if(shadowHeight > maxSize) shadowHeight = maxSize;
 	
 		int bufferStatus = 0;
 	
@@ -146,10 +156,27 @@ public class ShadowCaster
 		// check FBO status
 		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("ShadowCaster : Frame Buffer Failure!");
+			System.out.println("ShadowCaster : " + checkFramebufferError(bufferStatus));
 	
 		// switch back to window-system-provided framebuffer
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+	}
+	
+	private String checkFramebufferError(int status)
+	{
+		switch(status)
+		{
+			case GL2.GL_FRAMEBUFFER_UNDEFINED                     : return "Frame Buffer Undefined : No Window?";
+			case GL2.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT         : return "Frame Buffer Incomplete Attachment : Check status of each attachment";
+			case GL2.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT : return "Attach at least one buffer to the FBO";
+			case GL2.GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER        : return "Frame Buffer Incomplete Draw Buffer : Check that all attachments enabled" +
+					                                                       "via glDrawBuffers exists in FBO";
+			case GL2.GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER        : return "Frame Buffer Incomplete Read Buffer : Check that all attachments enabled" +
+            															   "via glReadBuffer exists in FBO";
+			case GL2.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS         : return "Framw Buffer Incomplete Dimensions";
+			
+			default : return "Error undefined";	
+		}
 	}
 
 	public int getTexture() { return shadowTexture; }
@@ -160,6 +187,12 @@ public class ShadowCaster
 		
 		int width  = scene.getWidth();
 		int height = scene.getHeight();
+		
+		int shadowWidth  = width  * shadowQuality;
+		int shadowHeight = height * shadowQuality;
+		
+		if(shadowWidth  > maxSize) shadowWidth  = maxSize;
+		if(shadowHeight > maxSize) shadowHeight = maxSize;
 		
 	    float distance, near, fov;
 	    
@@ -195,7 +228,7 @@ public class ShadowCaster
 	    if(enableBuffer)
 	    {
 	    	gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer); // rendering offscreen.
-	    	gl.glViewport(0, 0, width * shadowQuality, height * shadowQuality); // need larger viewport
+	    	gl.glViewport(0, 0, shadowWidth, shadowHeight); // need larger viewport
 	    }
 
 	    depthMode(gl, true);

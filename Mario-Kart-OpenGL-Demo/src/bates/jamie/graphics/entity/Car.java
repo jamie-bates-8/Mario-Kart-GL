@@ -651,6 +651,26 @@ public class Car
 			else item.render(gl, trajectory);
 		}
 		
+		if(!camera.isFirstPerson()) renderBalloons(gl);
+		
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glDisable(GL2.GL_LINE_SMOOTH);
+		
+		if(displayTag && !camera.isFirstPerson())
+		{
+			float ry = slipping ? slipTrajectory : trajectory; 
+			if(camera.isFree()) ry = camera.getRotation().y;
+			
+			tag.render(gl, ry);
+		}
+		
+		timeQuery.end(gl);
+	}
+
+	private void renderBalloons(GL2 gl)
+	{
 		Vec3 p = getPosition();
 		
 		for(int i = 0; i < balloons.length; i++)
@@ -671,21 +691,6 @@ public class Car
 			}
 			gl.glPopMatrix();
 		}
-		
-		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
-		
-		gl.glDisable(GL2.GL_BLEND);
-		gl.glDisable(GL2.GL_LINE_SMOOTH);
-		
-		if(displayTag && !camera.isFirstPerson())
-		{
-			float ry = slipping ? slipTrajectory : trajectory; 
-			if(camera.isFree()) ry = camera.getRotation().y;
-			
-			tag.render(gl, ry);
-		}
-		
-		timeQuery.end(gl);
 	}
 
 	private void updateLights(GL2 gl)

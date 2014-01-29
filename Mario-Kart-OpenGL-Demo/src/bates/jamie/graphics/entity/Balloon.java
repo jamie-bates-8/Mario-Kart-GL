@@ -30,7 +30,7 @@ public class Balloon
 	{
 		position = p;
 		
-		reflector = new Reflector(1.0f, 320, true);
+		reflector = new Reflector(1.0f, 320, false);
 		
 		balloonNode = new SceneNode(null, -1, balloon_model, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
 		balloonNode.setTranslation(p);
