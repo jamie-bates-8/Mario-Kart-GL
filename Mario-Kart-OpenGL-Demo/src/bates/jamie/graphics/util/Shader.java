@@ -127,7 +127,7 @@ public class Shader
 		
 		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
 		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
-		Shader mirage       = new Shader(gl, "show_texture", "mirage");
+		Shader mirage       = new Shader(gl, "show_texture", "rain_distort");
 		Shader combine      = new Shader(gl, "show_texture", "combine");
 		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
 		Shader ambientOcc   = new Shader(gl, "show_texture", "ssao"); // screen-space ambient occlusion

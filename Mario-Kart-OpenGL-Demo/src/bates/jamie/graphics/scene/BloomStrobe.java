@@ -175,7 +175,7 @@ public class BloomStrobe
 			int status = gl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
 			if(status != GL2.GL_FRAMEBUFFER_COMPLETE)
-				System.out.println("Frame Buffer Error : Second Rendering Pass");
+				System.out.println("Frame Buffer Error : Second Rendering Pass (Bloom)");
 
 			int offsetsLoc = gl.glGetUniformLocation(shader.shaderID, "tc_offset");
 			gl.glUniform2fv(offsetsLoc, 25, offsets[i], 0);
@@ -439,6 +439,7 @@ public class BloomStrobe
 	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 	    afterGlowValid = false;
 
+	    gl.glBindRenderbuffer(GL_RENDERBUFFER, rboID);
 	    gl.glRenderbufferStorage(GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT32, fboWidth, fboHeight);
 
 	    for(int i = 0; i < 2; i++)

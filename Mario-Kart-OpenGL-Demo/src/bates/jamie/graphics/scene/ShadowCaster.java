@@ -146,7 +146,7 @@ public class ShadowCaster
 		// check FBO status
 		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("Frame Buffer failure!");
+			System.out.println("ShadowCaster : Frame Buffer Failure!");
 	
 		// switch back to window-system-provided framebuffer
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);

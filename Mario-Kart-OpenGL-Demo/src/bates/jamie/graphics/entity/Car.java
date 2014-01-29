@@ -210,6 +210,8 @@ public class Car
 	
 	public Reflector reflector;
 	
+	public Balloon[] balloons = new Balloon[3];
+	
 	
 	public Car(GL2 gl, Vec3 c, float xrot, float yrot, float zrot, Scene scene)
 	{
@@ -240,6 +242,12 @@ public class Car
 	    tag = new HoloTag(String.format("(%+3.2f, %+3.2f, %+3.2f)", c.x, c.y, c.z), c);
 	    
 	    anchor = new AnchorPoint();
+	    
+	    reflector = new Reflector(0.75f, 320, true);
+	    
+	    balloons[0] = new Balloon(c);
+	    balloons[1] = new Balloon(c);
+	    balloons[2] = new Balloon(c);
 	    
 	    setupLights(gl);
 	    resetGraph();
@@ -278,8 +286,6 @@ public class Car
 	
 	public void setupGraph()
 	{
-		Reflector reflector = new Reflector(0.75f, 320, true);
-		
 		Material shiny = new Material(new float[] {1, 1, 1});
 		Material mat = new Material(new float[] {0, 0, 0});
 		
@@ -643,6 +649,27 @@ public class Car
 		{
 			if(Item.renderMode == 1) item.renderWireframe(gl, trajectory);
 			else item.render(gl, trajectory);
+		}
+		
+		Vec3 p = getPosition();
+		
+		for(int i = 0; i < balloons.length; i++)
+		{
+			float r = 0;
+			if(i == 1) r = -30;
+			if(i == 2) r = +30;
+			
+			gl.glPushMatrix();
+			{
+				gl.glTranslatef(p.x, p.y, p.z);
+				gl.glRotatef(trajectory, 0, -1, 0);
+				gl.glRotatef(r, 0, 0, 1);
+				gl.glTranslatef(0, 4, 0);
+				gl.glScalef(1.5f, 1.5f, 1.5f);
+				
+				balloons[i].render(gl);
+			}
+			gl.glPopMatrix();
 		}
 		
 		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);

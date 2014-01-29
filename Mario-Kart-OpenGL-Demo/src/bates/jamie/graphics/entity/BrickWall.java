@@ -6,6 +6,7 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Shader;
@@ -155,15 +156,25 @@ public class BrickWall
 	
 	private void renderSimpleModelParallax(GL2 gl)
 	{
-		Shader shader = Shader.get("parallax_lights"); shader.enable(gl);
+		Shader shader = Shader.get("bump_rain"); shader.enable(gl);
 		
-		shader.setSampler(gl, "texture"  , 0);
+		shader.setSampler(gl, "colourMap"  , 0);
 		shader.setSampler(gl, "bumpmap"  , 1);
 		shader.setSampler(gl, "heightmap", 2);
+		shader.setSampler(gl, "rainMap", 3);
+		
+		shader.setUniform(gl, "timer", Scene.sceneTimer);
 
+		gl.glActiveTexture(GL2.GL_TEXTURE3); Scene.singleton.rain_normal.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
+		
+		shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
+		shader.setUniform(gl, "shininess", 0.85f);
+		
+		float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+		shader.loadMatrix(gl, "cameraMatrix", camera);
 		
 		if(Scene.enableParallax)
 		{

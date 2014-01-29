@@ -35,8 +35,6 @@ public class FocalBlur
 	private int sampleQuality = 1;
 	
 	public boolean enableMirage = false;
-	private float timer = 0;
-	
 	public boolean enableRadial = false;
 	
 	public float decay    = 0.75f;
@@ -71,7 +69,7 @@ public class FocalBlur
 	private void createTexture(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE3);
-		mirageTexture = TextureLoader.load(gl, "tex/bump_maps/water.png"); 
+		mirageTexture = TextureLoader.load(gl, "tex/bump_maps/rain.png"); 
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		
@@ -130,7 +128,7 @@ public class FocalBlur
 		// check FBO status
 		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("Frame Buffer failure!");
+			System.out.println("FocalBlur: Frame Buffer Failure!");
 	
 		// switch back to window-system-provided framebuffer
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
@@ -233,7 +231,7 @@ public class FocalBlur
 		mirageTexture.bind(gl);
 		
 		Shader shader = (enableRadial && scene.enableRadial) ? Shader.get("radial_blur") :
-						(enableMirage ? Shader.get("crepuscular") : Shader.get("depth_field"));
+						(enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field"));
 		if(shader == null) return;
 		
 		shader.enable(gl);
@@ -256,7 +254,7 @@ public class FocalBlur
 		
 		if(enableMirage)
 		{
-			shader.setUniform(gl, "timer", timer += 0.05);
+			shader.setUniform(gl, "timer", (float) Scene.sceneTimer);
 			
 			gl.glActiveTexture(GL2.GL_TEXTURE4);
 			scene.bloom.getTexture(1);

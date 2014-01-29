@@ -111,6 +111,7 @@ import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.EnergyField.FieldType;
 import bates.jamie.graphics.entity.GoldCoin;
 import bates.jamie.graphics.entity.GoldCoin.CoinType;
+import bates.jamie.graphics.entity.Balloon;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.LightingStrike;
 import bates.jamie.graphics.entity.Mushroom;
@@ -1556,6 +1557,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(shine != null) shine.reflector.update(gl, shine.getPosition());
 		if(star  != null)  star.reflector.update(gl,  star.getPosition());
 		
+		for(Balloon balloon : car.balloons) balloon.reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 4, 0)));
+		
 		questionBlock.updateReflection(gl);
 		
 		cubeReflector.update(gl, cubeNode.getPosition());
@@ -2611,7 +2614,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    gl.glViewport(0, 0, canvasWidth, canvasHeight);
 	}
 	
-	public static int sceneTimer = 0;
+	public static float sceneTimer = 0;
 
 	/**
 	 * This method calculates the frames per second (FPS) of the application by

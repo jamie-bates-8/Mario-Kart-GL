@@ -52,7 +52,7 @@ public class PowerStar
 		bodyNode.setReflector(reflector);
 		bodyNode.setReflectivity(0.75f);
 		bodyNode.setRenderMode(RenderMode.REFLECT);
-		bodyNode.setColor(new float[] {1, 1, 0.2f});
+		bodyNode.setColor(new float[] {0.4f, 1.0f, 0.4f});
 		
 		eyesNode = new SceneNode(null, -1, power_star_eyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		eyesNode.setTranslation(p);
@@ -89,13 +89,12 @@ public class PowerStar
 		float   rimPower = Light.rimPower;
 		float[] rimColor = Light.rimColor;
 		
-//		Light.rimPower = 1.0f;
-//		Light.rimColor = new float[] {.7f, .7f, .7f};
-//		
-//		Light.setepRimLighting(gl);
+		Light.rimPower = 1.0f;
+		Light.rimColor = new float[] {.7f, .7f, .7f};
+		
+		Light.setepRimLighting(gl);
 		
 		bodyNode.setRotation(new Vec3(0, rotation, 0));
-		bodyNode.setColor(Scene.singleton.getCars().get(0).getColor());
 		
 		if(collected) bodyNode.renderGhost(gl, 1, Shader.get("aberration"));
 		else          bodyNode.render(gl);
