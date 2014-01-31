@@ -229,6 +229,7 @@ public class FocalBlur
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE3);
 		mirageTexture.bind(gl);
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, Scene.singleton.rainScreen.getHeightMap());
 		
 		Shader shader = (enableRadial && scene.enableRadial) ? Shader.get("radial_blur") :
 						(enableMirage ? Shader.get("heat_haze") : Shader.get("depth_field"));

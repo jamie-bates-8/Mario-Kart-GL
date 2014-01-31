@@ -66,9 +66,26 @@ void main(void)
 {
     vec2 texCoord = gl_TexCoord[0].st;
     
-    vec3 normal = texture2D(normalSampler, texCoord * 4.0 + vec2(0.0, timer * 0.02)).rgb;
+    vec3 normal = vec3(0.0, 0.0, 1.0 / 8.0);
+	
+	float xInc = 1.0 / 640.0;
+	float zInc = 1.0 / 860.0;
+	
+	float left  = texture2D(normalSampler, gl_TexCoord[0].st + vec2(-xInc, 0.0)).r;
+	float right = texture2D(normalSampler, gl_TexCoord[0].st + vec2(+xInc, 0.0)).r;
+	float up    = texture2D(normalSampler, gl_TexCoord[0].st + vec2(0.0, +zInc)).r;
+	float down  = texture2D(normalSampler, gl_TexCoord[0].st + vec2(0.0, -zInc)).r;
+	
+	float xDiff = left - right;
+	float zDiff = up - down;
+	
+	normal.x = xDiff / 2.0;
+	normal.y = zDiff / 2.0;
+	
+	normal = normalize(normal);
     
-    normal *= 2.0; normal -= 1.0;
+    //normal = texture2D(normalSampler, texCoord * 4.0 + vec2(0.0, timer * 0.02)).rgb;
+    //normal *= 2.0; normal -= 1.0;
     
     if(length(normal.z) < 1.0) texCoord += normal.xy * 0.075;
     

@@ -298,7 +298,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private GLU glu;
 	private GLUT glut;
 	
-	public float[] background = RGB.SKY_BLUE_3F;
+	public float[] background = RGB.BLACK;
 	
 	public static boolean enableAnimation = true;
 	private boolean normalize = true;
@@ -1309,6 +1309,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    focalBlur.setup(gl);
 	    
+	    rainScreen = new RainScreen();
+	    
 	    if(printVersion) printVersion(gl);
 	    
 	    console.parseCommand("profile game");
@@ -1507,7 +1509,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		GL2 gl = drawable.getGL().getGL2();
 		
 		gl.glClearDepth(1.0f);
-		gl.glClearColor(background[0], background[1], background[2], 0.0f);
+		gl.glClearColor(background[0], background[1], background[2], 1.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL2.GL_STENCIL_BUFFER_BIT);
 		
 		resetView(gl);
@@ -1538,7 +1540,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Car car = cars.get(0);
 		updateReflectors(gl, car);
 		
-		if(sphereMap) car.reflector.displayMap(gl);
+		if(!testMode) rainScreen.render(gl);
+		
+		if(sphereMap) rainScreen.render(gl); //car.reflector.displayMap(gl); 
 //		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
 		else render(gl);
 
@@ -1550,6 +1554,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		if(enableShadow) caster.update(gl);
 	}
+	
+	public RainScreen rainScreen;
 
 	private void updateReflectors(GL2 gl, Car car)
 	{
@@ -1791,6 +1797,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		cars.get(0).camera.setDimensions(width, height);
 		bloom.changeSize(gl);
+		rainScreen.changeSize();
 		resetShadow = true;
 		
 		final float ratio = (float) width / (float) height;

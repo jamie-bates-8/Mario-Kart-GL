@@ -129,12 +129,15 @@ public class Shader
 		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
 		Shader mirage       = new Shader(gl, "show_texture", "rain_distort");
 		Shader combine      = new Shader(gl, "show_texture", "combine");
-		Shader showTexture  = new Shader(gl, "show_texture", "show_texture");
+		Shader showTexture  = new Shader(gl, "show_texture", "height_normal");
 		Shader ambientOcc   = new Shader(gl, "show_texture", "ssao"); // screen-space ambient occlusion
+		Shader rainyScene   = new Shader(gl, "show_texture", "rainy_scene");
 		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
 		Shader radialBlur   = new Shader(gl, "radial_blur", "radial_blur");
 		Shader smoke        = new Shader(gl, "smoke", "smoke");
 		Shader fire         = new Shader(gl, "fire", "fire");
+		
+		Shader rainDrop     = new Shader(gl, "rain_drop", "rain_drop");
 		
 		Shader pulsate      = new Shader(gl, "pulsate", "phong_lights");
 		
@@ -190,9 +193,12 @@ public class Shader
 		if( showTexture.isValid()) shaders.put("show_texture", showTexture);
 		if(  ambientOcc.isValid()) shaders.put("ssao", ambientOcc);
 		if( crepuscular.isValid()) shaders.put("crepuscular", crepuscular);
+		if(  rainyScene.isValid()) shaders.put("rainy_scene", rainyScene);
 		if(  radialBlur.isValid()) shaders.put("radial_blur", radialBlur);
 		if(  	  smoke.isValid()) shaders.put("smoke", smoke);
 		if(  	   fire.isValid()) shaders.put("fire", fire);
+		
+		if(    rainDrop.isValid()) shaders.put("rain_drop", rainDrop);
 		
 		if(   pulsate.isValid()) shaders.put("pulsate", pulsate);
 		
