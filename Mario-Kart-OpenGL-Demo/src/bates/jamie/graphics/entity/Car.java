@@ -82,7 +82,6 @@ public class Car
 	public TerrainPatch patch;
 	
 	private float[]  color = {1.0f, 0.4f, 0.4f};
-	private float[] _color = {1.0f, 0.0f, 0.0f};
 	private float[] windowColor = {1.0f, 1.0f, 1.0f};
 	
 	public boolean displayModel = true;
@@ -178,10 +177,7 @@ public class Car
 	
 	private boolean starPower = false;
 	private int starDuration = 0;
-	private float[] starColor = {255, 0, 0};
-	private int spectrum = 0;
-	private boolean whiten = true;
-	private static final int COLOR_INCREMENT = 17; //1, 3, 5, 15, 17, 51, 85, 255
+	private float[] starColor = {0, 1, 1};
 	public Light starLight;
 	
 	private boolean invisible = false;
@@ -639,7 +635,7 @@ public class Car
 
 				graph.renderGhost(gl, booColor, shader);
 			}
-			else if(starPower) graph.renderColor(gl, _color, enableChrome ? reflector : null);
+			else if(starPower) graph.renderColor(gl, starColor, enableChrome ? reflector : null);
 			else graph.render(gl);
 		}
 		
@@ -695,7 +691,7 @@ public class Car
 
 	private void updateLights(GL2 gl)
 	{
-		starLight.setAmbience(new float[] {starColor[0]/255, starColor[1]/255, starColor[2]/255});
+		starLight.setAmbience(starColor);
 		
 		if(starDuration < 1) starLight.disable(gl);
 		else starLight.enable(gl);
@@ -725,50 +721,25 @@ public class Car
 	{
 		if(starPower)
 		{
-			cycleColor();
-			_color = new float[] {starColor[0]/255, starColor[1]/255, starColor[2]/255};
+			starColor = HSVToRGB(new float[] {Scene.sceneTimer * 0.01f, 1, 1});
 		}
 		if(invisible)
 		{
 			if(booColor > 0 && booDuration > 0) booColor -= fadeIncrement;
 		}
 	}
-
-	private void cycleColor()
+	
+	private static float[] HSVToRGB(float[] hsv)
 	{
-		if(starColor[0] == 255 && starColor[1] == 255 && starColor[2] == 255) whiten = false;
+		Vec3 k = new Vec3(1.0f, 2.0f / 3.0f, 1.0f / 3.0f);
 		
-		if(whiten)
-		{
-			if(starColor[0] < 255) starColor[0] += COLOR_INCREMENT;
-			if(starColor[1] < 255) starColor[1] += COLOR_INCREMENT;
-			if(starColor[2] < 255) starColor[2] += COLOR_INCREMENT;
-		}
-		else
-		{
-			switch(spectrum)
-			{
-				case 0: if(starColor[0] == 255 && starColor[1] ==   0 && starColor[2] ==   0) { whiten = true; spectrum++; }
-				else { starColor[1] -= COLOR_INCREMENT; starColor[2] -= COLOR_INCREMENT; } break;
-				
-				case 1: if(starColor[0] == 255 && starColor[1] == 255 && starColor[2] ==   0) { whiten = true; spectrum++; }
-				else { starColor[2] -= COLOR_INCREMENT; } break;
-				
-				case 2: if(starColor[0] ==   0 && starColor[1] == 255 && starColor[2] ==   0) { whiten = true; spectrum++; }
-				else { starColor[0] -= COLOR_INCREMENT; starColor[2] -= COLOR_INCREMENT; } break;
-				
-				case 3: if(starColor[0] ==   0 && starColor[1] == 255 && starColor[2] == 255) { whiten = true; spectrum++; }
-				else { starColor[0] -= COLOR_INCREMENT; } break;
-				
-				case 4: if(starColor[0] ==   0 && starColor[1] ==   0 && starColor[2] == 255) { whiten = true; spectrum++; }
-				else { starColor[0] -= COLOR_INCREMENT; starColor[1] -= COLOR_INCREMENT; } break;
-				
-				case 5: if(starColor[0] == 255 && starColor[1] ==   0 && starColor[2] == 255) { whiten = true; spectrum++; }
-				else { starColor[1] -= COLOR_INCREMENT; } break;
-			}
-		}
+		Vec3 p = new Vec3(hsv[0]).add(k);
+		p = p.fract().multiply(6).subtract(new Vec3(3.0));
+		p = p.absolute();
 		
-		spectrum = spectrum % 6;
+		p = p.subtract(new Vec3(k.x)).clamp(0, 1);
+		
+		return Vec3.mix(new Vec3(k.x), p, hsv[1]).multiply(hsv[2]).toArray();
 	}
 
 	public long renderHUD(GL2 gl, GLU glu) { return hud.render(gl, glu); }

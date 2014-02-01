@@ -109,24 +109,32 @@ public class Vec3
 	
 	public static Vec3 getRandomVector() { return getRandomVector(1); }
 	
-	public Vec3 add(Vec3 v)
+	public Vec3 add(Vec3 v) { return new Vec3(x + v.x, y + v.y, z + v.z); }
+	
+	public Vec3 subtract(Vec3 v) { return new Vec3(x - v.x, y - v.y, z - v.z); }
+	
+	public Vec3 multiply(Vec3 v) { return new Vec3(x * v.x, y * v.y, z * v.z); }
+	
+	public Vec3 multiply(float k) { return new Vec3(x * k, y * k, z * k); }
+	
+	public Vec3 absolute() { return new Vec3(abs(x), abs(y), abs(z)); }
+	
+	public Vec3 fract()
 	{
-		return new Vec3(x + v.x, y + v.y, z + v.z);
+		long _x = (long) x;
+		long _y = (long) y;
+		long _z = (long) z;
+		
+		return new Vec3(x - _x, y - _y, z - _z);
 	}
 	
-	public Vec3 subtract(Vec3 v)
+	public Vec3 clamp(float lower, float upper)
 	{
-		return new Vec3(x - v.x, y - v.y, z - v.z);
-	}
-	
-	public Vec3 multiply(Vec3 v)
-	{
-		return new Vec3(x * v.x, y * v.y, z * v.z);
-	}
-	
-	public Vec3 multiply(float k)
-	{
-		return new Vec3(x * k, y * k, z * k);
+		float _x =  Math.min(Math.max(x, lower), upper);
+		float _y =  Math.min(Math.max(y, lower), upper);
+		float _z =  Math.min(Math.max(z, lower), upper);
+		
+		return new Vec3(_x, _y, _z);
 	}
 	
 	public Vec3 multiply(RotationMatrix matrix)
@@ -177,13 +185,13 @@ public class Vec3
 		return v.magnitude();
 	}
 	
-	public Vec3 mix(Vec3 u, Vec3 v, float factor)
+	public static Vec3 mix(Vec3 u, Vec3 v, float factor)
 	{
 		float  f = factor < 0 ? 0 : (factor > 1 ? 1 : factor);
 		float _f = 1 - f;
 		
-		u = u.multiply( f);
-		v = v.multiply(_f);
+		u = u.multiply(_f);
+		v = v.multiply( f);
 		
 		return u.add(v);
 		
