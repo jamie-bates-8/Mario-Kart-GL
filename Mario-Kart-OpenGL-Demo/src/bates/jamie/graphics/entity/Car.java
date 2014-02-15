@@ -48,9 +48,9 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 /* TODO
  * 
@@ -623,7 +623,7 @@ public class Car
 			if(invisible)
 			{
 				String name = enableAberration ? "aberration" : "ghost";
-				Shader shader = Shader.enabled ? Shader.get(name) : null;
+				Shader shader = Shader.get(name);
 				
 				if(shader != null)
 				{

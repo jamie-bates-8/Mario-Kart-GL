@@ -16,8 +16,8 @@ import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.util.OBJParser;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 public class GoldCoin
 {

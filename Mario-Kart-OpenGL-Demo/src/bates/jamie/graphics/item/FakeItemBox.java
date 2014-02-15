@@ -21,8 +21,8 @@ import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;

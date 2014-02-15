@@ -1,4 +1,4 @@
-package bates.jamie.graphics.scene;
+package bates.jamie.graphics.scene.process;
 
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_TEXTURE0;
@@ -9,9 +9,12 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.scene.Light;
+import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.FrameBuffer;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -25,8 +28,8 @@ public class FocalBlur
 	
 	private Texture mirageTexture;
 	
-	private int fboWidth  = 0;
-	private int fboHeight = 0;
+	private int fboWidth  = Scene.canvasWidth;
+	private int fboHeight = Scene.canvasHeight;
 	
 	private float[] offsets_3x3 = new float[3 * 3 * 2]; // 3 by 3 Guassian mask
 	private float[] offsets_5x5 = new float[5 * 5 * 2];
@@ -57,6 +60,8 @@ public class FocalBlur
 	{
 		createBuffers(gl);
 		createTexture(gl);
+		
+		System.out.println("FocalBlur : Texture ID (" + sceneTexture + ")");
 	    
 	    update(gl);
 	    
@@ -68,10 +73,13 @@ public class FocalBlur
 	
 	private void createTexture(GL2 gl)
 	{
-		gl.glActiveTexture(GL2.GL_TEXTURE3);
 		mirageTexture = TextureLoader.load(gl, "tex/bump_maps/rain.png"); 
 		
-		gl.glActiveTexture(GL2.GL_TEXTURE1);
+		// Try to use a texture depth component
+		int[] texID = new int[2];
+		gl.glGenTextures(2, texID, 0);
+		sceneTexture = texID[0];
+		depthTexture = texID[1];
 		
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, sceneTexture);
 		
@@ -83,7 +91,17 @@ public class FocalBlur
 		
 		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_RGBA8, scene.getWidth(), scene.getHeight(), 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
 		
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
+		gl.glBindTexture(GL_TEXTURE_2D, depthTexture);
+
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
+
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+
+		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_DEPTH_TEXTURE_MODE, GL2.GL_INTENSITY);
+
+		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, fboWidth, fboHeight, 0, GL2.GL_DEPTH_COMPONENT, GL2.GL_UNSIGNED_BYTE, null);
 	}
 	
 	private void createBuffers(GL2 gl)
@@ -92,25 +110,6 @@ public class FocalBlur
 		fboHeight = scene.getHeight() * sampleQuality;
 	
 		int bufferStatus = 0;
-	
-		// Try to use a texture depth component
-		int[] texID = new int[1];
-	    gl.glGenTextures(1, texID, 0);
-	    depthTexture = texID[0];
-	    
-	    gl.glActiveTexture(GL2.GL_TEXTURE2);
-		gl.glBindTexture(GL_TEXTURE_2D, depthTexture);
-	
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_EDGE);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
-		
-		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_DEPTH_TEXTURE_MODE, GL2.GL_INTENSITY);
-	
-		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_DEPTH_COMPONENT, fboWidth, fboHeight, 0, GL2.GL_DEPTH_COMPONENT, GL2.GL_UNSIGNED_BYTE, null);
-		gl.glBindTexture(GL_TEXTURE_2D, 0);
 	
 		// create a framebuffer object
 		int[] fboID = new int[1];
@@ -128,7 +127,7 @@ public class FocalBlur
 		// check FBO status
 		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("FocalBlur: Frame Buffer Failure!");
+			System.out.println("FocalBlur : " + FrameBuffer.checkFramebufferError(bufferStatus));
 	
 		// switch back to window-system-provided framebuffer
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
@@ -136,6 +135,8 @@ public class FocalBlur
 	
 	public void update(GL2 gl)
 	{
+		enableTextures(gl);
+		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, depthBuffer); // rendering offscreen.
 	    gl.glViewport(0, 0, fboWidth, fboHeight); // need larger viewport
  
@@ -174,15 +175,14 @@ public class FocalBlur
 	}
 	
 	private void depthMode(GL2 gl, boolean enable)
-	{
-		boolean enableShaders = Shader.enabled;
-		
+	{		
 		if(enable) // Only need depth values
 		{
-			Shader.enabled = false; // shaders not required
+			Shader.enableSimple = true; // shaders not required
 			Scene.depthMode = true;
 			
 			// Clear the depth buffer only
+			gl.glDepthMask(true);
 		    gl.glClear(GL_DEPTH_BUFFER_BIT);
 		    
 		    gl.glShadeModel(GL2.GL_FLAT);
@@ -196,6 +196,7 @@ public class FocalBlur
 		else // Restore normal drawing state
 		{ 
 			Scene.depthMode = false;
+			Shader.enableSimple = false; 
 			
 		    gl.glShadeModel(GL2.GL_SMOOTH);
 		    
@@ -205,16 +206,12 @@ public class FocalBlur
 		    
 		    gl.glColorMask(true, true, true, true);
 		}
-		
-		Shader.enabled = enableShaders;
 	}
 	
 	private void copyScene(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE1);
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, sceneTexture);
-		
-		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glCopyTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, 0, 0, scene.getWidth(), scene.getHeight(), 0);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
@@ -292,37 +289,25 @@ public class FocalBlur
 		gl.glEnd();
 		
 		Shader.disable(gl);
+		
+		disableTextures(gl);
 	}
 	
-	public void display(GL2 gl)
-	{
-		enable(gl);
-		
+	public void enableTextures(GL2 gl)
+	{	
 		gl.glActiveTexture(GL2.GL_TEXTURE2);
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, depthTexture);
 		
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 
-	public void disable(GL2 gl)
+	private void disableTextures(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glDisable(GL2.GL_TEXTURE_2D);
 		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D);
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
-	}
-
-	public void enable(GL2 gl)
-	{
-		// fixed-functionality shadows no longer supported
-		if(Shader.enabled)
-		{
-			gl.glActiveTexture(GL2.GL_TEXTURE2);
-			gl.glEnable(GL2.GL_TEXTURE_2D);
-			gl.glBindTexture(GL2.GL_TEXTURE_2D, depthTexture);
-			
-			gl.glActiveTexture(GL2.GL_TEXTURE0);
-		}
 	}
 	
 	private void setGuassians()

@@ -22,8 +22,8 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 import javax.media.opengl.glu.GLUquadric;
 
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 
 public class Light extends AnchorPoint

@@ -18,8 +18,8 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -118,7 +118,7 @@ public class Banana extends Item
 			else gl.glMultMatrixf(u.toArray(), 0);
 			gl.glScalef(1.1f, 1.1f, 1.1f);
 			
-			Shader shader = Shader.enabled ? Shader.getLightModel("phong") : null;
+			Shader shader = Shader.getLightModel("phong");
 			if(shader != null) shader.enable(gl);
 			
 			gl.glCallList(bananaList);

@@ -20,8 +20,8 @@ import java.util.List;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.texture.Texture;
@@ -163,7 +163,7 @@ public class Model
 		for(int i : offsetData) indices.put(i);
 		indices.position(0);
 		
-		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
+//		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
 	}
 	
 	public Model(List<float[]> vertices, List<float[]> texCoords, List<float[]> normals, int[] vIndices, int[] tIndices, int[] nIndices, int type)
@@ -230,8 +230,8 @@ public class Model
 		for(int i : offsetData) indices.put(i);
 		indices.position(0);
 		
-		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates:  %d\n\tNormals:  %d\n}\n",
-				          indexCount, vertices.size(), texCoords.size(), normals.size());
+//		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates:  %d\n\tNormals:  %d\n}\n",
+//				          indexCount, vertices.size(), texCoords.size(), normals.size());
 	}
 	
 	public void calculateTangents()

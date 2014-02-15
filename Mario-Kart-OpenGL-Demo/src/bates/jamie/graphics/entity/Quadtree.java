@@ -20,13 +20,13 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
-import bates.jamie.graphics.scene.ShadowCaster;
+import bates.jamie.graphics.scene.process.ShadowCaster;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.texture.Texture;
@@ -1455,7 +1455,7 @@ public class Quadtree
 			
 			shader.enable(gl);
 			
-			if(Shader.enabled && shader != null)
+			if(shader != null)
 			{
 				shader.setSampler(gl, "texture", 0);
 				
@@ -1465,7 +1465,7 @@ public class Quadtree
 					shader.setUniform(gl, "enableParallax", Scene.enableParallax );
 				}
 				
-				if(enableCaustic && Shader.enabled && shader != null)
+				if(enableCaustic)
 				{
 					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					shader.setUniform(gl, "timer", timer);
@@ -1520,12 +1520,9 @@ public class Quadtree
 	{
 		Light.globalSpecular(gl, specular);
 		
-		if(Shader.enabled)
-		{
-			if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); bumpmap.bind(gl); }
-			if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); caustic.bind(gl); }
-			gl.glActiveTexture(GL2.GL_TEXTURE0);
-		}
+		if(enableBumpmap) { gl.glActiveTexture(GL2.GL_TEXTURE1); bumpmap.bind(gl); }
+		if(enableCaustic) { gl.glActiveTexture(GL2.GL_TEXTURE2); caustic.bind(gl); }
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		
 		if(!enableShading) gl.glDisable(GL2.GL_LIGHTING);
 		
@@ -1552,7 +1549,7 @@ public class Quadtree
 		iBuffer.flip();
 		aBuffer.flip();
 		
-		if((enableBumpmap || enableCaustic) && Shader.enabled)
+		if(enableBumpmap || enableCaustic)
 		{
 			gl.glVertexAttribPointer(1, 3, GL2.GL_FLOAT, true, 0, aBuffer);
 		}

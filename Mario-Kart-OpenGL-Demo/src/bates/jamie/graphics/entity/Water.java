@@ -6,9 +6,9 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Matrix;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -103,8 +103,7 @@ public class Water
 			gl.glColor4f(timer, 1, 1, 1);
 			
 			Shader shader = magma ? Shader.get("magma") : Shader.get("water");
-			
-			if(shader != null && Shader.enabled) shader.enable(gl);
+			if(shader != null) shader.enable(gl);
 			
 			gl.glActiveTexture(GL2.GL_TEXTURE3); if(magma) magmaTexture.bind(gl); else frostTexture.bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE2); perturbTexture.bind(gl);

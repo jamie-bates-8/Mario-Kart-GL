@@ -1,4 +1,4 @@
-package bates.jamie.graphics.scene;
+package bates.jamie.graphics.scene.process;
 
 import static javax.media.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
@@ -9,8 +9,11 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
 import bates.jamie.graphics.entity.Car;
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.scene.Light;
+import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.FrameBuffer;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 public class ShadowCaster
 {
@@ -156,27 +159,12 @@ public class ShadowCaster
 		// check FBO status
 		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
-			System.out.println("ShadowCaster : " + checkFramebufferError(bufferStatus));
+			System.out.println("ShadowCaster : " + FrameBuffer.checkFramebufferError(bufferStatus));
+		
+		System.out.println("Hi");
 	
 		// switch back to window-system-provided framebuffer
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
-	}
-	
-	private String checkFramebufferError(int status)
-	{
-		switch(status)
-		{
-			case GL2.GL_FRAMEBUFFER_UNDEFINED                     : return "Frame Buffer Undefined : No Window?";
-			case GL2.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT         : return "Frame Buffer Incomplete Attachment : Check status of each attachment";
-			case GL2.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT : return "Attach at least one buffer to the FBO";
-			case GL2.GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER        : return "Frame Buffer Incomplete Draw Buffer : Check that all attachments enabled" +
-					                                                       "via glDrawBuffers exists in FBO";
-			case GL2.GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER        : return "Frame Buffer Incomplete Read Buffer : Check that all attachments enabled" +
-            															   "via glReadBuffer exists in FBO";
-			case GL2.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS         : return "Framw Buffer Incomplete Dimensions";
-			
-			default : return "Error undefined";	
-		}
 	}
 
 	public int getTexture() { return shadowTexture; }
@@ -280,14 +268,13 @@ public class ShadowCaster
 	
 	private void depthMode(GL2 gl, boolean enable)
 	{
-		boolean enableShaders = Shader.enabled;
-		
 		if(enable) // Only need depth values
 		{
-			Shader.enabled = false;
+			Shader.enableSimple = true; 
 			Scene.depthMode = true;
 			Scene.shadowMode = true;
 			// Clear the depth buffer only
+			gl.glDepthMask(true);
 		    gl.glClear(GL_DEPTH_BUFFER_BIT);
 		    
 		    gl.glShadeModel(GL2.GL_FLAT);
@@ -309,6 +296,7 @@ public class ShadowCaster
 		{ 
 			Scene.depthMode = false;
 			Scene.shadowMode = false;
+			Shader.enableSimple = false; 
 			
 		    gl.glShadeModel(GL2.GL_SMOOTH);
 		    
@@ -323,8 +311,6 @@ public class ShadowCaster
 		    
 		    gl.glDisable(GL2.GL_POLYGON_OFFSET_FILL);
 		}
-		
-		Shader.enabled = enableShaders;
 	}
 	
 	public void displayShadow(GL2 gl)
@@ -342,13 +328,9 @@ public class ShadowCaster
 
 	public void enable(GL2 gl)
 	{
-		// fixed-functionality shadows no longer supported
-		if(Shader.enabled)
-		{
-			gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
-			gl.glBindTexture  (GL2.GL_TEXTURE_2D, shadowTexture);
-			gl.glActiveTexture(GL2.GL_TEXTURE0);
-		}
+		gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
+		gl.glBindTexture  (GL2.GL_TEXTURE_2D, shadowTexture);
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 
 	public static void cycle()

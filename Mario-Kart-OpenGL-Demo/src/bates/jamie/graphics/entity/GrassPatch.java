@@ -8,9 +8,9 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;

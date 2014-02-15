@@ -9,10 +9,10 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Renderer;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 
@@ -113,7 +113,7 @@ public class BrickWall
 	{
 		gl.glColor3f(0.636f, 0.201f, 0.031f);
 			
-		Shader shader = Shader.enabled ? Shader.get("phong_instance") : null;
+		Shader shader = Shader.get("phong_instance");
 		if(shader != null) shader.enable(gl);
 			
 		BrickBlock.brick_block.renderInstanced(gl, brickBlocks.size());
@@ -123,7 +123,7 @@ public class BrickWall
 
 	private void renderSimpleModelParallaxInstanced(GL2 gl)
 	{
-		Shader shader = Shader.enabled ? Shader.get("bump_instance") : null;
+		Shader shader = Shader.get("bump_instance");
 		if(shader != null) shader.enable(gl);
 		
 		shader.setSampler(gl, "texture"  , 0);

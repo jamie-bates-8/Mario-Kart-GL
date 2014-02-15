@@ -1,4 +1,4 @@
-package bates.jamie.graphics.scene;
+package bates.jamie.graphics.scene.process;
 
 
 import static javax.media.opengl.GL.GL_CLAMP_TO_EDGE;
@@ -19,8 +19,10 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.scene.Light;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 public class AmbientOccluder
 {

@@ -2,7 +2,7 @@ package bates.jamie.graphics.scene;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.shader.Shader;
 
 public class SceneGraph
 {

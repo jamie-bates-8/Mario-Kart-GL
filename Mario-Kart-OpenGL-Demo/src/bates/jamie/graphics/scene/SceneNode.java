@@ -5,6 +5,7 @@ import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -13,8 +14,9 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
+import bates.jamie.graphics.util.shader.Uniform;
 
 
 public class SceneNode
@@ -27,6 +29,9 @@ public class SceneNode
 	private List<Face> geometry;
 	private Model model;
 	private int displayList;
+	
+	private Shader shader;
+	private List<Uniform> uniforms = new ArrayList<Uniform>();
 	
 	private float[] color = {1, 1, 1};
 	
@@ -59,7 +64,7 @@ public class SceneNode
 		this.order = order;
 		
 		this.material = material;
-	}
+	} 
 	
 	public void render(GL2 gl)
 	{
@@ -69,11 +74,14 @@ public class SceneNode
 			if(material != null) material.load(gl);
 			gl.glColor3fv(color, 0);
 			
+			Shader shader = this.shader;
+			
 			switch(renderMode)
 			{
 				case TEXTURE:
 				{
-					Shader shader = Shader.enabled ? Shader.getLightModel("texture") : null;
+					if(shader == null) shader = Shader.getLightModel("texture");
+					
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -83,7 +91,8 @@ public class SceneNode
 				}
 				case BUMP_RAIN:
 				{
-					Shader shader = Shader.enabled ? Shader.get("bump_rain") : null;
+					if(shader == null) shader = Shader.get("bump_rain");
+					
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -108,7 +117,8 @@ public class SceneNode
 				}
 				case BUMP_REFLECT:
 				{
-					Shader shader = Shader.enabled ? Shader.get("bump_cube") : null;
+					if(shader == null) shader = Shader.get("bump_cube");
+					
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -125,7 +135,8 @@ public class SceneNode
 				}
 				case BUMP_COLOR:
 				{
-					Shader shader = Shader.enabled ? Shader.get("bump_phong") : null;
+					if(shader == null) shader = Shader.get("bump_phong");
+					
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -136,7 +147,8 @@ public class SceneNode
 				}
 				case BUMP_TEXTURE:
 				{
-					Shader shader = Shader.enabled ? (enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights")) : null;
+					if(shader == null) shader = enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights");
+					
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -149,19 +161,19 @@ public class SceneNode
 				}
 				case BLOOM_COLOR:
 				{
-					Shader shader = Shader.enabled ? Shader.get("bloom_color") : null;
+					if(shader == null) shader = Shader.get("bloom_color");
 					if(shader != null) shader.enable(gl);
 					break;
 				}
 				case COLOR:
 				{
-					Shader shader = Shader.enabled ? Shader.getLightModel("phong") : null;
+					if(shader == null) shader = Shader.getLightModel("phong");
 					if(shader != null) shader.enable(gl);
 					break;
 				}
 				case REFLECT:
 				{
-					Shader shader = Shader.enabled ? Shader.getLightModel("cube") : null;
+					if(shader == null) shader = Shader.getLightModel("cube");
 					if(shader != null)
 					{
 						shader.enable(gl);
@@ -175,6 +187,8 @@ public class SceneNode
 				}
 				case GLASS  : break;
 			}
+			
+			for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
 			
 			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS && enableBloom) gl.glDrawBuffers(2, attachments, 0);
@@ -224,6 +238,37 @@ public class SceneNode
 		}
 		gl.glPopMatrix();
 	}
+	
+	public List<Uniform> getUniforms() { return uniforms; }
+
+	public void setUniforms(List<Uniform> uniforms) { this.uniforms = uniforms; }
+
+	public void render(GL2 gl, Shader shader, Collection<Uniform> uniforms)
+	{
+		gl.glPushMatrix();
+		{
+			setupMatrix(gl);
+			gl.glColor3fv(color, 0);
+			
+			if(shader != null)
+			{	
+				Reflector reflector = this.reflector == null ? root.getReflector() : this.reflector;
+				
+				shader.enable(gl);
+				
+				for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
+				
+				if(reflector != null) reflector.enable(gl);
+				model.render(gl);
+				if(reflector != null) reflector.disable(gl);
+				
+				Shader.disable(gl);
+			}
+			
+			for(SceneNode child : children) child.render(gl, shader, uniforms);
+		}
+		gl.glPopMatrix();
+	}
 
 	public void renderGhost(GL2 gl, float fade, Shader shader, float[] color)
 	{
@@ -232,7 +277,7 @@ public class SceneNode
 			setupMatrix(gl);
 			gl.glColor3fv(color, 0);
 			
-			if(Shader.enabled && shader != null)
+			if(shader != null)
 			{	
 				Reflector reflector = this.reflector == null ? root.getReflector() : this.reflector;
 				
@@ -291,7 +336,7 @@ public class SceneNode
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
-			Shader shader = Shader.enabled ? (reflector != null ? Shader.get("star_power") : Shader.get("phong_rim")) : null;
+			Shader shader = reflector != null ? Shader.get("star_power") : Shader.get("phong_rim");
 			if(shader != null)
 			{
 				shader.enable(gl);
@@ -528,4 +573,10 @@ public class SceneNode
 	}
 
 	public void setModel(Model model) { this.model = model; }
+
+	public Vec3 getScale() { return s; }
+
+	public Shader getShader() { return shader; }
+
+	public void setShader(Shader shader) { this.shader = shader; }
 }

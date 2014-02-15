@@ -81,6 +81,7 @@ public class Reflector
 		gl.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_STENCIL_ATTACHMENT, GL2.GL_RENDERBUFFER, renderBuffer);
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+//		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);
 	}
 
 	private void createTexture(GL2 gl)
@@ -300,6 +301,7 @@ public class Reflector
 			gl.glTexImage2D(i, 0, GL2.GL_RGBA8, mapSize, mapSize, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+//		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);
 		
 		updateSize = false;
 	}

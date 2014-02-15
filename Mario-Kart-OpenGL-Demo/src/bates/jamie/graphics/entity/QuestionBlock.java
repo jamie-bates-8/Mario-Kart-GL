@@ -67,13 +67,13 @@ public class QuestionBlock
 		
 		blockNode.addChild(symbolNode);
 		
-		Renderer.bevelled_cube_model.colourMap = colourMap;
-		Renderer.bevelled_cube_model.normalMap = normalMap;
-		Renderer.bevelled_cube_model.heightMap = heightMap;
+		Renderer.multi_tex_bevelled_cube_model.colourMap = colourMap;
+		Renderer.multi_tex_bevelled_cube_model.normalMap = normalMap;
+		Renderer.multi_tex_bevelled_cube_model.heightMap = heightMap;
 		
-		Renderer.bevelled_cube_model.calculateTangents();
+		Renderer.multi_tex_bevelled_cube_model.calculateTangents();
 		
-		simpleNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		simpleNode = new SceneNode(null, -1, Renderer.multi_tex_bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		simpleNode.setTranslation(p);
 		simpleNode.setScale(new Vec3(scale));
 		simpleNode.setReflector(reflector);

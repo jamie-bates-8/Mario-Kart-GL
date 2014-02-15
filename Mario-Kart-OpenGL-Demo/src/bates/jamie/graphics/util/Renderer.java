@@ -827,5 +827,6 @@ public class Renderer
 
 	public static Model cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY, TANGENT_ARRAY, null, 4);
 	public static Model multi_tex_cube_model = new Model(VERTEX_ARRAY, NORMAL_ARRAY, TCOORD_ARRAY_MULTI_TEX, TANGENT_ARRAY, null, 4);
-	public static Model bevelled_cube_model = OBJParser.parseTexturedTriangleMesh("bevelled_block");
+	public static Model multi_tex_bevelled_cube_model = OBJParser.parseTexturedTriangleMesh("bevelled_block");
+	public static Model bevelled_cube_model = OBJParser.parseTexturedTriangleMesh("checkered_block");
 }

@@ -1,10 +1,12 @@
-package bates.jamie.graphics.util;
+package bates.jamie.graphics.util.shader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -12,34 +14,18 @@ import java.util.Scanner;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.glsl.ShaderUtil;
 
 public class Shader
 {
-	public static boolean enabled = true;
+	public static boolean enableSimple = false;
+//	public static boolean enabled = true; 
 	
 	public static Map<String, Shader> shaders = new HashMap<String, Shader>();
 	
-	public Map<String, UniformType> uniforms = new HashMap<String, UniformType>();
-	
-	private enum UniformType
-	{
-		BOOL,
-		VEC3,
-		FLOAT,
-		
-		UNDEFINED;
-		
-		public static UniformType getType(String type)
-		{
-			     if(type.equals("bool" )) return BOOL;
-			else if(type.equals("vec3" )) return VEC3;
-			else if(type.equals("float")) return FLOAT;
-			     
-			else return UNDEFINED; 
-		}
-	}
+	public List<Uniform> uniforms = new ArrayList<Uniform>();
 	
 	public int shaderID;
 	 
@@ -77,6 +63,8 @@ public class Shader
 		inst_attr.put(4, "instance_data");
 		
 		// load and compile shaders from file
+		Shader simple        = new Shader(gl, "simple", "simple");
+		
 		Shader phong         = new Shader(gl, "phong", "phong");
 		Shader phongLights   = new Shader(gl, "phong_lights", "phong_lights");
 		Shader phongInstance = new Shader(gl, "phong_instance", "phong_lights", inst_attr);
@@ -88,6 +76,7 @@ public class Shader
 		
 		Shader texLights     = new Shader(gl, "texture_lights", "texture_lights");
 		Shader textureRim    = new Shader(gl, "texture_lights", "texture_rim");
+		Shader checkerDiag   = new Shader(gl, "checker_diagonal", "checker_diagonal");
 		
 		Shader bump          = new Shader(gl, "bump", "bump", bump_attr);
 		Shader bumpPhong     = new Shader(gl, "bump_lights", "bump_phong", bump_attr);
@@ -142,6 +131,8 @@ public class Shader
 		Shader pulsate      = new Shader(gl, "pulsate", "phong_lights");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
+		if(       simple.isValid()) shaders.put("simple", simple);
+		
 		if(        phong.isValid()) shaders.put("phong", phong);
 		if(  phongLights.isValid()) shaders.put("phong_lights", phongLights);
 		if(phongInstance.isValid()) shaders.put("phong_instance", phongInstance);
@@ -153,6 +144,7 @@ public class Shader
 		
 		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
+		if( checkerDiag.isValid()) shaders.put("checker_diagonal", checkerDiag);
 		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
@@ -223,15 +215,18 @@ public class Shader
 				String[] tokens = line.trim().split("\\s++");
 				
 				String identifier = tokens[2].replace(";", "").replaceAll("\\[\\d+\\]", "");
-				UniformType type  = UniformType.getType(tokens[1]);
 				
-				uniforms.put(identifier, type);
+				uniforms.add(Uniform.getUniform(tokens[1], identifier));
 			}
 		}
 		scanner.close();
 	}
 	
-	public static Shader get(String name) { return shaders.get(name); }
+	public static Shader get(String name)
+	{
+		if(enableSimple) return shaders.get("simple");
+		else return shaders.get(name);
+	}
 	
 	public static Shader getLightModel(String name)
 	{
@@ -330,11 +325,12 @@ public class Shader
 	/** 
 	 * This function is called when you want to activate the shader.
      * Once activated, it will be used to render anything that is drawn until the
-     * <code>disable</code> function is called.
+     * <code>disable</code> function is called or the <code>enable</code> function
+     * is called by another Shader object.
      */
     public int enable(GL2 gl)
     {
-        if(enabled) gl.glUseProgram(shaderID);
+        gl.glUseProgram(shaderID);
         return shaderID;
     }
 
@@ -431,6 +427,22 @@ public class Shader
 			
 			default: return;
 		}
+	}
+	
+	public void setUniform(GL2 gl, String uniform, Vec3 vec)
+	{
+		setUniform(gl, uniform, vec.toArray());
+	}
+	
+	public void setUniform(GL2 gl, Uniform uniform)
+	{
+		int uniformID = gl.glGetUniformLocation(shaderID, uniform.getIdentifier());
+		
+		if(uniform instanceof UniformFloat  ) setUniform(gl, uniform.getIdentifier(), ((UniformFloat  ) uniform).getValue());
+		if(uniform instanceof UniformInt    ) setUniform(gl, uniform.getIdentifier(), ((UniformInt    ) uniform).getValue());
+		if(uniform instanceof UniformBool   ) setUniform(gl, uniform.getIdentifier(), ((UniformBool   ) uniform).getValue());
+		if(uniform instanceof UniformVec3   ) setUniform(gl, uniform.getIdentifier(), ((UniformVec3   ) uniform).getValue());
+		if(uniform instanceof UniformSampler) setSampler(gl, uniform.getIdentifier(), ((UniformSampler) uniform).getValue());
 	}
 	
 	public void loadModelMatrix(GL2 gl, float[] matrix)

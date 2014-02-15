@@ -53,6 +53,8 @@ public class Vec3
 		this.z = z;
 	}
 	
+	public Vec3 normalizeScale() { return this.multiply(1.0f / this.min()); }
+	
 	public Vec3(double x, double y, double z)
 	{
 		this.x = (float) x;
@@ -77,6 +79,14 @@ public class Vec3
 		}
 		
 		return 0;
+	}
+	
+	public float min()
+	{
+		float minimum = x < y ? x : y;
+		if(z < minimum) minimum = z;
+		
+		return minimum;
 	}
 	
 	public float[] toArray()

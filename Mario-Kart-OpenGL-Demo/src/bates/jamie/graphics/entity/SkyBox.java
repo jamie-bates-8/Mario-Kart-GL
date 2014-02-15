@@ -2,7 +2,7 @@ package bates.jamie.graphics.entity;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.gl2.GLUT;
 
@@ -24,19 +24,15 @@ public class SkyBox
 		gl.glDisable(GL2.GL_LIGHTING);
 		
 		Shader shader = Shader.get("clear_sky");
-		
-		if(Shader.enabled && shader != null) shader.enable(gl);
+		if(shader != null) shader.enable(gl);
 		
 		gl.glPushMatrix();
 		{
-			if(Shader.enabled)
-			{
-				shader.setUniform(gl, "horizon" , horizon );
-				shader.setUniform(gl, "skyColor", skyColor);
+			shader.setUniform(gl, "horizon" , horizon );
+			shader.setUniform(gl, "skyColor", skyColor);
 				
-				GLUT glut = new GLUT();
-				glut.glutSolidSphere(800, 32, 32);
-			}
+			GLUT glut = new GLUT();
+			glut.glutSolidSphere(800, 32, 32);
 		}	
 		gl.glPopMatrix();
 		

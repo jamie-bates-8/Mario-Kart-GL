@@ -7,11 +7,7 @@ import static javax.media.opengl.GL.GL_DEPTH_TEST;
 import static javax.media.opengl.GL.GL_LEQUAL;
 import static javax.media.opengl.GL.GL_NICEST;
 import static javax.media.opengl.GL.GL_TEXTURE_2D;
-import static javax.media.opengl.GL2.GL_ACCUM;
 import static javax.media.opengl.GL2.GL_ACCUM_BUFFER_BIT;
-import static javax.media.opengl.GL2.GL_LOAD;
-import static javax.media.opengl.GL2.GL_MULT;
-import static javax.media.opengl.GL2.GL_RETURN;
 import static javax.media.opengl.GL2ES1.GL_EXP2;
 import static javax.media.opengl.GL2ES1.GL_FOG;
 import static javax.media.opengl.GL2ES1.GL_FOG_COLOR;
@@ -102,6 +98,7 @@ import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.BoundParser;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.collision.Sphere;
+import bates.jamie.graphics.entity.Balloon;
 import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.BrickBlock;
@@ -111,7 +108,6 @@ import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.EnergyField.FieldType;
 import bates.jamie.graphics.entity.GoldCoin;
 import bates.jamie.graphics.entity.GoldCoin.CoinType;
-import bates.jamie.graphics.entity.Balloon;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.LightingStrike;
 import bates.jamie.graphics.entity.Mushroom;
@@ -147,15 +143,21 @@ import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.StarParticle;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.scene.ShadowCaster.ShadowQuality;
+import bates.jamie.graphics.scene.process.BloomStrobe;
+import bates.jamie.graphics.scene.process.FocalBlur;
+import bates.jamie.graphics.scene.process.Mirror;
+import bates.jamie.graphics.scene.process.RainScreen;
+import bates.jamie.graphics.scene.process.ShadowCaster;
+import bates.jamie.graphics.scene.process.ShadowCaster.ShadowQuality;
 import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
+import bates.jamie.graphics.util.shader.Uniform;
 
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.gl2.GLUT;
@@ -419,8 +421,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Queue<Integer> itemQueue = new ArrayBlockingQueue<Integer>(100);
 	private List<Item> itemList = new ArrayList<Item>();
 	
-	
-	private int boostCounter = 0;
 	
 	public boolean enableBlur   = false;
 	public boolean enableRadial = true;
@@ -723,7 +723,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_shaders = new JCheckBoxMenuItem("Enable Shaders");
 		menuItem_shaders.addItemListener(this);
 		menuItem_shaders.setMnemonic(KeyEvent.VK_S);
-		menuItem_shaders.setSelected(Shader.enabled);
+		menuItem_shaders.setSelected(true);
 		
 		menu_render.add(menuItem_shaders);
 		
@@ -1165,9 +1165,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 	
 	public SceneNode cubeNode;
+	public SceneNode testNode;
+	public SceneNode blueNode;
 	public Reflector cubeReflector;
 	
 	public QuestionBlock questionBlock;
+	
+	public Mirror mirror;
 
 	public void init(GLAutoDrawable drawable)
 	{
@@ -1246,14 +1250,44 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		cubeReflector = new Reflector(1.0f);
 		
+		List<Uniform> uniforms = new ArrayList<Uniform>();
+		
+		
+		uniforms.add(Uniform.getUniform("scaleVec", new Vec3(4, 6, 4).normalizeScale()));
+		uniforms.add(Uniform.getUniform("minScale", new Vec3(4, 6, 4).min()));
+		
 		cubeNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		cubeNode.setTranslation(new Vec3(0, 40, 2));
-		cubeNode.setScale(new Vec3(2));
+		cubeNode.setTranslation(new Vec3(-8, 40, 5));
+		cubeNode.setScale(new Vec3(4, 6, 4));
 		cubeNode.setReflector(cubeReflector);
-		cubeNode.setReflectivity(0.85f);
-		cubeNode.setRenderMode(RenderMode.BUMP_TEXTURE);
-		cubeNode.setColor(new float[] {1.0f, 1.0f, 1.0f});
+		cubeNode.setReflectivity(0.9f);
+		cubeNode.setRenderMode(RenderMode.BUMP_REFLECT);
+		cubeNode.setColor(new float[] {1.0f, 0.2f, 0.2f});
 		cubeNode.useParallax(false);
+		cubeNode.setUniforms(uniforms);
+		cubeNode.setShader(Shader.get("checker_diagonal"));
+		
+		testNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		testNode.setTranslation(new Vec3(0, 40, 5));
+		testNode.setScale(new Vec3(4, 6, 4));
+		testNode.setReflector(cubeReflector);
+		testNode.setReflectivity(0.9f);
+		testNode.setRenderMode(RenderMode.BUMP_REFLECT);
+		testNode.setColor(new float[] {1.0f, 0.8f, 0.0f});
+		testNode.useParallax(false);
+		testNode.setUniforms(uniforms);
+		testNode.setShader(Shader.get("checker_diagonal"));
+		
+	    blueNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+	    blueNode.setTranslation(new Vec3(8, 40, 5));
+	    blueNode.setScale(new Vec3(4, 6, 4));
+	    blueNode.setReflector(cubeReflector);
+	    blueNode.setReflectivity(0.9f);
+	    blueNode.setRenderMode(RenderMode.BUMP_REFLECT);
+	    blueNode.setColor(new float[] {0.1f, 0.5f, 1.0f});
+	    blueNode.useParallax(false);
+	    blueNode.setUniforms(uniforms);
+	    blueNode.setShader(Shader.get("checker_diagonal"));
 	    
 	    if(enableItems) loadItems(gl);
 	    loadParticles();
@@ -1308,6 +1342,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    updateTimes = new long[240][UPDATE_HEADERS.length];
 	    
 	    focalBlur.setup(gl);
+	    
+	    mirror = new Mirror(new Vec3(0, 100, 0), new Vec3(0, -1, 0));
+	    mirror.setup(gl);
 	    
 	    rainScreen = new RainScreen();
 	    
@@ -1381,12 +1418,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			shaderNode = new DefaultMutableTreeNode(shader.getKey());
 			
-			for(String uniform : shader.getValue().uniforms.keySet())
-			{
-				uniformNode = new DefaultMutableTreeNode(uniform);
-				shaderNode.add(uniformNode);
-			}
-			shaderRoot.add(shaderNode);
+//			for(String uniform : shader.getValue().uniforms)
+//			{
+//				uniformNode = new DefaultMutableTreeNode(uniform);
+//				shaderNode.add(uniformNode);
+//			}
+//			shaderRoot.add(shaderNode);
 		}
 	}
 	
@@ -1465,7 +1502,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			floorBump = TextureLoader.load(gl, "tex/bump_maps/brick_parallax.png");
 			floorTex  = TextureLoader.load(gl, "tex/brick_color.jpg");
 			
-			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
+//			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
+			rain_normal = TextureLoader.load(gl, "tex/bump_maps/noise.jpg");
 			
 			brickColour = TextureLoader.load(gl, "tex/brick_colour.png");
 			brickNormal = TextureLoader.load(gl, "tex/brick_normal.png");
@@ -1593,7 +1631,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
         gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
         gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
         
-        gl.glEnable(GL2.GL_BLEND);
+//        gl.glEnable(GL2.GL_BLEND);
         gl.glDisable(GL2.GL_DEPTH_TEST);
         
         gl.glMatrixMode(GL2.GL_TEXTURE);
@@ -1635,14 +1673,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		TimeQuery.resetCache();
 		
-		int[] order = new int[cars.size()];
-		
-		int i = orderRender(order);
-		int _i = i; //temporary variable _i used to store the boost count this frame
-		
 		if(mousePressed) selecter.selectModel(gl);
 
-		for(int index : order)
+		for(int index = 0; index < cars.size(); index++)
 		{
 			Car car = cars.get(index);
 			
@@ -1651,7 +1684,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			setupLights(gl, car);
 			
-			if(enableShadow && Shader.enabled)
+			mirror.update(gl);
+			
+			setupViewport(gl, index);
+			car.setupCamera(gl, glu);
+			
+			setupLights(gl, car);
+			
+			if(enableShadow)
 			{
 				caster.displayShadow(gl);
 				
@@ -1663,11 +1703,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				}
 			}
 			
-			if(enableFocalBlur)
-			{
-				focalBlur.display(gl);
-				focalBlur.update(gl);
-			}
+			if(enableFocalBlur) focalBlur.update(gl);
 			
 			bananasRendered = 0;
 			
@@ -1697,43 +1733,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					for(Light l : lights) l.render(gl);
 			}
 			
-			if(enableFocalBlur)
-			{
-				focalBlur.guassianPass(gl);
-				focalBlur.disable(gl);
-			}
+			if(enableFocalBlur) focalBlur.guassianPass(gl);
 			
 			gl.glDisable(GL2.GL_CLIP_PLANE2);
-			
-			/*
-			 * The condition (i == 1) means that the frames stored in the accumulation
-			 * are displayed once the last boosting car has been rendered
-			 * The condition (_i = boostCounter) means that the number of vehicles
-			 * boosting is consistent with the previous frame; hence, the accumulation
-			 * buffer is in a stable state (will not produce visual artifacts) 
-			 */
-			if(enableBlur && car.isBoosting() && i == 1 && _i == boostCounter)
-			{
-				gl.glAccum(GL_MULT , 0.5f);
-				gl.glAccum(GL_ACCUM, 0.5f);
-		
-				gl.glAccum(GL_RETURN, 1.0f);
-			}
-			else i--;
 			
 			renderTimes[frameIndex][5] = renderBounds(gl);
 			renderTimes[frameIndex][6] = car.renderHUD(gl, glu);
 		}
 		
-		/* 
-		 * Loads the current frame into the accumulation buffer; this is so that if
-		 * motion blur occurs in the next frame, any old frames stored in the buffer
-		 * will be over-written to avoid displaying visual artifacts.
-		 * */
-		if(enableBlur && _i != boostCounter) gl.glAccum(GL_LOAD, 1.0f);
-		boostCounter = _i;
-		
-		if(shadowMap) displayMap(gl, focalBlur.getDepthTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
+		if(shadowMap) displayMap(gl, mirror.getTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 
 	private void setupLights(GL2 gl, Car car)
@@ -2030,30 +2038,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		float friction = (frictions[0] + frictions[1] + frictions[2] + frictions[3]) / 4;
 		car.friction = friction;
 	}
-
-	private int orderRender(int[] order)
-	{
-		int i = 0;
-		
-		for(int j = 0; j < cars.size(); j++)
-		{
-			order[j] = j; 
-			
-			/*
-			 * The vehicles that are boosting must come first in the rendering
-			 * order so that the accumulative buffer does not store the frames
-			 * rendered by other vehicles.
-			 */
-			if(cars.get(j).isBoosting())
-			{
-				int t = order[i];
-				order[i] = j;
-				order[j] = t;
-				i++;
-			}
-		}
-		return i;
-	}
 	
 	/**
 	 * This method minimises the viewport to create a split-screen effect.
@@ -2189,7 +2173,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 		
 		// prevents shadow texture unit from being active
-		if(displaySkybox || Shader.enabled)
+		if(displaySkybox)
 		{
 			gl.glDrawBuffers(2, attachments, 0);
 			renderSkybox(gl);
@@ -2198,7 +2182,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader shader = null;
 		
-		if(Shader.enabled)
 		{
 			if(enableShadow)
 			{
@@ -2352,9 +2335,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(!environmentMode)
 		{
+			Renderer.bevelled_cube_model.normalMap = rain_normal;
+			Renderer.bevelled_cube_model.calculateTangents();
+			
 			shine.render(gl); 
 			 star.render(gl);
 		 cubeNode.render(gl);
+    	 testNode.render(gl);
+    	 blueNode.render(gl);
     questionBlock.render(gl);
 			 
 			for(GoldCoin coin : coins) coin.render(gl);
@@ -2562,8 +2550,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			for(Car car : cars)
 			{
 				if(car.colliding)
-					 car.bound.displayWireframe(gl, RGB.PURE_RED_3F, smoothBound);
-				else car.bound.displayWireframe(gl, RGB.BLACK_3F   , smoothBound);
+					 car.bound.renderWireframe(gl, RGB.PURE_RED_3F, smoothBound);
+				else car.bound.renderWireframe(gl, RGB.BLACK_3F   , smoothBound);
 			}
 			
 			for(Bound bound : bounds)
@@ -2571,10 +2559,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				{
 					if(car.collisions != null && car.collisions.contains(bound))
 					{
-						 bound.displayWireframe(gl, RGB.PURE_RED_3F, smoothBound);
+						 bound.renderWireframe(gl, RGB.PURE_RED_3F, smoothBound);
 						 break;
 					}
-					else bound.displayWireframe(gl, RGB.BLACK_3F   , smoothBound);
+					else bound.renderWireframe(gl, RGB.BLACK_3F   , smoothBound);
 				}
 		}
 		
@@ -2591,7 +2579,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableOBBSolids)
 			for(Bound bound : bounds)
-				bound.displaySolid(gl, RGB.toRGBAi(RGB.VIOLET, 0.1f));
+				bound.renderSolid(gl, RGB.toRGBAi(RGB.VIOLET, 0.1f));
 		
 		for(Car car : cars)
 			for(Item item : car.getItems())
@@ -3259,7 +3247,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		else if(source.equals(menuItem_tag        )) cars.get(0).displayTag       = selected;    
 		else if(source.equals(menuItem_settle     )) blizzard.enableSettling      = selected;
 		else if(source.equals(menuItem_splash     )) blizzard.enableSplashing     = selected;
-		else if(source.equals(menuItem_shaders    )) Shader.enabled               = selected;  
+		else if(source.equals(menuItem_shaders    )) ;  
 		else if(source.equals(menuItem_shadows    )) enableShadow                 = selected;   
 		else if(source.equals(menuItem_aberration )) cars.get(0).enableAberration = selected;     
 		else if(source.equals(menuItem_cubemap    ))

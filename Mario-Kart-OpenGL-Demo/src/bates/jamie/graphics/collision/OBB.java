@@ -418,7 +418,7 @@ public class OBB extends Bound
 	public Vec3 getUpVector  (float scale) { return c.     add(u.yAxis.multiply(scale)); }
 	public Vec3 getDownVector(float scale) { return c.subtract(u.yAxis.multiply(scale)); }
 	
-	public void displaySolid(GL2 gl, float[] color)
+	public void renderSolid(GL2 gl, float[] color)
 	{
 		gl.glColor4fv(color, 0);
 		
@@ -440,7 +440,7 @@ public class OBB extends Bound
 		gl.glEnable(GL_LIGHTING);
 	}
 		
-	public void displayWireframe(GL2 gl, float[] color, boolean smooth)
+	public void renderWireframe(GL2 gl, float[] color, boolean smooth)
 	{
 		if(color.length > 3)
 			 gl.glColor4fv(color, 0);

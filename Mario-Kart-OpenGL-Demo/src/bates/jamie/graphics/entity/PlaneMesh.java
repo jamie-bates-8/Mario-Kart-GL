@@ -6,10 +6,10 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec2;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.common.nio.Buffers;
 

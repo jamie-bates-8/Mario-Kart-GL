@@ -23,9 +23,9 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
@@ -121,12 +121,12 @@ public class BlueShell extends Shell
 				gl.glRotatef(rotation, 0, -1, 0);
 				gl.glScalef(1.5f, 1.5f, 1.5f);
 				
-				Shader shader = Shader.enabled ? Shader.getLightModel("texture") : null;
+				Shader shader = Shader.getLightModel("texture");
 				if(shader != null) shader.enable(gl);
 				
 				gl.glCallList(shellList);
 				
-				shader = Shader.enabled ? Shader.getLightModel("phong") : null;
+				shader = Shader.getLightModel("phong");
 				if(shader != null) shader.enable(gl);
 				
 				gl.glCallList(rimList);
@@ -157,7 +157,7 @@ public class BlueShell extends Shell
 	{
 		GLU glu = new GLU();
 		
-		Shader shader = Shader.enabled ? Shader.get("dissolve") : null;
+		Shader shader = Shader.get("dissolve");
 		if(shader != null)
 		{
 			shader.enable(gl);

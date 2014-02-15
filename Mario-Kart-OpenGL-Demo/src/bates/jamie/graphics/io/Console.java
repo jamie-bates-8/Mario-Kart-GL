@@ -21,9 +21,9 @@ import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.Blizzard;
 import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.scene.AmbientOccluder;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.process.AmbientOccluder;
 import bates.jamie.graphics.util.Vec3;
 
 /* TODO

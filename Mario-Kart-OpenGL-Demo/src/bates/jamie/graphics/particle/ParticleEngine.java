@@ -13,8 +13,8 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GL3;
 
 import bates.jamie.graphics.scene.Scene;
-import bates.jamie.graphics.util.Shader;
 import bates.jamie.graphics.util.Vec3;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.common.nio.Buffers;
 

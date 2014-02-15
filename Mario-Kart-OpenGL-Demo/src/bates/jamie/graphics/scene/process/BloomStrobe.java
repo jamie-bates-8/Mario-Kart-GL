@@ -1,4 +1,4 @@
-package bates.jamie.graphics.scene;
+package bates.jamie.graphics.scene.process;
 
 import static javax.media.opengl.GL.GL_CLAMP_TO_EDGE;
 import static javax.media.opengl.GL.GL_FRAMEBUFFER;
@@ -18,7 +18,9 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.scene.Light;
+import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.shader.Shader;
 
 public class BloomStrobe
 {
@@ -121,6 +123,11 @@ public class BloomStrobe
 		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		
+		renderScene(gl);
+	}
+
+	private void renderScene(GL2 gl)
+	{
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 		gl.glDrawBuffers(1, attachments, 0); // standard rendering
 		
@@ -424,6 +431,7 @@ public class BloomStrobe
 		}
 
 		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);
 	}
 	
 	public void changeSize(GL2 gl)
@@ -461,6 +469,8 @@ public class BloomStrobe
 				gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
 			}
 	    }
+	    
+//	    gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);
 
 	    setGuassian();
 	}

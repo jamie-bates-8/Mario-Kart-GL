@@ -90,7 +90,7 @@ public class Sphere extends Bound
 	@Override
 	public float getMaximumExtent() { return r; }
 	
-	public void displaySolid(GL2 gl, float[] color)
+	public void renderSolid(GL2 gl, float[] color)
 	{
 		if(color.length > 3)
 			 gl.glColor4fv(color, 0);
@@ -114,7 +114,7 @@ public class Sphere extends Bound
 		gl.glEnable(GL_LIGHTING);
 	}
 	
-	public void displayWireframe(GL2 gl, float[] color, boolean smooth)
+	public void renderWireframe(GL2 gl, float[] color, boolean smooth)
 	{
 		int v = 24;
 		

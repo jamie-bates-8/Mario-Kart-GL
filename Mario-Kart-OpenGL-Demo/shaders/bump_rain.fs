@@ -7,7 +7,6 @@ uniform sampler2D   heightmap;
 uniform sampler2D   bumpmap;
 uniform samplerCube cubeMap;
 
-uniform mat4 cameraMatrix;
 varying mat3 tangentMatrix;
 
 uniform float shininess;

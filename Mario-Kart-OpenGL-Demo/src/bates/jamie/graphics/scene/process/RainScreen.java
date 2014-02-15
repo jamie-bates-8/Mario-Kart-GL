@@ -1,4 +1,4 @@
-package bates.jamie.graphics.scene;
+package bates.jamie.graphics.scene.process;
 
 import static javax.media.opengl.GL.GL_CLAMP_TO_EDGE;
 import static javax.media.opengl.GL.GL_DEPTH_TEST;
@@ -19,7 +19,8 @@ import javax.media.opengl.GL3;
 import javax.media.opengl.glu.GLU;
 
 import bates.jamie.graphics.particle.RainDrop;
-import bates.jamie.graphics.util.Shader;
+import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.common.nio.Buffers;
 
