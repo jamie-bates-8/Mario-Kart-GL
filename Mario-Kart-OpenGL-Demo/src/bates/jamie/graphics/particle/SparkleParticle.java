@@ -16,6 +16,7 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.common.nio.Buffers;
@@ -38,9 +39,15 @@ public class SparkleParticle extends Particle
 		}
 	}
 	
-	public SparkleParticle(Vec3 c, Vec3 t, int duration)
+	private Vehicle car;
+	private float scale;
+	
+	public SparkleParticle(Vec3 c, Vec3 t, float scale, int duration, Vehicle car)
 	{
 		super(c, t, 0, duration);
+		
+		this.car = car;
+		this.scale = scale;
 	}
 
 	@Override
@@ -56,7 +63,7 @@ public class SparkleParticle extends Particle
 			gl.glEnable(GL2.GL_POINT_SMOOTH);
 			gl.glEnable(GL_POINT_SPRITE);
 			
-			gl.glPointSize(10);
+			gl.glPointSize(10 * scale);
 			gl.glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 
 			Vec3 p = this.c;
@@ -64,12 +71,8 @@ public class SparkleParticle extends Particle
 			float c = colorMap.get(duration);
 
 			gl.glColor4f(c, c, c, c);
-
-			if(!current.equals(whiteStar))
-			{
-				whiteStar.bind(gl);
-				current = whiteStar;
-			}
+			
+			whiteStar.bind(gl);
 
 			gl.glBegin(GL2.GL_POINTS);
 			gl.glVertex3f(p.x, p.y, p.z);
@@ -147,6 +150,8 @@ public class SparkleParticle extends Particle
 	{
 		super.update();
 		t = t.multiply(0.9f);
+		
+		if(car != null) c = c.add(car.getPosition().subtract(car.previousPosition).multiply(0.99f));
 	}
 }
 

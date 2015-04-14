@@ -8,7 +8,7 @@ import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.FrameBuffer;
@@ -258,7 +258,7 @@ public class ShadowCaster
 
 	private void renderCasters(GL2 gl)
 	{
-		Car car = scene.getCars().get(0);
+		Vehicle car = scene.getCars().get(0);
 		
 		scene.renderVehicles (gl, car, true);
 	    scene.renderItems    (gl, car);

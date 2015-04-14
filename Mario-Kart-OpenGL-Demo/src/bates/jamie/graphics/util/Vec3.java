@@ -3,6 +3,7 @@ package bates.jamie.graphics.util;
 import static java.lang.Math.abs;
 import static java.lang.Math.acos;
 import static java.lang.Math.sqrt;
+import static java.lang.Math.atan2;
 
 import java.util.Collection;
 import java.util.Random;
@@ -94,6 +95,50 @@ public class Vec3
 		return new float[] {x, y, z};
 	}
 	
+	public static float[][] toArray2D(Vec3[] points)
+	{
+		float[][] array = new float[points.length][3];
+		
+		for(int i = 0; i < points.length; i++)
+			array[i] = points[i].toArray();
+		
+		return array;
+	}
+	
+	public static float[] toArray1D(Vec3[] points)
+	{
+		float[] array = new float[3 * points.length];
+		
+		for(int i = 0; i < points.length; i++)
+		{
+			array[i * 3 + 0] = points[i].x;
+			array[i * 3 + 1] = points[i].y;
+			array[i * 3 + 2] = points[i].z;
+		}
+		
+		return array;
+	}
+	
+	public static Vec3[] toArrayVec3(float[] points)
+	{
+		Vec3[] array = new Vec3[points.length / 3];
+		
+		for(int i = 0; i < array.length; i++)
+			array[i] = new Vec3(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
+		
+		return array;
+	}
+	
+	public static Vec3[] toArrayVec3(float[][] points)
+	{
+		Vec3[] array = new Vec3[points.length];
+		
+		for(int i = 0; i < array.length; i++)
+			array[i] = new Vec3(points[i]);
+			
+		return array;
+	}
+	
 	public static Vec3 getRandomVector(float k)
 	{
 		Random g = new Random();
@@ -126,6 +171,10 @@ public class Vec3
 	public Vec3 multiply(Vec3 v) { return new Vec3(x * v.x, y * v.y, z * v.z); }
 	
 	public Vec3 multiply(float k) { return new Vec3(x * k, y * k, z * k); }
+	
+	public Vec3 divide(Vec3 v) { return new Vec3(x / v.x, y / v.y, z / v.z); }
+	
+	public Vec3 divide(float k) { return new Vec3(x / k, y / k, z / k); }
 	
 	public Vec3 absolute() { return new Vec3(abs(x), abs(y), abs(z)); }
 	
@@ -217,6 +266,12 @@ public class Vec3
 		return acos(cos);
 	}
 	
+	public double getCompassAngle()
+	{
+		return Math.toDegrees(atan2(z, x)) + 90.0;
+	}
+
+	
 	// TODO
 	public static float orient2D(float[] a, float[] b, float[] c)
 	{
@@ -303,9 +358,9 @@ public class Vec3
 	{
 		String vec = "(";
 		
-		vec += String.format("%." + precision + "f, ", x);
-		vec += String.format("%." + precision + "f, ", y);
-		vec += String.format("%." + precision + "f) ", z);
+		vec += String.format("%+." + precision + "f, ", x);
+		vec += String.format("%+." + precision + "f, ", y);
+		vec += String.format("%+." + precision + "f) ", z);
 		
 		return vec;
 	}

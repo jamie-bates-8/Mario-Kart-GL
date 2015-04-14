@@ -11,7 +11,7 @@ import java.util.List;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Material;
@@ -46,7 +46,7 @@ public class ItemBox
 	
 	public Reflector reflector;
 	
-	private static Texture questionMark;
+	public static Texture questionMark;
 	
 	static
 	{
@@ -95,8 +95,6 @@ public class ItemBox
 		symbolNode = new SceneNode(null, -1, question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		symbolNode.setTranslation(c);
 		symbolNode.setScale(new Vec3(1.25));
-		symbolNode.setReflector(reflector);
-		symbolNode.setReflectivity(0.75f);
 		symbolNode.setRenderMode(RenderMode.BLOOM_COLOR);
 		symbolNode.setColor(new float[] {1, 1, 1});
 		symbolNode.enableBloom(true);
@@ -124,9 +122,6 @@ public class ItemBox
 			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 			gl.glRotated(rotation, 0.0, -Math.cos(Scene.sceneTimer * (Math.PI / 90.0)), Math.sin(Scene.sceneTimer * (Math.PI / 90.0)));
 			gl.glScalef(SCALE, SCALE, SCALE);
-			
-			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			gl.glDrawBuffers(2, attachments, 0);
 			
 			Shader shader = Shader.get("item_box");
 			shader.enable(gl);
@@ -203,11 +198,11 @@ public class ItemBox
 		return boxes;
 	}
 	
-	public void update(List<Car> cars)
+	public void update(List<Vehicle> cars)
 	{
 		if(!isDead())
 		{
-			for(Car car : cars)
+			for(Vehicle car : cars)
 			{
 				if(car.bound.testSphere(bound))
 				{
@@ -221,7 +216,7 @@ public class ItemBox
 						roulette.secondary = car.hasItem();
 					}
 					
-					particles.addAll(generator.generateItemBoxParticles(getPosition(), 64));
+					particles.addAll(generator.generateItemBoxParticles(getPosition(), 24));
 				}
 			}
 		}

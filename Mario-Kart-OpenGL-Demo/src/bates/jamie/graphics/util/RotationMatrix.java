@@ -20,7 +20,7 @@ public class RotationMatrix
 		zAxis = new Vec3(matrix[2]);
 	}
 	
-	public RotationMatrix(float x, float y, float z)
+	public RotationMatrix(float x, float y, float z) // This method uses a right-handed coordinate system
 	{
 		x = (float) toRadians(x);
 		y = (float) toRadians(y);
@@ -62,7 +62,7 @@ public class RotationMatrix
 		Vec3 u = axis;
 		
 		float  c = cosf(toRadians(theta));
-		float _c = 1 - c;
+		float _c = 1.0f - c;
 		float  s = sinf(toRadians(theta));
 		
 		float u0 = u.x * u.x;
@@ -72,6 +72,33 @@ public class RotationMatrix
 		xAxis = new Vec3(             u0 * _c + c, u.x * u.y * _c + u.z * s, u.x * u.z * _c - u.y * s);
 	    yAxis = new Vec3(u.x * u.y * _c - u.z * s,              u1 * _c + c, u.y * u.z * _c + u.x * s);
 	    zAxis = new Vec3(u.x * u.z * _c + u.y * s, u.y * u.z * _c - u.x * s,              u2 * _c + c);
+	}
+	
+	public RotationMatrix(Quat q)
+	{
+		q = q.normalize(); // only a unit quaternion can represent a rotation
+		
+		// helper quantities calculated up front to avoid redundancies
+
+		float xx = q.x * q.x; // x squared
+		float yy = q.y * q.y;
+		float zz = q.z * q.z;
+		float ww = q.w * q.w;
+
+		float x2 = 2.0f * q.x; // x times 2
+		float y2 = 2.0f * q.y;
+		float w2 = 2.0f * q.w;
+
+		float xy = x2 * q.y;
+		float xz = x2 * q.z;
+		float yz = y2 * q.z;
+		float wx = w2 * q.x;
+		float wy = w2 * q.y;
+		float wz = w2 * q.z;
+
+		xAxis = new Vec3 ( ww + xx - yy - zz,    xy - wz,    xz + wy );
+		yAxis = new Vec3 ( xy + wz,    ww - xx + yy - zz,    yz - wx );
+		zAxis = new Vec3 ( xz - wy,    yz + wx,    ww - xx - yy + zz );
 	}
 	
 	public static float[][] multiply(float[][] a, float[][] b)
@@ -128,6 +155,11 @@ public class RotationMatrix
 		    xAxis.z, yAxis.z, zAxis.z,   0   ,
 			   0   ,    0   ,    0   ,   1
 		};
+	}
+	
+	public String toString()
+	{
+		return xAxis + "\n" + yAxis + "\n" + zAxis;
 	}
 	
 	public static float sinf(double a) { return (float) sin(a); }

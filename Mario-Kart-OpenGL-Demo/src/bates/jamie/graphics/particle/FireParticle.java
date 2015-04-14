@@ -9,7 +9,7 @@ import java.util.List;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL3;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
@@ -34,7 +34,7 @@ public class FireParticle extends Particle
 	private float scale = 1;
 	private boolean spark = false;
 	
-	private Car car;
+	private Vehicle car;
 	
 	private Vec3 source;
 	private Vec3 direction;
@@ -42,34 +42,40 @@ public class FireParticle extends Particle
 	
 	private Texture texture;
 	
-	private static Gradient gradient;
+	private FireType type;
+	
+	private static Gradient red_gradient;
+	private static Gradient blue_gradient;
+	private static Gradient smoke_gradient;
 	
 	static
 	{	
-		gradient = new Gradient(new float[] {252, 253, 187}, new float[] {120, 120, 120});
-		gradient.addStop( 5, RGB.BRIGHT_YELLOW);
-		gradient.addStop(10, new float[] {252, 211, 103});
-		gradient.addStop(20, new float[] {255, 171,  80});
-		gradient.addStop(30, RGB.ORANGE);
-		gradient.addStop(50, new float[] {255, 117,  58});
-		gradient.addStop(60, new float[] {255,  83,  33});
-		gradient.addStop(61, new float[] {30, 30, 30});
-		gradient.addStop(70, new float[] {60, 60, 60});
+		red_gradient = new Gradient(new float[] {252, 253, 187}, new float[] {120, 120, 120});
+		red_gradient.addStop( 5, RGB.BRIGHT_YELLOW);
+		red_gradient.addStop(10, new float[] {252, 211, 103});
+		red_gradient.addStop(20, new float[] {255, 171,  80});
+		red_gradient.addStop(30, RGB.ORANGE);
+		red_gradient.addStop(50, new float[] {255, 117,  58});
+		red_gradient.addStop(60, new float[] {255,  83,  33});
+		red_gradient.addStop(61, new float[] {30, 30, 30});
+		red_gradient.addStop(70, new float[] {60, 60, 60});
 		
-//		gradient = new Gradient(new float[] {226, 254, 253}, new float[] {120, 120, 120});
-//		gradient.addStop( 5, new float[] {180, 235, 255});
-//		gradient.addStop(10, new float[] {68, 208, 255});
-//		gradient.addStop(20, RGB.BLUE);
-//		gradient.addStop(30, RGB.INDIGO);
-//		gradient.addStop(40, new float[] {48, 104, 231});
-//		gradient.addStop(50, new float[] {56, 80, 255});
-//		gradient.addStop(60, new float[] {39, 39, 234});
-//		gradient.addStop(61, new float[] {30, 30, 30});
-//		gradient.addStop(70, new float[] {60, 60, 60});
+		blue_gradient = new Gradient(new float[] {226, 254, 253}, new float[] {120, 120, 120});
+		blue_gradient.addStop( 5, new float[] {180, 235, 255});
+		blue_gradient.addStop(10, new float[] {68, 208, 255});
+		blue_gradient.addStop(20, RGB.BLUE);
+		blue_gradient.addStop(30, RGB.INDIGO);
+		blue_gradient.addStop(40, new float[] {48, 104, 231});
+		blue_gradient.addStop(50, new float[] {56, 80, 255});
+		blue_gradient.addStop(60, new float[] {39, 39, 234});
+		blue_gradient.addStop(61, new float[] {30, 30, 30});
+		blue_gradient.addStop(70, new float[] {60, 60, 60});
+		
+		smoke_gradient = new Gradient(new float[] {30, 30, 30}, new float[] {60, 60, 60});
 	}
 
 	public FireParticle(Vec3 c, Vec3 t, Vec3 dir, float rotation, int duration,
-			int textureID, float scale, boolean spark, Car car, int sourceID)
+			int textureID, float scale, boolean spark, FireType type, Vehicle car, int sourceID)
 	{
 		super(c, t, rotation, duration);
 		
@@ -82,6 +88,8 @@ public class FireParticle extends Particle
 		this.spark = spark;
 		this.scale = scale;
 		this.sourceID = sourceID;
+		
+		this.type = type;
 		
 		if(textureID == 0) texture = whiteFlare; 
 		if(textureID == 1) texture = fire_alpha_1; 
@@ -103,16 +111,33 @@ public class FireParticle extends Particle
 		
 		gl.glPushMatrix();
 		{	
+			boolean diminish = (car != null && car.boostDuration < 5);
+			
+			Gradient gradient;
+			
+			switch(type)
+			{
+				case RED   : gradient = red_gradient;   break; 
+				case BLUE  : gradient = blue_gradient;  break;
+				case SMOKE : gradient = smoke_gradient; break;
+				
+				default : gradient = red_gradient; break;
+			}
+			if(diminish && !spark) gradient = smoke_gradient;
+			
 			float  age = (float) duration / lifespan;
 			float halflife = lifespan / 2;
 			float size = Math.abs(((float) duration - halflife) / lifespan);
 			size = 1.0f - size;
 			size = 2.0f * (size - 0.5f);
 			
-			gl.glPointSize((30 * size * scale) + (20 * age * scale));
-			if(spark) gl.glPointSize(5 + 10 * age);
+			float boost = (car != null) ?  (float) car.boostDuration / 60.0f : 1.0f;
+			boost = 0.75f + boost * 0.25f;
+				
+			gl.glPointSize((18 * size * scale * boost) + (12 * age * scale * boost));
+			if(spark) gl.glPointSize(3 + 6 * age);
 			
-			float[] color = gradient.interpolate(1.0 - age);
+			float[]   color = gradient.interpolate(1.0 - age);
 			if(spark) color = gradient.interpolate(0.5);
 			
 			float[][] colors = gradient.getColors((int) ((1.0 - age) * 100));
@@ -133,8 +158,12 @@ public class FireParticle extends Particle
 			
 			offset = car != null ? car.getBoostVectors()[sourceID] : source;
 			
-			Vec3 position = car != null ? offset.add(c).add(car.bound.u.zAxis.multiply(10.0f * (1 - age))) :
-										  offset.add(c).add(direction.multiply(10.0f * (1 - age)));
+			float fadeDistance = (type == FireType.BLUE) ? 7.5f : 5.0f;
+			if(car != null) fadeDistance *= boost; 
+			if(car != null) fadeDistance  = car.isSlipping() ? 0 : fadeDistance; 
+			
+			Vec3 position = car != null ? offset.add(c).add(car.bound.u.zAxis.multiply(fadeDistance * (1 - age))) :
+										  offset.add(c).add(direction.multiply(fadeDistance * (1 - age)));
 			
 			texture.bind(gl);
 			
@@ -202,14 +231,14 @@ public class FireParticle extends Particle
 		size = 1.0f - size;
 		size = 2.0f * (size - 0.5f);
 		
-		gl.glPointSize((30 * size * scale) + (20 * age * scale));
-		if(spark) gl.glPointSize(5 + 10 * age);
+		gl.glPointSize((18 * size * scale) + (12 * age * scale));
+		if(spark) gl.glPointSize(3 + 6 * age);
 		
-		float[] color = gradient.interpolate(1.0 - age);
-		if(spark) color = gradient.interpolate(0.5);
+		float[]   color = red_gradient.interpolate(1.0 - age);
+		if(spark) color = red_gradient.interpolate(0.5);
 		
-		float[][] colors = gradient.getColors((int) ((1.0 - age) * 100));
-		if(spark) colors = gradient.getColors(30);
+		float[][] colors = red_gradient.getColors((int) ((1.0 - age) * 100));
+		if(spark) colors = red_gradient.getColors(30);
 		
 		shader.setUniform(gl, "color2", colors[0]);
 		shader.setUniform(gl, "color1", colors[1]);
@@ -222,8 +251,8 @@ public class FireParticle extends Particle
 		
 		offset = car != null ? car.getBoostVectors()[sourceID] : source;
 		
-		Vec3 position = car != null ? offset.add(c).add(car.bound.u.zAxis.multiply(10.0f * (1 - age))) :
-									  offset.add(c).add(direction.multiply(10.0f * (1 - age)));
+		Vec3 position = car != null ? offset.add(c).add(car.bound.u.zAxis.multiply(5.0f * (1 - age))) :
+									  offset.add(c).add(direction.multiply(5.0f * (1 - age)));
 		
 		texture.bind(gl);
 		
@@ -239,7 +268,13 @@ public class FireParticle extends Particle
 	{
 		super.update();
 		
-//		t = t.add(car.getForwardVector().multiply(0.02f));
 		t = t.multiply(duration > 0 ? (float) duration / lifespan : 0.002f);
+	}
+	
+	public enum FireType
+	{
+		RED,
+		BLUE,
+		SMOKE;
 	}
 }

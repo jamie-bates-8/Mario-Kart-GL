@@ -97,9 +97,6 @@ public class Light extends AnchorPoint
 	{
 		GLU glu = new GLU();
 		
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		
-		gl.glDrawBuffers(2, attachments, 0);
 		gl.glColor4f(diffuse[0], diffuse[1], diffuse[2], 1);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
@@ -122,7 +119,6 @@ public class Light extends AnchorPoint
 		
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		gl.glColor4f(1, 1, 1, 1);
-		gl.glDrawBuffers(1, attachments, 0);
 	}
 	
 	public static void setupModel(GL2 gl)

@@ -12,8 +12,9 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Gradient;
 import bates.jamie.graphics.util.OBJParser;
@@ -54,7 +55,7 @@ public class Banana extends Item
 	
 	private int bananaID = 0;
 	
-	public Banana(GL2 gl, Scene scene, Car car, int id)
+	public Banana(GL2 gl, Scene scene, Vehicle car, int id)
 	{
 		if(bananaList == -1)
 		{
@@ -135,6 +136,8 @@ public class Banana extends Item
 
 	private void renderFace(GL2 gl)
 	{
+		boolean useHDR = BloomStrobe.end(gl);
+		
 		gl.glPushMatrix();
 		{
 			gl.glDisable(GL_LIGHTING);
@@ -160,6 +163,8 @@ public class Banana extends Item
 			gl.glEnable(GL_LIGHTING);
 		}
 		gl.glPopMatrix();
+		
+		if(useHDR) BloomStrobe.begin(gl);
 	}
 	
 	@Override
@@ -203,7 +208,7 @@ public class Banana extends Item
 	}
 	
 	@Override
-	public void collide(Car car)
+	public void collide(Vehicle car)
 	{
 		car.spin();
 		destroy();

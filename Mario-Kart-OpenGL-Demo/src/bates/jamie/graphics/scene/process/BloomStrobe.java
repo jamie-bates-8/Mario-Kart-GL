@@ -15,7 +15,7 @@ import static javax.media.opengl.GL2GL3.GL_TEXTURE_MAX_LEVEL;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.scene.Light;
@@ -40,6 +40,8 @@ public class BloomStrobe
 	private boolean afterGlowValid = false;
 
 	private DisplayMode mode = DisplayMode.FULL_SCENE;
+	
+	private static boolean enabled = false;
 
 	public BloomStrobe(GL2 gl, Scene scene)
 	{
@@ -77,6 +79,32 @@ public class BloomStrobe
 	    show2D.setSampler(gl, "sampler0", 0);
 
 	    Shader.disable(gl);
+	}
+	
+	public static boolean isEnabled() { return enabled; }
+	
+	public static boolean begin(GL2 gl)
+	{
+		boolean isEnabled = enabled;
+		
+		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+		gl.glDrawBuffers(2, attachments, 0); // add another color attachment to store the bright pass
+		
+		enabled = true;
+		
+		return isEnabled;
+	}
+	
+	public static boolean end(GL2 gl)
+	{
+		boolean isEnabled = enabled;
+		
+		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+		gl.glDrawBuffers(1, attachments, 0);
+		
+		enabled = true;
+		
+		return isEnabled;
 	}
 
 	public void render(GL2 gl)
@@ -128,10 +156,7 @@ public class BloomStrobe
 
 	private void renderScene(GL2 gl)
 	{
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		gl.glDrawBuffers(1, attachments, 0); // standard rendering
-		
-		Car car = scene.getCars().get(0);
+		Vehicle car = scene.getCars().get(0);
 		Terrain terrain = scene.getTerrain();
 		
 		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
@@ -141,8 +166,6 @@ public class BloomStrobe
 		
 		if(scene.displayLight) for(Light l : scene.lights) l.render(gl);
 		
-		gl.glDrawBuffers(2, attachments, 0);
-		
 		scene.renderParticles(gl, car);
 		Particle.resetTexture();
 		
@@ -151,12 +174,8 @@ public class BloomStrobe
 		if(terrain != null && terrain.enableWater) 
 		{
 			scene.water.setRefraction(gl);
-			
-			gl.glDrawBuffers(2, attachments, 0);
 			scene.water.render(gl, car.camera.getPosition());
 		}
-		
-		gl.glDrawBuffers(2, attachments, 0);
 	}
 
 	/*
@@ -436,9 +455,6 @@ public class BloomStrobe
 	
 	public void changeSize(GL2 gl)
 	{
-	    int width  = fboWidth;
-	    int height = fboHeight;
-	    
 	    fboWidth  = scene.getWidth();
 	    fboHeight = scene.getHeight();
 

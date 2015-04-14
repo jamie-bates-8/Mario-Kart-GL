@@ -16,7 +16,7 @@ import java.util.Random;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.scene.Light;
@@ -88,10 +88,10 @@ public class AmbientOccluder
 	{
 		setupShaders(gl);
 	
-		// Original Scene + Bright Pass
+		// Original Scene + Ambient Pass
 		firstPass(gl);
 	
-		// Generate mipmaps of the bright pass results:
+		// Generate mipmaps of the ambient pass results:
 		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
 	
 		secondPass(gl);
@@ -124,7 +124,7 @@ public class AmbientOccluder
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 		gl.glDrawBuffers(1, attachments, 0); // standard rendering
 		
-		Car car = scene.getCars().get(0);
+		Vehicle car = scene.getCars().get(0);
 		Terrain terrain = scene.getTerrain();
 		
 		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
@@ -335,8 +335,6 @@ public class AmbientOccluder
 		
 		FloatBuffer positions = FloatBuffer.allocate(length * length * 4);
 		
-		Random generator = new Random();
-		
 		for(int i = 0; i < length * length; i++)
 		{
 			positions.put(getRandomDirection());
@@ -405,9 +403,6 @@ public class AmbientOccluder
 	
 	public void changeSize(GL2 gl)
 	{
-	    int width  = fboWidth;
-	    int height = fboHeight;
-	    
 	    fboWidth  = scene.getWidth();
 	    fboHeight = scene.getHeight();
 	    

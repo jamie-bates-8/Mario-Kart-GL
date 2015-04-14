@@ -11,8 +11,8 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
 import bates.jamie.graphics.entity.Terrain;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Reflector;
@@ -55,7 +55,7 @@ public class FakeItemBox extends Item
 	
 	private boolean simplify = false;
 	
-	public FakeItemBox(GL2 gl, Scene scene, Car car)
+	public FakeItemBox(GL2 gl, Scene scene, Vehicle car)
 	{
 		this.scene = scene;
 		this.car = car;
@@ -103,8 +103,6 @@ public class FakeItemBox extends Item
 		symbolNode = new SceneNode(null, -1, ItemBox.question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		symbolNode.setTranslation(c);
 		symbolNode.setScale(new Vec3(-1.25, -1.25, 1.25));
-		symbolNode.setReflector(reflector);
-		symbolNode.setReflectivity(0.75f);
 		symbolNode.setRenderMode(RenderMode.BLOOM_COLOR);
 		symbolNode.setColor(new float[] {1, 0.4f, 0.4f});
 		symbolNode.enableBloom(true);
@@ -138,11 +136,9 @@ public class FakeItemBox extends Item
 			gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 			
 			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
-			gl.glRotated(rotation, 0.0, Math.cos(Scene.sceneTimer * (Math.PI / 90.0)), -Math.sin(Scene.sceneTimer * (Math.PI / 90.0)));
+			gl.glRotated(rotation, 0.0, Math.cos(Scene.sceneTimer * (Math.PI / 90.0)),
+					                   -Math.sin(Scene.sceneTimer * (Math.PI / 90.0)));
 			gl.glScalef(SCALE, SCALE, SCALE);
-			
-			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			gl.glDrawBuffers(2, attachments, 0);
 			
 			Shader shader = Shader.get("fake_box");
 			shader.enable(gl);
@@ -194,7 +190,7 @@ public class FakeItemBox extends Item
 	public void destroy()
 	{
 		super.destroy();
-		scene.addParticles(generator.generateFakeItemBoxParticles(getPosition(), 64, false));
+		scene.addParticles(generator.generateFakeItemBoxParticles(getPosition(), 24, false, null));
 	}
 	
 	@Override
@@ -295,7 +291,7 @@ public class FakeItemBox extends Item
 	public float getMaximumExtent() { return bound.getMaximumExtent() * 0.85f; }
 	
 	@Override
-	public void collide(Car car)
+	public void collide(Vehicle car)
 	{
 		car.curse();
 		destroy();

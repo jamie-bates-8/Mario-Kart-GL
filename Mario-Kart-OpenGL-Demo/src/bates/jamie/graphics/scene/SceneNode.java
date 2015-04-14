@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
@@ -190,8 +191,9 @@ public class SceneNode
 			
 			for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
 			
-			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS && enableBloom) gl.glDrawBuffers(2, attachments, 0);
+			boolean useHDR = BloomStrobe.isEnabled();
+			
+			if(Scene.reflectMode || renderMode == RenderMode.GLASS || !enableBloom) BloomStrobe.end(gl);
 			
 			if(model != null)
 			{
@@ -230,8 +232,8 @@ public class SceneNode
 					case GLASS        : Renderer.displayGlassObject   (gl, geometry, color); break;
 				}
 			}
+			if(useHDR) BloomStrobe.begin(gl);
 			
-			if(!Scene.reflectMode && Scene.singleton.enableBloom && renderMode != RenderMode.GLASS) gl.glDrawBuffers(1, attachments, 0);
 			Shader.disable(gl);
 			
 			for(SceneNode child : children) child.render(gl);
@@ -356,8 +358,9 @@ public class SceneNode
 				}
 			}
 			
-			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
+			boolean useHDR = BloomStrobe.isEnabled();
+			
+			if(Scene.reflectMode || !enableBloom) BloomStrobe.end(gl);
 			
 			if(model != null)
 			{
@@ -368,7 +371,8 @@ public class SceneNode
 			}
 			else Renderer.displayColoredObject(gl, geometry, color);
 			
-			if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
+			if(useHDR) BloomStrobe.begin(gl);
+			
 			Shader.disable(gl);
 			
 			for(SceneNode child : children) child.renderColor(gl, color, reflector);

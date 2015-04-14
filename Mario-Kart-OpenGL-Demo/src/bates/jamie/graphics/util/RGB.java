@@ -19,7 +19,7 @@ public class RGB
 	public static final float[] GRAY        = {127, 127, 127};
 	public static final float[] DARK_GRAY   = { 64,  64,  64};
 	public static final float[] BLACK       = {  0,   0,   0};
-	public static final float[] SKY_BLUE    = { 30, 144,   1};
+	public static final float[] SKY_BLUE    = { 30, 144, 255};
 
 	public static final float[] SKY_BLUE_3F = {0.118f, 0.565f, 1.000f};
 
@@ -27,6 +27,8 @@ public class RGB
 	public static final float[] LIGHT_BROWN = { 93,  63,  19};
 	
 	public static final float[] BRIGHT_YELLOW = {255, 255, 102};
+	public static final float[] BRIGHT_RED    = {255,  70,  70};
+	public static final float[] BRIGHT_BLUE   = {138, 236, 255};
 
 	public static final float[] BLACK_3F      = {0, 0, 0};
 	public static final float[] PURE_RED_3F   = {1, 0, 0};
@@ -44,6 +46,11 @@ public class RGB
 		System.out.println("vec3" + Vector.print(Vector.multiply(GREEN, 1.0f / 255)) + ",");
 		System.out.println("vec3" + Vector.print(Vector.multiply(BLUE, 1.0f / 255)) + ",");
 		System.out.println("vec3" + Vector.print(Vector.multiply(VIOLET, 1.0f / 255)) + ",");
+	}
+	
+	public static float[] toRGBi(float[] color)
+	{
+		return new float[] {color[0]/255, color[1]/255, color[2]/255};
 	}
 
 	public static float[] toRGBAi(float[] color, float alpha)
@@ -105,6 +112,19 @@ public class RGB
 		float[] _color = cs.fromRGB(new float[] {red, green, blue});
 
 		return (_color[0] + _color[1] + _color[2]) / 3;
+	}
+	
+	public static float[] HSVToRGB(float[] hsv)
+	{
+		Vec3 k = new Vec3(1.0f, 2.0f / 3.0f, 1.0f / 3.0f);
+		
+		Vec3 p = new Vec3(hsv[0]).add(k);
+		p = p.fract().multiply(6).subtract(new Vec3(3.0));
+		p = p.absolute();
+		
+		p = p.subtract(new Vec3(k.x)).clamp(0, 1);
+		
+		return Vec3.mix(new Vec3(k.x), p, hsv[1]).multiply(hsv[2]).toArray();
 	}
 
 	public static float[] HSLtoRGB(float hue, float saturation, float luminosity)

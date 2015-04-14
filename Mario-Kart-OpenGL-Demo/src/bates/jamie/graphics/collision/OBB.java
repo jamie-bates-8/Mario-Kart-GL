@@ -11,6 +11,7 @@ import java.util.Arrays;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.util.Quat;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Vec3;
@@ -38,6 +39,15 @@ public class OBB extends Bound
 	// flags to determine whether collisions with certain faces should be considered 
 	public boolean[] validFaces = new boolean[6];
 	
+	public OBB()
+	{
+		c = new Vec3();
+		setRotation(0, 0, 0);
+		e = new Vec3(0.5);
+		
+		Arrays.fill(validFaces, true);
+	}
+	
 
 	public OBB(float c0, float c1, float c2,
 			   float u0, float u1, float u2,
@@ -50,7 +60,8 @@ public class OBB extends Bound
 		Arrays.fill(validFaces, true);
 	}
 	
-	public OBB(float x, float y, float z, float rx, float ry, float rz, float halfWidth, float halfHeight, float halfDepth, boolean[] validFaces)
+	public OBB(float x, float y, float z, float rx, float ry, float rz,
+			   float halfWidth, float halfHeight, float halfDepth, boolean[] validFaces)
 	{
 		setPosition(x, y, z);
 		setRotation(rx, ry, rz);
@@ -72,6 +83,22 @@ public class OBB extends Bound
 		setRotation(u[0], u[1], u[2]);
 		this.e = new Vec3(e);
 		validFaces = v;
+	}
+	
+	public OBB(Vec3 centre, Vec3 orientation, Vec3 extents)
+	{
+		setPosition(centre);
+		setRotation(orientation.x, orientation.y, orientation.z);
+		e = extents.multiply(0.5f);
+		Arrays.fill(validFaces, true);
+	}
+	
+	public OBB(Vec3 centre, Quat orientation, Vec3 extents)
+	{
+		setPosition(centre);
+		u = new RotationMatrix(orientation);
+		e = extents.multiply(0.5f);
+		Arrays.fill(validFaces, true);
 	}
 
 	public boolean isValidCollision(Vec3 face)
@@ -129,6 +156,61 @@ public class OBB extends Bound
 		}   else return zScale < 0 ? normals[FRONT] : normals[BACK];		
 	}
 	
+	public Vec3 getCollisionVector(OBB b)
+	{
+		float p = Integer.MAX_VALUE;
+		
+		Vec3 v = new Vec3();
+		
+		OBB a = this;
+		
+		float ra, rb, r;
+		
+		float[][] R    = new float[3][3];
+		float[][] AbsR = new float[3][3];
+		
+		for(int i = 0; i < 3; i++)
+			for(int j = 0; j < 3; j++)
+			{
+				   R[j][i] = a.u.getAxis(i).dot(b.u.getAxis(j));
+				AbsR[j][i] = abs(R[j][i]) + EPSILON;
+			}
+		
+		Vec3 t = b.c.subtract(a.c);
+		t = new Vec3(t.dot(a.u.xAxis), t.dot(a.u.yAxis), t.dot(a.u.zAxis));		
+		
+		for(int i = 0; i < 3; i++)
+		{
+			ra = a.e.get(i);
+			rb = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
+			r  = abs(t.get(i));
+
+			if(p > abs(ra + rb - r))
+			{
+				p = abs(ra + rb - r);
+				v = a.u.getAxis(i);
+			}
+		}
+
+		for(int i = 0; i < 3; i++)
+		{
+			ra = a.e.x * AbsR[i][0] + a.e.y * AbsR[i][1] + a.e.z * AbsR[i][2];
+			rb = b.e.get(i);
+			r  = abs(t.x * R[i][0] + t.y * R[i][1] + t.z * R[i][2]);
+
+			if(p > abs(ra + rb - r))
+			{
+				p = abs(ra + rb - r);
+				v = b.u.getAxis(i);
+			}
+		}
+		
+		v = v.normalize();
+		if((b.c.subtract(a.c)).dot(v) > 0) v = v.negate();
+		
+		return v;
+	}
+	
 	public float getPenetration(OBB b)
 	{
 		float p = Integer.MAX_VALUE;
@@ -143,29 +225,29 @@ public class OBB extends Bound
 		for(int i = 0; i < 3; i++)
 			for(int j = 0; j < 3; j++)
 			{
-				   R[j][i] = b.u.getAxis(i).dot(u.getAxis(j));
+				   R[j][i] = a.u.getAxis(i).dot(b.u.getAxis(j));
 				AbsR[j][i] = abs(R[j][i]) + EPSILON;
 			}
 		
-		Vec3 t = a.c.subtract(b.c);
-		t = new Vec3(t.dot(b.u.xAxis), t.dot(b.u.yAxis), t.dot(b.u.zAxis));		
+		Vec3 t = b.c.subtract(a.c);
+		t = new Vec3(t.dot(a.u.xAxis), t.dot(a.u.yAxis), t.dot(a.u.zAxis));		
 		
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e.get(i);
-			rb = e.dot(new Vec3(AbsR[i]));
+			ra = a.e.get(i);
+			rb = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
 			r  = abs(t.get(i));
 
-			if(p > abs(rb - (r - ra))) p = abs(rb - (r - ra));
+			if(p > abs(ra + rb - r)) p = abs(ra + rb - r);
 		}
 
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
-			rb = a.e.get(i);
-			r  = abs(t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i]);
+			ra = a.e.x * AbsR[i][0] + a.e.y * AbsR[i][1] + a.e.z * AbsR[i][2];
+			rb = b.e.get(i);
+			r  = abs(t.x * R[i][0] + t.y * R[i][1] + t.z * R[i][2]);
 
-			if(p > abs(rb - (r - ra))) p = abs(rb - (r - ra));
+			if(p > abs(ra + rb - r)) p = abs(ra + rb - r);
 		}
 		
 		return p;
@@ -183,10 +265,7 @@ public class OBB extends Bound
 	}
 	
 	@Override
-	public float getMaximumExtent()
-	{
-		return e.magnitude();
-	}
+	public float getMaximumExtent() { return e.magnitude(); }
 	
 	/**
 	 * An even index indicates that the vertex is on front of the OBB.
@@ -231,62 +310,62 @@ public class OBB extends Bound
 		for(int i = 0; i < 3; i++)
 			for(int j = 0; j < 3; j++)
 			{
-				   R[j][i] = b.u.getAxis(i).dot(a.u.getAxis(j));
+				   R[j][i] = a.u.getAxis(i).dot(b.u.getAxis(j));
 				AbsR[j][i] = abs(R[j][i]) + EPSILON;
 			}
 		
-		Vec3 t = a.c.subtract(b.c);
-		t = new Vec3(t.dot(b.u.xAxis), t.dot(b.u.yAxis), t.dot(b.u.zAxis));	
+		Vec3 t = b.c.subtract(a.c);
+		t = new Vec3(t.dot(a.u.xAxis), t.dot(a.u.yAxis), t.dot(a.u.zAxis));	
 		
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e.get(i);
-			rb = a.e.x * AbsR[i][0] + a.e.y * AbsR[i][1] + a.e.z * AbsR[i][2];
+			ra = a.e.get(i);
+			rb = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
 			if(abs(t.get(i)) > ra + rb) return false;
 		}
 		
 		for(int i = 0; i < 3; i++)
 		{
-			ra = b.e.x * AbsR[0][i] + b.e.y * AbsR[1][i] + b.e.z * AbsR[2][i];
-			rb = a.e.get(i);
-			if(abs(t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i]) > ra + rb) return false;
+			ra = a.e.x * AbsR[i][0] + a.e.y * AbsR[i][1] + a.e.z * AbsR[i][2];
+			rb = b.e.get(i);
+			if(abs(t.x * R[i][0] + t.y * R[i][1] + t.z * R[i][2]) > ra + rb) return false;
 		}
 		
-		ra = b.e.y * AbsR[2][0] + b.e.z * AbsR[1][0];
-		rb = a.e.y * AbsR[0][2] + a.e.z * AbsR[0][1];
-		if(abs(t.z * R[1][0] - t.y * R[2][0]) > ra + rb) return false;
+		ra = a.e.y * AbsR[0][2] + a.e.z * AbsR[0][1];
+		rb = b.e.y * AbsR[2][0] + b.e.z * AbsR[1][0];
+		if(abs(t.z * R[0][1] - t.y * R[0][2]) > ra + rb) return false;
 		
-		ra = b.e.y * AbsR[2][1] + b.e.z * AbsR[1][1];
-		rb = a.e.x * AbsR[0][2] + a.e.z * AbsR[0][0];
-		if(abs(t.z * R[1][1] - t.y * R[2][1]) > ra + rb) return false;
+		ra = a.e.y * AbsR[1][2] + a.e.z * AbsR[1][1];
+		rb = b.e.x * AbsR[2][0] + b.e.z * AbsR[0][0];
+		if(abs(t.z * R[1][1] - t.y * R[1][2]) > ra + rb) return false;
 		
-		ra = b.e.y * AbsR[2][2] + b.e.z * AbsR[1][2];
-		rb = a.e.x * AbsR[0][1] + a.e.y * AbsR[0][0];
-		if(abs(t.z * R[1][2] - t.y * R[2][2]) > ra + rb) return false;
+		ra = a.e.y * AbsR[2][2] + a.e.z * AbsR[2][1];
+		rb = b.e.x * AbsR[1][0] + b.e.y * AbsR[0][0];
+		if(abs(t.z * R[2][1] - t.y * R[2][2]) > ra + rb) return false;
 		
-		ra = b.e.x * AbsR[2][0] + b.e.z * AbsR[0][0];
-		rb = a.e.y * AbsR[1][2] + a.e.z * AbsR[1][1];
-		if(abs(t.x * R[2][0] - t.z * R[0][0]) > ra + rb) return false;
+		ra = a.e.x * AbsR[0][2] + a.e.z * AbsR[0][0];
+		rb = b.e.y * AbsR[2][1] + b.e.z * AbsR[1][1];
+		if(abs(t.x * R[0][2] - t.z * R[0][0]) > ra + rb) return false;
 		
-		ra = b.e.x * AbsR[2][1] + b.e.z * AbsR[0][1];
-		rb = a.e.x * AbsR[1][2] + a.e.z * AbsR[1][0];
-		if(abs(t.x * R[2][1] - t.z * R[0][1]) > ra + rb) return false;
+		ra = a.e.x * AbsR[1][2] + a.e.z * AbsR[1][0];
+		rb = b.e.x * AbsR[2][1] + b.e.z * AbsR[0][1];
+		if(abs(t.x * R[1][2] - t.z * R[1][0]) > ra + rb) return false;
 		
-		ra = b.e.x * AbsR[2][2] + b.e.z * AbsR[0][2];
-		rb = a.e.x * AbsR[1][1] + a.e.y * AbsR[1][0];
-		if(abs(t.x * R[2][2] - t.z * R[0][2]) > ra + rb) return false;
+		ra = a.e.x * AbsR[2][2] + a.e.z * AbsR[2][0];
+		rb = b.e.x * AbsR[1][1] + b.e.y * AbsR[0][1];
+		if(abs(t.x * R[2][2] - t.z * R[2][0]) > ra + rb) return false;
 		
-		ra = b.e.x * AbsR[1][0] + b.e.y * AbsR[0][0];
-		rb = a.e.y * AbsR[2][2] + a.e.z * AbsR[2][1];
-		if(abs(t.y * R[0][0] - t.x * R[1][0]) > ra + rb) return false;
+		ra = a.e.x * AbsR[0][1] + a.e.y * AbsR[0][0];
+		rb = b.e.y * AbsR[2][2] + b.e.z * AbsR[1][2];
+		if(abs(t.y * R[0][0] - t.x * R[0][1]) > ra + rb) return false;
 		
-		ra = b.e.x * AbsR[1][1] + b.e.y * AbsR[0][1];
-		rb = a.e.x * AbsR[2][2] + a.e.z * AbsR[2][0];
-		if(abs(t.y * R[0][1] - t.x * R[1][1]) > ra + rb) return false;
+		ra = a.e.x * AbsR[1][1] + a.e.y * AbsR[1][0];
+		rb = b.e.x * AbsR[2][2] + b.e.z * AbsR[0][2];
+		if(abs(t.y * R[1][0] - t.x * R[1][1]) > ra + rb) return false;
 		
-		ra = b.e.x * AbsR[1][2] + b.e.y * AbsR[0][2];
-		rb = a.e.x * AbsR[2][1] + a.e.y * AbsR[2][0];
-		if(abs(t.y * R[0][2] - t.x * R[1][2]) > ra + rb) return false;
+		ra = a.e.x * AbsR[2][1] + a.e.y * AbsR[2][0];
+		rb = b.e.x * AbsR[1][2] + b.e.y * AbsR[0][2];
+		if(abs(t.y * R[2][0] - t.x * R[2][1]) > ra + rb) return false;
 		
 		return true;
 	}
@@ -301,16 +380,26 @@ public class OBB extends Bound
 		return p.dot() <= s.r * s.r;
 	}
 
-	public boolean testRay(Vec3 p0, Vec3 p1)
+	/** This method returns <code>true</code> if the line segment from point
+	 *  <code>p0</code> to point <code>p1</code> intersects this OBB.
+	 *  
+	 *  This particular implementation translates the line segment into the
+	 *  coordinate system of the OBB, and then performs a line segment 
+	 *  intersection test as though the OBB were an AABB.
+	 *  
+	 *  @param p0 - the start point of the line segment.
+	 *  @param p1 - the end point of the line segment.
+	 **/
+	public boolean testSegment(Vec3 p0, Vec3 p1)
 	{
-		p0.subtract(c);
+		p0 = p0.subtract(c);
 		p0 = new Vec3(p0.dot(u.xAxis), p0.dot(u.yAxis), p0.dot(u.zAxis));
 		
-		Vec3 min = c.subtract(e);
-		Vec3 max = c.add(e);
+		p1 = p1.subtract(c);
+		p1 = new Vec3(p1.dot(u.xAxis), p1.dot(u.yAxis), p1.dot(u.zAxis));
 		
-		Vec3 d = p1.subtract(p0);
-		Vec3 m = p0.add(p1).subtract(min).subtract(max);
+		Vec3 m = p0.add(p1).multiply(0.5f); // the mid-point of the segment
+		Vec3 d = p1.subtract(m); // the direction vector of the segment
 		
 		float adx = abs(d.x); if(abs(m.x) > e.x + adx) return false;
 		float ady = abs(d.y); if(abs(m.y) > e.y + ady) return false;
@@ -323,6 +412,89 @@ public class OBB extends Bound
 		if(abs(m.x * d.y - m.y * d.x) > e.x * ady + e.y * adx) return false;
 		
 		return true;	
+	}
+	
+	public Vec3 testRay(Vec3 start, Vec3 dir)
+	{
+		Vec3 q = new Vec3(); // point of intersection
+		
+		float tmin = 0.0f;
+		float tmax = Float.MAX_VALUE;
+		
+		for(int i = 0; i < 3; i++)
+		{
+			Vec3 axis = u.getAxis(i);
+			
+			float ood = 1.0f / dir.dot(axis);
+			float t1 = (c.dot(axis) - e.get(i) - start.dot(axis)) * ood;
+			float t2 = (c.dot(axis) + e.get(i) - start.dot(axis)) * ood;
+			
+			if(t1 > t2)
+			{
+				float temp = t1;
+				t1 = t2;
+				t2 = temp;
+			}
+			
+			tmin = Math.max(tmin, t1);
+			tmax = Math.min(tmax, t2);
+		}
+		
+		q = start.add(dir.multiply(tmin));
+		
+		return q;
+	}
+	
+	/** This method returns <code>true</code> if the line segment from point
+	 *  <code>p0</code> to point <code>p1</code> intersects this OBB.
+	 *  
+	 *  @param p0 - the start point of the line segment.
+	 *  @param p1 - the end point of the line segment.
+	 **/
+	public boolean testSegmentOBB(Vec3 p0, Vec3 p1)
+	{
+		Vec3 m = p0.add(p1).multiply(0.5f); // the mid-point of the segment
+		Vec3 d = p1.subtract(m); // the direction vector of the segment
+		
+		m = m.subtract(c); // translate to origin (centre of OBB)
+		
+		for(int i = 0; i < 3; i++)
+		{
+			Vec3 v = u.getAxis(i);
+			
+			float ds = abs(m.dot(v));
+			float rs = abs(d.dot(v));
+			float rb = e.x * abs(u.xAxis.dot(v)) + e.y * abs(u.yAxis.dot(v)) + e.z * abs(u.zAxis.dot(v));
+			
+			if(ds > rb + rs) return false;
+		}
+		
+		for(int i = 0; i < 3; i++)
+		{
+			Vec3 v = d.cross(u.getAxis(i));
+			
+			float ds = abs(m.dot(v));
+			float rs = abs(d.dot(v));
+			float rb = e.x * abs(u.xAxis.dot(v)) + e.y * abs(u.yAxis.dot(v)) + e.z * abs(u.zAxis.dot(v));
+			
+			if(ds > rb + rs) return false;
+		}
+		
+		return true;	
+	}
+	
+	public boolean containsPoint(Vec3 p)
+	{
+		Vec3 d = p.subtract(c);
+		
+		for(int i = 0; i < 3; i++)
+		{
+			float dist = d.dot(u.getAxis(i));
+			
+			if(abs(dist) > e.get(i)) return false;
+		}
+		
+		return true;
 	}
 
 	@Override
@@ -339,6 +511,32 @@ public class OBB extends Bound
 			
 			if(dist >  e[i]) dist =  e[i];
 			if(dist < -e[i]) dist = -e[i];
+			
+			q = q.add(u.getAxis(i).multiply(dist));
+		}
+		
+		return q;
+	}
+	
+	public Vec3 highestPoint(Vec3 p)
+	{	
+		Vec3 d = p.subtract(c);
+		Vec3 q = new Vec3(c);
+		
+		float[] e = this.e.toArray();
+		
+		for(int i = 0; i < 3; i++)
+		{
+			float dist = d.dot(u.getAxis(i));
+			
+			if(dist >  e[i]) dist =  e[i];
+			if(dist < -e[i]) dist = -e[i];
+			
+			if(i == 1)
+			{
+				if(dist > 0) dist = -e[1];
+				if(dist < 0) dist =  e[1];
+			}
 			
 			q = q.add(u.getAxis(i).multiply(dist));
 		}
@@ -525,6 +723,20 @@ public class OBB extends Bound
 		gl.glPopMatrix();
 	}
 	
+	public void displayPerimeterPtToPt(GL2 gl, GLUT glut, float[] p, float[] color)
+	{
+		gl.glColor4fv(color, 0);
+		
+		gl.glPushMatrix();
+		{
+			Vec3 vertex = closestPointOnPerimeter(new Vec3(p));
+
+			gl.glTranslatef(vertex.x, vertex.y, vertex.z);
+			glut.glutSolidSphere(0.2, 12, 12);
+		}
+		gl.glPopMatrix();
+	}
+	
 	/**
 	 * Returns a randomly calculated point that is within the bound.
 	 */
@@ -537,5 +749,13 @@ public class OBB extends Bound
 		Vec3 z = u.zAxis.multiply(e.z * r.z);
 		
 		return c.add(x).add(y).add(z);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return c + "\n" +
+	           new Quat(u) + "\n" +
+			   e + "\n";		
 	}
 }

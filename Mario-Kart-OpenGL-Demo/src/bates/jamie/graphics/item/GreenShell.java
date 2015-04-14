@@ -7,7 +7,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
@@ -43,7 +43,7 @@ public class GreenShell extends Shell
 	
 	public int durability;
 	
-	public GreenShell(GL2 gl, Scene scene, Car car, float trajectory, boolean orbiting)
+	public GreenShell(GL2 gl, Scene scene, Vehicle car, float trajectory, boolean orbiting)
 	{
 		super(gl, scene, car, trajectory);
 		
@@ -129,5 +129,5 @@ public class GreenShell extends Shell
 	}
 	
 	@Override
-	public void collide(Car car) { car.spin(); destroy(); }
+	public void collide(Vehicle car) { car.spin(); destroy(); }
 }

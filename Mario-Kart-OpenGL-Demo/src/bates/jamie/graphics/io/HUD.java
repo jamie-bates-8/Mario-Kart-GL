@@ -21,10 +21,11 @@ import java.io.File;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.Quat;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
@@ -37,7 +38,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
 public class HUD
 {
 	private Scene scene;
-	private Car car;
+	private Vehicle car;
 	
 	private boolean visible = true;
 	public boolean smooth = false;
@@ -69,7 +70,7 @@ public class HUD
 		catch (Exception e) { e.printStackTrace(); }
 	}
 	
-	public HUD(Scene scene, Car car)
+	public HUD(Scene scene, Vehicle car)
 	{
 		this.scene = scene;
 		this.car = car;
@@ -135,7 +136,7 @@ public class HUD
 		return System.nanoTime() - start;
 	}
 
-	private void renderSpeedometer(GL2 gl, Car car)
+	private void renderSpeedometer(GL2 gl, Vehicle car)
 	{
 		gl.glEnable(GL_TEXTURE_2D);
 		gl.glEnable(GL_BLEND);
@@ -158,7 +159,7 @@ public class HUD
 		
 		gl.glDisable(GL_BLEND);
 		
-		double speedRatio = abs(car.velocity) / (2 * Car.TOP_SPEED);
+		double speedRatio = abs(car.velocity) / (2 * Vehicle.TOP_SPEED);
 		float dialRotation = (float) ((speedRatio * 240) + 60);
 		
 		gl.glDisable(GL_TEXTURE_2D);
@@ -240,7 +241,7 @@ public class HUD
 	 * addition to the state of the car passed as a parameter (such as the position,
 	 * velocity, turn rate...)
 	 */
-	private void renderText(Car car)
+	private void renderText(Vehicle car)
 	{
 		renderer.beginRendering(scene.getWidth(), scene.getHeight());
 		renderer.setSmoothing(true);
@@ -296,7 +297,12 @@ public class HUD
 		renderer.draw("Colliding: "   + car.colliding, x, 430);
 		renderer.draw("Falling: "     + car.falling,   x, 400);
 		
+		renderer.draw("Fall Rate: "   + String.format("%.2f", car.fallRate), x, 370);
 		renderer.draw("Turn Rate: "   + String.format("%.2f", car.turnRate), x, 340);
+		
+		Quat q = new Quat(car.bound.u);
+		
+		renderer.draw(q.toString(), x, 310);
 		
 		renderer.draw("x: " + String.format("%.2f", p.x), x, 280);
 		renderer.draw("y: " + String.format("%.2f", p.y), x, 250);

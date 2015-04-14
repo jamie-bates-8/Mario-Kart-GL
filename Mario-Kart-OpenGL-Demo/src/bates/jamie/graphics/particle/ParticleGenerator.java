@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
+import bates.jamie.graphics.particle.FireParticle.FireType;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
@@ -66,11 +68,10 @@ public class ParticleGenerator
 		switch(type)
 		{
 			case BLAST   : return generateBlastParticles  (source, quantity);
-			case SPARK   : return generateSparkParticles  (source, getRandomVector(), quantity, 1, null);
-			case STAR    : return generateStarParticles   (source, quantity, true);
+			case SPARK   : return generateSparkParticles  (source, getRandomVector(), quantity, 0, null);
 			case RAY     : return generateRayParticles    (source, quantity);
-			case SPARKLE : return generateSparkleParticles(source, quantity);
-			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 0.9, 0), null, 0);
+			case SPARKLE : return generateSparkleParticles(source, quantity, false, null);
+			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 0.9, 0), null, 0, FireType.SMOKE);
 			
 			default: return null;
 		}
@@ -78,7 +79,7 @@ public class ParticleGenerator
 	
 	private int colorID = 0;
 	
-	public List<Particle> generateFireParticles(Vec3 source, int n, Vec3 direction, Car car, int sourceID)
+	public List<Particle> generateFireParticles(Vec3 source, int n, Vec3 direction, Vehicle car, int sourceID, FireType type)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -86,15 +87,15 @@ public class ParticleGenerator
 		
 		for(int i = 0; i < n; i++)
 		{	
-			Vec3 t = getRandomVector(getRandomVector(), 0.25f, generator.nextFloat() * 0.25f);
+			Vec3 t = getRandomVector(getRandomVector(), 0.25f, generator.nextFloat() * (type == FireType.BLUE ? 0.15f : 0.10f));
 			int duration = 30 + generator.nextInt(70) + (generator.nextFloat() < 0.05 ? 5 : 0);
 			int textureID = generator.nextInt(5);
 			
 			boolean spark = false;
 			
-			if(generator.nextFloat() < 0.05)
+			if(generator.nextFloat() < 0.04)
 			{
-				t = getRandomVector(direction, 0.5f, 0.25f + generator.nextFloat() * 0.25f);
+				t = getRandomVector(direction, 0.5f, 0.15f + generator.nextFloat() * 0.10f);
 				textureID = 0;
 				spark = true;
 				duration += 45;
@@ -102,10 +103,10 @@ public class ParticleGenerator
 			
 			float scale = 1 - t.magnitude();
 			
-			scale *= 2.5;
+			scale *= type == FireType.BLUE ? 1.75 : 1.5;
 			duration *= 0.5;
 			
-			particles.add(new FireParticle(car != null ? getRandomVector(0.1f) : source, t, direction, 0, duration, textureID, scale, spark, car, sourceID));
+			particles.add(new FireParticle(car != null ? getRandomVector(0.05f) : source, t, direction, 0, duration, textureID, scale, spark, type, car, sourceID));
 		}
 		
 		return particles;
@@ -169,31 +170,35 @@ public class ParticleGenerator
 	public List<Particle> generateItemBoxParticles(Vec3 source, int n)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
-		
-		float[][] colors = {RGB.RED, RGB.ORANGE, RGB.YELLOW, RGB.GREEN, RGB.BLUE, RGB.INDIGO, RGB.VIOLET};
+				
+		float hue = (float) Scene.sceneTimer % 1000;
+		hue *= 0.001;
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[]  color = colors[generator.nextInt(colors.length)];
-			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
+			float h = hue + generator.nextFloat() * 0.083f;
+			if(h > 1) h -= 1;
 			
-			Vec3 t = getRandomVector();
+			float[] color = RGB.HSVToRGB(new float[] {h, 1, 1});
 			
-			particles.add(new ItemBoxParticle(source, t, 0, _color, generator.nextBoolean(), false));
+			Vec3 t = getRandomVector(0.85f);
+			t.y = Math.abs(t.y);
+			
+			particles.add(new ItemBoxParticle(source, t, generator.nextInt(360), color, generator.nextBoolean(), false, false, null));
 		}
 		
 		return particles;
 	}
 	
-	public List<Particle> generateSparkParticles(Vec3 source, Vec3 t, int n, int type, Car car)
+	public List<Particle> generateSparkParticles(Vec3 source, Vec3 t, int n, int type, Vehicle car)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
 		float[][][] colors =
 		{
-			{RGB.YELLOW, RGB.ORANGE},
-			{RGB.ORANGE, RGB.RED   },
-			{RGB.INDIGO, RGB.BLUE  },
+			{RGB.WHITE,  RGB.BRIGHT_YELLOW},
+			{RGB.RED,    RGB.BRIGHT_RED   },
+			{RGB.BLUE,   RGB.BRIGHT_BLUE  },
 		};
 		
 		for(int i = 0; i < n; i++)
@@ -204,7 +209,7 @@ public class ParticleGenerator
 			t = t.normalize().add(getRandomVector());
 			t.y = Math.abs(t.y * (generator.nextBoolean() ? 1 : 2));
 			
-			int length = 3 + generator.nextInt(4);
+			int length = 5 + generator.nextInt(2);
 			
 			particles.add(new SparkParticle(car, source, t, 8, _color, length));
 		}
@@ -243,41 +248,24 @@ public class ParticleGenerator
 		return particles;
 	}
 	
-	public List<Particle> generateSparkleParticles(Vec3 source, int n)
+	public List<Particle> generateSparkleParticles(Vec3 source, int n, boolean miniature, Vehicle car)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
 		for(int i = 0; i < n; i++)
 		{
-			Vec3 t = getRandomVector();
-			t = t.normalize().multiply(0.5f);
+			Vec3 t = getRandomVector().normalize();
+			if(miniature) t = t.multiply(0.3f); else t = t.multiply(0.6f); 
 			
 			int duration = 30 + generator.nextInt(30);
 			
-			particles.add(new SparkleParticle(source, t, duration));
+			particles.add(new SparkleParticle(source, t, miniature ? 1.0f : 1.25f, duration, car));
 		}
 		
 		return particles;
 	}
 	
-	public List<Particle> generateStarParticles(Vec3 source, int n, boolean miniature)
-	{
-		List<Particle> particles = new ArrayList<Particle>();
-		
-		for(int i = 0; i < n; i++)
-		{
-			Vec3 t = getRandomVector();
-			if(miniature) t = t.multiply(0.5f);
-			
-			float scale = generator.nextFloat() * ((miniature) ? 1.25f : 2.5f);
-			
-			particles.add(new StarParticle(source, t, 5, scale));
-		}
-		
-		return particles;
-	}
-	
-	public List<Particle> generateFakeItemBoxParticles(Vec3 source, int n, boolean miniature)
+	public List<Particle> generateFakeItemBoxParticles(Vec3 source, int n, boolean miniature, Vehicle car)
 	{
 		List<Particle> particles = new ArrayList<Particle>();
 		
@@ -288,10 +276,18 @@ public class ParticleGenerator
 			float[]  color = RGB.RED;
 			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
 			
-			Vec3 t = getRandomVector();
-			if(miniature) t = t.multiply(0.5f);
+			Vec3 t = getRandomVector(0.85f);
+			if(car != null && miniature) t = t.multiply(0.5f);
+			t.y = Math.abs(t.y);
 			
-			particles.add(new ItemBoxParticle(source, t, 45, _color, generator.nextBoolean(), miniature));
+			if(car != null)
+			{
+				source = source.add(t.multiply(4));
+				t.x *= 0.25;
+				t.z *= 0.25;
+			}
+			
+			particles.add(new ItemBoxParticle(source, t, generator.nextInt(360), _color, generator.nextBoolean(), miniature, true, car));
 		}
 		
 		return particles;

@@ -115,10 +115,32 @@ public class Renderer
 				gl.glPushMatrix();
 				{
 					gl.glTranslatef(point[0], point[1], point[2]);
-					glut.glutSolidSphere(0.1, 6, 6);
+					glut.glutSolidSphere(size, 6, 6);
 				}
 				gl.glPopMatrix();
 			}
+		}
+		
+		gl.glDisable(GL2.GL_BLEND);
+		gl.glDisable(GL2.GL_POINT_SMOOTH);
+	}
+	
+	public static void displayPoints(GL2 gl, float[] points, int n, float[] color, float size)
+	{
+		if(color.length > 3)
+			 gl.glColor4fv(color, 0);
+		else gl.glColor3fv(color, 0);
+		
+		gl.glEnable(GL2.GL_BLEND);
+		gl.glEnable(GL2.GL_POINT_SMOOTH);
+		gl.glPointSize(size);
+		gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
+		
+		for(int i = 0; i < n; i++)
+		{
+			gl.glBegin(GL2.GL_POINTS);
+			gl.glVertex3f(points[i * 3 + 0], points[i * 3 + 1], points[i * 3 + 2]);
+			gl.glEnd();
 		}
 		
 		gl.glDisable(GL2.GL_BLEND);
@@ -462,6 +484,9 @@ public class Renderer
 	
 	public static void displayLines(GL2 gl, float[][] vertices, int n, float[] color, boolean stipple)
 	{
+		boolean texture  = gl.glIsEnabled(GL2.GL_TEXTURE_2D);
+		boolean lighting = gl.glIsEnabled(GL2.GL_LIGHTING  );
+		
 		gl.glDisable(GL_LIGHTING);
 		gl.glDisable(GL_TEXTURE_2D);
 		
@@ -487,6 +512,62 @@ public class Renderer
 		}
 		
 		gl.glDisable(GL2.GL_LINE_STIPPLE);
+
+		if(lighting) gl.glEnable(GL_LIGHTING  );	
+		if(texture ) gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);
+	}
+	
+	public static void displayLines(GL2 gl, float[] vertices, float[] color, boolean stipple)
+	{
+		boolean texture  = gl.glIsEnabled(GL2.GL_TEXTURE_2D);
+		boolean lighting = gl.glIsEnabled(GL2.GL_LIGHTING  );
+		
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+		
+		if(stipple)
+		{
+			gl.glEnable(GL2.GL_LINE_STIPPLE);
+			gl.glLineStipple(4, (short) 0xBBBB);
+		}
+		
+		gl.glColor3f(color[0], color[1], color[2]);
+
+		gl.glBegin(GL2.GL_LINE_STRIP);
+		{
+			int offset = 0;
+			
+			while(offset < vertices.length)
+			{
+				gl.glVertex3fv(vertices, offset);
+				offset += 3;
+			}
+		}
+		gl.glEnd();
+		
+		gl.glDisable(GL2.GL_LINE_STIPPLE);
+
+		if(lighting) gl.glEnable(GL_LIGHTING  );	
+		if(texture ) gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);
+	}
+	
+	public static void displaySegment(GL2 gl, Vec3 p0, Vec3 p1, float[] color)
+	{
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(color[0], color[1], color[2]);
+
+		gl.glBegin(GL2.GL_LINES);
+		{	
+			gl.glVertex3f(p0.x, p0.y, p0.z);
+			gl.glVertex3f(p1.x, p1.y, p1.z);	
+		}
+		gl.glEnd();
 
 		gl.glEnable(GL_LIGHTING);	
 		gl.glEnable(GL_TEXTURE_2D);

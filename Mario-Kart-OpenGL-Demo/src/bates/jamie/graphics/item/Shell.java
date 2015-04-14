@@ -7,7 +7,7 @@ import java.util.List;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
@@ -29,7 +29,7 @@ public abstract class Shell extends Item
 	public boolean orbiting;
 	public float rotation;
 	
-	public Shell(GL2 gl, Scene scene, Car car, float trajectory)
+	public Shell(GL2 gl, Scene scene, Vehicle car, float trajectory)
 	{ 
 		if(rimList == -1)
 		{

@@ -7,7 +7,7 @@ varying vec3 vertexNormal;
 uniform vec3 horizon;
 uniform vec3 skyColor;
 
-void main(void)
+void main (void)
 { 
     float h = worldPos.y / 500.0;
     h = clamp(h, -1.0, 1.0);

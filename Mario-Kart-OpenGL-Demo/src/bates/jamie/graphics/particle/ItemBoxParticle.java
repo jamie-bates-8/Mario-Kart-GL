@@ -8,6 +8,7 @@ import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import javax.media.opengl.GL2;
 
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.util.Vec3;
 
 
@@ -17,14 +18,20 @@ public class ItemBoxParticle extends Particle
 	private float[] color;
 	private boolean fill;
 	private boolean miniature;
+	private boolean fake;
 	
-	public ItemBoxParticle(Vec3 c, Vec3 t, float rotation, float[] color, boolean fill, boolean miniature)
+	private Vehicle car;
+	
+	public ItemBoxParticle(Vec3 c, Vec3 t, float rotation, float[] color, boolean fill, boolean miniature, boolean fake, Vehicle car)
 	{
-		super(c, t, rotation, 20);
+		super(c, t, rotation, 30);
 		
 		this.color = color;
 		this.fill = fill;
 		this.miniature = miniature;
+		this.fake = fake;
+		
+		this.car = car;
 	}
 
 	@Override
@@ -33,18 +40,22 @@ public class ItemBoxParticle extends Particle
 		gl.glPushMatrix();
 		{
 			gl.glTranslatef(c.x, c.y, c.z);
-			gl.glRotatef(trajectory, 0, -1, 0);
-			gl.glRotatef(rotation, 0, 0, 1);
+			gl.glRotatef(trajectory + rotation + 5 * duration, 0, -1, 0);
+			if(fake) gl.glRotatef(45, 0, 0, 1);
 			
-			if(miniature) gl.glScalef(0.375f, 0.375f, 0.375f);
-			else gl.glScalef(0.75f, 0.75f, 0.75f);
+			Vec3 scale = new Vec3(0.5);
+			if(miniature) scale = scale.multiply(0.5f);
+			
+			gl.glScalef(scale.x, scale.y, scale.z);
 			
 			gl.glDepthMask(false);
 			gl.glDisable(GL_LIGHTING);
 			gl.glEnable(GL_BLEND);
 			gl.glDisable(GL_TEXTURE_2D);
-
-			gl.glColor3fv(color, 0);
+			
+			float alpha = (float) duration / 30.0f;
+			
+			gl.glColor4f(color[0], color[1], color[2], alpha);
 
 			if(fill)
 			{
@@ -75,5 +86,15 @@ public class ItemBoxParticle extends Particle
 			gl.glDepthMask(true);
 		}
 		gl.glPopMatrix();
+	}
+	
+	@Override
+	public void update()
+	{
+		t.y += (car != null) ? 0.010 : 0.025;
+		t = t.multiply(0.85f);
+		super.update();	
+		
+		if(car != null) c = c.add(car.getPosition().subtract(car.previousPosition));
 	}
 }

@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
@@ -350,7 +350,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(    "terrain"))
 		{
 			scene.enableTerrain = cmd.nextBoolean();
-			Car player = scene.getCars().get(0); //TODO
+			Vehicle player = scene.getCars().get(0); //TODO
 			player.friction = 1;
 		}
 		else if(_cmd.equalsIgnoreCase( "background"))
@@ -611,7 +611,7 @@ public class Console
 	private void parsePlayer(Scanner cmd)
 	{
 		int playerID = cmd.nextInt();
-		Car player = scene.getCars().get(playerID);
+		Vehicle player = scene.getCars().get(playerID);
 		
 		String _cmd = cmd.next();
 		
@@ -633,7 +633,7 @@ public class Console
 		}
 	}
 	
-	private void parseHUD(Scanner cmd, Car player)
+	private void parseHUD(Scanner cmd, Vehicle player)
 	{
 		String _cmd = cmd.next();
 		
@@ -649,7 +649,7 @@ public class Console
 	    }
 	}
 	
-	private void parseFrameTime(Scanner cmd, Car player)
+	private void parseFrameTime(Scanner cmd, Vehicle player)
 	{
 		String _cmd = cmd.next();
 		

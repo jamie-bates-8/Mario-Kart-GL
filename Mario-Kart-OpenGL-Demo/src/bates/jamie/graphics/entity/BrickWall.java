@@ -2,12 +2,12 @@ package bates.jamie.graphics.entity;
 
 import java.nio.FloatBuffer;
 import java.util.List;
-import java.util.Random;
 
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
@@ -69,8 +69,6 @@ public class BrickWall
 	{
 		FloatBuffer positions = FloatBuffer.allocate(brickBlocks.size() * 4);
 		
-		Random generator = new Random();
-		
 		for(BrickBlock block : brickBlocks)
 		{
 			Vec3 position = new Vec3(block.getPosition());
@@ -90,8 +88,9 @@ public class BrickWall
 		timeQuery.getResult(gl);
 		timeQuery.begin(gl);
 		
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(2, attachments, 0);
+		boolean useHDR = BloomStrobe.isEnabled();
+		
+		if(Scene.reflectMode) BloomStrobe.end(gl);
 		
 		switch(mode)
 		{
@@ -102,7 +101,7 @@ public class BrickWall
 			case SIMPLE_MODEL_PARALLAX_INSTANCED : renderSimpleModelParallaxInstanced(gl); break;
 		}
 		
-		if(!Scene.reflectMode && Scene.singleton.enableBloom) gl.glDrawBuffers(1, attachments, 0);
+		if(useHDR) BloomStrobe.begin(gl);
 		
 		Shader.disable(gl);
 		

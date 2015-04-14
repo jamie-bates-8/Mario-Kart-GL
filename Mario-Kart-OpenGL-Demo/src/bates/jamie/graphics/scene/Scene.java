@@ -103,13 +103,13 @@ import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.BrickBlock;
 import bates.jamie.graphics.entity.BrickWall;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.EnergyField.FieldType;
 import bates.jamie.graphics.entity.GoldCoin;
 import bates.jamie.graphics.entity.GoldCoin.CoinType;
 import bates.jamie.graphics.entity.GrassPatch;
-import bates.jamie.graphics.entity.LightingStrike;
+import bates.jamie.graphics.entity.LightningStrike;
 import bates.jamie.graphics.entity.Mushroom;
 import bates.jamie.graphics.entity.PlaneMesh;
 import bates.jamie.graphics.entity.PowerStar;
@@ -140,7 +140,6 @@ import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.particle.StarParticle;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
@@ -350,7 +349,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	/** Model Fields **/
 	private EnergyField energyField;
 	
-	private List<Car> cars = new ArrayList<Car>();
+	private List<Vehicle> cars = new ArrayList<Vehicle>();
 	public boolean enableQuality = true;
 	
 	public static final float[] ORIGIN = {0.0f, 0.0f, 0.0f};
@@ -468,11 +467,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public BloomStrobe bloom;
 	public FocalBlur focalBlur;
 	
-	public boolean enableBloom = false;
+	public boolean enableBloom = true;
 	public static boolean enableParallax = true;
-	public static boolean enableFocalBlur = false;
+	public static boolean enableFocalBlur = true;
 	
-	public LightingStrike[] bolts;
+	public LightningStrike[] bolts;
 	public ParticleEngine smokeCloud = new ParticleEngine(100);
 	
 	DefaultMutableTreeNode shaderRoot;
@@ -760,6 +759,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_bloom = new JCheckBoxMenuItem("HDR Bloom");
 		menuItem_bloom.addItemListener(this);
 		menuItem_bloom.setMnemonic(KeyEvent.VK_B);
+		menuItem_bloom.setSelected(enableBloom);
 		
 		menu_effects.add(menuItem_motionblur);
 		menu_effects.add(menuItem_aberration);
@@ -1149,6 +1149,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    System.out.println("Line Width Range: " + data[0] + " -> " + data[1]);
 	    System.out.println("Line Width Granularity: " + data[2] + "\n");
 	    
+	    gl.glGetFloatv(GL2.GL_MAX_EVAL_ORDER, data, 0);
+	    System.out.println("Number of Control Points: " + data[0] + "\n");
+	    
 	    gl.glGetFloatv(GL2.GL_MAX_VERTEX_UNIFORM_COMPONENTS, data, 0);
 	    System.out.println("Vertex Uniform Components: " + data[0] + "\n");
 	}
@@ -1332,10 +1335,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    water = new Water(this);
 	    water.createTextures(gl);
 	    
-	    bolts = new LightingStrike[3];
-	    bolts[0] = new LightingStrike(new float[] {0, 50, 0}, new float[] {0, 5, 0});
-	    bolts[1] = new LightingStrike(new float[] {0, 50, 0}, new float[] {0, 5, 0});
-	    bolts[2] = new LightingStrike(new float[] {0, 50, 0}, new float[] {0, 5, 0});
+//	    bolts = new LightningStrike[8];
+//	    
+//	    for(int i = 0; i < 8; i++)
+//	    	bolts[i] = new LightningStrike(new Vec3(-16 + i * 4, 4, 16), new Vec3(-12 + i * 4, 4, 16));
+	    
+	    bolts = new LightningStrike[1];
+	    
+	    bolts[0] = new LightningStrike(new Vec3(-16, 4, 16), new Vec3(16, 4, 16));
 	    
 	    frameTimes  = new long[240];
 	    renderTimes = new long[240][RENDER_HEADERS.length];
@@ -1450,7 +1457,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		menuItem_focal_blur.setSelected(enableFocalBlur);
 		if(focalBlur != null) menuItem_mirage.setSelected(focalBlur.enableMirage);
 		
-		Car car = cars.get(0);
+		Vehicle car = cars.get(0);
 		
 		menuItem_cubemap.setSelected(car.enableChrome);
 		menuItem_aberration.setSelected(car.enableAberration);
@@ -1467,23 +1474,24 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupGenerators()
 	{
-//		generators.add(new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE, new Vec3(5, 2, 5)));
-		
-//		fire_generator = new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE, new Vec3(5, 2, 5));
+		generators.add(new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE , new Vec3(-8, 2.5, 8)));
+		generators.add(new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE , new Vec3(+8, 2.5, 8)));
+		generators.add(new ParticleGenerator(5, 2, ParticleGenerator.GeneratorType.SPARK, new Vec3(-16, 4, 16)));
+		generators.add(new ParticleGenerator(5, 2, ParticleGenerator.GeneratorType.SPARK, new Vec3(+16, 4, 16)));
 	}
 
 	private void loadPlayers(GL2 gl)
 	{
-		cars.add(new Car(gl, new Vec3(0, 1.8f, 78.75f), 0,   0, 0, this));
+		cars.add(new Vehicle(gl, new Vec3(0, 1.8f, 78.75f), 0,   0, 0, this));
 	    
 	    if(GamePad.numberOfGamepads() > 1)
-	    	cars.add(new Car(gl, new Vec3( -78.75f, 1.8f, 0), 0, 180, 0, this));
+	    	cars.add(new Vehicle(gl, new Vec3( -78.75f, 1.8f, 0), 0, 180, 0, this));
 	    
 	    if(GamePad.numberOfGamepads() > 2)
-	    	cars.add(new Car(gl, new Vec3( 0, 1.8f,  78.75f), 0, 270, 0, this));
+	    	cars.add(new Vehicle(gl, new Vec3( 0, 1.8f,  78.75f), 0, 270, 0, this));
 	    	
 	    if(GamePad.numberOfGamepads() > 3)
-		    cars.add(new Car(gl, new Vec3( 0, 1.8f, -78.75f), 0,  90, 0, this));
+		    cars.add(new Vehicle(gl, new Vec3( 0, 1.8f, -78.75f), 0,  90, 0, this));
 	}
 
 	private void loadTextures(GL2 gl)
@@ -1529,7 +1537,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		new BoostParticle(new Vec3(), new Vec3(), 0, 0, 0, false, false);
 	    new LightningParticle(new Vec3());
-	    new StarParticle(new Vec3(), new Vec3(), 0, 0);
 	}
 
 	private void loadItems(GL2 gl)
@@ -1575,7 +1582,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
-		Car car = cars.get(0);
+		Vehicle car = cars.get(0);
 		updateReflectors(gl, car);
 		
 		if(!testMode) rainScreen.render(gl);
@@ -1595,7 +1602,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public RainScreen rainScreen;
 
-	private void updateReflectors(GL2 gl, Car car)
+	private void updateReflectors(GL2 gl, Vehicle car)
 	{
 		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) car.reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 2, 0)));
 		if(shine != null) shine.reflector.update(gl, shine.getPosition());
@@ -1677,7 +1684,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 		for(int index = 0; index < cars.size(); index++)
 		{
-			Car car = cars.get(index);
+			Vehicle car = cars.get(index);
 			
 			setupViewport(gl, index);
 			car.setupCamera(gl, glu);
@@ -1707,9 +1714,16 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			bananasRendered = 0;
 			
-			if(enableBloom) bloom.render(gl);
+			if(enableBloom)
+			{
+				BloomStrobe.begin(gl);
+				 
+				bloom.render(gl);
+			}
 			else
 			{
+				BloomStrobe.end(gl);
+				
 				if(enableReflection) displayReflection(gl, car);
 
 				if(terrain != null && terrain.enableWater) renderWater(gl, car);
@@ -1744,7 +1758,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(shadowMap) displayMap(gl, mirror.getTexture(), 0.0f, 0.0f, 1.0f, 1.0f);
 	}
 
-	private void setupLights(GL2 gl, Car car)
+	private void setupLights(GL2 gl, Vehicle car)
 	{
 		for(Light l : lights) l.setup(gl);
 		car.starLight.setup(gl);
@@ -1765,7 +1779,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * level are clipped (the primitives clipped are actually above water level
 	 * as the reflected environment is rendered upside down).
 	 */
-	public void renderWater(GL2 gl, Car car)
+	public void renderWater(GL2 gl, Vehicle car)
 	{
 		int aboveWater = car.camera.getPosition().y >= 0 ? -1 : 1;  
 		
@@ -1843,7 +1857,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void registerItems(GL2 gl)
 	{
-		for(Car car : cars)
+		for(Vehicle car : cars)
 		{
 			while(!car.getItemCommands().isEmpty())
 			{
@@ -1877,8 +1891,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Particle.removeParticles(particles);
 		
-//		Particle.removeParticles(fire_particles);
-		
 		if(enableItemBoxes)
 			{ for(ItemBox box : itemBoxes) box.update(cars); } 
 		
@@ -1887,22 +1899,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    ItemBox.increaseRotation();
 		FakeItemBox.increaseRotation();
 		
-//		generators.get(4).setSource(new Vec3(Math.cos(timer) * 15, 2, Math.sin(timer) * 15));
-		
 		for(ParticleGenerator generator : generators)
 			if(generator.update()) particles.addAll(generator.generate());
-		
-//		for(Particle p : fire_generator.generate())
-//			fire_particles.add((FireParticle) p);
-//		
-//		for(Particle p : fire_particles) p.update();
 		
 		for(Particle p : particles) p.update();
 		
 		updateTimes[frameIndex][1] = (enableBlizzard) ? blizzard.update() : 0;
 			
 		vehicleCollisions();
-		for(Car car : cars)
+		for(Vehicle car : cars)
 		{
 			car.update();
 			if(outOfBounds(car.getPosition())) car.reset();
@@ -1923,7 +1928,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			updateTimes[frameIndex][0] = System.nanoTime() - _start;
 				
-			for(Car car : cars) terrainCollisions(car);
+			for(Vehicle car : cars) terrainCollisions(car);
 		}
 		
 		return System.currentTimeMillis() - start;
@@ -1954,7 +1959,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		Item.removeItems(itemList);
 		
-		for(Car car : cars) car.removeItems();
+		for(Vehicle car : cars) car.removeItems();
 	}
 
 	private void updateItems()
@@ -1965,7 +1970,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			item.update(cars);
 		}
 		
-		for(Car car : cars)
+		for(Vehicle car : cars)
 		{
 			for(Item item : car.getItems())
 			{
@@ -1983,7 +1988,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		allItems.addAll(itemList);
 		
-		for(Car car : cars)
+		for(Vehicle car : cars)
 			allItems.addAll(car.getItems());
 		
 		for(int i = 0; i < allItems.size() - 1; i++)
@@ -2005,15 +2010,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			for(int j = i + 1; j < cars.size(); j++)
 			{
-				Car a = cars.get(i);
-				Car b = cars.get(j);
+				Vehicle a = cars.get(i);
+				Vehicle b = cars.get(j);
 				
 				if(a.getBound().testBound(b.getBound())) a.collide(b);
 			}
 		}
 	}
 
-	private void terrainCollisions(Car car)
+	private void terrainCollisions(Vehicle car)
 	{
 		Vec3[] vertices = car.bound.getVertices();
 		float[] frictions = {1, 1, 1, 1};
@@ -2063,7 +2068,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 	}
 
-	private void displayReflection(GL2 gl, Car car)
+	private void displayReflection(GL2 gl, Vehicle car)
 	{
 		// TODO Weather effects may not be working correctly with reflection
 		
@@ -2116,6 +2121,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{	
 		gl.glPushMatrix();
 		{
+			boolean bloom = BloomStrobe.begin(gl);
+			
 			Shader shader = enableBump ? (singleLight ? Shader.get("bump") : Shader.get("bump_lights")) :
 				Shader.getLightModel("shadow");
 
@@ -2157,6 +2164,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				gl.glTexCoord2f(   0,    0); gl.glVertex3f(-250, -0.01f, +250);
 			}
 			gl.glEnd();
+			
+			if(!bloom) BloomStrobe.end(gl);
 		}	
 		gl.glPopMatrix();
 	}
@@ -2170,18 +2179,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		
 		// prevents shadow texture unit from being active
-		if(displaySkybox)
-		{
-			gl.glDrawBuffers(2, attachments, 0);
-			renderSkybox(gl);
-			gl.glDrawBuffers(1, attachments, 0);
-		}
+		if(displaySkybox) renderSkybox(gl);
 		
 		Shader shader = null;
-		
 		{
 			if(enableShadow)
 			{
@@ -2207,22 +2208,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 		}
 		
-		if(water.magma) gl.glDrawBuffers(2, attachments, 0);
-		gl.glDrawBuffers(2, attachments, 0);
-		
 		if(enableTerrain && !environmentMode) renderTimes[frameIndex][0] = renderTerrain(gl); 
 		else if(!enableReflection)
 		{
 			renderFloor(gl);
 			renderTimes[frameIndex][0] = 0;
 		}
-		
-		if(water.magma) gl.glDrawBuffers(1, attachments, 0);
-		gl.glDrawBuffers(1, attachments, 0);
-		
-		gl.glDrawBuffers(2, attachments, 0);
+
 		renderTimes[frameIndex][1] = renderObstacles(gl);
-		gl.glDrawBuffers(2, attachments, 0);
 		
 		Shader.disable(gl);
 			
@@ -2345,7 +2338,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
     	 blueNode.render(gl);
     questionBlock.render(gl);
 			 
-			for(GoldCoin coin : coins) coin.render(gl);
+//			for(GoldCoin coin : coins) coin.render(gl);
 			 
 			if(!shadowMode && !displaySkybox)  brickWall.render(gl);
 		}
@@ -2365,12 +2358,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	 * objects that change position, rotation or state such as other vehicles, item
 	 * boxes and world items.
 	 */
-	public void render3DModels(GL2 gl, Car car)
+	public void render3DModels(GL2 gl, Vehicle car)
 	{	
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-		
-		gl.glDrawBuffers(2, attachments, 0);
-		
 		renderTimes[frameIndex][2] = renderVehicles(gl, car, false);
 	
 		if(enableItemBoxes)
@@ -2380,10 +2369,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    }
 		
 		renderTimes[frameIndex][3] = renderItems(gl, car);
-		gl.glDrawBuffers(1, attachments, 0);
 	}
 
-	public long renderVehicles(GL2 gl, Car car, boolean shadow)
+	public long renderVehicles(GL2 gl, Vehicle car, boolean shadow)
 	{
 		long start = System.nanoTime();
 		
@@ -2395,7 +2383,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			car.displayTag = tag;
 		}
 	
-		for(Car c : cars)
+		for(Vehicle c : cars)
 		{
 			if(!c.equals(car))
 			{
@@ -2419,7 +2407,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public static int bananasRendered = 0;
 
-	public long renderItems(GL2 gl, Car car)
+	public long renderItems(GL2 gl, Vehicle car)
 	{
 		long start = System.nanoTime();
 		
@@ -2439,13 +2427,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return System.nanoTime() - start;
 	}
 
-	public long renderParticles(GL2 gl, Car car)
+	public long renderParticles(GL2 gl, Vehicle car)
 	{
 		long start = System.nanoTime();
 		
 		if(enableBlizzard) blizzard.render(gl);
 		
-//		for(LightingStrike bolt : bolts) bolt.render(gl);
+		for(LightningStrike bolt : bolts) bolt.render(gl);
 		
 //		energyField.render(gl);
 		
@@ -2474,7 +2462,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableFoliage = true;
 	public int foliageMode = 0;
 
-	public long renderFoliage(GL2 gl, Car car)
+	public long renderFoliage(GL2 gl, Vehicle car)
 	{
 		if(!enableFoliage) return 0;
 		
@@ -2522,7 +2510,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //		test(gl);
 		gl.glDisable(GL2.GL_LIGHTING);
 		
-		
 		List<Bound> bounds = getBounds();
 		
 		if(enableClosestPoints)
@@ -2531,49 +2518,96 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableOBBVertices)
 		{
-			for(Car car : cars)
-			{
-				if(car.colliding)
-					 car.bound.displayVertices(gl, glut, RGB.PURE_RED_3F, smoothBound);
-				else car.bound.displayVertices(gl, glut, RGB.WHITE_3F   , smoothBound);
-			}
-		
+//			for(Car car : cars)
+//			{
+//				if(car.colliding)
+//					 car.bound.displayVertices(gl, glut, RGB.PURE_RED_3F, smoothBound);
+//				else car.bound.displayVertices(gl, glut, RGB.WHITE_3F   , smoothBound);
+//			}
+//		
+//			for(Bound bound : bounds)
+//			{
+//				OBB obb = (OBB) bound;
+//				obb.displayVertices(gl, glut, RGB.WHITE_3F, smoothBound);
+//			}
+			
 			for(Bound bound : bounds)
 			{
 				OBB obb = (OBB) bound;
-				obb.displayVertices(gl, glut, RGB.WHITE_3F, smoothBound);
+				
+				Vehicle car = cars.get(0);
+				
+				Vec3[] vertices = car.bound.getVertices();
+				
+				if(car.collisions.contains(obb))
+				{
+					obb.displayPerimeterPtToPt(gl, glut, vertices[0].toArray(), RGB.WHITE_3F);
+					obb.displayPerimeterPtToPt(gl, glut, vertices[1].toArray(), RGB.PURE_RED_3F);
+					obb.displayPerimeterPtToPt(gl, glut, vertices[2].toArray(), RGB.PURE_GREEN_3F);
+					obb.displayPerimeterPtToPt(gl, glut, vertices[3].toArray(), RGB.PURE_BLUE_3F);
+				}
 			}
 		}
 		
 		if(enableOBBWireframes)
 		{
-			for(Car car : cars)
+			for(Vehicle car : cars)
 			{
 				if(car.colliding)
 					 car.bound.renderWireframe(gl, RGB.PURE_RED_3F, smoothBound);
-				else car.bound.renderWireframe(gl, RGB.BLACK_3F   , smoothBound);
+				else car.bound.renderWireframe(gl, RGB.WHITE_3F   , smoothBound);
 			}
 			
 			for(Bound bound : bounds)
-				for(Car car : cars)
+				for(Vehicle car : cars)
 				{
-					if(car.collisions != null && car.collisions.contains(bound))
+					OBB obb = (OBB) bound;
+					
+					Vec3 p0 = car.bound.getPosition();
+					Vec3 p1 = p0.subtract(car.bound.u.zAxis.multiply(20));
+										
+					if(obb.testSegment(p0, p1))
+					{
+						obb.renderWireframe(gl, RGB.PURE_GREEN_3F, smoothBound);
+						
+						Vec3 p_ = obb.testRay(p0, car.bound.u.zAxis.negate());
+						
+						Renderer.displayPoints(gl, glut, new float[][] {p_.toArray()}, RGB.toRGBi(RGB.ORANGE), 2, true);
+					}
+					else if(car.collisions != null && car.collisions.contains(bound))
 					{
 						 bound.renderWireframe(gl, RGB.PURE_RED_3F, smoothBound);
 						 break;
 					}
-					else bound.renderWireframe(gl, RGB.BLACK_3F   , smoothBound);
+					else bound.renderWireframe(gl, RGB.WHITE_3F   , smoothBound);		
 				}
 		}
 		
 		if(enableOBBAxes)
 		{
-			for(Car car : cars) car.bound.displayAxes(gl, 10);
+//			for(Car car : cars) car.bound.displayAxes(gl, 10);
+//			
+//			for(Bound bound : bounds)
+//			{
+//				OBB obb = (OBB) bound;
+//				obb.displayAxes(gl, 20);
+//			}
 			
-			for(Bound bound : bounds)
+			Vehicle car = cars.get(0);
+			
+//			Vec3 p0 = car.bound.getPosition();
+//			Vec3 p1 = p0.subtract(car.bound.u.zAxis.multiply(20));
+//			
+//			Renderer.displaySegment(gl, p0, p1, RGB.toRGBi(RGB.BRIGHT_YELLOW));
+//			
+			Vec3[] vertices = car.bound.getVertices();
+			
+			for(int i = 0; i < 4; i++)
 			{
-				OBB obb = (OBB) bound;
-				obb.displayAxes(gl, 20);
+				Vec3 p0 = vertices[i];
+				Vec3 p1 = p0.add(Vec3.NEGATIVE_Y_AXIS.multiply(5));
+				
+				Renderer.displaySegment(gl, p0, p1, RGB.toRGBi(RGB.BRIGHT_YELLOW));
 			}
 		}
 		
@@ -2581,7 +2615,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			for(Bound bound : bounds)
 				bound.renderSolid(gl, RGB.toRGBAi(RGB.VIOLET, 0.1f));
 		
-		for(Car car : cars)
+		for(Vehicle car : cars)
 			for(Item item : car.getItems())
 				item.renderBound(gl);
 		
@@ -2644,7 +2678,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		return p.dot() > GLOBAL_RADIUS * GLOBAL_RADIUS;
 	}
 
-	public List<Car> getCars() { return cars; }
+	public List<Vehicle> getCars() { return cars; }
 
 	public void sendItemCommand(int itemID) { itemQueue.add(itemID); }
 	
@@ -2965,7 +2999,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_H:  enableObstacles = !enableObstacles; break;
 			
-			case KeyEvent.VK_T:   enableTerrain = !enableTerrain; for(Car car : cars) car.friction = 1; break;
+			case KeyEvent.VK_T:   enableTerrain = !enableTerrain; for(Vehicle car : cars) car.friction = 1; break;
 			case KeyEvent.VK_F10: enableItemBoxes = !enableItemBoxes; break;
 			
 			case KeyEvent.VK_BACK_SLASH: shadowMap = !shadowMap; break;
@@ -3015,7 +3049,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			case KeyEvent.VK_SPACE: console.parseCommand(command.getText()); break;
 	
-			default: for(Car car : cars) car.keyPressed(e); break;
+			default: for(Vehicle car : cars) car.keyPressed(e); break;
 		}
 	}
 	
@@ -3076,7 +3110,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		switch (e.getKeyCode())
 		{
-			default: for(Car car : cars) car.keyReleased(e); break;
+			default: for(Vehicle car : cars) car.keyReleased(e); break;
 		}
 	}
 

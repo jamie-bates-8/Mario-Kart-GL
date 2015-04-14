@@ -13,13 +13,14 @@ import javax.media.opengl.glu.GLUquadric;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
@@ -63,7 +64,7 @@ public class BlueShell extends Shell
 	
 	private List<Particle> blast = new ArrayList<Particle>();
 	
-	public BlueShell(GL2 gl, Scene scene, Car car, float trajectory)
+	public BlueShell(GL2 gl, Scene scene, Vehicle car, float trajectory)
 	{
 		super(gl, scene, car, trajectory);
 		
@@ -136,15 +137,16 @@ public class BlueShell extends Shell
 			
 			Shader.disable(gl);
 		}	
-		else if(!blast.isEmpty())
+		else if(!blast.isEmpty() && !Scene.shadowMode)
 		{
-			int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
-			if(!Scene.reflectMode) gl.glDrawBuffers(2, attachments, 0);
+			boolean useHDR = BloomStrobe.isEnabled();
+			
+			if(Scene.reflectMode) BloomStrobe.end(gl);
 
 			if(Scene.singleton.enableBloom) renderBlast(gl);
 			else BlastParticle.renderList(gl, blast);
 			
-			if(!Scene.reflectMode) gl.glDrawBuffers(1, attachments, 0);
+			if(useHDR) BloomStrobe.begin(gl);
 			
 			Shader.disable(gl);
 		}
@@ -214,8 +216,6 @@ public class BlueShell extends Shell
 			blastSpeed *= 0.9f;
 			blastDuration--;
 			
-			List<Particle> toRemove = new ArrayList<Particle>();
-			
 			for(Particle particle : blast) particle.update();
 			Particle.removeParticles(blast);
 			
@@ -242,7 +242,7 @@ public class BlueShell extends Shell
 	public boolean isDead() { return dead && blastDuration < 1; }
 	
 	@Override
-	public void collide(Car car)
+	public void collide(Vehicle car)
 	{
 		if(!dead) destroy();
 		else if(blastDuration > 50)

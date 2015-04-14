@@ -6,7 +6,7 @@ import static javax.media.opengl.GL.GL_TEXTURE_2D;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.scene.Light;
@@ -152,7 +152,7 @@ public class FocalBlur
 	
 	private void depthPass(GL2 gl)
 	{
-		Car car = scene.getCars().get(0);
+		Vehicle car = scene.getCars().get(0);
 		Terrain terrain = scene.getTerrain();
 		
 		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);

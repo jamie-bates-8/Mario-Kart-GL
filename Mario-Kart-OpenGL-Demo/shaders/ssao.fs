@@ -3,7 +3,7 @@
 
 // Samplers for pre-rendered color, normal and depth
 uniform sampler2D colourSampler;
-uniform sampler2D normalSampler;
+uniform sampler2D normalSampler; // normals stored in RGB channels, depth stored in alpha channel
 uniform sampler2D randomSampler; // Uniform sampler containing completely random vectors
 
 // Various uniforms controling SSAO effect

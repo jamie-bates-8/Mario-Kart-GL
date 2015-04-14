@@ -8,7 +8,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
@@ -42,10 +42,10 @@ public class RedShell extends Shell
 	
 	private float acceleration = 0.0125f;
 	
-	private Car target;
+	private Vehicle target;
 	private boolean locked = true;
 	
-	public RedShell(GL2 gl, Scene scene, Car car, float trajectory, boolean orbiting)
+	public RedShell(GL2 gl, Scene scene, Vehicle car, float trajectory, boolean orbiting)
 	{
 		super(gl, scene, car, trajectory);
 		
@@ -81,13 +81,13 @@ public class RedShell extends Shell
 		target = seekTarget();
 	}
 	
-	private Car seekTarget()
+	private Vehicle seekTarget()
 	{
-		Car target = null;
+		Vehicle target = null;
 		
 		float min_distance = Float.MAX_VALUE;
 		
-		for(Car c : scene.getCars())
+		for(Vehicle c : scene.getCars())
 		{
 			if(!c.equals(car))
 			{
@@ -171,5 +171,5 @@ public class RedShell extends Shell
 	public void rebound(Bound b) { destroy(); }
 	
 	@Override
-	public void collide(Car car) { car.spin(); destroy(); }
+	public void collide(Vehicle car) { car.spin(); destroy(); }
 }

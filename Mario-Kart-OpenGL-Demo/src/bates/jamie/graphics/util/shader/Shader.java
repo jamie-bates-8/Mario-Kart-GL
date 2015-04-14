@@ -110,6 +110,7 @@ public class Shader
 		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", bump_attr);
 		
 		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
+		Shader cloudySky    = new Shader(gl, "cloudy_sky", "cloudy_sky");
 		Shader grass        = new Shader(gl, "grass", "grass");
 		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
 		Shader energyField  = new Shader(gl, "energy_field", "energy_field");
@@ -174,6 +175,7 @@ public class Shader
 		if(    caustics.isValid()) shaders.put("water_caustics", caustics);
 		if(bumpCaustics.isValid()) shaders.put("bump_caustics", bumpCaustics);
 		if(    clearSky.isValid()) shaders.put("clear_sky", clearSky);
+		if(   cloudySky.isValid()) shaders.put("cloudy_sky", cloudySky);
 		if(       grass.isValid()) shaders.put("grass", grass);
 		if(    dissolve.isValid()) shaders.put("dissolve", dissolve);
 		if( energyField.isValid()) shaders.put("energy_field", energyField);
@@ -231,8 +233,6 @@ public class Shader
 	public static Shader getLightModel(String name)
 	{
 		Scene scene = Scene.singleton;
-		
-//		if(Scene.enableParallax) return get("phong_lights");
 		
 		if(name.equalsIgnoreCase("phong"))
 		{
@@ -436,7 +436,7 @@ public class Shader
 	
 	public void setUniform(GL2 gl, Uniform uniform)
 	{
-		int uniformID = gl.glGetUniformLocation(shaderID, uniform.getIdentifier());
+//		int uniformID = gl.glGetUniformLocation(shaderID, uniform.getIdentifier());
 		
 		if(uniform instanceof UniformFloat  ) setUniform(gl, uniform.getIdentifier(), ((UniformFloat  ) uniform).getValue());
 		if(uniform instanceof UniformInt    ) setUniform(gl, uniform.getIdentifier(), ((UniformInt    ) uniform).getValue());

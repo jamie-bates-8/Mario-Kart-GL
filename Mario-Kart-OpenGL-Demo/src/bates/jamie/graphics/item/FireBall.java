@@ -5,7 +5,7 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Scene;
@@ -22,7 +22,7 @@ public class FireBall extends Item
 	private Vec3 bounceVector = new Vec3();
 	private ParticleGenerator flameGenerator;
 	
-	public FireBall(GL2 gl, Scene scene, Car car, int id)
+	public FireBall(GL2 gl, Scene scene, Vehicle car, int id)
 	{
 		this.scene = scene;
 	    this.car = car;
@@ -157,7 +157,7 @@ public class FireBall extends Item
 	}
 	
 	@Override
-	public void collide(Car car)
+	public void collide(Vehicle car)
 	{
 		car.spin();
 		destroy();

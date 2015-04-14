@@ -1,6 +1,5 @@
 package bates.jamie.graphics.item;
 
-import static bates.jamie.graphics.util.Vector.orient2D;
 import static java.lang.Math.atan;
 import static java.lang.Math.toDegrees;
 
@@ -12,7 +11,7 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.OBB;
-import bates.jamie.graphics.entity.Car;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Quadtree;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.scene.Scene;
@@ -41,7 +40,7 @@ public abstract class Item
 	public static boolean boundSolids = false;
 	
 	protected Scene scene;
-	protected Car car;
+	protected Vehicle car;
 	
 	protected float gravity = 0.05f;
 	protected float fallRate = 0.0f;
@@ -173,7 +172,7 @@ public abstract class Item
 	
 	public abstract void collide(Item item);
 	
-	public abstract void collide(Car car);
+	public abstract void collide(Vehicle car);
 	
 	public void fall()
 	{
@@ -183,9 +182,9 @@ public abstract class Item
 	
 	public abstract void update();
 	
-	public void update(List<Car> cars)
+	public void update(List<Vehicle> cars)
 	{
-		for(Car car : cars)
+		for(Vehicle car : cars)
 		{
 			if(car.bound.testBound(bound))
 			{
@@ -262,20 +261,13 @@ public abstract class Item
 		Vec3  n = b.getFaceVector(getPosition()); //normal position vector
 		Vec3 _n = n.subtract(b.c); //normal translation vector
 		
-		Vec3  t = getPositionVector(); //item position vector
-		Vec3 _t = t.subtract(getPosition()); //item translation vector
+		Vec3  v = getPositionVector(); //item position vector
+		Vec3 _v = v.subtract(getPosition()); //item translation vector
 		
-		Vec3 _i = new Vec3().subtract(_t.multiply(15)); //incident translation vector
-		_i.y = 0;
+		Vec3 i = _v.subtract(_n.multiply(_v.dot(_n)).multiply(2));
 		
-		double theta = toDegrees(_n.getAngle(_i));
+		trajectory = (float) i.getCompassAngle();
 		
-		float orient = orient2D(ORIGIN, new float[] {_n.x, _n.z},
-			new float[] {_t.x, _t.z});
-		
-		double angle = (90 - theta) * 2;
-
-		trajectory += (orient < 0) ? angle : -angle;
 		trajectory %= 360;
 	}
 	
@@ -357,8 +349,6 @@ public abstract class Item
 	public float[] getHeights(Collection<Quadtree> trees)
 	{
 		Vec3[] vertices = getAxisVectors();
-		
-		Quadtree[] _trees = new Quadtree[4];
 		
 		for(int i = 0; i < 4; i++)
 			heights[i] = scene.getTerrain().getHeight(trees, vertices[i].toArray());

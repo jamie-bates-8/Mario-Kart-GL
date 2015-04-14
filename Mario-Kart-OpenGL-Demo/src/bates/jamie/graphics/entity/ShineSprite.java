@@ -116,8 +116,6 @@ public class ShineSprite
 	{	
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
 		
-		Car car = Scene.singleton.getCars().get(0);
-		
 		gl.glPushMatrix();
 		{	
 			gl.glTranslatef(position.x, position.y, position.z);
