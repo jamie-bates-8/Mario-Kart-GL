@@ -530,7 +530,7 @@ public class Model
 		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP);
 		
 		float[] c = RGB.BLUE;
-		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
+		gl.glColor3f(c[0], c[1], c[2]);
 
 		gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
 		
@@ -571,7 +571,7 @@ public class Model
 		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP);
 		
 		float[] c = RGB.GREEN;
-		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
+		gl.glColor3f(c[0], c[1], c[2]);
 
 		gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
 		

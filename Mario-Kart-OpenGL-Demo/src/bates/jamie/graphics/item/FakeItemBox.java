@@ -61,7 +61,7 @@ public class FakeItemBox extends Item
 		this.car = car;
 		
 		bound = new Sphere(new Vec3(), 2.5f);
-		boundColor = RGB.toRGBAi(RGB.RED, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.RED, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
 		
@@ -75,7 +75,7 @@ public class FakeItemBox extends Item
 		this.scene = scene;
 		
 		bound = new Sphere(c, 2.5f);
-		boundColor = RGB.toRGBAi(RGB.RED, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.RED, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
 		

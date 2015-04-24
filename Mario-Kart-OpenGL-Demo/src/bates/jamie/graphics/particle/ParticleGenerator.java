@@ -93,7 +93,7 @@ public class ParticleGenerator
 			
 			boolean spark = false;
 			
-			if(generator.nextFloat() < 0.04)
+			if(generator.nextFloat() < 0.03)
 			{
 				t = getRandomVector(direction, 0.5f, 0.15f + generator.nextFloat() * 0.10f);
 				textureID = 0;
@@ -124,7 +124,6 @@ public class ParticleGenerator
 			colorID %= colors.length;
 			
 			float[]  color = colors[colorID];
-			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
 			
 			double incline = generator.nextFloat() * Math.PI * (generator.nextBoolean() ? 1 : -1);
 			double azimuth = 0;
@@ -136,7 +135,6 @@ public class ParticleGenerator
 			Vec3 t0 = new Vec3(rayX, rayY, rayZ);
 			
 			incline += 0.15 + generator.nextFloat() * 0.05;
-//			azimuth += 0.15 + generator.nextFloat() * 0.05;
 			
 			rayX = (float) (Math.sin(incline) * Math.cos(azimuth));
 			rayY = (float) (Math.cos(incline));
@@ -144,7 +142,7 @@ public class ParticleGenerator
 			
 			Vec3 t1 = new Vec3(rayX, rayY, rayZ);
 			
-			particles.add(new RayParticle(this, t0.normalize(), t1.normalize(), _color, 120));
+			particles.add(new RayParticle(this, t0.normalize(), t1.normalize(), color, 120));
 		}
 		
 		return particles;
@@ -203,15 +201,14 @@ public class ParticleGenerator
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[]  color = Vector.mix(colors[type][0], colors[type][1], generator.nextFloat());
-			float[] _color = {color[0]/255, color[1]/255, color[2]/255};
+			float[] color = Vector.mix(colors[type][0], colors[type][1], generator.nextFloat());
 			
 			t = t.normalize().add(getRandomVector());
 			t.y = Math.abs(t.y * (generator.nextBoolean() ? 1 : 2));
 			
 			int length = 5 + generator.nextInt(2);
 			
-			particles.add(new SparkParticle(car, source, t, 8, _color, length));
+			particles.add(new SparkParticle(car, source, t, 8, color, length));
 		}
 		
 		return particles;
@@ -273,8 +270,7 @@ public class ParticleGenerator
 		
 		for(int i = 0; i < n; i++)
 		{
-			float[]  color = RGB.RED;
-			float[] _color = {color[0]/255, color[1]/255, color[2]/255}; 
+			float[] color = RGB.RED;
 			
 			Vec3 t = getRandomVector(0.85f);
 			if(car != null && miniature) t = t.multiply(0.5f);
@@ -287,7 +283,7 @@ public class ParticleGenerator
 				t.z *= 0.25;
 			}
 			
-			particles.add(new ItemBoxParticle(source, t, generator.nextInt(360), _color, generator.nextBoolean(), miniature, true, car));
+			particles.add(new ItemBoxParticle(source, t, generator.nextInt(360), color, generator.nextBoolean(), miniature, true, car));
 		}
 		
 		return particles;

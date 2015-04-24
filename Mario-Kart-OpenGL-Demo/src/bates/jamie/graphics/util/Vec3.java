@@ -170,7 +170,9 @@ public class Vec3
 	
 	public Vec3 multiply(Vec3 v) { return new Vec3(x * v.x, y * v.y, z * v.z); }
 	
-	public Vec3 multiply(float k) { return new Vec3(x * k, y * k, z * k); }
+	public Vec3 multiply(float  k) { return new Vec3(x * k, y * k, z * k); }
+	
+	public Vec3 multiply(double k) { return new Vec3(x * k, y * k, z * k); }
 	
 	public Vec3 divide(Vec3 v) { return new Vec3(x / v.x, y / v.y, z / v.z); }
 	

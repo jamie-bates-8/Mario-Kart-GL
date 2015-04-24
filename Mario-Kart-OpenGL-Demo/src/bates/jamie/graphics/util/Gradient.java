@@ -9,9 +9,9 @@ public class Gradient
 {
 	private List<Stop> stops = new ArrayList<Stop>();
 	
-	public static final Gradient GRAYSCALE = new Gradient(RGB.WHITE_3F, RGB.GRAY);
-	public static final Gradient MUD       = new Gradient(new float[][] {RGB.WHITE_3F, RGB.LIGHT_BROWN, RGB.DARK_BROWN}); 
-	public static final Gradient TROPICAL  = new Gradient(new float[][] {RGB.WHITE_3F, RGB.BLUE,        RGB.INDIGO    }); 
+	public static final Gradient GRAYSCALE = new Gradient(RGB.WHITE, RGB.GRAY);
+	public static final Gradient MUD       = new Gradient(new float[][] {RGB.WHITE, RGB.LIGHT_BROWN, RGB.DARK_BROWN}); 
+	public static final Gradient TROPICAL  = new Gradient(new float[][] {RGB.WHITE, RGB.BLUE,        RGB.INDIGO    }); 
 	
 	public Gradient(float[] color1, float[] color2)
 	{
@@ -62,10 +62,6 @@ public class Gradient
 		int index = 0;
 		
 		while(stops.get(index + 1).location < location) index++;
-		
-		// index <-- lower -- location -- upper --> index + 1
-		int lower = location - stops.get(index).location;
-		int upper = stops.get(index + 1).location - location;
 		
 		return new float[][] {stops.get(index).color, stops.get(index + 1).color};
 	}

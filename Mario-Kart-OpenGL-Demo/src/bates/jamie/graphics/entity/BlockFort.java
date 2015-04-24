@@ -118,7 +118,7 @@ public class BlockFort
 				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
 			}
 
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList);
 		}	
@@ -141,7 +141,7 @@ public class BlockFort
 				shader.loadModelMatrix(gl, model);
 			}
 
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 1);
 		}	
@@ -164,7 +164,7 @@ public class BlockFort
 				shader.loadModelMatrix(gl, model);
 			}
 
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 2);
 		}	
@@ -187,7 +187,7 @@ public class BlockFort
 				shader.loadModelMatrix(gl, model);
 			}
 
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK_3F);
+			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
 			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
 			else gl.glCallList(fortList + 3);
 		}	

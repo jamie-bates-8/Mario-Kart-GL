@@ -224,6 +224,18 @@ public class Camera extends AnchorPoint
 		if(zoom > 2.50) zoom = 2.50f;
 	}
 	
+	/**
+	 * This method returns the rotation matrix that describes the current
+	 * orientation of this camera. This negative z-axis of this matrix is
+	 * considered to be the direction that the camera is looking in. It
+	 * should be noted that a full 16-value array in column-major format
+	 * is returned, not just the orientation. Any values that represent
+	 * scale or translation are set to identity values.
+	 * 
+	 * @return the orientation of this camera as a 16-value array in
+	 * column-major format, equivalent to the transformation matrices
+	 * used internally by OpenGL.
+	 */
 	public float[] getMatrix()
 	{
 		viewMatrix[ 3] = viewMatrix[ 7] = viewMatrix[11] = 0;

@@ -20,6 +20,13 @@ public class RotationMatrix
 		zAxis = new Vec3(matrix[2]);
 	}
 	
+	public RotationMatrix(float[] matrix) // column-major
+	{
+		xAxis = new Vec3(matrix[ 0], matrix[ 4], matrix[ 8]);
+		yAxis = new Vec3(matrix[ 1], matrix[ 5], matrix[ 9]);
+		zAxis = new Vec3(matrix[ 2], matrix[ 6], matrix[10]);
+	}
+	
 	public RotationMatrix(float x, float y, float z) // This method uses a right-handed coordinate system
 	{
 		x = (float) toRadians(x);
@@ -59,7 +66,7 @@ public class RotationMatrix
 	
 	public RotationMatrix(Vec3 axis, float theta)
 	{
-		Vec3 u = axis;
+		Vec3 u = axis.normalize();
 		
 		float  c = cosf(toRadians(theta));
 		float _c = 1.0f - c;

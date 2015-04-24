@@ -56,7 +56,7 @@ public class DriftParticle extends Particle
 
 			whiteSpark.bind(gl);
 			
-			gl.glColor3f(colors[color][0]/255, colors[color][1]/255, colors[color][2]/255);
+			gl.glColor3f(colors[color][0], colors[color][1], colors[color][2]);
 
 			gl.glBegin(GL_QUADS);
 			{

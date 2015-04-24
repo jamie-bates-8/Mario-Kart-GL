@@ -20,6 +20,8 @@ import javax.media.opengl.glu.GLU;
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.collision.Sphere;
+import bates.jamie.graphics.entity.LightningStrike.BoltType;
+import bates.jamie.graphics.entity.LightningStrike.RenderStyle;
 import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.HUD;
 import bates.jamie.graphics.io.HoloTag;
@@ -33,8 +35,8 @@ import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.item.ItemState;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.item.Shell;
-import bates.jamie.graphics.particle.LightningParticle;
 import bates.jamie.graphics.particle.ParticleGenerator;
+import bates.jamie.graphics.particle.ThunderOrb;
 import bates.jamie.graphics.particle.FireParticle.FireType;
 import bates.jamie.graphics.scene.AnchorPoint;
 import bates.jamie.graphics.scene.Camera;
@@ -45,6 +47,7 @@ import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneGraph;
 import bates.jamie.graphics.scene.SceneNode;
+import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
@@ -257,24 +260,24 @@ public class Vehicle
 	{
 		Vec3 c = getPosition();
 		
-		starLight = new Light(gl, c, RGB.WHITE_3F, RGB.WHITE_3F, RGB.WHITE_3F);
-	    starLight.setConstantAttenuation(0.75f);
+		starLight = new Light(gl, c, RGB.WHITE, RGB.WHITE, RGB.WHITE);
+	    starLight.setConstantAttenuation (0.80f);
 	    starLight.setQuadraticAttenuation(0.04f);
 	    starLight.enableAttenuation = true;
 	    
 	    Light leftLight, rightLight;
-	    float[] sparkColor = new float[] {RGB.YELLOW[0]/255, RGB.YELLOW[1]/255, RGB.YELLOW[2]/255};
+	    float[] sparkColor = RGB.YELLOW;
 	    leftLight = new Light(gl, c, sparkColor, sparkColor, sparkColor);
-	    
-	    leftLight.setConstantAttenuation(0.75f);
-	    leftLight.setQuadraticAttenuation(0.4f);
+	    leftLight.setConstantAttenuation (1.00f);
+	    leftLight.setLinearAttenuation   (0.20f);
+	    leftLight.setQuadraticAttenuation(0.20f);
 	    leftLight.enableAttenuation = true;
 	    leftLight.disable(gl);
 	    
 	    rightLight = new Light(gl, c, sparkColor, sparkColor, sparkColor);
-	    rightLight.setConstantAttenuation(1.00f);
-	    rightLight.setLinearAttenuation(0.2f);
-	    rightLight.setQuadraticAttenuation(0.2f);
+	    rightLight.setConstantAttenuation (1.00f);
+	    rightLight.setLinearAttenuation   (0.20f);
+	    rightLight.setQuadraticAttenuation(0.20f);
 	    rightLight.enableAttenuation = true;
 	    rightLight.disable(gl);
 	    
@@ -622,11 +625,11 @@ public class Vehicle
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		}
 		
+		boolean useHDR = BloomStrobe.isEnabled();
+		
 		if(displayModel)
 		{
-			float   rimPower = Light.rimPower;
-			float[] rimColor = Light.rimColor;
-			boolean rimLight = scene.rimLighting;
+			Light.saveRimState();
 			
 			if(cursed)
 			{
@@ -634,6 +637,17 @@ public class Vehicle
 				
 				Light.rimPower = 3.0f;
 				Light.rimColor = new float[] {.7f, .0f, .0f};
+				
+				Light.setepRimLighting(gl);
+			}
+			else if(miniature)
+			{
+				BloomStrobe.end(gl);
+				
+				scene.rimLighting = true;
+				
+				Light.rimPower = 1.0f;
+				Light.rimColor = Scene.sceneTimer % 10 < 5 ? RGB.BLUE : RGB.INDIGO;
 				
 				Light.setepRimLighting(gl);
 			}
@@ -656,13 +670,13 @@ public class Vehicle
 			else if(starPower) graph.renderColor(gl, starColor, enableChrome ? reflector : null);
 			else graph.render(gl);
 			
-			scene.rimLighting = rimLight;
-			
-			Light.rimPower = rimPower;
-			Light.rimColor = rimColor;
-			
-			Light.setepRimLighting(gl);
+			Light.restoreRimState(gl);
 		}
+		
+		if(useHDR) BloomStrobe.begin(gl);
+		
+		if(bolt != null) 				  bolt.render(gl, camera.getOrientation().zAxis);
+		if(orb  != null && !orb.isDead())  orb.render(gl, camera.getOrientation().zAxis);
 		
 		gl.glColor3f(1, 1, 1);
 		
@@ -716,10 +730,19 @@ public class Vehicle
 
 	private void updateLights(GL2 gl)
 	{
-		starLight.setAmbience(starColor);
+		if(miniature)
+		{
+			starLight.setAmbience(RGB.BRIGHT_YELLOW);
+			starLight.setConstantAttenuation (0.80f * Scene.sceneTimer % 5);
+		}
+		else
+		{
+			starLight.setAmbience(starColor);
+			starLight.setConstantAttenuation (0.80f);
+		}
 		
-		if(starDuration < 1) starLight.disable(gl);
-		else starLight.enable(gl);
+		if(starDuration > 0 || miniature) starLight.enable(gl);
+		else starLight.disable(gl);
 		
 		float[] driftColor = RGB.YELLOW;
 		
@@ -730,12 +753,12 @@ public class Vehicle
 			case BLUE   : driftColor = RGB.BLUE;   break;
 		}
 		
-		if(drift != Direction.STRAIGHT && !reversing && velocity > 0) for(Light l : driftLights)
+		if(drift != Direction.STRAIGHT && !reversing && velocity > 0 && !miniature) for(Light l : driftLights)
 		{
 			l.enable(gl);
-			l.setAmbience(new float[] {driftColor[0]/255, driftColor[1]/255, driftColor[2]/255});
-			l.setSpecular(new float[] {driftColor[0]/255, driftColor[1]/255, driftColor[2]/255});
-			l.setDiffuse (new float[] {driftColor[0]/255, driftColor[1]/255, driftColor[2]/255});
+			l.setAmbience(driftColor);
+			l.setSpecular(driftColor);
+			l.setDiffuse (driftColor);
 		}
 		else for(Light l : driftLights) l.disable(gl);
 	}
@@ -1457,9 +1480,14 @@ public class Vehicle
 		};
 	}
 	
-	public Vec3 getLightningVector()
+	public Vec3[] getLightningVectors()
 	{
-		return bound.c.add(bound.u.yAxis.multiply(20));
+		return new Vec3[]
+		{
+			bound.c.add(new Vec3(0, 32, 0)),
+			bound.c.add(new Vec3(0,  6, 0)),
+			bound.c.add(bound.u.yAxis.multiply(bound.e.y))
+		};
 	}
 	
 	public Vec3 getBackwardItemVector(Item item, int iteration)
@@ -1534,6 +1562,9 @@ public class Vehicle
 //			if(!car.equals(this)) car.struckByLightning();
 	}
 	
+	LightningStrike bolt;
+	ThunderOrb orb;
+	
 	public void struckByLightning()
 	{
 		if(!starPower && !invisible)
@@ -1553,8 +1584,34 @@ public class Vehicle
 			else spin();
 		}
 		
-		Vec3 source = getLightningVector(); 
-		scene.addParticle(new LightningParticle(source));
+		Vec3 start = getLightningVectors()[0]; 
+		Vec3 end   = getLightningVectors()[starPower ? 1 : 2];
+		
+		bolt = new LightningStrike(start, end, 4, true, true, RenderStyle.SINGLE_FLASH);
+		bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.SELF_ARCH, 2, end, 5, 32));
+		
+		float radius = bound.e.z * 2.0f;
+		
+		if(starPower)
+		{
+			for(int i = 0; i < 3; i++)
+			{
+				Vec3 p;
+				
+				if(starPower)
+				{
+					p= bound.u.zAxis.multiply(radius);
+				    p = p.multiply(new RotationMatrix(bound.u.yAxis, i * 120));
+				    p = bound.c.subtract(bound.u.yAxis.multiply(bound.e.y)).add(p);
+				}
+				else p = getLightningVectors()[3];
+				
+				bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.END_ARCH, 0.5f, p, 3, 16));
+				bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.END_ARCH, 2.0f, p, 3, 16));
+			}
+		}
+		
+		orb = new ThunderOrb(getLightningVectors()[0]);
 	}
 	
 	public void curse()
@@ -1712,9 +1769,6 @@ public class Vehicle
 		{
 			switch(e)
 			{
-//				case  5: camera.increaseSensitivity(); break;
-//				case  7: camera.decreaseSensitivity(); break;
-				
 				case  5: camera.setSpeed(15); break;
 				case  7: camera.setSpeed(0.1f); break;
 			}
@@ -1723,6 +1777,8 @@ public class Vehicle
 		switch(e)
 		{
 			case  8: camera.cycleMode(); displayModel = true; break;
+			case 11: Scene.enableAnimation = !Scene.enableAnimation; break;
+			case 12: System.exit(0); break;
 		}
 	}
 	

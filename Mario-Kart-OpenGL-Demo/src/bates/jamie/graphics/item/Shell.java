@@ -35,7 +35,7 @@ public abstract class Shell extends Item
 		{
 			rimList = gl.glGenLists(1);
 			gl.glNewList(rimList, GL2.GL_COMPILE);
-		    displayColoredObject(gl, RIM_FACES, RGB.WHITE_3F);
+		    displayColoredObject(gl, RIM_FACES, RGB.WHITE);
 		    gl.glEndList();
 		}
 		

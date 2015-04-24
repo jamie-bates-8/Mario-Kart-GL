@@ -88,7 +88,7 @@ public abstract class Item
 	
 	public void renderBound(GL2 gl)
 	{
-		if(boundFrames) bound.renderWireframe(gl, RGB.BLACK_3F, smooth);
+		if(boundFrames) bound.renderWireframe(gl, RGB.BLACK, smooth);
 		if(boundSolids) bound.renderSolid(gl, boundColor);
 	}
 	
@@ -105,7 +105,7 @@ public abstract class Item
 			gl.glColorMask(false, false, false, false);
 			gl.glDepthMask(false);
 			
-			bound.renderSolid(gl, RGB.WHITE_3F);
+			bound.renderSolid(gl, RGB.WHITE);
 			
 			if(!Scene.depthMode) gl.glColorMask(true, true, true, true);
 			gl.glDepthMask(true);

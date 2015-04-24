@@ -5,60 +5,36 @@ import java.awt.color.ColorSpace;
 
 public class RGB
 {
-	public static final float[] DARK_RED    = {153,   0,   0};
-	public static final float[] RED         = {237,  28,  36};
-	public static final float[] ORANGE      = {242, 101,  34};
-	public static final float[] YELLOW      = {255, 228,   0};
-	public static final float[] LIME_GREEN  = { 50, 205,  50};
-	public static final float[] GREEN       = { 57, 180,  74};
-	public static final float[] BLUE        = {  0, 173, 239};
-	public static final float[] INDIGO      = {  0, 114, 188};
-	public static final float[] VIOLET      = {102,  45, 145};
-	public static final float[] PLUM        = {221, 160, 221};
-	public static final float[] WHITE       = {255, 255, 255};
-	public static final float[] GRAY        = {127, 127, 127};
-	public static final float[] DARK_GRAY   = { 64,  64,  64};
-	public static final float[] BLACK       = {  0,   0,   0};
-	public static final float[] SKY_BLUE    = { 30, 144, 255};
-
-	public static final float[] SKY_BLUE_3F = {0.118f, 0.565f, 1.000f};
-
-	public static final float[] DARK_BROWN  = { 44,  29,   9};
-	public static final float[] LIGHT_BROWN = { 93,  63,  19};
+	public static final float[] BLACK         = {0.000f, 0.000f, 0.000f};
+	public static final float[] DARK_GRAY     = {0.251f, 0.251f, 0.251f};
+	public static final float[] GRAY          = {0.498f, 0.498f, 0.498f};
+	public static final float[] WHITE         = {1.000f, 1.000f, 1.000f};
 	
-	public static final float[] BRIGHT_YELLOW = {255, 255, 102};
-	public static final float[] BRIGHT_RED    = {255,  70,  70};
-	public static final float[] BRIGHT_BLUE   = {138, 236, 255};
+	public static final float[] DARK_RED      = {0.600f, 0.000f, 0.000f};
+	public static final float[] RED           = {0.929f, 0.110f, 0.141f};
+	public static final float[] ORANGE        = {0.949f, 0.396f, 0.133f};
+	public static final float[] YELLOW        = {1.000f, 0.894f, 0.000f};
+	public static final float[] LIME_GREEN    = {0.196f, 0.804f, 0.196f};
+	public static final float[] GREEN         = {0.224f, 0.706f, 0.290f};
+	public static final float[] SKY_BLUE      = {0.118f, 0.565f, 1.000f};
+	public static final float[] BLUE          = {0.000f, 0.678f, 0.937f};
+	public static final float[] INDIGO        = {0.000f, 0.447f, 0.737f};
+	public static final float[] VIOLET        = {0.400f, 0.176f, 0.569f};
+	public static final float[] PLUM          = {0.867f, 0.627f, 0.867f};
 
-	public static final float[] BLACK_3F      = {0, 0, 0};
-	public static final float[] PURE_RED_3F   = {1, 0, 0};
-	public static final float[] PURE_GREEN_3F = {0, 1, 0};
-	public static final float[] PURE_BLUE_3F  = {0, 0, 1};
-	public static final float[] WHITE_3F      = {1, 1, 1};
-
-	public static void main(String[] args)
-	{
-		System.out.println("vec3" + Vector.print(Vector.multiply(DARK_RED, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(RED, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(ORANGE, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(YELLOW, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(LIME_GREEN, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(GREEN, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(BLUE, 1.0f / 255)) + ",");
-		System.out.println("vec3" + Vector.print(Vector.multiply(VIOLET, 1.0f / 255)) + ",");
-	}
+	public static final float[] DARK_BROWN    = {0.173f, 0.114f, 0.035f};
+	public static final float[] LIGHT_BROWN   = {0.365f, 0.247f, 0.075f};
 	
-	public static float[] toRGBi(float[] color)
-	{
-		return new float[] {color[0]/255, color[1]/255, color[2]/255};
-	}
+	public static final float[] BRIGHT_RED    = {1.000f, 0.275f, 0.275f};
+	public static final float[] BRIGHT_YELLOW = {1.000f, 1.000f, 0.500f};
+	public static final float[] BRIGHT_GREEN  = {0.631f, 0.918f, 0.392f};
+	public static final float[] BRIGHT_BLUE   = {0.541f, 0.925f, 1.000f};
+	
+	public static final float[] PURE_RED      = {1.000f, 0.000f, 0.000f};
+	public static final float[] PURE_GREEN    = {0.000f, 1.000f, 0.000f};
+	public static final float[] PURE_BLUE     = {0.000f, 0.000f, 1.000f};
 
-	public static float[] toRGBAi(float[] color, float alpha)
-	{
-		return new float[] {color[0]/255, color[1]/255, color[2]/255, alpha};
-	}
-
-	public static float[] toRGBAf(float[] color, float alpha)
+	public static float[] toRGBA(float[] color, float alpha)
 	{
 		return new float[] {color[0], color[1], color[2], alpha};
 	}

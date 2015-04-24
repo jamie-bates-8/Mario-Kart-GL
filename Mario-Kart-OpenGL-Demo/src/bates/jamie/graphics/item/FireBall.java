@@ -28,7 +28,7 @@ public class FireBall extends Item
 	    this.car = car;
 		
 		bound = new Sphere(new Vec3(), RADIUS);
-		boundColor = RGB.toRGBAi(RGB.RED, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.RED, BOUND_ALPHA);
 		
 		flameGenerator = new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE, new Vec3());
 		scene.generators.add(flameGenerator);
@@ -39,7 +39,7 @@ public class FireBall extends Item
 		this.scene = scene;
 		
 		bound = new Sphere(c, RADIUS);
-		boundColor = RGB.toRGBAi(RGB.RED, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.RED, BOUND_ALPHA);
 		
 		flameGenerator = new ParticleGenerator(1, 5, ParticleGenerator.GeneratorType.FIRE, new Vec3(c));
 		scene.generators.add(flameGenerator);

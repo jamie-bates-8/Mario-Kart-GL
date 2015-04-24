@@ -289,7 +289,7 @@ public class TerrainPatch
 		
 		gl.glPushMatrix();
 		{
-			displayWireframeObject(gl, _vertices, 4, RGB.PURE_RED_3F);
+			displayWireframeObject(gl, _vertices, 4, RGB.PURE_RED);
 		}
 		gl.glPopMatrix();
 		

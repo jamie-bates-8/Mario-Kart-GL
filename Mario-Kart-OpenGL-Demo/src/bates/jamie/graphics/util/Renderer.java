@@ -125,7 +125,7 @@ public class Renderer
 		gl.glDisable(GL2.GL_POINT_SMOOTH);
 	}
 	
-	public static void displayPoints(GL2 gl, float[] points, int n, float[] color, float size)
+	public static void displayPoints(GL2 gl, float[] points, float[] color, float size)
 	{
 		if(color.length > 3)
 			 gl.glColor4fv(color, 0);
@@ -136,7 +136,7 @@ public class Renderer
 		gl.glPointSize(size);
 		gl.glHint(GL2.GL_POINT_SMOOTH_HINT, GL2.GL_NICEST);
 		
-		for(int i = 0; i < n; i++)
+		for(int i = 0; i < points.length / 3; i++)
 		{
 			gl.glBegin(GL2.GL_POINTS);
 			gl.glVertex3f(points[i * 3 + 0], points[i * 3 + 1], points[i * 3 + 2]);
@@ -573,6 +573,203 @@ public class Renderer
 		gl.glEnable(GL_TEXTURE_2D);
 		
 		gl.glColor3f(1, 1, 1);
+	}
+	
+	public static void displayNURBSCurve(GL2 gl, Vec3[] controlPoints, float[] knots, float[] color, int sampleRate)
+	{
+		boolean texture  = gl.glIsEnabled(GL2.GL_TEXTURE_2D);
+		boolean lighting = gl.glIsEnabled(GL2.GL_LIGHTING  );
+		
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(color[0], color[1], color[2]);
+		
+		float increment = 1.0f / sampleRate;
+
+		gl.glBegin(GL2.GL_LINE_STRIP);
+		{
+			for(int i = 0; i <= sampleRate; i++)
+			{
+				Vec3 p = evaluateNURBSCurveCubic(controlPoints, knots, increment * i);
+				gl.glVertex3fv(p.toArray(), 0);
+			}
+			System.out.println();
+		}
+		gl.glEnd();
+
+		if(lighting) gl.glEnable(GL_LIGHTING  );	
+		if(texture ) gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);	
+	}
+	
+	public static Vec3 evaluateNURBSCurveCubic(Vec3[] controlPoints, float[] knots, float u)
+	{	
+		float[] R = new float[4];
+		
+		u *= knots[knots.length - 1];
+		
+		int i = 0;
+		while((knots[i] > u || u >= knots[i + 1]) && knots[i + 1] != knots[knots.length - 1]) i++;
+		
+		if(i < 2) i = 2;
+		if(i > knots.length - 4) i = knots.length - 4;
+		if(i > controlPoints.length - 2) i = controlPoints.length - 2;
+		
+		float k0 = knots[i - 2];
+		float k1 = knots[i - 1];
+		float k2 = knots[i + 0];
+		float k3 = knots[i + 1];
+		float k4 = knots[i + 2];
+		float k5 = knots[i + 3];
+		
+		Vec3 c0 = controlPoints[i - 2];
+		Vec3 c1 = controlPoints[i - 1];
+		Vec3 c2 = controlPoints[i + 0];
+		Vec3 c3 = controlPoints[i + 1];
+		
+		float l = (k3 - u) / ((k3 - k2) * (k3 - k1) + 1E-5f);
+		float r = (u - k2) / ((k3 - k2) * (k4 - k2) + 1E-5f);
+		
+		float a = ( r * (u - k2)) / (k5 - k2 + 1E-5f);
+		float b = ((r * (k4 - u)) + (l * (u - k1))) / (k4 - k1 + 1E-5f);
+		float c = ( l * (k3 - u)) / (k3 - k0 + 1E-5f);
+		
+		R[0] =  c * (k3 - u);
+		R[1] = (b * (k4 - u)) + (c * (u - k0));
+		R[2] = (a * (k5 - u)) + (b * (u - k1));
+		R[3] =  a * (u - k2);
+		
+		float w = R[0] + R[1] + R[2] + R[3] + 1E-5f;
+		
+		Vec3 C = c0.multiply(R[0]).add(c1.multiply(R[1])).add(c2.multiply(R[2])).add(c3.multiply(R[3]));
+		
+		return C.divide(w);
+	}
+	
+	public static Vec3 evaluateNURBSCurve(Vec3[] controlPoints, float[] knots, float u)
+	{
+		Vec3 c = new Vec3();
+		
+		u *= knots[knots.length - 1];
+		
+		for(int i = 0; i < controlPoints.length; i++)
+		{
+			float R = basis(i, 3, knots, u);
+			float denom = 1E-5f;
+			
+			for(int j = 0; j < controlPoints.length; j++)
+				denom += basis(j, 3, knots, u);
+			
+			R /= denom;
+			
+			c = c.add(controlPoints[i].multiply(R));
+		}
+		
+		return c;
+	}
+	
+	private static float basis(int i, int n, float[] knots, float u) 
+	{	
+		if(n == 0)
+		{
+			if(knots[i] <= u && u <= knots[i + 1]) return 1.0f;
+			else return 0.0f;
+		}
+		
+		float f = f(i    , n, knots, u);
+		float g = g(i + 1, n, knots, u);
+		
+		return f * basis(i, n - 1, knots, u) + g * basis(i + 1, n - 1, knots, u);
+	}
+	
+	private static float f(int i, int n, float[] knots, float u)
+	{
+		return (u - knots[i]) / (knots[i + n] - knots[i] + 1E-5f);
+	}
+	
+	private static float g(int i, int n, float[] knots, float u)
+	{
+		return (knots[i + n] - u) / (knots[i + n] - knots[i] + 1E-5f);
+	}
+	
+	public static void displayCubicBezierCurve(GL2 gl, Vec3[] controlPoints, float[] color, int sampleRate)
+	{
+		boolean texture  = gl.glIsEnabled(GL2.GL_TEXTURE_2D);
+		boolean lighting = gl.glIsEnabled(GL2.GL_LIGHTING  );
+		
+		gl.glDisable(GL_LIGHTING);
+		gl.glDisable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(color[0], color[1], color[2]);
+		
+		float increment = 1.0f / sampleRate;
+
+		gl.glBegin(GL2.GL_LINE_STRIP);
+		{
+			for(int i = 0; i <= sampleRate; i++)
+			{
+				Vec3 p = bezierCurveCubic(controlPoints, increment * i);
+				gl.glVertex3fv(p.toArray(), 0);
+			}
+		}
+		gl.glEnd();
+
+		if(lighting) gl.glEnable(GL_LIGHTING  );	
+		if(texture ) gl.glEnable(GL_TEXTURE_2D);
+		
+		gl.glColor3f(1, 1, 1);	
+	}
+	
+	public static Vec3 bezierCurveCubic(Vec3[] controlPoints, float u)
+	{
+		float v = 1 - u;
+		
+		Vec3 p =  controlPoints[0].multiply(v * v * v);
+		p = p.add(controlPoints[1].multiply(v * v * u * 3));
+		p = p.add(controlPoints[2].multiply(v * u * u * 3));
+		p = p.add(controlPoints[3].multiply(u * u * u));
+		
+		return p;
+	}
+	
+	public static Vec3 bezierCurveDerivative(Vec3[] controlPoints, float u)
+	{
+		float v = 1 - u;
+		
+		Vec3 p =  controlPoints[1].subtract(controlPoints[0]).multiply(v * v * 3);
+		p = p.add(controlPoints[2].subtract(controlPoints[1]).multiply(v * u * 6));
+		p = p.add(controlPoints[3].subtract(controlPoints[2]).multiply(u * u * 3));
+		
+		return p;
+	}
+	
+	public static Vec3 bezierCurve(Vec3[] controlPoints, int order, float u)
+	{
+		Vec3 p = new Vec3();
+		
+		for(int i = 0; i < 4; i++)
+			p = p.add(controlPoints[i].multiply(bernstein(3, i, u)));
+		
+		return p;
+	}
+	
+	private static double bernstein(int n, int i, float u)
+	{
+		int binom = binomial(n, i);
+		
+		return binom * Math.pow(u, i) * Math.pow(1 - u, n  - i);
+	}
+	
+	private static int binomial(int n, int k)
+	{
+		int c = 1;
+		
+		for(int i = 1; i <= k; i++)
+			c *= (float) (n + 1 - i) / i; 
+		
+		return c;
 	}
 	
 	public static void displayQuads(GL2 gl, float[][] vertices, float[] color)

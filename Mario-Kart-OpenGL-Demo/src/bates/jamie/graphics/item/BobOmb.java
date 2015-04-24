@@ -89,7 +89,7 @@ public class BobOmb extends Item
 		eyeNode = new SceneNode(null, -1, bob_omb_eyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		eyeNode.setScale(new Vec3(1.0));
 		eyeNode.setRenderMode(RenderMode.COLOR);
-		eyeNode.setColor(RGB.WHITE_3F);
+		eyeNode.setColor(RGB.WHITE);
 		
 		capNode = new SceneNode(null, -1, bob_omb_cap, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		capNode.setScale(new Vec3(1.0));
@@ -101,7 +101,7 @@ public class BobOmb extends Item
 		fuseNode = new SceneNode(null, -1, bob_omb_fuse, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		fuseNode.setScale(new Vec3(1.0));
 		fuseNode.setRenderMode(RenderMode.COLOR);
-		fuseNode.setColor(RGB.WHITE_3F);
+		fuseNode.setColor(RGB.WHITE);
 		
 		legsNode = new SceneNode(null, -1, bob_omb_legs, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		legsNode.setScale(new Vec3(1.0));
@@ -165,7 +165,7 @@ public class BobOmb extends Item
 		{
 			noiseSampler = TextureLoader.load(gl, "tex/blast_noise.png");
 			
-			float[] blastColor = {RGB.INDIGO[0]/255, RGB.INDIGO[1]/255, RGB.INDIGO[2]/255};
+			float[] blastColor = RGB.INDIGO;
 			
 			blastLight = new Light(gl, new Vec3(), blastColor, blastColor, blastColor);
 		    

@@ -757,9 +757,9 @@ public class Terrain
 		
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 			
-			displayWireframeObject(gl, vertices, 4, RGB.BLACK_3F);
-			displayWireframeObject(gl, q, 4, RGB.PURE_RED_3F);
-			displayLines(gl, r, 3, RGB.PURE_BLUE_3F, true);
+			displayWireframeObject(gl, vertices, 4, RGB.BLACK);
+			displayWireframeObject(gl, q, 4, RGB.PURE_RED);
+			displayLines(gl, r, 3, RGB.PURE_BLUE, true);
 			
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 			

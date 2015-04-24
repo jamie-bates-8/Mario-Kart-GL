@@ -212,7 +212,6 @@ public class HUD
 		if(scene.mousePressed)
 		{
 			float[] c = (scene.rightClick) ? RGB.BLUE : RGB.ORANGE;
-			c = Vector.multiply(c, 1.0f / 255);
 			gl.glColor3f(c[0], c[1], c[2]);
 		}
 		else gl.glColor3f(0, 0, 0);
@@ -354,10 +353,10 @@ public class HUD
 					color1 = RGB.DARK_RED; color2 = RGB.RED;
 				}
 				     
-				gl.glColor3f(color1[0]/255, color1[1]/255, color1[2]/255);
+				gl.glColor3f(color1[0], color1[1], color1[2]);
 				gl.glVertex2f(50 + (i * 2), scene.getHeight() - 50);
 				
-				gl.glColor3f(color2[0]/255, color2[1]/255, color2[2]/255);
+				gl.glColor3f(color2[0], color2[1], color2[2]);
 				gl.glVertex2f(50 + (i * 2), scene.getHeight() - 50 - (times[i] * yStretch));
 			}
 		}
@@ -393,7 +392,7 @@ public class HUD
 					
 					else color = colors[j];
 					
-					gl.glColor3f(color[0]/255, color[1]/255, color[2]/255);
+					gl.glColor3f(color[0], color[1], color[2]);
 				
 					gl.glVertex2f(50 + (i * 2), y);
 					gl.glVertex2f(50 + (i * 2), y -= (renderTimes[i][j] / 1E6 * yStretch));
@@ -427,7 +426,7 @@ public class HUD
 					
 					else color = colors[j];
 					
-					gl.glColor3f(color[0]/255, color[1]/255, color[2]/255);
+					gl.glColor3f(color[0], color[1], color[2]);
 				
 					gl.glVertex2f(50 + (i * 2), y);
 					gl.glVertex2f(50 + (i * 2), y -= (times[i][j] / 1E6 * yStretch));
@@ -469,10 +468,10 @@ public class HUD
 					color1 = RGB.DARK_RED; color2 = RGB.RED;
 				}
 				     
-				gl.glColor3f(color1[0]/255, color1[1]/255, color1[2]/255);
+				gl.glColor3f(color1[0], color1[1], color1[2]);
 				gl.glVertex2f(50 + (i * 2), y);
 				
-				gl.glColor3f(color2[0]/255, color2[1]/255, color2[2]/255);
+				gl.glColor3f(color2[0], color2[1], color2[2]);
 				gl.glVertex2f(50 + (i * 2), y - time * yStretch);
 			}
 		}

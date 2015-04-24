@@ -77,7 +77,7 @@ public class BlueShell extends Shell
 			
 			noiseSampler = TextureLoader.load(gl, "tex/blast_noise.png");
 			
-			float[] blastColor = {RGB.INDIGO[0]/255, RGB.INDIGO[1]/255, RGB.INDIGO[2]/255};
+			float[] blastColor = RGB.INDIGO;
 			
 			blastLight = new Light(gl, new Vec3(), blastColor, blastColor, blastColor);
 		    
@@ -98,7 +98,7 @@ public class BlueShell extends Shell
 		
 		generator = new ParticleGenerator();
 		
-		boundColor = RGB.toRGBAi(RGB.INDIGO, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.INDIGO, BOUND_ALPHA);
 	}
 	
 	public BlueShell(Scene scene, Vec3 c)
@@ -106,7 +106,7 @@ public class BlueShell extends Shell
 		super(null, scene, null, 0);
 		
 		bound = new Sphere(c, RADIUS);
-		boundColor = RGB.toRGBAi(RGB.INDIGO, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.INDIGO, BOUND_ALPHA);
 		
 		generator = new ParticleGenerator();
 	}

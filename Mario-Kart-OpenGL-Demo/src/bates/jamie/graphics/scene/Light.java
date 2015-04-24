@@ -134,6 +134,26 @@ public class Light extends AnchorPoint
 	public static float[] rimColor = {0.7f, 0.7f, 0.7f};
 	public static float   rimPower = 5.0f;
 	
+	private static boolean prev_rim_state = false;
+	private static float[] prev_rim_color = {0.7f, 0.7f, 0.7f};
+	private static float   prev_rim_power = 5.0f;
+	
+	public static void saveRimState()
+	{
+		prev_rim_state = Scene.singleton.rimLighting;
+		prev_rim_color = rimColor;
+		prev_rim_power = rimPower;
+	}
+	
+	public static void restoreRimState(GL2 gl)
+	{
+		Scene.singleton.rimLighting = prev_rim_state;
+		rimColor = prev_rim_color;
+		rimPower = prev_rim_power;
+		
+		setepRimLighting(gl);
+	}
+	
 	public static void setepRimLighting(GL2 gl)
 	{
 		Shader shaders[] = {Shader.get("phong_rim"), Shader.get("texture_rim"), Shader.get("cube_rim"), Shader.get("energy_field")};

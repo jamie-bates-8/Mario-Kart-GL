@@ -113,7 +113,7 @@ public class Quadtree
 	
 	public boolean reliefMap = false;
 
-	public float[] lineColor = RGB.WHITE_3F;
+	public float[] lineColor = RGB.WHITE;
 	
 	/**
 	 * This method constructs a Quadtree data structure that maintains an indexed
@@ -309,7 +309,7 @@ public class Quadtree
 		for(int i = 0; i < 4; i++) tangents.add(tangent);
 		
 		colors = new ArrayList<float[]>();
-		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
+		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE);
 		
 		heights = new ArrayList<Float>();
 		for(int i = 0; i < 4; i++) heights.add(plane.get(i)[1]);
@@ -322,7 +322,7 @@ public class Quadtree
 		for(int i = 0; i < 4; i++) normals.add(normal);
 		
 		colors = new ArrayList<float[]>();
-		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE_3F);
+		for(int i = 0; i < 4; i++) colors.add(RGB.WHITE);
 		
 		heights = new ArrayList<Float>();
 		for(int i = 0; i < 4; i++) heights.add(vertices.get(i)[1]);
@@ -650,11 +650,11 @@ public class Quadtree
 		if(iCentre == -1) { centre = vertices.size(); vertices.add(vCentre); vBuffer.put(vCentre); }
 		
 		// set default color to white so that final color is sampled using the texture
-		if(iNorth  == -1) { colors.add(RGB.WHITE_3F); cBuffer.put(RGB.WHITE_3F); }
-		if(iEast   == -1) { colors.add(RGB.WHITE_3F); cBuffer.put(RGB.WHITE_3F); }
-		if(iSouth  == -1) { colors.add(RGB.WHITE_3F); cBuffer.put(RGB.WHITE_3F); }
-		if(iWest   == -1) { colors.add(RGB.WHITE_3F); cBuffer.put(RGB.WHITE_3F); }
-		if(iCentre == -1) { colors.add(RGB.WHITE_3F); cBuffer.put(RGB.WHITE_3F); }
+		if(iNorth  == -1) { colors.add(RGB.WHITE); cBuffer.put(RGB.WHITE); }
+		if(iEast   == -1) { colors.add(RGB.WHITE); cBuffer.put(RGB.WHITE); }
+		if(iSouth  == -1) { colors.add(RGB.WHITE); cBuffer.put(RGB.WHITE); }
+		if(iWest   == -1) { colors.add(RGB.WHITE); cBuffer.put(RGB.WHITE); }
+		if(iCentre == -1) { colors.add(RGB.WHITE); cBuffer.put(RGB.WHITE); }
 		
 		// record original heights for use in color and deformation calculations 
 		if(iNorth  == -1) { heights.add(vNorth [1]); }
@@ -1020,14 +1020,14 @@ public class Quadtree
 			float[] vertex = vertices.get(i);
 			vertex[1] = heights.get(i);
 			
-			colors.set(i, RGB.WHITE_3F);
+			colors.set(i, RGB.WHITE);
 			
 			int position = vBuffer.position();
 				
 			vBuffer.position(i * 3 + 1); vBuffer.put(vertex[1]);
 			vBuffer.position(position);
 				
-			cBuffer.position(i * 3); cBuffer.put(RGB.WHITE_3F);
+			cBuffer.position(i * 3); cBuffer.put(RGB.WHITE);
 			cBuffer.position(position);
 		}
 	}
@@ -1663,7 +1663,7 @@ public class Quadtree
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
 		float[] c = RGB.BLUE;
-		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
+		gl.glColor3f(c[0], c[1], c[2]);
 
 		gl.glEnable(GL2.GL_BLEND);
 		gl.glEnable(GL2.GL_LINE_SMOOTH);
@@ -1696,7 +1696,7 @@ public class Quadtree
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
 		float[] c = RGB.GREEN;
-		gl.glColor3f(c[0]/255, c[1]/255, c[2]/255);
+		gl.glColor3f(c[0], c[1], c[2]);
 
 		gl.glEnable(GL2.GL_BLEND);
 		gl.glEnable(GL2.GL_LINE_SMOOTH);

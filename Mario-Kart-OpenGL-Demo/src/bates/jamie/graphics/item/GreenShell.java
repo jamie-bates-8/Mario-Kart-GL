@@ -60,7 +60,7 @@ public class GreenShell extends Shell
 		
 		this.orbiting = orbiting;
 		
-		boundColor = RGB.toRGBAi(RGB.GREEN, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.GREEN, BOUND_ALPHA);
 	}
 	
 	public GreenShell(Scene scene, Vec3 c, float trajectory, boolean modelOnly)
@@ -68,7 +68,7 @@ public class GreenShell extends Shell
 		super(null, scene, null, trajectory);
 		
 		bound = new Sphere(c, RADIUS);
-		boundColor = RGB.toRGBAi(RGB.GREEN, BOUND_ALPHA);
+		boundColor = RGB.toRGBA(RGB.GREEN, BOUND_ALPHA);
 		
 		velocity = modelOnly ? 0 : MAX_VELOCITY;
 		durability = MAX_DURABILITY;

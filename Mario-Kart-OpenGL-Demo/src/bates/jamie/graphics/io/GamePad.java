@@ -43,9 +43,9 @@ public class GamePad
 		
 		listControllers();
 		
-		printDetails(cs[5]);
+		printDetails(cs[2]);
 		
-		pollComponent(cs[5], cs[5].getComponents()[3]);
+		pollComponent(cs[2], cs[2].getComponents()[3]);
 	}
 	
 	public GamePad()

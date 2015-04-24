@@ -328,7 +328,7 @@ public class SceneNode
 	
 	public void renderGhost(GL2 gl, float fade, Shader shader)
 	{
-		renderGhost(gl, fade, shader, RGB.WHITE_3F);
+		renderGhost(gl, fade, shader, RGB.WHITE);
 	}
 	
 	public void renderColor(GL2 gl, float[] color, Reflector reflector)
