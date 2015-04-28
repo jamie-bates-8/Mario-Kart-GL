@@ -63,7 +63,7 @@ public class Light extends AnchorPoint
 		id = count++; count %= 8;
 		
 		setPosition(new Vec3(250));
-
+		
 		gl.glEnable(GL_LIGHTING);
 		gl.glEnable(getLight(id));
 

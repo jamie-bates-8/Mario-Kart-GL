@@ -627,7 +627,7 @@ public class Vehicle
 		
 		boolean useHDR = BloomStrobe.isEnabled();
 		
-		if(displayModel)
+		if(displayModel && !(invisible && BloomStrobe.opaqueMode))
 		{
 			Light.saveRimState();
 			
@@ -655,6 +655,7 @@ public class Vehicle
 			if(invisible)
 			{
 				String name = enableAberration ? "aberration" : "ghost";
+				if(Scene.singleton.enableBloom) name = enableChrome ? "invisible" : "ghost_rim";
 				Shader shader = Shader.get(name);
 				
 				if(shader != null)
@@ -675,8 +676,11 @@ public class Vehicle
 		
 		if(useHDR) BloomStrobe.begin(gl);
 		
-		if(bolt != null) 				  bolt.render(gl, camera.getOrientation().zAxis);
-		if(orb  != null && !orb.isDead())  orb.render(gl, camera.getOrientation().zAxis);
+		if(!Scene.shadowMode)
+		{
+			if(bolt != null) 				  bolt.render(gl, camera.getOrientation().zAxis);
+			if(orb  != null && !orb.isDead())  orb.render(gl, camera.getOrientation().zAxis);
+		}
 		
 		gl.glColor3f(1, 1, 1);
 		
@@ -753,7 +757,7 @@ public class Vehicle
 			case BLUE   : driftColor = RGB.BLUE;   break;
 		}
 		
-		if(drift != Direction.STRAIGHT && !reversing && velocity > 0 && !miniature) for(Light l : driftLights)
+		if(drift != Direction.STRAIGHT && !reversing && velocity > 0 && !miniature && !falling) for(Light l : driftLights)
 		{
 			l.enable(gl);
 			l.setAmbience(driftColor);
@@ -1486,7 +1490,7 @@ public class Vehicle
 		{
 			bound.c.add(new Vec3(0, 32, 0)),
 			bound.c.add(new Vec3(0,  6, 0)),
-			bound.c.add(bound.u.yAxis.multiply(bound.e.y))
+			bound.c
 		};
 	}
 	
@@ -1588,7 +1592,8 @@ public class Vehicle
 		Vec3 end   = getLightningVectors()[starPower ? 1 : 2];
 		
 		bolt = new LightningStrike(start, end, 4, true, true, RenderStyle.SINGLE_FLASH);
-		bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.SELF_ARCH, 2, end, 5, 32));
+		if(starPower) bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.SELF_ARCH, 2, end, 5, 32));
+		else bolt.addChild(new LightningStrike(start, end, 2, true, true, RenderStyle.SINGLE_FLASH));
 		
 		float radius = bound.e.z * 2.0f;
 		
@@ -1598,13 +1603,9 @@ public class Vehicle
 			{
 				Vec3 p;
 				
-				if(starPower)
-				{
-					p= bound.u.zAxis.multiply(radius);
-				    p = p.multiply(new RotationMatrix(bound.u.yAxis, i * 120));
-				    p = bound.c.subtract(bound.u.yAxis.multiply(bound.e.y)).add(p);
-				}
-				else p = getLightningVectors()[3];
+				p= bound.u.zAxis.multiply(radius);
+				p = p.multiply(new RotationMatrix(bound.u.yAxis, i * 120));
+				p = bound.c.subtract(bound.u.yAxis.multiply(bound.e.y)).add(p);
 				
 				bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.END_ARCH, 0.5f, p, 3, 16));
 				bolt.addChild(bolt.generateBolt(RenderStyle.SINGLE_FLASH, BoltType.END_ARCH, 2.0f, p, 3, 16));
@@ -1806,7 +1807,7 @@ public class Vehicle
 		}
 	}
 	
-	public void setupCamera(GL2 gl, GLU glu)
+	public void setupCamera(GL2 gl)
 	{
 		float _trajectory = trajectory;
 		
@@ -1842,7 +1843,7 @@ public class Vehicle
 			default: break;	
 		}
 
-		camera.setupView(gl, glu);
+		camera.setupView(gl);
 	}
 	
 	public enum Motion

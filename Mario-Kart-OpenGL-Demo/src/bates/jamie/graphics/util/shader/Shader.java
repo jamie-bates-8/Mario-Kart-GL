@@ -99,6 +99,8 @@ public class Shader
 		
 		Shader aberration   = new Shader(gl, "aberration", "aberration");
 		Shader ghost        = new Shader(gl, "ghost", "ghost");
+		Shader ghostRim     = new Shader(gl, "phong", "ghost_rim");
+		Shader invisible    = new Shader(gl, "ghost", "invisible");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
 		
 		Shader itemBox      = new Shader(gl, "item_box", "item_box");
@@ -169,6 +171,8 @@ public class Shader
 		if(     cubeRim.isValid()) shaders.put("cube_rim", cubeRim);
 		if(  aberration.isValid()) shaders.put("aberration", aberration);
 		if(       ghost.isValid()) shaders.put("ghost", ghost);
+		if(   invisible.isValid()) shaders.put("invisible", invisible);
+		if(    ghostRim.isValid()) shaders.put("ghost_rim", ghostRim);
 		if(   starPower.isValid()) shaders.put("star_power", starPower);
 		if(       water.isValid()) shaders.put("water", water);
 		if(       magma.isValid()) shaders.put("magma", magma);

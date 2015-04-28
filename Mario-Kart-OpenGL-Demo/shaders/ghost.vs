@@ -14,14 +14,16 @@ uniform mat4 cameraMatrix;
 uniform float eta;
 uniform float reflectance;
 
+varying vec3 eyeDir;
+varying vec3 vertexNormal;
 
 void main()
 {
 	vec4 vertex = gl_ModelViewMatrix * gl_Vertex;
 	vec3 position = (vertex / vertex.w).xyz;
 	
-	vec3 eyeDir = normalize(vertex.xyz);
-	vec3 vertexNormal = normalize(gl_NormalMatrix * gl_Normal);
+	eyeDir = normalize(vertex.xyz);
+	vertexNormal = normalize(gl_NormalMatrix * gl_Normal);
 	
 	ratio = reflectance + (1.0 - reflectance) * pow((1.0 - dot(-eyeDir, vertexNormal)), FRESNEL_POWER);
 	
@@ -32,6 +34,8 @@ void main()
     coord = vec4(refract(eyeDir, vertexNormal, eta), 1.0);
     coord = inverse(cameraMatrix) * coord;
     refractDir = normalize(coord.xyz);
+    
+    eyeDir = -vertex.xyz;
 
 	gl_Position = ftransform();
 }

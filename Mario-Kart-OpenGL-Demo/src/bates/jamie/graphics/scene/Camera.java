@@ -87,8 +87,10 @@ public class Camera extends AnchorPoint
 		return new Vec3(cameraX, cameraY, cameraZ);
 	}
 	
-	public void setupView(GL2 gl, GLU glu)
+	public void setupView(GL2 gl)
 	{
+		GLU glu = new GLU();
+		
 		switch(mode)
 		{	
 			//Cause the camera to follow the car dynamically as it moves along the track 

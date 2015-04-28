@@ -284,13 +284,29 @@ public class SceneNode
 				Reflector reflector = this.reflector == null ? root.getReflector() : this.reflector;
 				
 				shader.enable(gl);
-				shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
 				
-				shader.setUniform(gl, "eta", reflector.eta);
-				shader.setUniform(gl, "reflectance", reflector.reflectance);
+				if(!shader.equals(Shader.get("ghost_rim")))
+				{
+					shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
+					
+					shader.setUniform(gl, "eta", reflector.eta);
+					shader.setUniform(gl, "reflectance", reflector.reflectance);
+					
+					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+					shader.loadMatrix(gl, "cameraMatrix", camera);
+				}
 				
-				float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
-				shader.loadMatrix(gl, "cameraMatrix", camera);
+				if(shader.equals(Shader.get("invisible")) || shader.equals(Shader.get("ghost_rim")))
+				{
+					shader.setSampler(gl, "sceneSampler", 0);
+					gl.glBindTexture(GL2.GL_TEXTURE_2D, Scene.singleton.bloom.getTexture(7));
+					
+					shader.setUniform(gl, "screenHeight", (float) Scene.singleton.getHeight());
+					shader.setUniform(gl, "screenWidth" , (float) Scene.singleton.getWidth ());
+						
+					shader.setUniform(gl, "rim_color", new Vec3(0.7));
+					shader.setUniform(gl, "rim_power", 3.0f);
+				}
 				
 				if(model != null)
 				{

@@ -41,7 +41,7 @@ void pointLight(in int i, in vec3 normal, inout vec4 ambient, inout vec4 diffuse
 	{
 		vec3 lightReflection = reflect(normalize(-lightDir[i]), normalize(normal));
 		
-    	float specularCoefficient = max(0.0, dot(normalize(-eyeDir), lightReflection));
+    	float specularCoefficient = max(0.0, dot(normalize(eyeDir), lightReflection));
 		specularCoefficient = pow(specularCoefficient, gl_FrontMaterial.shininess);
 		
         specular += specularCoefficient * gl_LightSource[i].specular * attenuation;

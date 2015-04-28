@@ -4,8 +4,8 @@ import static javax.media.opengl.GL.GL_BLEND;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
-import javax.media.opengl.GL2;
 
+import javax.media.opengl.GL2;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;

@@ -9,8 +9,8 @@ import javax.media.opengl.glu.GLUquadric;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
@@ -25,19 +25,14 @@ import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
-
-import com.jogamp.opengl.util.texture.Texture;
 
 public class BobOmb extends Item
 {
 	private static final float RADIUS = 1.6f;
 
 	public static final int ID = 14;
-	
-	private static Texture noiseSampler;
 	
 	static Model bob_omb_body = OBJParser.parseTriangleMesh("bob_omb_body");
 	static Model bob_omb_eyes = OBJParser.parseTriangleMesh("bob_omb_eyes");
@@ -148,8 +143,8 @@ public class BobOmb extends Item
 		
 		gl.glPushMatrix();
 		{
-			noiseSampler.bind(gl);
-			noiseSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+			BlueShell.noiseSampler.bind(gl);
+			BlueShell.noiseSampler.setTexParameterf(gl, GL2.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 			
 			gl.glTranslatef(bound.c.x, bound.c.y, bound.c.z);
 			
@@ -158,12 +153,14 @@ public class BobOmb extends Item
 		gl.glPopMatrix();
 	}
 	
+	private boolean initialized = false;
+	
 	@Override
 	public void render(GL2 gl, float trajectory)
 	{	
-		if(noiseSampler == null)
+		if(!initialized)
 		{
-			noiseSampler = TextureLoader.load(gl, "tex/blast_noise.png");
+			initialized = true;
 			
 			float[] blastColor = RGB.INDIGO;
 			
@@ -184,7 +181,7 @@ public class BobOmb extends Item
 			bodyNode.setRotation(new Vec3(0, rotation, 0));
 			bodyNode.render(gl);
 		}
-		else if(!blast.isEmpty())
+		else if(!blast.isEmpty() && !Scene.shadowMode)
 		{
 			boolean useHDR = BloomStrobe.isEnabled();
 			

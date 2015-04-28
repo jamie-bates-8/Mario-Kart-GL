@@ -12,13 +12,12 @@ void main(void)
     gl_Position   = ftransform();
 	
     // Get surface normal in eye coordinates
-    vertexNormal = gl_NormalMatrix * gl_Normal;
-	vertexNormal = normalize(vertexNormal);
+    vertexNormal = normalize(gl_NormalMatrix * gl_Normal);
 
     // Get vertex position in eye coordinates
     vec3 position = (vertex / vertex.w).xyz;
     
-    eyeDir = vertex.xyz;
+    eyeDir = -vertex.xyz;
 
     // Get vector to light source
     lightDir = gl_LightSource[0].position.xyz - position;

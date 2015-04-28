@@ -26,7 +26,7 @@ import com.jogamp.common.nio.Buffers;
 
 public class RainScreen
 {
-	private int textureIDs[] = new int[3];
+	public  int textureIDs[] = new int[3];
 	private int pboID;
 	
 	private int width;
@@ -131,10 +131,12 @@ public class RainScreen
 		
 		ortho2DEnd(gl);
 		
+		// read pixels displaying the rain pattern into the pixel buffer
 		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
 		gl.glReadPixels(0, 0, width, height, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
 		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 		
+		// push the pixels from the buffer straight into the texture
 		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, pboID);
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, textureIDs[2]);
@@ -173,7 +175,7 @@ public class RainScreen
 		{
 			shader = Shader.get("show_texture");
 			shader.enable(gl);
-			
+
 			shader.setSampler(gl, "sampler0", 0);
 			
 			gl.glActiveTexture(GL2.GL_TEXTURE0);

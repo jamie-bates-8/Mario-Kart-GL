@@ -29,19 +29,22 @@ public class BloomStrobe
 	private int fboWidth  = 0;
 	private int fboHeight = 0;
 
-	private int[] textureID = new int[7]; // original scene, bright pass, and bloom results (4)
-	private int[] fboID     = new int[5]; // FBO names for 1st pass (1) and 2nd pass (4)                    
+	private int[] textureIDs = new int[8]; // original pass, bright pass, guassian pass x 4, previous frame, opaque pass
+	private int[] fboID     = new int[5]; // FBO names for the original pass, and guassian passes x 4                    
 
 	private int rboID; // render buffer object name
-	private int pboID; // pixel buffer object name 
+	private int motion_blur_buffer;          // pixel buffer object for storing the previous frame (complete)
+	//private int[] opaque_buffers = new int[2]; // pixel buffer object for storing the current frame (opaque objects only)
+	private int full_opaque_buffer; 
 	
 	private float[][] offsets = new float[4][5 * 5 * 2]; // 5 based on size of gaussian
 	
-	private boolean afterGlowValid = false;
+	private boolean blurInitialized = false;
 
 	private DisplayMode mode = DisplayMode.FULL_SCENE;
 	
 	private static boolean enabled = false;
+	public  static boolean opaqueMode = false;
 
 	public BloomStrobe(GL2 gl, Scene scene)
 	{
@@ -56,7 +59,7 @@ public class BloomStrobe
 		changeSize(gl);
 	}
 	
-	public int getTexture(int texture) { return textureID[texture]; }
+	public int getTexture(int texture) { return textureIDs[texture]; }
 	
 	public void setupShaders(GL2 gl)
 	{
@@ -110,26 +113,50 @@ public class BloomStrobe
 	public void render(GL2 gl)
 	{
 		setupShaders(gl);
-	
-		// Original Scene + Bright Pass
-		firstPass(gl);
-	
-		// Generate mipmaps of the bright pass results:
-		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
-		gl.glGenerateMipmap(GL_TEXTURE_2D);
-	
-		secondPass(gl);
-	
-		finalPass(gl);
-	
-		// Read back frame for afterglow effect
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
+		
+		opaqueMode = true;
+		renderScene(gl); // render screen without transparent objects
+		opaqueMode = false;
+
+		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, full_opaque_buffer);
 		gl.glReadPixels(0, 0, fboWidth, fboHeight, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0); 
 		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
-		afterGlowValid = true;
+		
+		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+	
+		// Original Scene + Bright Pass
+		firstPass (gl);
+		secondPass(gl);
+		finalPass (gl);
+	
+		updateBlur(gl);
+		
+		gl.glBindTexture(GL_TEXTURE_2D, textureIDs[7]);
+
+		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, full_opaque_buffer);
+		gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
+		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
 	
 		// Reset state
 		Shader.disable(gl);
+	}
+
+	private void updateBlur(GL2 gl)
+	{
+		// Read back frame for motion blur effect
+		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, motion_blur_buffer);
+		gl.glReadPixels(0, 0, fboWidth, fboHeight, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0); 
+		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+		blurInitialized = true;
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE5);
+		
+		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, motion_blur_buffer);
+		gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
+		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
+		
+		gl.glActiveTexture(GL_TEXTURE0);
 	}
 
 	/*
@@ -189,8 +216,10 @@ public class BloomStrobe
 	{
 		Shader shader = Shader.get("gaussian");
 		if(shader != null) shader.enable(gl);
-
-		gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
+		
+		// Generate mipmaps of the bright pass results:
+		gl.glBindTexture   (GL_TEXTURE_2D, textureIDs[1]);
+		gl.glGenerateMipmap(GL_TEXTURE_2D);
 
 		for(int i = 0; i < 4; i++)
 		{
@@ -229,60 +258,16 @@ public class BloomStrobe
 	{
 		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		gl.glViewport(0, 0, scene.getWidth(), scene.getHeight());
-
-		// set up afterglow texture
-		gl.glActiveTexture(GL2.GL_TEXTURE5);
-		
-		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, pboID);
-		gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0);
-		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
-		
-		gl.glActiveTexture(GL_TEXTURE0);
 		
 		updateState(gl);
 
-		switch(mode)
-		{
-			case ORIGINAL_SCENE:
-			{
-				Shader shader = Shader.get("show_texture");
-				if(shader != null) shader.enable(gl);
-				gl.glBindTexture(GL_TEXTURE_2D, textureID[0]);
-				break;
-			}
-			case BRIGHT_PASS:
-			case PRE_BLUR:
-			{
-				Shader shader = Shader.get("show_texture");
-				if(shader != null) shader.enable(gl);
-				gl.glBindTexture(GL_TEXTURE_2D, textureID[1]);
-				break;
-			}
-			case POST_BLUR:
-			{
-				Shader shader = Shader.get("show_texture");
-				if(shader != null) shader.enable(gl);
-				break;
-			}
-			case JUST_BLOOM:
-			case NO_AFTER_GLOW:
-			case JUST_AFTER_GLOW:
-			case FULL_SCENE:
-			{
-				Shader shader = Shader.get("combine");
-				if(shader != null) shader.enable(gl);
+		updateShader(gl);
 
-				gl.glBindTexture(GL_TEXTURE_2D, 
-						((mode == DisplayMode.JUST_BLOOM) || (mode == DisplayMode.JUST_AFTER_GLOW)) ? 0 : textureID[0]);
+		renderScreen(gl);
+	}
 
-				boolean afterGlow = mode.ordinal() >= DisplayMode.JUST_AFTER_GLOW.ordinal();
-				shader.setUniform(gl, "afterGlow", afterGlow && afterGlowValid ? 1 : 0);
-				break;
-			}
-
-			default: assert(false); break;
-		}
-
+	private void renderScreen(GL2 gl)
+	{
 		if((mode == DisplayMode.PRE_BLUR) || (mode == DisplayMode.POST_BLUR))
 		{
 			if(mode == DisplayMode.PRE_BLUR)
@@ -291,7 +276,7 @@ public class BloomStrobe
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 0);
 			}
-			else gl.glBindTexture(GL_TEXTURE_2D, textureID[2]);
+			else gl.glBindTexture(GL_TEXTURE_2D, textureIDs[2]);
 
 			gl.glBegin(GL2.GL_QUADS);
 			{
@@ -307,7 +292,7 @@ public class BloomStrobe
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 1);
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 1);
 			}
-			else gl.glBindTexture(GL_TEXTURE_2D, textureID[3]);
+			else gl.glBindTexture(GL_TEXTURE_2D, textureIDs[3]);
 
 			gl.glBegin(GL2.GL_QUADS);
 			{
@@ -323,7 +308,7 @@ public class BloomStrobe
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 2);
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 2);
 			}
-			else gl.glBindTexture(GL_TEXTURE_2D, textureID[4]);
+			else gl.glBindTexture(GL_TEXTURE_2D, textureIDs[4]);
 
 			gl.glBegin(GL2.GL_QUADS);
 			{
@@ -339,7 +324,7 @@ public class BloomStrobe
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 3);
 				gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 3);
 			}
-			else gl.glBindTexture(GL_TEXTURE_2D, textureID[5]);
+			else gl.glBindTexture(GL_TEXTURE_2D, textureIDs[5]);
 
 			gl.glBegin(GL2.GL_QUADS);
 			{
@@ -369,16 +354,61 @@ public class BloomStrobe
 		}
 	}
 
+	private void updateShader(GL2 gl)
+	{
+		switch(mode)
+		{
+			case ORIGINAL_SCENE:
+			{
+				Shader shader = Shader.get("show_texture");
+				if(shader != null) shader.enable(gl);
+				gl.glBindTexture(GL_TEXTURE_2D, textureIDs[0]);
+				break;
+			}
+			case BRIGHT_PASS:
+			case PRE_BLUR:
+			{
+				Shader shader = Shader.get("show_texture");
+				if(shader != null) shader.enable(gl);
+				gl.glBindTexture(GL_TEXTURE_2D, textureIDs[1]);
+				break;
+			}
+			case POST_BLUR:
+			{
+				Shader shader = Shader.get("show_texture");
+				if(shader != null) shader.enable(gl);
+				break;
+			}
+			case JUST_BLOOM:
+			case NO_AFTER_GLOW:
+			case JUST_AFTER_GLOW:
+			case FULL_SCENE:
+			{
+				Shader shader = Shader.get("combine");
+				if(shader != null) shader.enable(gl);
+
+				gl.glBindTexture(GL_TEXTURE_2D, 
+						((mode == DisplayMode.JUST_BLOOM) || (mode == DisplayMode.JUST_AFTER_GLOW)) ? 0 : textureIDs[0]);
+
+				boolean afterGlow = mode.ordinal() >= DisplayMode.JUST_AFTER_GLOW.ordinal();
+				shader.setUniform(gl, "afterGlow", afterGlow && blurInitialized ? 1 : 0);
+				break;
+			}
+
+			default: assert(false); break;
+		}
+	}
+
 	public void createTexture(GL2 gl)
 	{
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		
 		// Set up the render textures: 2 for 1st pass, 4 for 2nd pass
-		gl.glGenTextures(7, textureID, 0);
+		gl.glGenTextures(textureIDs.length, textureIDs, 0);
 
 		for(int i = 0; i < 2; i++) // original + bright pass
 		{
-			gl.glBindTexture(GL2.GL_TEXTURE_2D, textureID[i]);
+			gl.glBindTexture(GL2.GL_TEXTURE_2D, textureIDs[i]);
 
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -388,10 +418,10 @@ public class BloomStrobe
 			gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA32F, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_FLOAT, null);
 		}
 
-		for(int i = 2; i < 7; i++)
+		for(int i = 2; i < textureIDs.length; i++)
 		{
 			gl.glActiveTexture(GL2.GL_TEXTURE1 + i - 2);
-			gl.glBindTexture(GL_TEXTURE_2D, textureID[i]);
+			gl.glBindTexture(GL_TEXTURE_2D, textureIDs[i]);
 
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -413,18 +443,15 @@ public class BloomStrobe
 	public void createBuffers(GL2 gl)
 	{
 		// Set up a PBO for afterglow
-		int[] buffers = new int[2];
+		int[] buffers = new int[3];
 
-		gl.glGenBuffers(1, buffers, 0);
-		pboID = buffers[0];
-
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
-		gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, 1, null, GL2.GL_STREAM_COPY);
-		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+		gl.glGenBuffers(3, buffers, 0);
+		motion_blur_buffer = buffers[0];
+		full_opaque_buffer = buffers[1];
 
 		// Set up some renderbuffer state
-		gl.glGenRenderbuffers(1, buffers, 1);
-		rboID = buffers[1];
+		gl.glGenRenderbuffers(1, buffers, 0);
+		rboID = buffers[0];
 
 		gl.glBindRenderbuffer(GL_RENDERBUFFER, rboID);
 		gl.glRenderbufferStorage(GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT32, fboWidth, fboHeight);
@@ -439,14 +466,14 @@ public class BloomStrobe
 
 		gl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboID);
 
-		gl.glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[0], GL_TEXTURE_2D, textureID[0], 0); // original pass
-		gl.glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[1], GL_TEXTURE_2D, textureID[1], 0); // bright pass
+		gl.glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[0], GL_TEXTURE_2D, textureIDs[0], 0); // original pass
+		gl.glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[1], GL_TEXTURE_2D, textureIDs[1], 0); // bright pass
 
 		// in 2nd pass (actually 4 passes) we'll render to one 2D texture at a time
 		for (int i = 0; i < 4; i++)
 		{
 			gl.glBindFramebuffer(GL_FRAMEBUFFER, fboID[i + 1]);
-			gl.glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[0], GL_TEXTURE_2D, textureID[i + 2], 0);
+			gl.glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[0], GL_TEXTURE_2D, textureIDs[i + 2], 0);
 		}
 
 		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -458,23 +485,27 @@ public class BloomStrobe
 	    fboWidth  = scene.getWidth();
 	    fboHeight = scene.getHeight();
 
-	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pboID);
-	    gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fboHeight * fboWidth * 4, null, GL2.GL_STREAM_COPY);
+	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, motion_blur_buffer);
+	    gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fboHeight * fboWidth * 4, null, GL2.GL_DYNAMIC_COPY);
 	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
-	    afterGlowValid = false;
+	    blurInitialized = false;
+	    
+	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, full_opaque_buffer);
+	    gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fboHeight * fboWidth * 4, null, GL2.GL_STREAM_READ);
+	    gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 
 	    gl.glBindRenderbuffer(GL_RENDERBUFFER, rboID);
 	    gl.glRenderbufferStorage(GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT32, fboWidth, fboHeight);
 
 	    for(int i = 0; i < 2; i++)
 	    {
-	    	gl.glBindTexture(GL_TEXTURE_2D, textureID[i]); // GL_RGB16
+	    	gl.glBindTexture(GL_TEXTURE_2D, textureIDs[i]); // GL_RGB16
 	    	gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA32F, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_FLOAT, null);
 	    }
 
-	    for(int i = 2; i < 7; i++)
+	    for(int i = 2; i < 8; i++)
 	    {
-	    	gl.glBindTexture(GL_TEXTURE_2D, textureID[i]);
+	    	gl.glBindTexture(GL_TEXTURE_2D, textureIDs[i]);
 	    	
 	    	if (i < 6)
 			{
@@ -485,8 +516,6 @@ public class BloomStrobe
 				gl.glTexImage2D(GL_TEXTURE_2D, 0, GL2.GL_RGBA8, fboWidth, fboHeight, 0, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, null);
 			}
 	    }
-	    
-//	    gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);
 
 	    setGuassian();
 	}
@@ -524,10 +553,10 @@ public class BloomStrobe
 		}
 		else
 		{
-			gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL_TEXTURE_2D, textureID[2]);
-			gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glBindTexture(GL_TEXTURE_2D, textureID[3]);
-			gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glBindTexture(GL_TEXTURE_2D, textureID[4]);
-			gl.glActiveTexture(GL2.GL_TEXTURE4); gl.glBindTexture(GL_TEXTURE_2D, textureID[5]);
+			gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glBindTexture(GL_TEXTURE_2D, textureIDs[2]);
+			gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glBindTexture(GL_TEXTURE_2D, textureIDs[3]);
+			gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glBindTexture(GL_TEXTURE_2D, textureIDs[4]);
+			gl.glActiveTexture(GL2.GL_TEXTURE4); gl.glBindTexture(GL_TEXTURE_2D, textureIDs[5]);
 		}
 		gl.glActiveTexture(GL_TEXTURE0);
 	}

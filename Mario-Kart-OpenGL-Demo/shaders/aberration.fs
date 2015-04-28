@@ -6,7 +6,7 @@ varying vec3 refractBlue;
 
 varying float ratio;
 
-uniform samplerCube cubeMap;
+uniform samplerCube cubeMap; 
 uniform float opacity;
 
 void main()

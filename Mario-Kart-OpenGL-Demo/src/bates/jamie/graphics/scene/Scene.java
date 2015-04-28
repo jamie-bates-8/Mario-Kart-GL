@@ -141,7 +141,6 @@ import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.particle.ThunderOrb;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
@@ -154,7 +153,6 @@ import bates.jamie.graphics.sound.MP3;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Renderer;
-import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
@@ -1196,7 +1194,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		setupShaderTree();
 		
 		// may provide extra speed depending on machine
-		gl.setSwapInterval(0);
+//		gl.setSwapInterval(0);
 		
 		gl.glClearStencil(0);
 		gl.glEnable(GL2.GL_STENCIL_TEST);
@@ -1263,7 +1261,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		uniforms.add(Uniform.getUniform("minScale", new Vec3(4, 6, 4).min()));
 		
 		cubeNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		cubeNode.setTranslation(new Vec3(-8, 40, 0));
+		cubeNode.setTranslation(new Vec3(-8.01, 40, 0));
 		cubeNode.setScale(new Vec3(4, 6, 4));
 		cubeNode.setReflector(cubeReflector);
 		cubeNode.setReflectivity(0.9f);
@@ -1285,7 +1283,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		testNode.setShader(Shader.get("checker_diagonal"));
 		
 	    blueNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-	    blueNode.setTranslation(new Vec3(8, 40, 0));
+	    blueNode.setTranslation(new Vec3(8.01, 40, 0));
 	    blueNode.setScale(new Vec3(4, 6, 4));
 	    blueNode.setReflector(cubeReflector);
 	    blueNode.setReflectivity(0.9f);
@@ -1342,7 +1340,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 //	    bolts[0] = new LightningStrike(new Vec3(-16, 16, 16), new Vec3(16, 16, 16));
 	    bolts.add(new LightningStrike(new Vec3(0, 34, 0), new Vec3(0, 2, 0), 2, true, true, RenderStyle.CONTINUOUS));
-	    bolts.add(new LightningStrike(new Vec3(0, 34, 0), new Vec3(0, 2, 0), 1, true, false, RenderStyle.PERIODIC_FLASH));
 	    
 	    LightningStrike bolt = bolts.get(0);
 	    
@@ -1580,10 +1577,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Vehicle car = cars.get(0);
 		updateReflectors(gl, car);
 		
-		if(!testMode) rainScreen.render(gl);
-		
-		if(sphereMap) rainScreen.render(gl); //car.reflector.displayMap(gl); 
-//		else if(shadowMap) displayMap(gl, bloom.getTexture(texture), -1.0f, -1.0f, 1.0f, 1.0f);
+//		rainScreen.render(gl);
+		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, canvasWidth, canvasHeight);
 		else render(gl);
 
 		gl.glFlush();
@@ -1618,12 +1613,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			if(item instanceof BobOmb)
 			{
 				BobOmb bomb = (BobOmb) item;
-				bomb.reflector.update(gl,  bomb.getPosition());
+				bomb.reflector.update(gl, bomb.getPosition());
 			}
 			else if(item instanceof FakeItemBox)
 			{
 				FakeItemBox box = (FakeItemBox) item;
-				box.reflector.update(gl,  box.getPosition());
+				box.reflector.update(gl, box.getPosition());
 			}
 		}
 	}
@@ -1682,14 +1677,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			Vehicle car = cars.get(index);
 			
 			setupViewport(gl, index);
-			car.setupCamera(gl, glu);
+			car.setupCamera(gl);
 			
 			setupLights(gl, car);
 			
 			mirror.update(gl);
 			
 			setupViewport(gl, index);
-			car.setupCamera(gl, glu);
+			car.setupCamera(gl);
 			
 			setupLights(gl, car);
 			
@@ -2145,6 +2140,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //			gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glBindTexture(GL2.GL_TEXTURE_2D, water.reflectTexture);
 			gl.glActiveTexture(GL2.GL_TEXTURE1); floorBump.bind(gl);
 			gl.glActiveTexture(GL2.GL_TEXTURE0); floorTex.bind(gl);
+			
+			gl.glColor3f(1, 1, 1);
 
 			gl.glBegin(GL2.GL_QUADS);
 			{

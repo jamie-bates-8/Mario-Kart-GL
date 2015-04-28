@@ -17,6 +17,7 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
+import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
@@ -94,13 +95,16 @@ public class ShineSprite
 		
 		Light.setepRimLighting(gl);
 		
-		shineNode.setRotation(new Vec3(0, rotation, 0));
-		
-		if(collected) shineNode.renderGhost(gl, 1, Shader.get("aberration"));
-		else          shineNode.render(gl);
-		
-		eyeNode.setRotation(new Vec3(0, rotation, 0));
-		eyeNode.render(gl);
+		if(!(BloomStrobe.opaqueMode && collected))
+		{
+			shineNode.setRotation(new Vec3(0, rotation, 0));
+			
+			if(collected) shineNode.renderGhost(gl, 1, Shader.get("invisible"));
+			else          shineNode.render(gl);
+			
+			eyeNode.setRotation(new Vec3(0, rotation, 0));
+			eyeNode.render(gl);
+		}
 		
 		Light.rimPower = rimPower;
 		Light.rimColor = rimColor;

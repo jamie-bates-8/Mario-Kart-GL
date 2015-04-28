@@ -42,7 +42,7 @@ public class ThunderOrb
 			LightningStrike bolt = new LightningStrike(start, end, 1, true, true, RenderStyle.SINGLE_FLASH);
 			bolt.setIntervals(2, 16);
 			bolt.offsetScale = 0.15f;
-			bolt.duration = -30 - generator.nextInt(120);
+			bolt.duration = -30 - generator.nextInt(240);
 			
 			bolts.add(bolt);
 		}
@@ -57,7 +57,7 @@ public class ThunderOrb
 				Vec3 direction = Vec3.getRandomVector();
 				bolt.setOrigin(position);
 				bolt.setTarget(position.add(direction.multiply(3)));
-				bolt.duration = -30 - generator.nextInt(120);
+				bolt.duration = -30 - generator.nextInt(240);
 			}
 		}
 		

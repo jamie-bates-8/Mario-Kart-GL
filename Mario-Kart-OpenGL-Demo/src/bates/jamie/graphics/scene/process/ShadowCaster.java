@@ -160,8 +160,6 @@ public class ShadowCaster
 		bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
 			System.out.println("ShadowCaster : " + FrameBuffer.checkFramebufferError(bufferStatus));
-		
-		System.out.println("Hi");
 	
 		// switch back to window-system-provided framebuffer
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
@@ -207,7 +205,7 @@ public class ShadowCaster
 	    // Switch to light's point of view
 	    gl.glMatrixMode(GL_MODELVIEW);
 	    gl.glLoadIdentity();
-	    glu.gluLookAt(p.x, p.y, p.z, 0, 0, 0, 0, 1, 0);
+	    glu.gluLookAt(p.x, p.y, p.z, 0, 0, 0, 1, 0, 0);
 	    
 	    gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, modelview, 0);
 
