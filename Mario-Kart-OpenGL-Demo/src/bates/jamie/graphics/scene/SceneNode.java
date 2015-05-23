@@ -199,6 +199,16 @@ public class SceneNode
 			{
 				switch(renderMode)
 				{
+					case BUMP_COLOR   :
+					case BUMP_RAIN    :
+					case BUMP_REFLECT :
+					case BUMP_TEXTURE : if(!model.hasTangentData()) model.calculateTangents(); break;
+				
+					default: break;
+				}
+				
+				switch(renderMode)
+				{
 					case TEXTURE      : 
 					case BUMP_COLOR   :
 					case COLOR        :
@@ -258,7 +268,7 @@ public class SceneNode
 				
 				shader.enable(gl);
 				
-				for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
+				if(uniforms != null) for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
 				
 				if(reflector != null) reflector.enable(gl);
 				model.render(gl);
@@ -304,7 +314,7 @@ public class SceneNode
 					shader.setUniform(gl, "screenHeight", (float) Scene.singleton.getHeight());
 					shader.setUniform(gl, "screenWidth" , (float) Scene.singleton.getWidth ());
 						
-					shader.setUniform(gl, "rim_color", new Vec3(0.7));
+					shader.setUniform(gl, "rim_color", new Vec3(0.3));
 					shader.setUniform(gl, "rim_power", 3.0f);
 				}
 				

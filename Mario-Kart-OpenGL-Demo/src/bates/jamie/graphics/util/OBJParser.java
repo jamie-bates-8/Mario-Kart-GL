@@ -166,8 +166,6 @@ public class OBJParser
 		
 		int polygonCount = 0;
 		
-		List<Face> faces = new ArrayList<Face>();
-		
 		List<float[]> vertices  = new ArrayList<float[]>();
 		List<float[]> normals   = new ArrayList<float[]>();
 		
@@ -229,7 +227,10 @@ public class OBJParser
 		
 		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount, (endTime - startTime) / 1E6);
 		
-		return new Model(vertices, normals, _vIndices, _nIndices, 3);
+		Model model = new Model(vertices, normals, _vIndices, _nIndices, 3);
+		Model.model_set.put(fileName, model);
+		
+		return model;
 	}
 	
 	public static Model parseTexturedTriangleMesh(String fileName)
@@ -237,8 +238,6 @@ public class OBJParser
 		long startTime = System.nanoTime();
 		
 		int polygonCount = 0;
-		
-		List<Face> faces = new ArrayList<Face>();
 		
 		List<float[]> vertices  = new ArrayList<float[]>();
 		List<float[]> normals   = new ArrayList<float[]>();
@@ -316,6 +315,117 @@ public class OBJParser
 		
 		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount, (endTime - startTime) / 1E6);
 		
-		return new Model(vertices, texCoords, normals, _vIndices, _tIndices, _nIndices, 3);
+		Model model = new Model(vertices, texCoords, normals, _vIndices, _tIndices, _nIndices, 3);
+		Model.model_set.put(fileName, model);
+		
+		return model;
+	}
+	
+	public static void main(String[] args)
+	{
+		parseIndexedArrays("grass_top_upper");
+		parseTexturedTriangleMesh("grass_top_upper");
+		
+	}
+	
+	public static Model parseIndexedArrays(String fileName)
+	{
+		long startTime = System.nanoTime();
+		
+		int polygonCount = 0;
+		
+		List<float[]> vertices = new ArrayList<float[]>();
+		List<float[]> normals  = new ArrayList<float[]>();
+		List<float[]> tcoords0 = new ArrayList<float[]>();
+		List<float[]> tcoords1 = new ArrayList<float[]>(); 
+		
+		List<int[]> points  = new ArrayList<int[]>();
+
+		try
+		{
+			Scanner fs = new Scanner(new File("obj/" + fileName + ".model"));
+			
+			while (fs.hasNextLine())
+			{
+				String line = fs.nextLine();
+				
+				if (line.startsWith("VERTEX"))
+				{
+					line = line.substring(6).trim();
+					String[] coords = line.split(" ");
+					
+					for(int i = 0; i < coords.length; i += 3)
+					{
+						float x = Float.parseFloat(coords[i + 0]);
+						float y = Float.parseFloat(coords[i + 1]);
+						float z = Float.parseFloat(coords[i + 2]);
+						vertices.add(new float[] {x, y, z});
+					}
+				}
+				if (line.startsWith("NORMAL"))
+				{
+					line = line.substring(6).trim();
+					String[] coords = line.split(" ");
+					
+					for(int i = 0; i < coords.length; i += 3)
+					{
+						float x = Float.parseFloat(coords[i + 0]);
+						float y = Float.parseFloat(coords[i + 1]);
+						float z = Float.parseFloat(coords[i + 2]);
+						normals.add(new float[] {x, y, z});
+					}
+				}
+				if (line.startsWith("TEXCOORD0"))
+				{
+					line = line.substring(9).trim();
+					String[] coords = line.split(" ");
+					
+					for(int i = 0; i < coords.length; i += 2)
+					{
+						float s = Float.parseFloat(coords[i + 0]);
+						float t = Float.parseFloat(coords[i + 1]);
+						tcoords0.add(new float[] {s, t});
+					}
+				}
+				if (line.startsWith("TEXCOORD1"))
+				{
+					line = line.substring(9).trim();
+					String[] coords = line.split(" ");
+					
+					for(int i = 0; i < coords.length; i += 2)
+					{
+						float s = Float.parseFloat(coords[i + 0]);
+						float t = Float.parseFloat(coords[i + 1]);
+						tcoords1.add(new float[] {s, t});
+					}
+				}
+				if (line.startsWith("INDEX"))
+				{	
+					line = line.substring(5).trim();
+					String[] indices = line.split(" ");
+					
+					polygonCount = indices.length;
+					
+					for(int i = 0; i < indices.length; i += 3)
+					{
+						int vi = Integer.parseInt(indices[i + 0]);
+						int ni = Integer.parseInt(indices[i + 1]);
+						int ti = Integer.parseInt(indices[i + 2]);
+						points.add(new int[] {vi, ni, ti});
+					}
+				}
+			}
+			fs.close();
+		}
+		catch (IOException ioe) { ioe.printStackTrace(); }
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", fileName, polygonCount / 9, (endTime - startTime) / 1E6);
+		
+		Model model = new Model(vertices, tcoords0, tcoords1, normals, points);
+		Model.model_set.put(fileName, model);
+		
+		return model;
 	}
 }

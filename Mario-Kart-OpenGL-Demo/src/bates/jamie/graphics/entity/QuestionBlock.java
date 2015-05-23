@@ -10,7 +10,6 @@ import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Vec3;
 
@@ -19,8 +18,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 public class QuestionBlock
 {
-	static Model block_model  = OBJParser.parseTriangleMesh("question_block_box");
-	static Model symbol_model = OBJParser.parseTriangleMesh("question_block_symbol");
+	static Model block_model  = new Model("question_block_box");
+	static Model symbol_model = new Model("question_block_symbol");
 	
 	static Texture colourMap, normalMap, heightMap;
 	

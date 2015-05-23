@@ -15,7 +15,9 @@ import java.io.ObjectOutputStream;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.media.opengl.GL2;
 
@@ -28,11 +30,14 @@ import com.jogamp.opengl.util.texture.Texture;
 
 public class Model
 {
+	public static HashMap<String, Model> model_set = new HashMap<String, Model>();
+	
 	private List<float[]> _vertices;
 	
 	private FloatBuffer vertices;
 	private FloatBuffer normals;
-	private FloatBuffer texCoords;
+	private FloatBuffer tcoords0;
+	private FloatBuffer tcoords1;
 	private FloatBuffer colors;
 	private FloatBuffer tangents;
 	private FloatBuffer positions;
@@ -51,15 +56,16 @@ public class Model
 	public static boolean enableVBO = true;
 	public boolean bufferCreated = false;
 	
-	private int[] bufferIDs = new int[7];
+	private int[] bufferIDs = new int[8];
 	
 	private static final int  VERTEX_BUFFER = 0;
 	private static final int  NORMAL_BUFFER = 1;
-	private static final int  TCOORD_BUFFER = 2;
-	private static final int  COLOUR_BUFFER = 3;
-	private static final int  OFFSET_BUFFER = 4;
-	private static final int TANGENT_BUFFER = 5;
-	private static final int   INDEX_BUFFER = 6;
+	private static final int TCOORD0_BUFFER = 2;
+	private static final int TCOORD1_BUFFER = 3;
+	private static final int  COLOUR_BUFFER = 4;
+	private static final int  OFFSET_BUFFER = 5;
+	private static final int TANGENT_BUFFER = 6;
+	private static final int   INDEX_BUFFER = 7;
 	
 	private static final int  TANGENT_ID = 1;
 	private static final int POSITION_ID = 4; 
@@ -74,7 +80,7 @@ public class Model
 		this.vertices  = Buffers.newDirectFloatBuffer(vertices);
 		this.normals   = Buffers.newDirectFloatBuffer(normals); 
 		
-		if(texCoords != null) this.texCoords = Buffers.newDirectFloatBuffer(texCoords); 
+		if(texCoords != null) this.tcoords0  = Buffers.newDirectFloatBuffer(texCoords); 
 		if(tangents  != null) this.tangents  = Buffers.newDirectFloatBuffer(tangents);
 		if(positions != null) this.positions = Buffers.newDirectFloatBuffer(positions);
 		
@@ -91,24 +97,16 @@ public class Model
 		this.normals   = Buffers.newDirectFloatBuffer(normals); 
 		
 		if(colors    != null) this.colors    = Buffers.newDirectFloatBuffer(colors);
-		if(texCoords != null) this.texCoords = Buffers.newDirectFloatBuffer(texCoords); 
+		if(texCoords != null) this.tcoords0  = Buffers.newDirectFloatBuffer(texCoords); 
 		if(tangents  != null) this.tangents  = Buffers.newDirectFloatBuffer(tangents);
 		if(positions != null) this.positions = Buffers.newDirectFloatBuffer(positions);
 		
 	}
 	
-	public Model(String fileName)
-	{
-		long start = System.currentTimeMillis();
-		
-		polygon = 3;
-		load(fileName);
-		
-		System.out.println("Model Loader: " + fileName + ", " + (System.currentTimeMillis() - start));
-	}
-	
 	public Model(List<float[]> vertices, List<float[]> normals, int[] vIndices, int[] nIndices, int type)
 	{
+		long startTime = System.nanoTime();
+		
 		if(type == 3) polygon = GL2.GL_TRIANGLES;
 		if(type == 4) polygon = GL2.GL_QUADS;
 		
@@ -163,11 +161,16 @@ public class Model
 		for(int i : offsetData) indices.put(i);
 		indices.position(0);
 		
-//		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n", indexCount, vertices.size(), normals.size());
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Indexed Model: %8.3f ms \n{\n\tIndices:  %d\n\tVertices: %d\n\tNormals:  %d\n}\n",
+				(endTime - startTime) / 1E6, indexCount, vertices.size(), normals.size());
 	}
 	
 	public Model(List<float[]> vertices, List<float[]> texCoords, List<float[]> normals, int[] vIndices, int[] tIndices, int[] nIndices, int type)
 	{
+		long startTime = System.nanoTime();
+		
 		if(type == 3) polygon = GL2.GL_TRIANGLES;
 		if(type == 4) polygon = GL2.GL_QUADS;
 		
@@ -218,9 +221,9 @@ public class Model
 		for(float[] vertex : vertexData) this.vertices.put(vertex);
 		this.vertices.position(0); 
 		
-		this.texCoords = Buffers.newDirectFloatBuffer(tcoordData.size() * 2);
-		for(float[] tcoord : tcoordData) this.texCoords.put(tcoord);
-		this.texCoords.position(0);
+		this.tcoords0 = Buffers.newDirectFloatBuffer(tcoordData.size() * 2);
+		for(float[] tcoord : tcoordData) this.tcoords0.put(tcoord);
+		this.tcoords0.position(0);
 		
 		this.normals = Buffers.newDirectFloatBuffer(normalData.size() * 3);
 		for(float[] normal : normalData) this.normals.put(normal);
@@ -230,8 +233,96 @@ public class Model
 		for(int i : offsetData) indices.put(i);
 		indices.position(0);
 		
-//		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates:  %d\n\tNormals:  %d\n}\n",
-//				          indexCount, vertices.size(), texCoords.size(), normals.size());
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Indexed Model: %8.3f ms \n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates:  %d\n\tNormals:  %d\n}\n",
+				(endTime - startTime) / 1E6, indexCount, vertices.size(), texCoords.size(), normals.size());
+	}
+	
+	public Model(List<float[]> vertices, List<float[]> tcoords0, List<float[]> tcoords1, List<float[]> normals, List<int[]> points)
+	{
+		long startTime = System.nanoTime();
+		
+		polygon = GL2.GL_TRIANGLES;
+		
+		List<float[]> vertexData = new ArrayList<float[]>();
+		List<float[]> tex_0_Data = new ArrayList<float[]>();
+		List<float[]> tex_1_Data = new ArrayList<float[]>();
+		List<float[]> normalData = new ArrayList<float[]>();
+		List<Integer> offsetData = new ArrayList<Integer>();
+		
+		List<int[]> pointData = new ArrayList<int[]>();
+		
+		int index = 0;
+		
+		for(int i = 0; i < points.size(); i++)
+		{
+			int[] pIndices = points.get(i);
+			
+			float[] vertex = vertices.get(pIndices[0]);
+			float[] normal = normals .get(pIndices[1]);
+			float[] texUV0 = tcoords0.get(pIndices[2]);
+			float[] texUV1 = tcoords1.get(pIndices[2]);
+			
+			boolean unique = true;
+			int k = index;
+			
+			for(int j = 0; j < pointData.size(); j++)
+			{
+				int[] stored_point = pointData.get(j);
+				
+				if(pIndices[0] == stored_point[0] &&
+				   pIndices[1] == stored_point[1] && 
+				   pIndices[2] == stored_point[2]   )
+				{
+					k = j;
+					unique = false;
+					break;
+				}
+			}
+			
+			if(unique)
+			{
+				pointData.add(pIndices);
+				
+				offsetData.add(k);
+				vertexData.add(vertex);
+				normalData.add(normal);
+				tex_0_Data.add(texUV0);
+				tex_1_Data.add(texUV1);
+				index++;
+			}
+			else offsetData.add(k);
+		}
+		
+		_vertices = vertexData;
+		
+		indexCount = points.size();
+		
+		this.vertices = Buffers.newDirectFloatBuffer(vertexData.size() * 3);
+		for(float[] vertex : vertexData) this.vertices.put(vertex);
+		this.vertices.position(0); 
+		
+		this.tcoords0 = Buffers.newDirectFloatBuffer(tex_0_Data.size() * 2);
+		for(float[] tcoord : tex_0_Data) this.tcoords0.put(tcoord);
+		this.tcoords0.position(0);
+		
+		this.tcoords1 = Buffers.newDirectFloatBuffer(tex_1_Data.size() * 2);
+		for(float[] tcoord : tex_1_Data) this.tcoords1.put(tcoord);
+		this.tcoords1.position(0);
+		
+		this.normals = Buffers.newDirectFloatBuffer(normalData.size() * 3);
+		for(float[] normal : normalData) this.normals.put(normal);
+		this.normals.position(0);
+		
+		indices = Buffers.newDirectIntBuffer(offsetData.size());
+		for(int i : offsetData) indices.put(i);
+		indices.position(0);
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Indexed Model: %8.3f ms \n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates:  %d\n\tNormals:  %d\n}\n",
+				(endTime - startTime) / 1E6, indexCount, vertices.size(), tcoords0.size(), normals.size());
 	}
 	
 	public void calculateTangents()
@@ -248,22 +339,24 @@ public class Model
 			float[] v2 = new float[3]; vertices.position(i2 * 3); vertices.get(v2);
 			float[] v3 = new float[3]; vertices.position(i3 * 3); vertices.get(v3);
 			
-			float[] t1 = new float[2]; texCoords.position(i1 * 2); texCoords.get(t1);
-			float[] t2 = new float[2]; texCoords.position(i2 * 2); texCoords.get(t2);
-			float[] t3 = new float[2]; texCoords.position(i3 * 2); texCoords.get(t3);
+			float[] t1 = new float[2]; tcoords0.position(i1 * 2); tcoords0.get(t1);
+			float[] t2 = new float[2]; tcoords0.position(i2 * 2); tcoords0.get(t2);
+			float[] t3 = new float[2]; tcoords0.position(i3 * 2); tcoords0.get(t3);
 			
 			_tangents[i1] = Vector.add(_tangents[i1], Vector.tangent(v1, v2, v3, t1, t2, t3));
 			_tangents[i2] = Vector.add(_tangents[i2], Vector.tangent(v2, v3, v1, t2, t3, t1));
 			_tangents[i3] = Vector.add(_tangents[i3], Vector.tangent(v3, v1, v2, t3, t1, t2));
 			
 		}
-		vertices .position(0);
-		texCoords.position(0);
-		indices  .position(0);
+		vertices.position(0);
+		tcoords0.position(0);
+		indices .position(0);
 		
 		tangents = Buffers.newDirectFloatBuffer(indices.capacity() * 3);
 		for(float[] tangent : _tangents) tangents.put(Vector.normalize(tangent));
 		tangents.position(0); 
+		
+		bufferCreated = false;
 	}
 	
 	public boolean save(String fileName)
@@ -353,9 +446,9 @@ public class Model
 		
 		indexCount = vIndices.length;
 		
-		this.texCoords = Buffers.newDirectFloatBuffer(vertices.size() * 2);
-		for(float[] texCoord : texCoords) this.texCoords.put(texCoord);
-		this.texCoords.position(0);
+		this.tcoords0 = Buffers.newDirectFloatBuffer(vertices.size() * 2);
+		for(float[] texCoord : texCoords) this.tcoords0.put(texCoord);
+		this.tcoords0.position(0);
 		
 		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates: %d\n}\n", indexCount, vertices.size(), texCoords.size());
 		
@@ -369,20 +462,47 @@ public class Model
 			FileWriter writer = new FileWriter("iva/" + fileName + ".iva");
 			BufferedWriter out = new BufferedWriter(writer);
 			
-			out.write("vertices ");
-			float[] vertexArray = vertices.array();
-			for(int v = 0; v < vertexArray.length; v++) out.write(vertexArray[v] + " ");
-			out.write("\r\n");
+			if(vertices != null)
+			{
+				out.write("VERTEX ");
+				for(int i = 0; i < vertices.capacity(); i++) out.write(vertices.get(i) + " ");
+				out.write("\r\n");
+			}
 			
-			out.write("normals ");
-			float[] normalArray = vertices.array();
-			for(int n = 0; n < normalArray.length; n++) out.write(normalArray[n] + " ");
-			out.write("\r\n");
+			if(normals != null)
+			{
+				out.write("NORMAL ");
+				for(int i = 0; i < normals.capacity(); i++) out.write(normals.get(i) + " ");
+				out.write("\r\n");
+			}
 			
-			out.write("indices ");
-			float[] indexArray = vertices.array();
-			for(int i = 0; i < indexArray.length; i++) out.write(indexArray[i] + " ");
-			out.write("\r\n");
+			if(tcoords0 != null)
+			{
+				out.write("TEXCOORD0 ");
+				for(int i = 0; i < tcoords0.capacity(); i++) out.write(tcoords0.get(i) + " ");
+				out.write("\r\n");
+			}
+			
+			if(tcoords1 != null)
+			{
+				out.write("TEXCOORD1 ");
+				for(int i = 0; i < tcoords1.capacity(); i++) out.write(tcoords1.get(i) + " ");
+				out.write("\r\n");
+			}
+			
+			if(tangents != null)
+			{
+				out.write("TANGENT ");
+				for(int i = 0; i < tangents.capacity(); i++) out.write(tangents.get(i) + " ");
+				out.write("\r\n");
+			}
+			
+			if(indices != null)
+			{
+				out.write("INDEX ");
+				for(int i = 0; i < indices.capacity(); i++) out.write(indices.get(i) + " ");
+				out.write("\r\n");
+			}
 	
 			out.close();
 		}
@@ -390,7 +510,107 @@ public class Model
 		catch(Exception e)
 		{
 			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
+	}
+	
+	public Model(String fileName)
+	{
+		 polygon = GL2.GL_TRIANGLES;
+		
+		long startTime = System.nanoTime();
+
+		try
+		{
+			Scanner fs = new Scanner(new File("iva/" + fileName + ".iva"));
+			
+			while (fs.hasNextLine())
+			{
+				String line = fs.nextLine();
+				
+				if (line.startsWith("VERTEX"))
+				{
+					line = line.substring(6).trim();
+					String[] coords = line.split(" ");
+					
+					vertices = Buffers.newDirectFloatBuffer(coords.length);
+					
+					for(int i = 0; i < coords.length; i++)
+						vertices.put(Float.parseFloat(coords[i]));
+					
+					vertices.position(0);
+					
+				}
+				if (line.startsWith("NORMAL"))
+				{
+					line = line.substring(6).trim();
+					String[] coords = line.split(" ");
+					
+					normals = Buffers.newDirectFloatBuffer(coords.length);
+					
+					for(int i = 0; i < coords.length; i++)
+						normals.put(Float.parseFloat(coords[i]));
+					
+					normals.position(0);
+				}
+				if (line.startsWith("TEXCOORD0"))
+				{
+					line = line.substring(9).trim();
+					String[] coords = line.split(" ");
+					
+					tcoords0 = Buffers.newDirectFloatBuffer(coords.length);
+					
+					for(int i = 0; i < coords.length; i++)
+						tcoords0.put(Float.parseFloat(coords[i]));
+					
+					tcoords0.position(0);
+				}
+				if (line.startsWith("TEXCOORD1"))
+				{
+					line = line.substring(9).trim();
+					String[] coords = line.split(" ");
+					
+					tcoords1 = Buffers.newDirectFloatBuffer(coords.length);
+					
+					for(int i = 0; i < coords.length; i++)
+						tcoords1.put(Float.parseFloat(coords[i]));
+					
+					tcoords1.position(0);
+				}
+				if (line.startsWith("TANGENT"))
+				{
+					line = line.substring(7).trim();
+					String[] coords = line.split(" ");
+					
+					tangents = Buffers.newDirectFloatBuffer(coords.length);
+					
+					for(int i = 0; i < coords.length; i++)
+						tangents.put(Float.parseFloat(coords[i]));
+					
+					tangents.position(0);
+				}
+				if (line.startsWith("INDEX"))
+				{	
+					line = line.substring(5).trim();
+					String[] indices = line.split(" ");
+					
+					indexCount = indices.length;
+					
+					this.indices = Buffers.newDirectIntBuffer(indices.length);
+					
+					for(int i = 0; i < indices.length; i++)
+						this.indices.put(Integer.parseInt(indices[i]));
+					
+					this.indices.position(0);		
+				}
+			}
+			fs.close();
+		}
+		catch (IOException ioe) { ioe.printStackTrace(); }
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Indexed Model: %-13s (%5d) %8.3f ms" + "\n", fileName, indexCount / 3, (endTime - startTime) / 1E6);
 	}
 	
 	public List<float[]> getVertices() { return _vertices; }
@@ -409,7 +629,7 @@ public class Model
 	{
 		if(!bufferCreated && enableVBO) createBuffers(gl);
 		
-		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
+		if(tcoords0 == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		if(heightMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl); }
@@ -441,7 +661,7 @@ public class Model
 
 	private void unbindArrays(GL2 gl)
 	{
-		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER        , 0);
+		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 		if(indices != null) gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
@@ -450,9 +670,16 @@ public class Model
 						      gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, vertices );
 		if(normals   != null) gl.glNormalPointer  (   GL2.GL_FLOAT, 0, normals  );
 		if(colors    != null) gl.glColorPointer   (3, GL2.GL_FLOAT, 0, colors   );
-		if(texCoords != null) gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, texCoords);
+		if(tcoords0  != null) gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, tcoords0 );
 		if(tangents  != null) gl.glVertexAttribPointer(TANGENT_ID , 3, GL2.GL_FLOAT, true , 0, tangents );
 		if(positions != null) gl.glVertexAttribPointer(POSITION_ID, 4, GL2.GL_FLOAT, false, 0, positions);	
+		
+		if(tcoords1  != null)
+		{
+			gl.glClientActiveTexture(GL2.GL_TEXTURE1);
+			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, tcoords1);
+			gl.glClientActiveTexture(GL2.GL_TEXTURE0);
+		}
 	}
 
 	private void bindArrays(GL2 gl)
@@ -460,10 +687,18 @@ public class Model
 		                        gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[VERTEX_BUFFER ]); gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, 0);
 		if(normals   != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[NORMAL_BUFFER ]); gl.glNormalPointer  (   GL2.GL_FLOAT, 0, 0); }
 		if(colors    != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[COLOUR_BUFFER ]); gl.glColorPointer   (3, GL2.GL_FLOAT, 0, 0); }
-		if(texCoords != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD_BUFFER ]); gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0); }
+		if(tcoords0  != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD0_BUFFER]); gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0); }
 		if(tangents  != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TANGENT_BUFFER]); gl.glVertexAttribPointer(TANGENT_ID , 3, GL2.GL_FLOAT, true , 0, 0); }
 		if(positions != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[OFFSET_BUFFER ]); gl.glVertexAttribPointer(POSITION_ID, 4, GL2.GL_FLOAT, false, 0, 0); }
 
+		if(tcoords1  != null)
+		{
+			gl.glClientActiveTexture(GL2.GL_TEXTURE1);
+			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD1_BUFFER]);
+			gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0);
+			gl.glClientActiveTexture(GL2.GL_TEXTURE0);
+		}
+		
 		if(indices != null) gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, bufferIDs[INDEX_BUFFER]);
 	}
 
@@ -471,31 +706,46 @@ public class Model
 	{
 							  gl.glDisableClientState(GL2.GL_VERTEX_ARRAY       );
 		if(normals   != null) gl.glDisableClientState(GL2.GL_NORMAL_ARRAY       );
-		if(texCoords != null) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+		if(tcoords0  != null) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		if(colors    != null) gl.glDisableClientState(GL2.GL_COLOR_ARRAY        );
 		if(tangents  != null) gl.glDisableVertexAttribArray(TANGENT_ID );
 		if(positions != null) gl.glDisableVertexAttribArray(POSITION_ID);
+		
+		if(tcoords1  != null)
+		{
+			gl.glClientActiveTexture(GL2.GL_TEXTURE1);
+			gl.glDisableClientState (GL2.GL_TEXTURE_COORD_ARRAY);
+			gl.glClientActiveTexture(GL2.GL_TEXTURE0);
+		}
 	}
 
 	private void enableState(GL2 gl)
 	{
 		                      gl.glEnableClientState(GL2.GL_VERTEX_ARRAY       );
 		if(normals   != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY       );
-		if(texCoords != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+		if(tcoords0  != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		if(colors    != null) gl.glEnableClientState(GL2.GL_COLOR_ARRAY        );
 		if(tangents  != null) gl.glEnableVertexAttribArray(TANGENT_ID );
 		if(positions != null) gl.glEnableVertexAttribArray(POSITION_ID);
+		
+		if(tcoords1  != null)
+		{
+			gl.glClientActiveTexture(GL2.GL_TEXTURE1);
+			gl.glEnableClientState  (GL2.GL_TEXTURE_COORD_ARRAY);
+			gl.glClientActiveTexture(GL2.GL_TEXTURE0);
+		}
 		
 		gl.getGL3().glVertexAttribDivisor(POSITION_ID, 1);
 	}
 	
 	public boolean hasInstanceData() { return positions != null; }
+	public boolean hasTangentData () { return tangents  != null; }
 	
 	public void renderInstanced(GL2 gl, int count)
 	{
 		if(!bufferCreated && enableVBO) createBuffers(gl);
 		
-		if(texCoords == null) gl.glDisable(GL2.GL_TEXTURE_2D);
+		if(tcoords0 == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		if(colourMap != null) colourMap.bind(gl);
@@ -555,7 +805,7 @@ public class Model
 		gl.glColor3f(1, 1, 1);
 		
 		gl.glEnable(GL2.GL_LIGHTING);
-		gl.glEnable(GL_TEXTURE_2D);	
+		gl.glEnable(GL2.GL_TEXTURE_2D);	
 	}
 	
 	public void renderTangents(GL2 gl, boolean smooth, float scale)
@@ -563,12 +813,9 @@ public class Model
 		Shader.disable(gl);
 		
 		gl.glDisable(GL2.GL_LIGHTING);
+		gl.glDisable(GL2.GL_TEXTURE_2D);
 		
-		gl.glActiveTexture(GL2.GL_TEXTURE3); gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE1); gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glActiveTexture(GL2.GL_TEXTURE0); gl.glDisable(GL2.GL_TEXTURE_2D);
-		gl.glDisable(GL2.GL_TEXTURE_CUBE_MAP);
+		gl.glEnable(GL2.GL_BLEND);
 		
 		float[] c = RGB.GREEN;
 		gl.glColor3f(c[0], c[1], c[2]);
@@ -590,13 +837,12 @@ public class Model
 		
 		tangents.position(0);
 		
-		gl.glDisable(GL2.GL_BLEND);
-		gl.glDisable(GL2.GL_POINT_SMOOTH);
-		
 		gl.glColor3f(1, 1, 1);
 		
+		gl.glDisable(GL2.GL_BLEND);
+		
 		gl.glEnable(GL2.GL_LIGHTING);
-		gl.glEnable(GL_TEXTURE_2D);	
+		gl.glEnable(GL2.GL_TEXTURE_2D);	
 	}
 	
 	public void createBuffers(GL2 gl)
@@ -615,10 +861,17 @@ public class Model
 		}
 	    
 	    // Texture coordinates
-		if(texCoords != null)
+		if(tcoords0 != null)
 		{
-			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD_BUFFER]);
-			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Float.SIZE / 8 * texCoords.capacity(), texCoords, GL2.GL_STATIC_DRAW);
+			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD0_BUFFER]);
+			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Float.SIZE / 8 * tcoords0.capacity(), tcoords0, GL2.GL_STATIC_DRAW);
+		}
+		
+		// Additional texture coordinates for complex texture mapping (i.e. using an alpha map)
+		if(tcoords1 != null)
+		{
+			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD1_BUFFER]);
+			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Float.SIZE / 8 * tcoords1.capacity(), tcoords1, GL2.GL_STATIC_DRAW);
 		}
 		
 		// Color data

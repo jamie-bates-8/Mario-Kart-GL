@@ -45,6 +45,11 @@ public class Shader
 		valid = attachPrograms(gl, vShader, fShader, null);
 	}
 	
+	public Shader(GL2 gl, String shader)
+	{	
+		valid = attachPrograms(gl, shader, shader, null);
+	}
+	
 	public Shader(GL2 gl, String vShader, String fShader, HashMap<Integer, String> attributes)
 	{	
 		valid = attachPrograms(gl, vShader, fShader, attributes);
@@ -63,20 +68,22 @@ public class Shader
 		inst_attr.put(4, "instance_data");
 		
 		// load and compile shaders from file
-		Shader simple        = new Shader(gl, "simple", "simple");
+		Shader simple        = new Shader(gl, "simple");
 		
-		Shader phong         = new Shader(gl, "phong", "phong");
-		Shader phongLights   = new Shader(gl, "phong_lights", "phong_lights");
+		Shader phong         = new Shader(gl, "phong");
+		Shader phongLights   = new Shader(gl, "phong_lights");
 		Shader phongInstance = new Shader(gl, "phong_instance", "phong_lights", inst_attr);
 		Shader phongRim      = new Shader(gl, "phong_lights", "phong_rim");
-		Shader phongTexture  = new Shader(gl, "phong_texture", "phong_texture");
+		Shader phongTexture  = new Shader(gl, "phong_texture");
 		Shader phongAlpha    = new Shader(gl, "phong_texture", "phong_alpha");
 		
-		Shader bloomColor    = new Shader(gl, "bloom_color", "bloom_color");
+		Shader bloomColor    = new Shader(gl, "bloom_color");
 		
-		Shader texLights     = new Shader(gl, "texture_lights", "texture_lights");
-		Shader textureRim    = new Shader(gl, "texture_lights", "texture_rim");
-		Shader checkerDiag   = new Shader(gl, "checker_diagonal", "checker_diagonal");
+		Shader texLights      = new Shader(gl, "texture_lights");
+		Shader textureRim     = new Shader(gl, "texture_lights", "texture_rim");
+		Shader checkerDiag    = new Shader(gl, "checker_diagonal");
+		Shader checkerSlope   = new Shader(gl, "checker_slope");
+		Shader checkerReflect = new Shader(gl, "checker_slope", "checker_reflect");
 		
 		Shader bump          = new Shader(gl, "bump", "bump", bump_attr);
 		Shader bumpPhong     = new Shader(gl, "bump_lights", "bump_phong", bump_attr);
@@ -87,23 +94,23 @@ public class Shader
 		Shader bumpRain      = new Shader(gl, "bump_cube", "bump_rain", bump_attr);
 		Shader bumpInstance  = new Shader(gl, "bump_instance", "parallax_lights", bump_inst_attr);
 		
-		Shader heightMap     = new Shader(gl, "height_map", "height_map");
+		Shader heightMap     = new Shader(gl, "height_map");
 		
-		Shader shadow        = new Shader(gl, "shadow", "shadow");
-		Shader phongShadow   = new Shader(gl, "phong_shadow", "phong_shadow");
-		Shader shadowLights  = new Shader(gl, "shadow_lights", "shadow_lights");
+		Shader shadow        = new Shader(gl, "shadow");
+		Shader phongShadow   = new Shader(gl, "phong_shadow");
+		Shader shadowLights  = new Shader(gl, "shadow_lights");
 		
-		Shader phongCube    = new Shader(gl, "phong_cube", "phong_cube");
-		Shader cubeLights   = new Shader(gl, "cube_lights", "cube_lights");
+		Shader phongCube    = new Shader(gl, "phong_cube");
+		Shader cubeLights   = new Shader(gl, "cube_lights");
 		Shader cubeRim      = new Shader(gl, "cube_lights", "cube_rim");
 		
-		Shader aberration   = new Shader(gl, "aberration", "aberration");
-		Shader ghost        = new Shader(gl, "ghost", "ghost");
+		Shader aberration   = new Shader(gl, "aberration");
+		Shader ghost        = new Shader(gl, "ghost");
 		Shader ghostRim     = new Shader(gl, "phong", "ghost_rim");
 		Shader invisible    = new Shader(gl, "ghost", "invisible");
 		Shader starPower    = new Shader(gl, "phong_cube", "star_cube");
 		
-		Shader itemBox      = new Shader(gl, "item_box", "item_box");
+		Shader itemBox      = new Shader(gl, "item_box");
 		Shader fakeBox      = new Shader(gl, "item_box", "fake_box");
 		
 		Shader water        = new Shader(gl, "water", "water", bump_attr);
@@ -111,11 +118,11 @@ public class Shader
 		Shader caustics     = new Shader(gl, "water_caustics", "water_caustics", bump_attr);
 		Shader bumpCaustics = new Shader(gl, "bump_caustics", "bump_caustics", bump_attr);
 		
-		Shader clearSky     = new Shader(gl, "clear_sky", "clear_sky");
-		Shader cloudySky    = new Shader(gl, "cloudy_sky", "cloudy_sky");
-		Shader grass        = new Shader(gl, "grass", "grass");
-		Shader dissolve     = new Shader(gl, "dissolve", "dissolve");
-		Shader energyField  = new Shader(gl, "energy_field", "energy_field");
+		Shader clearSky     = new Shader(gl, "clear_sky");
+		Shader cloudySky    = new Shader(gl, "cloudy_sky");
+		Shader grass        = new Shader(gl, "grass");
+		Shader dissolve     = new Shader(gl, "dissolve");
+		Shader energyField  = new Shader(gl, "energy_field");
 		
 		Shader gaussian     = new Shader(gl, "show_texture", "gaussian");
 		Shader depthField   = new Shader(gl, "show_texture", "depth_field");
@@ -124,14 +131,16 @@ public class Shader
 		Shader showTexture  = new Shader(gl, "show_texture", "height_normal");
 		Shader ambientOcc   = new Shader(gl, "show_texture", "ssao"); // screen-space ambient occlusion
 		Shader rainyScene   = new Shader(gl, "show_texture", "rainy_scene");
-		Shader crepuscular  = new Shader(gl, "crepuscular", "crepuscular");
-		Shader radialBlur   = new Shader(gl, "radial_blur", "radial_blur");
-		Shader smoke        = new Shader(gl, "smoke", "smoke");
-		Shader fire         = new Shader(gl, "fire", "fire");
+		Shader crepuscular  = new Shader(gl, "crepuscular");
+		Shader radialBlur   = new Shader(gl, "radial_blur");
+		Shader smoke        = new Shader(gl, "smoke");
+		Shader fire         = new Shader(gl, "fire");
 		
-		Shader rainDrop     = new Shader(gl, "rain_drop", "rain_drop");
+		Shader rainDrop     = new Shader(gl, "rain_drop");
 		
 		Shader pulsate      = new Shader(gl, "pulsate", "phong_lights");
+		
+		Shader wood         = new Shader(gl, "wood");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(       simple.isValid()) shaders.put("simple", simple);
@@ -148,6 +157,8 @@ public class Shader
 		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
 		if( checkerDiag.isValid()) shaders.put("checker_diagonal", checkerDiag);
+		if(checkerSlope.isValid()) shaders.put("checker_slope", checkerSlope);
+		if(checkerReflect.isValid()) shaders.put("checker_reflect", checkerReflect);
 		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
@@ -197,8 +208,8 @@ public class Shader
 		if(  	   fire.isValid()) shaders.put("fire", fire);
 		
 		if(    rainDrop.isValid()) shaders.put("rain_drop", rainDrop);
-		
-		if(   pulsate.isValid()) shaders.put("pulsate", pulsate);
+		if(     pulsate.isValid()) shaders.put("pulsate", pulsate);
+		if(        wood.isValid()) shaders.put("wood", wood);
 		
 		for(Shader shader : shaders.values()) shader.mapUniforms();
 	}

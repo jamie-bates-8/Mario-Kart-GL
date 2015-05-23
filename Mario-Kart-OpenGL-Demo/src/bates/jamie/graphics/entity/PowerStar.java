@@ -18,15 +18,14 @@ import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
 public class PowerStar
 {
-	static Model power_star_body = OBJParser.parseTriangleMesh("power_star_body");
-	static Model power_star_eyes = OBJParser.parseTriangleMesh("power_star_eyes");
+	static Model power_star_body = new Model("power_star_body");
+	static Model power_star_eyes = new Model("power_star_eyes");
 	
 	SceneNode bodyNode;
 	SceneNode eyesNode;

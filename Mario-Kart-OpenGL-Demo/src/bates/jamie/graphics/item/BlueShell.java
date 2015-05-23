@@ -1,6 +1,5 @@
 package bates.jamie.graphics.item;
 
-import static bates.jamie.graphics.util.Renderer.displayColoredObject;
 import static bates.jamie.graphics.util.Renderer.displayWildcardObject;
 
 import java.io.File;
@@ -13,16 +12,19 @@ import javax.media.opengl.glu.GLUquadric;
 
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.Sphere;
-import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
+import bates.jamie.graphics.scene.Material;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.SceneNode;
+import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
+import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
-import bates.jamie.graphics.util.Face;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
@@ -36,8 +38,8 @@ public class BlueShell extends Shell
 	public static final int ID = 13;
 	
 	private static int shellList = -1;
-	private static int spikeList = -1;
-	private static final List<Face> SPIKE_FACES = OBJParser.parseTriangles("spikes");
+	private static Model spike_model = new Model("spikes");
+	private static SceneNode spikeNode;
 	
 	private static Texture[] textures;
 	private static Texture shellTop;
@@ -75,6 +77,10 @@ public class BlueShell extends Shell
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
 			
+			spikeNode = new SceneNode(null, -1, spike_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+			spikeNode.setRenderMode(RenderMode.COLOR);
+			spikeNode.setColor(RGB.WHITE);
+			
 			noiseSampler = TextureLoader.load(gl, "tex/blast_noise.png");
 			
 			float[] blastColor = RGB.INDIGO;
@@ -86,14 +92,6 @@ public class BlueShell extends Shell
 			blastLight.setQuadraticAttenuation(0.001f);
 			blastLight.enableAttenuation = true;
 			blastLight.disable(gl);
-		}
-		
-		if(spikeList == -1)
-		{
-			spikeList = gl.glGenLists(1);
-			gl.glNewList(spikeList, GL2.GL_COMPILE);
-			displayColoredObject(gl, SPIKE_FACES, 1);
-			gl.glEndList();
 		}
 		
 		generator = new ParticleGenerator();
@@ -127,11 +125,9 @@ public class BlueShell extends Shell
 				
 				gl.glCallList(shellList);
 				
-				shader = Shader.getLightModel("phong");
-				if(shader != null) shader.enable(gl);
+				spikeNode.render(gl);
+				rimNode.render(gl);
 				
-				gl.glCallList(rimList);
-				gl.glCallList(spikeList);
 			}
 			gl.glPopMatrix();
 			

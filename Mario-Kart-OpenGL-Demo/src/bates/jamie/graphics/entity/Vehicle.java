@@ -52,6 +52,7 @@ import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
+import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
@@ -75,8 +76,8 @@ public class Vehicle
 {
 	/** Model Fields **/
 	private static List<Face> wheel_faces;
-	private static List<Face> base_faces;
 	
+	private static Model base_faces;
 	private static Model all_windows;
 	private static Model car_body;
 	private static Model head_lights;
@@ -221,12 +222,14 @@ public class Vehicle
 		if(car_body == null)
 		{
 			wheel_faces = OBJParser.parseTriangles("new_wheel");
-			base_faces  = OBJParser.parseTriangles("car_base");
+			base_faces  = new Model("car_base");
 			
-			all_windows = OBJParser.parseTriangleMesh("windows_all");
-			car_body    = OBJParser.parseTriangleMesh("car_body");
+			base_faces.colourMap = TextureLoader.load(gl, "tex/scratched_metal.jpg");
+			
+			all_windows = new Model("windows_all");
+			car_body    = new Model("car_body");
 
-			head_lights = OBJParser.parseTriangleMesh("head_lights");
+			head_lights = new Model("head_lights");
 		}
 	    
 	    bound = new OBB(
@@ -320,7 +323,6 @@ public class Vehicle
 			body.addChild(wheel);
 		}
 		
-		
 		SceneNode headlights = new SceneNode(null, -1, head_lights, SceneNode.MatrixOrder.T, shiny);
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
 		headlights.setTranslation(new Vec3());
@@ -328,7 +330,7 @@ public class Vehicle
 		
 		body.addChild(headlights);
 		
-		SceneNode car_base = new SceneNode(base_faces, -1, null, SceneNode.MatrixOrder.T, shiny);
+		SceneNode car_base = new SceneNode(null, -1, base_faces, SceneNode.MatrixOrder.T, shiny);
 		car_base.setColor(new float[] {1, 1, 1});
 		car_base.setTranslation(new Vec3());
 		car_base.setRenderMode(SceneNode.RenderMode.TEXTURE);
@@ -339,9 +341,7 @@ public class Vehicle
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
 		
-		body.addChild(windows);
-		
-		
+		body.addChild(windows);	
 	}
 	
 	public void updateGraph()

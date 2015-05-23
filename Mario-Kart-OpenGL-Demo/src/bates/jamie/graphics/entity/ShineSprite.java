@@ -18,15 +18,14 @@ import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
 public class ShineSprite
 {
-	static Model shineSprite = OBJParser.parseTriangleMesh("shine_sprite");
-	static Model shineEyes   = OBJParser.parseTriangleMesh("shine_eyes");
+	static Model shineSprite = new Model("shine_sprite");
+	static Model shineEyes   = new Model("shine_eyes");
 	
 	SceneNode shineNode;
 	SceneNode eyeNode;

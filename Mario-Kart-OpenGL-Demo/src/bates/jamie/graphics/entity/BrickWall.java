@@ -110,13 +110,13 @@ public class BrickWall
 
 	private void renderComplexModelInstanced(GL2 gl)
 	{
-		gl.glColor3f(0.636f, 0.201f, 0.031f);
+		gl.glColor3fv(BrickBlock.BRICK_BROWN, 0);
 			
 		Shader shader = Shader.get("phong_instance");
 		if(shader != null) shader.enable(gl);
 			
 		BrickBlock.brick_block.renderInstanced(gl, brickBlocks.size());
-		gl.glColor3f(0.1f, 0.1f, 0.1f);
+		gl.glColor3fv(BrickBlock.BRICK_BLACK, 0);
 		BrickBlock.mortar_block.renderInstanced(gl, brickBlocks.size());
 	}
 

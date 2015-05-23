@@ -23,7 +23,6 @@ import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
@@ -34,12 +33,12 @@ public class BobOmb extends Item
 
 	public static final int ID = 14;
 	
-	static Model bob_omb_body = OBJParser.parseTriangleMesh("bob_omb_body");
-	static Model bob_omb_eyes = OBJParser.parseTriangleMesh("bob_omb_eyes");
-	static Model bob_omb_cap  = OBJParser.parseTriangleMesh("bob_omb_cap");
-	static Model bob_omb_fuse = OBJParser.parseTriangleMesh("bob_omb_fuse");
-	static Model bob_omb_legs = OBJParser.parseTriangleMesh("bob_omb_legs");
-	static Model bob_omb_key  = OBJParser.parseTriangleMesh("bob_omb_key");
+	static Model bob_omb_body = new Model("bob_omb_body");
+	static Model bob_omb_eyes = new Model("bob_omb_eyes");
+	static Model bob_omb_cap  = new Model("bob_omb_cap");
+	static Model bob_omb_fuse = new Model("bob_omb_fuse");
+	static Model bob_omb_legs = new Model("bob_omb_legs");
+	static Model bob_omb_key  = new Model("bob_omb_key");
 	
 	SceneNode bodyNode;
 	SceneNode eyeNode;

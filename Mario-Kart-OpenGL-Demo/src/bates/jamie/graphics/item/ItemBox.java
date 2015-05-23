@@ -21,7 +21,6 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
@@ -36,8 +35,8 @@ public class ItemBox
 	public static final float SCALE = 1.8f;
 	public static final int RESPAWN_TIME = 60;
 	
-	public static Model item_box = OBJParser.parseTriangleMesh("item_box");
-	public static Model question_mark = OBJParser.parseTriangleMesh("question_mark");
+	public static Model item_box = new Model("item_box");
+	public static Model question_mark = new Model("question_mark");
 	
 	SceneNode boxNode;
 	SceneNode symbolNode;

@@ -4,9 +4,6 @@ import java.io.File;
 
 import javax.media.opengl.GL2;
 
-import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
-
 import bates.jamie.graphics.scene.Light;
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
@@ -15,15 +12,17 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
+import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.TextureIO;
+
 public class GoldCoin
 {
-	static Model      base_model = OBJParser.parseTexturedTriangleMesh("coin_base");
-	static Model gold_coin_model = OBJParser.parseTriangleMesh("gold_coin");
-	static Model  red_coin_model = OBJParser.parseTriangleMesh("red_coin");
+	static Model      base_model = new Model("coin_base");
+	static Model gold_coin_model = new Model("gold_coin");
+	static Model  red_coin_model = new Model("red_coin");
 	
 	static Texture line_normal_map;
 	static Texture star_normal_map;
@@ -55,7 +54,7 @@ public class GoldCoin
 			star_normal_map = TextureIO.newTexture(new File("tex/bump_maps/red_coin_normal.png"), true);
 			
 			base_model.normalMap = line_normal_map;
-			base_model.calculateTangents();
+			if(!base_model.hasTangentData()) base_model.calculateTangents();
 		}
 		catch (Exception e) { e.printStackTrace(); }
 	}

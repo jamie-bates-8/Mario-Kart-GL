@@ -103,15 +103,14 @@ import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.BrickBlock;
 import bates.jamie.graphics.entity.BrickWall;
-import bates.jamie.graphics.entity.LightningStrike.BoltType;
-import bates.jamie.graphics.entity.LightningStrike.RenderStyle;
-import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.EnergyField.FieldType;
 import bates.jamie.graphics.entity.GoldCoin;
 import bates.jamie.graphics.entity.GoldCoin.CoinType;
 import bates.jamie.graphics.entity.GrassPatch;
 import bates.jamie.graphics.entity.LightningStrike;
+import bates.jamie.graphics.entity.LightningStrike.BoltType;
+import bates.jamie.graphics.entity.LightningStrike.RenderStyle;
 import bates.jamie.graphics.entity.Mushroom;
 import bates.jamie.graphics.entity.PlaneMesh;
 import bates.jamie.graphics.entity.PowerStar;
@@ -121,8 +120,11 @@ import bates.jamie.graphics.entity.ShineSprite;
 import bates.jamie.graphics.entity.SkyBox;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.TerrainPatch;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Volume;
+import bates.jamie.graphics.entity.WarpPipe;
 import bates.jamie.graphics.entity.Water;
+import bates.jamie.graphics.entity.WoodPlank;
 import bates.jamie.graphics.io.Console;
 import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.ModelSelecter;
@@ -340,6 +342,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Texture floorTex;
 	
 	public Texture rain_normal;
+	public Texture pattern_mask;
 	
 	public Texture brickColour;
 	public Texture brickNormal;
@@ -1171,6 +1174,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public SceneNode cubeNode;
 	public SceneNode testNode;
 	public SceneNode blueNode;
+	public SceneNode wedgeNode;
 	public Reflector cubeReflector;
 	
 	public QuestionBlock questionBlock;
@@ -1244,6 +1248,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		star = new PowerStar(new Vec3(-20, 40, 0));
 		mushroom = new Mushroom(gl, new Vec3(40, 1.5, 0));
 		energyField = new EnergyField(new Vec3(), FieldType.LIGHT);
+		pipe = new WarpPipe(new Vec3(0, 2, 20));
+		
+		planks = new WoodPlank[]
+		{
+			new WoodPlank(gl, new Vec3(0, .5, 40), 0),
+			new WoodPlank(gl, new Vec3(0, .5, 44), 1),
+			new WoodPlank(gl, new Vec3(0, .5, 48), 2),
+			new WoodPlank(gl, new Vec3(0, .5, 52), 3)
+		};
 		
 		setupCoinStacks();
 	
@@ -1256,42 +1269,59 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		List<Uniform> uniforms = new ArrayList<Uniform>();
 		
+		Vec3 scale = new Vec3(3, 4, 3);
+		Vec3 texScale = scale.add(new Vec3(1));
 		
-		uniforms.add(Uniform.getUniform("scaleVec", new Vec3(4, 6, 4).normalizeScale()));
-		uniforms.add(Uniform.getUniform("minScale", new Vec3(4, 6, 4).min()));
+		uniforms.add(Uniform.getUniform("scaleVec", texScale.normalizeScale()));
+		uniforms.add(Uniform.getUniform("minScale", texScale.min()));
+		uniforms.add(Uniform.getSampler("patternMask", 0));
 		
-		cubeNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		cubeNode.setTranslation(new Vec3(-8.01, 40, 0));
-		cubeNode.setScale(new Vec3(4, 6, 4));
+		cubeNode = new SceneNode(null, -1, Renderer.bevelled_slope_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		cubeNode.setTranslation(new Vec3(-1.5 * 3, 40, 0));
+		cubeNode.setScale(new Vec3(3));
 		cubeNode.setReflector(cubeReflector);
-		cubeNode.setReflectivity(0.9f);
-		cubeNode.setRenderMode(RenderMode.BUMP_REFLECT);
+		cubeNode.setReflectivity(0.95f);
+		cubeNode.setRenderMode(RenderMode.REFLECT);
 		cubeNode.setColor(new float[] {1.0f, 0.2f, 0.2f});
 		cubeNode.useParallax(false);
 		cubeNode.setUniforms(uniforms);
-		cubeNode.setShader(Shader.get("checker_diagonal"));
+		cubeNode.setShader(Shader.get("checker_slope"));
 		
 		testNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		testNode.setTranslation(new Vec3(0, 40, 0));
-		testNode.setScale(new Vec3(4, 6, 4));
+		testNode.setScale(new Vec3(3));
 		testNode.setReflector(cubeReflector);
-		testNode.setReflectivity(0.9f);
+		testNode.setReflectivity(0.95f);
 		testNode.setRenderMode(RenderMode.BUMP_REFLECT);
 		testNode.setColor(new float[] {1.0f, 0.8f, 0.0f});
 		testNode.useParallax(false);
 		testNode.setUniforms(uniforms);
-		testNode.setShader(Shader.get("checker_diagonal"));
+		testNode.setShader(Shader.get("checker_reflect"));
 		
-	    blueNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-	    blueNode.setTranslation(new Vec3(8.01, 40, 0));
-	    blueNode.setScale(new Vec3(4, 6, 4));
-	    blueNode.setReflector(cubeReflector);
-	    blueNode.setReflectivity(0.9f);
-	    blueNode.setRenderMode(RenderMode.BUMP_REFLECT);
-	    blueNode.setColor(new float[] {0.1f, 0.5f, 1.0f});
-	    blueNode.useParallax(false);
-	    blueNode.setUniforms(uniforms);
-	    blueNode.setShader(Shader.get("checker_diagonal"));
+		blueNode = new SceneNode(null, -1, Renderer.block_bolts_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+	    blueNode.setTranslation(new Vec3(0, 40, 0));
+	    blueNode.setScale(new Vec3(3));
+	    blueNode.setRenderMode(RenderMode.COLOR);
+	    blueNode.setColor(RGB.WHITE);
+	    
+	    wedgeNode = new SceneNode(null, -1, Renderer.wedge_block_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+	    wedgeNode.setTranslation(new Vec3(-1.5 * 6, 40, 0));
+	    wedgeNode.setScale(new Vec3(3));
+	    wedgeNode.setReflector(cubeReflector);
+	    wedgeNode.setReflectivity(0.95f);
+	    wedgeNode.setRenderMode(RenderMode.REFLECT);
+	    wedgeNode.setColor(new float[] {0.1f, 0.5f, 1.0f});
+		
+//	    blueNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+//	    blueNode.setTranslation(new Vec3(scale.x * 2.0 + 0.01, 40, 0));
+//	    blueNode.setScale(scale);
+//	    blueNode.setReflector(cubeReflector);
+//	    blueNode.setReflectivity(0.9f);
+//	    blueNode.setRenderMode(RenderMode.BUMP_REFLECT);
+//	    blueNode.setColor(new float[] {0.1f, 0.5f, 1.0f});
+//	    blueNode.useParallax(false);
+//	    blueNode.setUniforms(uniforms);
+//	    blueNode.setShader(Shader.get("checker_diagonal"));
 	    
 	    if(enableItems) loadItems(gl);
 	    loadParticles();
@@ -1506,7 +1536,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			floorTex  = TextureLoader.load(gl, "tex/brick_color.jpg");
 			
 //			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
-			rain_normal = TextureLoader.load(gl, "tex/bump_maps/noise.jpg");
+			rain_normal  = TextureLoader.load(gl, "tex/bump_maps/noise.jpg");
+			pattern_mask = TextureLoader.load(gl, "tex/slope_mask.jpg");
 			
 			brickColour = TextureLoader.load(gl, "tex/brick_colour.png");
 			brickNormal = TextureLoader.load(gl, "tex/brick_normal.png");
@@ -1578,8 +1609,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		updateReflectors(gl, car);
 		
 //		rainScreen.render(gl);
-		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, canvasWidth, canvasHeight);
-		else render(gl);
+//		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, canvasWidth, canvasHeight);
+//		else render(gl);
+		
+		render(gl);
 
 		gl.glFlush();
 		
@@ -1597,6 +1630,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) car.reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 2, 0)));
 		if(shine != null) shine.reflector.update(gl, shine.getPosition());
 		if(star  != null)  star.reflector.update(gl,  star.getPosition());
+		if(pipe  != null)  pipe.reflector.update(gl,  pipe.getPosition());
 		
 		for(Balloon balloon : car.balloons) balloon.reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 4, 0)));
 		
@@ -2321,16 +2355,25 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(!environmentMode)
 		{
 			Renderer.bevelled_cube_model.normalMap = rain_normal;
-			Renderer.bevelled_cube_model.calculateTangents();
+			if(!Renderer.bevelled_cube_model.hasTangentData())
+				Renderer.bevelled_cube_model.calculateTangents();
+			
+			Renderer.bevelled_slope_model.colourMap = pattern_mask;
+			if(!Renderer.bevelled_slope_model.hasTangentData())
+				Renderer.bevelled_slope_model.calculateTangents();
 			
 			shine.render(gl); 
 			 star.render(gl);
 		 cubeNode.render(gl);
     	 testNode.render(gl);
     	 blueNode.render(gl);
+        wedgeNode.render(gl);
     questionBlock.render(gl);
+//             pipe.render(gl);
+            
+//            for(WoodPlank plank : planks) plank.render(gl);
 			 
-//			for(GoldCoin coin : coins) coin.render(gl);
+			for(GoldCoin coin : coins) coin.render(gl);
 			 
 			if(!shadowMode && !displaySkybox)  brickWall.render(gl);
 		}
@@ -2343,6 +2386,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private ShineSprite shine;
 	private PowerStar star;
 	private Mushroom mushroom;
+	private WarpPipe pipe;
+	private WoodPlank[] planks;
 
 	/**
 	 * This method renders all of the dynamic 3D models within the world from the
@@ -3088,12 +3133,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			{
 				star.setCollected(!star.isCollected());
 				shine.setCollected(!shine.isCollected());
+				pipe.setClear(!pipe.isClear());
 				break;
 			}
 			case KeyEvent.VK_E: energyField.cycle(); break;
 			
 			case KeyEvent.VK_F1: testMode = !testMode;  break;
 			case KeyEvent.VK_F2: LightningStrike.debugMode = !LightningStrike.debugMode; break;
+			case KeyEvent.VK_F3:
+			{
+				Set<Map.Entry<String, Model>> models = Model.model_set.entrySet();
+				for(Map.Entry<String, Model> model : models) model.getValue().export(model.getKey());
+				break;
+			}
 			
 			default: break;
 		}

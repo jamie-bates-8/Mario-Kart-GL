@@ -55,8 +55,9 @@ bool insideEllipse(vec2 circle, vec2 radius, vec2 point)
 
 vec4 getCheckerColor(vec2 texCoord)
 {
-	vec2  borderSize = 0.1 / texScale;
-	vec2 _borderSize = 1.0 - borderSize;
+	vec2  borderSize  = vec2(0.25);
+	      borderSize /= texScale * 2.0;
+	vec2 _borderSize  = 1.0 - borderSize;
 
 	bool exterior = texCoord.s <       borderSize.s || texCoord.t <       borderSize.t ||
 	                texCoord.s > 1.0 - borderSize.s || texCoord.t > 1.0 - borderSize.t;

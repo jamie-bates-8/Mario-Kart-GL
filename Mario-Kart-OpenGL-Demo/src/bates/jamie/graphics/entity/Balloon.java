@@ -10,13 +10,12 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
 public class Balloon
 {
-	static Model balloon_model = OBJParser.parseTriangleMesh("balloon");
+	static Model balloon_model = new Model("balloon");
 	
 	SceneNode balloonNode;
 	

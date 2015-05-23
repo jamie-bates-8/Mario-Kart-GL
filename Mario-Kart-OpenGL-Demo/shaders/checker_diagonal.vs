@@ -13,8 +13,11 @@ varying mat3 tangentMatrix;
 attribute vec3 tangent;
 
 varying vec2 texScale;
-uniform vec3 scaleVec;
+uniform vec3 scaleVec; // determines the number of cells
 
+// Returns the relative dimensions of the current face / plane using the maximum
+// value of the face normal. For example, if the face normal is (0, 1, 0), and
+// hence maximal along the y-axis, the x and z dimensions of the face are returned.
 vec2 getTextureScale()
 {
 	vec3 normal = abs(gl_Normal);

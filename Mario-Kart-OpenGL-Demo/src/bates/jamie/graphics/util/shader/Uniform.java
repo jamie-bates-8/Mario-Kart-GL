@@ -48,5 +48,15 @@ public abstract class Uniform
 		return uniform;
 	}
 	
+	public static Uniform getSampler(String identifier, int sampler)
+	{
+		UniformSampler uniform = new UniformSampler();
+		
+		uniform.setIdentifier(identifier);
+		uniform.setValue(sampler);
+		
+		return uniform;
+	}
+	
 	public String toString() { return identifier; }
 }

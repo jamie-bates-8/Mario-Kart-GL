@@ -120,10 +120,7 @@ public class RedShell extends Shell
 			
 			gl.glCallList(shellList);
 			
-			shader = Shader.getLightModel("phong");
-			if(shader != null) shader.enable(gl);
-			
-			gl.glCallList(rimList);
+			rimNode.render(gl);
 		}
 		gl.glPopMatrix();
 		

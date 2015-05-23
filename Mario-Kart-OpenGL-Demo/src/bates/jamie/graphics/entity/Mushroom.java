@@ -1,9 +1,5 @@
 package bates.jamie.graphics.entity;
 
-import static bates.jamie.graphics.util.Renderer.displayTexturedObject;
-
-import java.util.List;
-
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Material;
@@ -12,20 +8,16 @@ import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.Face;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
 public class Mushroom
 {
-	private static final List<Face> CAP_FACES = OBJParser.parseTriangles("mushroom_cap");
-	
-	static Model mushroom_base = OBJParser.parseTriangleMesh("mushroom_base");
-	static Model mushroom_eyes = OBJParser.parseTriangleMesh("mushroom_eyes");
-	
-	private static int mushroom_cap = -1;
+	static Model mushroom_cap  = new Model("mushroom_cap" );
+	static Model mushroom_base = new Model("mushroom_base");
+	static Model mushroom_eyes = new Model("mushroom_eyes");
 	
 	SceneNode baseNode;
 	SceneNode eyesNode;
@@ -38,14 +30,6 @@ public class Mushroom
 	{
 		position = p;
 		
-		if(mushroom_cap == -1)
-		{
-			mushroom_cap = gl.glGenLists(1);
-			gl.glNewList(mushroom_cap, GL2.GL_COMPILE);
-			displayTexturedObject(gl, CAP_FACES);
-		    gl.glEndList();
-		}
-		
 		baseNode = new SceneNode(null, -1, mushroom_base, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		baseNode.setTranslation(p);
 		baseNode.setScale(new Vec3(0.75));
@@ -56,7 +40,9 @@ public class Mushroom
 		eyesNode.setRenderMode(RenderMode.COLOR);
 		eyesNode.setColor(RGB.BLACK);
 		
-		capNode = new SceneNode(null, mushroom_cap, null, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		if(mushroom_cap.colourMap == null) mushroom_cap.colourMap = TextureLoader.load(gl,"tex/items/red_mushroom_cap.png");
+		
+		capNode = new SceneNode(null, -1, mushroom_cap, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		capNode.setRenderMode(RenderMode.TEXTURE); 
 		
 		baseNode.addChild(eyesNode);

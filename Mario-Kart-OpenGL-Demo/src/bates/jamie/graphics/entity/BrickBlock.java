@@ -2,18 +2,17 @@ package bates.jamie.graphics.entity;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Material;
+import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Vec3;
 
 public class BrickBlock
 {
-	static Model brick_block  = OBJParser.parseTriangleMesh("brick_block");
-	static Model mortar_block = OBJParser.parseTriangleMesh("mortar_block");
+	static Model brick_block  = new Model("brick_block");
+	static Model mortar_block = new Model("mortar_block");
 	
 	SceneNode brickNode;
 	SceneNode mortarNode;
@@ -21,6 +20,8 @@ public class BrickBlock
 	float rotation = 0;
 	Vec3  position;
 	
+	public static float[] BRICK_BROWN = {0.278f, 0.114f, 0.039f};
+	public static float[] BRICK_BLACK = {0.022f, 0.022f, 0.022f};
 	
 	
 	public BrickBlock(Vec3 p, float scale)
@@ -31,11 +32,11 @@ public class BrickBlock
 		brickNode.setTranslation(p);
 		brickNode.setScale(new Vec3(scale));
 		brickNode.setRenderMode(RenderMode.COLOR);
-		brickNode.setColor(new float[] {0.736f, 0.221f, 0.031f});
+		brickNode.setColor(BRICK_BROWN);
 		
 		mortarNode = new SceneNode(null, -1, mortar_block, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
 		mortarNode.setRenderMode(RenderMode.COLOR);
-		mortarNode.setColor(new float[] {0.2f, 0.2f, 0.2f});
+		mortarNode.setColor(BRICK_BLACK);
 		
 		brickNode.addChild(mortarNode);
 	}

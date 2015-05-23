@@ -54,7 +54,7 @@ public class Vec3
 		this.z = z;
 	}
 	
-	public Vec3 normalizeScale() { return this.multiply(1.0f / this.min()); }
+	public Vec3 normalizeScale() { return this.multiply(1.0f / min()); }
 	
 	public Vec3(double x, double y, double z)
 	{
