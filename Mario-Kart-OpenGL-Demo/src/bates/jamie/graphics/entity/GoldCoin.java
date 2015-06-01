@@ -10,8 +10,8 @@ import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
+import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
@@ -27,20 +27,21 @@ public class GoldCoin
 	static Texture line_normal_map;
 	static Texture star_normal_map;
 	
+	static Material gold_coin_mat;
+	static Material red_coin_mat;
+	
 	public enum CoinType
 	{
-		GOLD_COIN(gold_coin_model, line_normal_map, new float[] {1, 1, .2f}),
-		 RED_COIN( red_coin_model, star_normal_map, new float[] {1, .4f, .4f});
+		GOLD_COIN(gold_coin_model, gold_coin_mat),
+		 RED_COIN( red_coin_model,  red_coin_mat);
 		
-		public Model   model;
-		public Texture normal_map;
-		public float[] color;
+		public Model    model;
+		public Material material;
 		
-		private CoinType(Model model, Texture normal_map, float[] color)
+		private CoinType(Model model, Material material)
 		{
 			this.model = model;
-			this.normal_map = normal_map;
-			this.color = color;
+			this.material = material;
 		}
 	}
 	
@@ -53,7 +54,11 @@ public class GoldCoin
 			line_normal_map = TextureIO.newTexture(new File("tex/bump_maps/gold_coin_normal.png"), true);
 			star_normal_map = TextureIO.newTexture(new File("tex/bump_maps/red_coin_normal.png"), true);
 			
-			base_model.normalMap = line_normal_map;
+			gold_coin_mat = new Material(new float[] {1.0f, 1.0f, 0.2f}, RGB.WHITE, 16); 
+			red_coin_mat  = new Material(new float[] {1.0f, 0.4f, 0.4f}, RGB.WHITE, 16); 
+			gold_coin_mat.setNormalMap(line_normal_map);
+			red_coin_mat .setNormalMap(star_normal_map);
+			
 			if(!base_model.hasTangentData()) base_model.calculateTangents();
 		}
 		catch (Exception e) { e.printStackTrace(); }
@@ -78,13 +83,13 @@ public class GoldCoin
 		
 		reflector = new Reflector(1.0f);
 		
-		coinNode = new SceneNode(null, -1, type.model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		coinNode = new SceneNode(type.model);
 		coinNode.setTranslation(p);
 		coinNode.setScale(new Vec3(2.0));
 		coinNode.setReflector(reflector);
 		coinNode.setReflectivity(0.75f);
 		coinNode.setRenderMode(RenderMode.BUMP_REFLECT);
-		coinNode.setColor(type.color);
+		coinNode.setMaterial(type.material);
 	}
 	
 	public void setPosition(Vec3 p)
@@ -118,11 +123,9 @@ public class GoldCoin
 		}
 		else
 		{
-			base_model.normalMap = type.normal_map;
 			coinNode.setModel(base_model);
 			coinNode.setRenderMode(RenderMode.BUMP_REFLECT);
 		}
-		coinNode.setColor(type.color);
 		
 		if(collected) coinNode.renderGhost(gl, 1, Shader.get("aberration"));
 		else          coinNode.render(gl);

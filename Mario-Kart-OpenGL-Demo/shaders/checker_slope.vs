@@ -8,7 +8,7 @@ varying vec3 eyeDir;
 varying vec3 vertexPosition;
 varying vec3 reflectDir;
 
-varying vec2 texScale;
+varying vec2 gridScale;
 uniform vec3 scaleVec; // determines the number of cells
 
 // Returns the relative dimensions of the current face / plane using the maximum
@@ -51,5 +51,5 @@ void main(void)
     
     gl_TexCoord[0] = gl_MultiTexCoord0;
     
-    texScale = getTextureScale();
+    gridScale = getTextureScale();
 }

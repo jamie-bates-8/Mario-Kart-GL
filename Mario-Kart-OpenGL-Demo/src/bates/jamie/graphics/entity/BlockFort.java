@@ -40,10 +40,14 @@ public class BlockFort
 	
 	private static int fortList = -1;
 	
+	private NewBlockFort green_fort;
+	
 	private List<OBB> bounds;
 	
 	public BlockFort(GL2 gl)
 	{
+		green_fort = new NewBlockFort(gl);
+		
 		loadTextures(gl);
 		
 		fortList = gl.glGenLists(4);
@@ -89,6 +93,8 @@ public class BlockFort
 		
 		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
+		green_fort.render(gl);
+		
 		Shader shader = Shader.getLightModel("shadow");
 		if(shader != null)
 		{
@@ -96,33 +102,33 @@ public class BlockFort
 			
 			if(Scene.enableShadow)
 			{
-				shader.setUniform(gl, "enableShadow", 1);
+				shader.setUniform(gl, "enableShadow", true);
 				shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
 				shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
 			}
-			else shader.setUniform(gl, "enableShadow", 0);
+			else shader.setUniform(gl, "enableShadow", false);
 		}
 		
-		gl.glPushMatrix(); // Green Fort
-		{
-			gl.glTranslatef(90, 30, 90);
-			gl.glScalef(30.0f, 30.0f, 30.0f);
-			
-			if(shader != null)
-			{
-				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-				Matrix.translate(model, 90, 30, 90);
-				Matrix.scale    (model, 30, 30, 30);
-				
-				shader.loadModelMatrix(gl, model);
-				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
-			}
-
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
-			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
-			else gl.glCallList(fortList);
-		}	
-		gl.glPopMatrix();
+//		gl.glPushMatrix(); // Green Fort
+//		{
+//			gl.glTranslatef(90, 30, 90);
+//			gl.glScalef(30.0f, 30.0f, 30.0f);
+//			
+//			if(shader != null)
+//			{
+//				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+//				Matrix.translate(model, 90, 30, 90);
+//				Matrix.scale    (model, 30, 30, 30);
+//				
+//				shader.loadModelMatrix(gl, model);
+//				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
+//			}
+//
+//			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
+//			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
+//			else gl.glCallList(fortList);
+//		}	
+//		gl.glPopMatrix();
 
 		gl.glPushMatrix(); // BLue Fort TODO shadows incorrect
 		{	

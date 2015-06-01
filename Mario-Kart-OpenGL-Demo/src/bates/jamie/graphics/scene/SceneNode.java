@@ -11,6 +11,7 @@ import java.util.List;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.process.BloomStrobe;
+import bates.jamie.graphics.scene.process.ShadowCaster;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.RGB;
@@ -33,8 +34,6 @@ public class SceneNode
 	
 	private Shader shader;
 	private List<Uniform> uniforms = new ArrayList<Uniform>();
-	
-	private float[] color = {1, 1, 1};
 	
 	private Vec3 t = new Vec3(0); // translation
 	private Vec3 r = new Vec3(0); // rotation
@@ -60,11 +59,26 @@ public class SceneNode
 		this.displayList = displayList;
 		this.model = model;
 		
-		color = new float[4];
-		
 		this.order = order;
 		
-		this.material = material;
+		this.material = new Material(material);
+		
+		root = this;
+	} 
+	
+	public SceneNode(Model model)
+	{
+		children = new ArrayList<SceneNode>();
+		
+		geometry = null;
+		displayList = -1;
+		this.model = model;
+		
+		order = MatrixOrder.T_RY_RX_RZ_S;
+		
+		material = new Material();
+		
+		root = this;
 	} 
 	
 	public void render(GL2 gl)
@@ -73,123 +87,8 @@ public class SceneNode
 		{
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
-			gl.glColor3fv(color, 0);
 			
-			Shader shader = this.shader;
-			
-			switch(renderMode)
-			{
-				case TEXTURE:
-				{
-					if(shader == null) shader = Shader.getLightModel("texture");
-					
-					if(shader != null)
-					{
-						shader.enable(gl);
-						shader.setSampler(gl, "texture", 0);
-					}
-					break;      
-				}
-				case BUMP_RAIN:
-				{
-					if(shader == null) shader = Shader.get("bump_rain");
-					
-					if(shader != null)
-					{
-						shader.enable(gl);
-						shader.setSampler(gl, "rainMap", 3);
-						shader.setSampler(gl, "heightmap", 2);
-						
-						shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
-						shader.setUniform(gl, "shininess", reflectivity);
-						
-						shader.setSampler(gl, "colourMap", 0);
-						shader.setSampler(gl, "bumpmap", 1);
-						
-						gl.glActiveTexture(GL2.GL_TEXTURE3); Scene.singleton.rain_normal.bind(gl);
-						gl.glActiveTexture(GL2.GL_TEXTURE0);
-						
-						shader.setUniform(gl, "timer", (float) Scene.sceneTimer);
-						
-						float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
-						shader.loadMatrix(gl, "cameraMatrix", camera);
-					}
-					break;      
-				}
-				case BUMP_REFLECT:
-				{
-					if(shader == null) shader = Shader.get("bump_cube");
-					
-					if(shader != null)
-					{
-						shader.enable(gl);
-						
-						shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
-						shader.setUniform(gl, "shininess", reflectivity);
-						
-						shader.setSampler(gl, "bumpmap", 1);
-						
-						float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
-						shader.loadMatrix(gl, "cameraMatrix", camera);
-					}
-					break;      
-				}
-				case BUMP_COLOR:
-				{
-					if(shader == null) shader = Shader.get("bump_phong");
-					
-					if(shader != null)
-					{
-						shader.enable(gl);
-				
-						shader.setSampler(gl, "bumpmap", 1);
-					}
-					break;      
-				}
-				case BUMP_TEXTURE:
-				{
-					if(shader == null) shader = enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights");
-					
-					if(shader != null)
-					{
-						shader.enable(gl);
-				
-						shader.setSampler(gl, "texture"  , 0);
-						shader.setSampler(gl, "bumpmap"  , 1);
-						shader.setSampler(gl, "heightmap", 2);
-					}
-					break;      
-				}
-				case BLOOM_COLOR:
-				{
-					if(shader == null) shader = Shader.get("bloom_color");
-					if(shader != null) shader.enable(gl);
-					break;
-				}
-				case COLOR:
-				{
-					if(shader == null) shader = Shader.getLightModel("phong");
-					if(shader != null) shader.enable(gl);
-					break;
-				}
-				case REFLECT:
-				{
-					if(shader == null) shader = Shader.getLightModel("cube");
-					if(shader != null)
-					{
-						shader.enable(gl);
-						shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
-						shader.setUniform(gl, "shininess", reflectivity);
-						
-						float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
-						shader.loadMatrix(gl, "cameraMatrix", camera);
-					}
-					break;      
-				}
-				case GLASS  : break;
-			}
-			
-			for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
+			setupShader(gl);
 			
 			boolean useHDR = BloomStrobe.isEnabled();
 			
@@ -223,7 +122,8 @@ public class SceneNode
 						if(reflector != null) reflector.disable(gl);
 						break;
 					}
-					case GLASS : model.renderGlass(gl, color); break;
+					case GLASS : model.renderGlass(gl, material.getDiffuse()); break;
+					case NORMAL: renderNormals(gl); break;
 				}
 			}
 			else if(displayList != -1) gl.glCallList(displayList);
@@ -238,8 +138,9 @@ public class SceneNode
 					case BUMP_REFLECT :
 					case BUMP_COLOR   :
 					case BLOOM_COLOR  :
-					case COLOR        : Renderer.displayColoredObject (gl, geometry, color); break;
-					case GLASS        : Renderer.displayGlassObject   (gl, geometry, color); break;
+					case COLOR        : Renderer.displayColoredObject (gl, geometry, material.getDiffuse()); break;
+					case GLASS        : Renderer.displayGlassObject   (gl, geometry, material.getDiffuse()); break;
+					case NORMAL       : renderNormals(gl); break;
 				}
 			}
 			if(useHDR) BloomStrobe.begin(gl);
@@ -249,6 +150,138 @@ public class SceneNode
 			for(SceneNode child : children) child.render(gl);
 		}
 		gl.glPopMatrix();
+	}
+
+	private void setupShader(GL2 gl)
+	{
+		Shader shader = this.shader;
+		
+		switch(renderMode)
+		{
+			case TEXTURE:
+			{
+				if(shader == null) shader = Shader.getLightModel("texture");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+					shader.setSampler(gl, "texture", 0);
+				}
+				break;      
+			}
+			case BUMP_RAIN:
+			{
+				if(shader == null) shader = Shader.get("bump_rain");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+					shader.setSampler(gl, "rainMap", 3);
+					shader.setSampler(gl, "heightmap", 2);
+					
+					shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
+					shader.setUniform(gl, "shininess", reflectivity);
+					
+					shader.setSampler(gl, "colourMap", 0);
+					shader.setSampler(gl, "bumpmap", 1);
+					
+					gl.glActiveTexture(GL2.GL_TEXTURE3); Scene.singleton.rain_normal.bind(gl);
+					gl.glActiveTexture(GL2.GL_TEXTURE0);
+					
+					shader.setUniform(gl, "timer", (float) Scene.sceneTimer);
+					
+					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+					shader.loadMatrix(gl, "cameraMatrix", camera);
+				}
+				break;      
+			}
+			case BUMP_REFLECT:
+			{
+				if(shader == null) shader = Shader.get("bump_cube");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+					
+					shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
+					shader.setUniform(gl, "shininess", reflectivity);
+					
+					shader.setSampler(gl, "bumpmap", 1);
+					
+					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+					shader.loadMatrix(gl, "cameraMatrix", camera);
+				}
+				break;      
+			}
+			case BUMP_COLOR:
+			{
+				if(shader == null) shader = Shader.get("bump_phong");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+			
+					shader.setSampler(gl, "bumpmap", 1);
+				}
+				break;      
+			}
+			case BUMP_TEXTURE:
+			{
+				if(shader == null) shader = enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+			
+					shader.setSampler(gl, "texture"  , 0);
+					shader.setSampler(gl, "bumpmap"  , 1);
+					shader.setSampler(gl, "heightmap", 2);
+				}
+				break;      
+			}
+			case BLOOM_COLOR:
+			{
+				if(shader == null) shader = Shader.get("bloom_color");
+				if(shader != null) shader.enable(gl);
+				break;
+			}
+			case COLOR:
+			{
+				if(shader == null) shader = Shader.getLightModel("phong");
+				if(shader != null) shader.enable(gl);
+				break;
+			}
+			case REFLECT:
+			{
+				if(shader == null) shader = Shader.getLightModel("cube");
+				if(shader != null)
+				{
+					shader.enable(gl);
+					shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
+					shader.setUniform(gl, "shininess", reflectivity);
+					
+					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
+					shader.loadMatrix(gl, "cameraMatrix", camera);
+				}
+				break;      
+			}
+			case GLASS :
+			case NORMAL: break;
+		}
+		
+		if(Scene.enableShadow && shader != null)
+		{
+			shader.loadModelMatrix(gl, getModelMatrix());
+
+			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
+
+			shader.setUniform(gl, "enableShadow", true);
+			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+		}
+		else if(shader != null) shader.setUniform(gl, "enableShadow", false);
+		
+		for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
 	}
 	
 	public List<Uniform> getUniforms() { return uniforms; }
@@ -260,7 +293,7 @@ public class SceneNode
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
-			gl.glColor3fv(color, 0);
+			if(material != null) material.load(gl);
 			
 			if(shader != null)
 			{	
@@ -269,6 +302,18 @@ public class SceneNode
 				shader.enable(gl);
 				
 				if(uniforms != null) for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
+				
+				if(Scene.enableShadow && shader != null)
+				{
+					shader.loadModelMatrix(gl, getModelMatrix());
+
+					shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
+
+					shader.setUniform(gl, "enableShadow", true);
+					shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+					shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+				}
+				else if(shader != null) shader.setUniform(gl, "enableShadow", false);
 				
 				if(reflector != null) reflector.enable(gl);
 				model.render(gl);
@@ -419,6 +464,8 @@ public class SceneNode
 	
 	public void setRenderMode(RenderMode mode) { renderMode = mode; }
 	
+	public void setMatrixOrder(MatrixOrder order) { this.order = order; }
+	
 	public List<SceneNode> getChildren() { return children; }
 	
 	public void setChildren(List<SceneNode> children) { this.children = children; }
@@ -438,7 +485,7 @@ public class SceneNode
 
 	public void setDisplayList(int displayList) { this.displayList = displayList; }
 	
-	public void setColor(float[] color) { this.color = color; }
+	public void setColor(float[] color) { material.setDiffuse(color); }
 	
 	public void setTranslation(Vec3 c) { this.t = c; }
 	
@@ -517,8 +564,8 @@ public class SceneNode
 			case T_RY_RX_RZ_S:
 			{
 				Matrix.translate(model, t.x, t.y, t.z);
-				Matrix.multiply (model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(r.x, r.y, r.z)));
 				Matrix.scale    (model, s.x, s.y, s.z);
+				Matrix.multiply (model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(r.x, r.y, r.z)));
 				
 				break;
 			}
@@ -599,7 +646,8 @@ public class SceneNode
 		BUMP_TEXTURE,
 		BUMP_RAIN,
 		REFLECT,
-		GLASS;
+		GLASS,
+		NORMAL;
 	}
 
 	public void setModel(Model model) { this.model = model; }
@@ -609,4 +657,27 @@ public class SceneNode
 	public Shader getShader() { return shader; }
 
 	public void setShader(Shader shader) { this.shader = shader; }
+	
+	public void renderNormals(GL2 gl)
+	{	
+		gl.glPushMatrix();
+		{
+			setupMatrix(gl);
+			
+			float scale = 1.0f / s.max();
+			
+			if(model != null) model.renderNormals(gl, true, scale);
+		}
+		gl.glPopMatrix();
+	}
+	
+	public void renderTangents(GL2 gl)
+	{	
+		gl.glPushMatrix();
+		{
+			setupMatrix(gl);
+			if(model != null) model.renderTangents(gl, true, 1);
+		}
+		gl.glPopMatrix();
+	}
 }

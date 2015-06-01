@@ -90,6 +90,14 @@ public class Vec3
 		return minimum;
 	}
 	
+	public float max()
+	{
+		float maximum = x > y ? x : y;
+		if(z > maximum) maximum = z;
+		
+		return maximum;
+	}
+	
 	public float[] toArray()
 	{
 		return new float[] {x, y, z};

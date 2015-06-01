@@ -2,17 +2,11 @@ package bates.jamie.graphics.entity;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
-
-import com.jogamp.opengl.util.texture.Texture;
 
 public class WoodPlank
 {
@@ -24,8 +18,6 @@ public class WoodPlank
 		new Model("plank_4")
 	};
 	
-	static Texture colourMap, normalMap, heightMap;
-	
 	SceneNode plankNode;
 	
 	float rotation = 0;
@@ -33,24 +25,13 @@ public class WoodPlank
 	
 	public WoodPlank(GL2 gl, Vec3 p, int model)
 	{
-		if(colourMap == null)
-		{
-			try
-			{	
-				colourMap = TextureLoader.load(gl, "tex/plank_COLOR.jpg");
-				normalMap = TextureLoader.load(gl, "tex/plank_NRM.jpg");
-				heightMap = TextureLoader.load(gl, "tex/plank_DISP.jpg");
-			}
-			catch (Exception e) { e.printStackTrace(); }
-		}
-		
 		position = p;
 		
-		plankNode = new SceneNode(null, -1, plank_models[model], MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		plankNode = new SceneNode(plank_models[model]);
+		plankNode.setMaterial(WoodBridge.polished_wood);
 		plankNode.setTranslation(p);
 		plankNode.setScale(new Vec3(2.0));
 		plankNode.setRenderMode(RenderMode.BUMP_TEXTURE);
-		plankNode.setColor(RGB.WHITE);
 	}
 	
 	public void setPosition(Vec3 p)
@@ -85,10 +66,6 @@ public class WoodPlank
 		
 		plankNode.setRotation(new Vec3(0, rotation, 0));
 //	    plankNode.render(gl, shader, null);
-		
-		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
-		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
-		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
 	    
 	    plankNode.render(gl);
 		

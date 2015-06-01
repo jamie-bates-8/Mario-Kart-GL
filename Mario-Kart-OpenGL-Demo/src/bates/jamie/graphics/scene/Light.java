@@ -46,9 +46,9 @@ public class Light extends AnchorPoint
 	private float[] specular = {1.0f, 1.0f, 1.0f, 1.0f};
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
 	
-	public boolean enableAttenuation = true;
+	public boolean enableAttenuation = false;
 	
-	private float constantAttenuation  = 0.50f;
+	private float constantAttenuation  = 0.90f;
 	private float linearAttenuation    = 0.02f;
 	private float quadraticAttenuation = 0.00f;
 	
@@ -62,7 +62,7 @@ public class Light extends AnchorPoint
 	{
 		id = count++; count %= 8;
 		
-		setPosition(new Vec3(250));
+		setPosition(new Vec3(-250, 750, -250));
 		
 		gl.glEnable(GL_LIGHTING);
 		gl.glEnable(getLight(id));

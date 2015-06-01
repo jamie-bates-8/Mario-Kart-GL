@@ -18,11 +18,9 @@ import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.RGB;
@@ -77,9 +75,8 @@ public class BlueShell extends Shell
 			displayWildcardObject(gl, SHELL_FACES, textures);
 			gl.glEndList();
 			
-			spikeNode = new SceneNode(null, -1, spike_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+			spikeNode = new SceneNode(spike_model);
 			spikeNode.setRenderMode(RenderMode.COLOR);
-			spikeNode.setColor(RGB.WHITE);
 			
 			noiseSampler = TextureLoader.load(gl, "tex/blast_noise.png");
 			

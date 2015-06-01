@@ -15,12 +15,10 @@ import bates.jamie.graphics.particle.BlastParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.RGB;
@@ -72,7 +70,7 @@ public class BobOmb extends Item
 		
 		reflector = new Reflector(1.0f);
 		
-		bodyNode = new SceneNode(null, -1, bob_omb_body, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		bodyNode = new SceneNode(bob_omb_body);
 		bodyNode.setTranslation(p);
 		bodyNode.setScale(new Vec3(0.60));
 		bodyNode.setReflector(reflector);
@@ -80,30 +78,23 @@ public class BobOmb extends Item
 		bodyNode.setRenderMode(RenderMode.REFLECT);
 		bodyNode.setColor(new float[] {0.013f, 0.037f, 0.077f});
 		
-		eyeNode = new SceneNode(null, -1, bob_omb_eyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		eyeNode.setScale(new Vec3(1.0));
+		eyeNode = new SceneNode(bob_omb_eyes);
 		eyeNode.setRenderMode(RenderMode.COLOR);
-		eyeNode.setColor(RGB.WHITE);
 		
-		capNode = new SceneNode(null, -1, bob_omb_cap, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		capNode.setScale(new Vec3(1.0));
+		capNode = new SceneNode(bob_omb_cap);
 		capNode.setReflector(reflector);
 		capNode.setReflectivity(0.9f);
 		capNode.setRenderMode(RenderMode.REFLECT);
 		capNode.setColor(new float[] {0.272f, 0.426f, 0.467f});
 		
-		fuseNode = new SceneNode(null, -1, bob_omb_fuse, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		fuseNode.setScale(new Vec3(1.0));
+		fuseNode = new SceneNode(bob_omb_fuse);
 		fuseNode.setRenderMode(RenderMode.COLOR);
-		fuseNode.setColor(RGB.WHITE);
 		
-		legsNode = new SceneNode(null, -1, bob_omb_legs, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		legsNode.setScale(new Vec3(1.0));
+		legsNode = new SceneNode(bob_omb_legs);
 		legsNode.setRenderMode(RenderMode.COLOR);
 		legsNode.setColor(new float[] {1.000f, 0.412f, 0.019f});
 		
-		keyNode = new SceneNode(null, -1, bob_omb_key, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		keyNode.setScale(new Vec3(1.0));
+		keyNode = new SceneNode(bob_omb_key);
 		keyNode.setReflector(reflector);
 		keyNode.setReflectivity(0.75f);
 		keyNode.setRenderMode(RenderMode.REFLECT);

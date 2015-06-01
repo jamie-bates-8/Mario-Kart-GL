@@ -235,6 +235,11 @@ public class OBJParser
 	
 	public static Model parseTexturedTriangleMesh(String fileName)
 	{
+		return parseTexturedTriangleMesh(fileName, new Vec2(1));
+	}
+	
+	public static Model parseTexturedTriangleMesh(String fileName, Vec2 textureScale)
+	{
 		long startTime = System.nanoTime();
 		
 		int polygonCount = 0;
@@ -264,7 +269,7 @@ public class OBJParser
 				if (line.startsWith("vt"))
 				{
 					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
-					texCoords.add(new float[] {ls.nextFloat(), ls.nextFloat()});
+					texCoords.add(new float[] {ls.nextFloat() * textureScale.x, ls.nextFloat() * textureScale.y});
 					ls.close();
 				}
 				if (line.startsWith("vn"))
@@ -321,18 +326,13 @@ public class OBJParser
 		return model;
 	}
 	
-	public static void main(String[] args)
-	{
-		parseIndexedArrays("grass_top_upper");
-		parseTexturedTriangleMesh("grass_top_upper");
-		
-	}
-	
-	public static Model parseIndexedArrays(String fileName)
+	public static Model parseIndexedArrays(String fileName, boolean flip_normals, boolean collada_axis, Vec2 tex_scale_0, Vec2 tex_scale_1)
 	{
 		long startTime = System.nanoTime();
 		
 		int polygonCount = 0;
+		
+		float normal_scale = flip_normals ? -1 : 1;
 		
 		List<float[]> vertices = new ArrayList<float[]>();
 		List<float[]> normals  = new ArrayList<float[]>();
@@ -359,6 +359,14 @@ public class OBJParser
 						float x = Float.parseFloat(coords[i + 0]);
 						float y = Float.parseFloat(coords[i + 1]);
 						float z = Float.parseFloat(coords[i + 2]);
+						
+						if(collada_axis)
+						{
+							float temp = -y;
+							y = z;
+							z = temp;
+						}
+						
 						vertices.add(new float[] {x, y, z});
 					}
 				}
@@ -369,9 +377,17 @@ public class OBJParser
 					
 					for(int i = 0; i < coords.length; i += 3)
 					{
-						float x = Float.parseFloat(coords[i + 0]);
-						float y = Float.parseFloat(coords[i + 1]);
-						float z = Float.parseFloat(coords[i + 2]);
+						float x = Float.parseFloat(coords[i + 0]) * normal_scale;
+						float y = Float.parseFloat(coords[i + 1]) * normal_scale;
+						float z = Float.parseFloat(coords[i + 2]) * normal_scale;
+						
+						if(collada_axis)
+						{
+							float temp = -y;
+							y = z;
+							z = temp;
+						}
+						
 						normals.add(new float[] {x, y, z});
 					}
 				}
@@ -382,8 +398,8 @@ public class OBJParser
 					
 					for(int i = 0; i < coords.length; i += 2)
 					{
-						float s = Float.parseFloat(coords[i + 0]);
-						float t = Float.parseFloat(coords[i + 1]);
+						float s = Float.parseFloat(coords[i + 0]) * tex_scale_0.x;
+						float t = Float.parseFloat(coords[i + 1]) * tex_scale_0.y;
 						tcoords0.add(new float[] {s, t});
 					}
 				}
@@ -394,8 +410,8 @@ public class OBJParser
 					
 					for(int i = 0; i < coords.length; i += 2)
 					{
-						float s = Float.parseFloat(coords[i + 0]);
-						float t = Float.parseFloat(coords[i + 1]);
+						float s = Float.parseFloat(coords[i + 0]) * tex_scale_1.x;
+						float t = Float.parseFloat(coords[i + 1]) * tex_scale_1.y;
 						tcoords1.add(new float[] {s, t});
 					}
 				}

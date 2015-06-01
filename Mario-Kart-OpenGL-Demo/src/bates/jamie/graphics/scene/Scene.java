@@ -124,7 +124,6 @@ import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Volume;
 import bates.jamie.graphics.entity.WarpPipe;
 import bates.jamie.graphics.entity.Water;
-import bates.jamie.graphics.entity.WoodPlank;
 import bates.jamie.graphics.io.Console;
 import bates.jamie.graphics.io.GamePad;
 import bates.jamie.graphics.io.ModelSelecter;
@@ -143,8 +142,6 @@ import bates.jamie.graphics.particle.BoostParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
-import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.scene.process.FocalBlur;
 import bates.jamie.graphics.scene.process.Mirror;
@@ -159,7 +156,6 @@ import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
-import bates.jamie.graphics.util.shader.Uniform;
 
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.gl2.GLUT;
@@ -364,7 +360,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Light Fields **/
-	public Light[] lights = new Light[5];
+	public Light[] lights = new Light[1];
 	public Light light;
 	public int lightID = 0;
 	
@@ -474,9 +470,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public boolean enableBloom = true;
 	public static boolean enableParallax = true;
 	public static boolean enableFocalBlur = true;
-	
-	public List<LightningStrike> bolts;
-	public ParticleEngine smokeCloud = new ParticleEngine(100);
 	
 	DefaultMutableTreeNode shaderRoot;
 	JTree shaderTree;
@@ -1244,84 +1237,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		/** Model Setup **/
 		skybox = new SkyBox(gl);
-		shine = new ShineSprite(new Vec3(20, 40, 0));
-		star = new PowerStar(new Vec3(-20, 40, 0));
+		shine = new ShineSprite(new Vec3(10, 40, 0));
+		star = new PowerStar(new Vec3(-10, 40, 0));
 		mushroom = new Mushroom(gl, new Vec3(40, 1.5, 0));
 		energyField = new EnergyField(new Vec3(), FieldType.LIGHT);
 		pipe = new WarpPipe(new Vec3(0, 2, 20));
-		
-		planks = new WoodPlank[]
-		{
-			new WoodPlank(gl, new Vec3(0, .5, 40), 0),
-			new WoodPlank(gl, new Vec3(0, .5, 44), 1),
-			new WoodPlank(gl, new Vec3(0, .5, 48), 2),
-			new WoodPlank(gl, new Vec3(0, .5, 52), 3)
-		};
 		
 		setupCoinStacks();
 	
 		setupBrickBlocks();
 		brickWall = new BrickWall(gl, brickBlocks, brickScale);
 		
-		questionBlock = new QuestionBlock(new Vec3(0, 40, -10), 2);
-		
-		cubeReflector = new Reflector(1.0f);
-		
-		List<Uniform> uniforms = new ArrayList<Uniform>();
-		
-		Vec3 scale = new Vec3(3, 4, 3);
-		Vec3 texScale = scale.add(new Vec3(1));
-		
-		uniforms.add(Uniform.getUniform("scaleVec", texScale.normalizeScale()));
-		uniforms.add(Uniform.getUniform("minScale", texScale.min()));
-		uniforms.add(Uniform.getSampler("patternMask", 0));
-		
-		cubeNode = new SceneNode(null, -1, Renderer.bevelled_slope_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		cubeNode.setTranslation(new Vec3(-1.5 * 3, 40, 0));
-		cubeNode.setScale(new Vec3(3));
-		cubeNode.setReflector(cubeReflector);
-		cubeNode.setReflectivity(0.95f);
-		cubeNode.setRenderMode(RenderMode.REFLECT);
-		cubeNode.setColor(new float[] {1.0f, 0.2f, 0.2f});
-		cubeNode.useParallax(false);
-		cubeNode.setUniforms(uniforms);
-		cubeNode.setShader(Shader.get("checker_slope"));
-		
-		testNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-		testNode.setTranslation(new Vec3(0, 40, 0));
-		testNode.setScale(new Vec3(3));
-		testNode.setReflector(cubeReflector);
-		testNode.setReflectivity(0.95f);
-		testNode.setRenderMode(RenderMode.BUMP_REFLECT);
-		testNode.setColor(new float[] {1.0f, 0.8f, 0.0f});
-		testNode.useParallax(false);
-		testNode.setUniforms(uniforms);
-		testNode.setShader(Shader.get("checker_reflect"));
-		
-		blueNode = new SceneNode(null, -1, Renderer.block_bolts_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-	    blueNode.setTranslation(new Vec3(0, 40, 0));
-	    blueNode.setScale(new Vec3(3));
-	    blueNode.setRenderMode(RenderMode.COLOR);
-	    blueNode.setColor(RGB.WHITE);
-	    
-	    wedgeNode = new SceneNode(null, -1, Renderer.wedge_block_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-	    wedgeNode.setTranslation(new Vec3(-1.5 * 6, 40, 0));
-	    wedgeNode.setScale(new Vec3(3));
-	    wedgeNode.setReflector(cubeReflector);
-	    wedgeNode.setReflectivity(0.95f);
-	    wedgeNode.setRenderMode(RenderMode.REFLECT);
-	    wedgeNode.setColor(new float[] {0.1f, 0.5f, 1.0f});
-		
-//	    blueNode = new SceneNode(null, -1, Renderer.bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
-//	    blueNode.setTranslation(new Vec3(scale.x * 2.0 + 0.01, 40, 0));
-//	    blueNode.setScale(scale);
-//	    blueNode.setReflector(cubeReflector);
-//	    blueNode.setReflectivity(0.9f);
-//	    blueNode.setRenderMode(RenderMode.BUMP_REFLECT);
-//	    blueNode.setColor(new float[] {0.1f, 0.5f, 1.0f});
-//	    blueNode.useParallax(false);
-//	    blueNode.setUniforms(uniforms);
-//	    blueNode.setShader(Shader.get("checker_diagonal"));
+		questionBlock = new QuestionBlock(new Vec3(0, 40, 0), 2);
 	    
 	    if(enableItems) loadItems(gl);
 	    loadParticles();
@@ -1365,14 +1292,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    water = new Water(this);
 	    water.createTextures(gl);
+	    
+	    cubeReflector = new Reflector(1.0f);
 	        
-	    bolts = new ArrayList<LightningStrike>();
-	    
-//	    bolts[0] = new LightningStrike(new Vec3(-16, 16, 16), new Vec3(16, 16, 16));
-	    bolts.add(new LightningStrike(new Vec3(0, 34, 0), new Vec3(0, 2, 0), 2, true, true, RenderStyle.CONTINUOUS));
-	    
-	    LightningStrike bolt = bolts.get(0);
-	    
+	    bolt = (new LightningStrike(new Vec3(0, 34, 0), new Vec3(0, 2, 0), 2, true, true, RenderStyle.CONTINUOUS));
 	    if(bolt.getChildren().isEmpty()) bolt.addChild(bolt.generateBolt(RenderStyle.CONTINUOUS, BoltType.SELF_ARCH, 1.5f, new Vec3(), 5, 32));
 	    
 	    frameTimes  = new long[240];
@@ -1396,6 +1319,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
 	}
+	
+	LightningStrike bolt;
 
 	private void setupCoinStacks()
 	{
@@ -1549,10 +1474,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private void createLights(GL2 gl)
 	{
 		lights[0] = new Light(gl);
-		lights[1] = new Light(gl, new Vec3(-60, 20, -60), new float[] {0.25f, 0.10f, 0.10f}, new float[] {0.75f, 0.50f, 0.50f}, new float[] {1.00f, 0.75f, 0.75f});
-		lights[2] = new Light(gl, new Vec3(-60, 20, +60), new float[] {0.10f, 0.25f, 0.10f}, new float[] {0.50f, 0.75f, 0.50f}, new float[] {0.75f, 1.00f, 0.75f});
-		lights[3] = new Light(gl, new Vec3(+60, 20, +60), new float[] {0.10f, 0.10f, 0.25f}, new float[] {0.50f, 0.50f, 0.75f}, new float[] {0.75f, 0.75f, 1.00f});
-		lights[4] = new Light(gl, new Vec3(+60, 20, -60), new float[] {0.25f, 0.25f, 0.10f}, new float[] {0.75f, 0.75f, 0.50f}, new float[] {1.00f, 1.00f, 0.75f});
+//		lights[1] = new Light(gl, new Vec3(-60, 20, -60), new float[] {0.25f, 0.10f, 0.10f}, new float[] {0.75f, 0.50f, 0.50f}, new float[] {1.00f, 0.75f, 0.75f});
+//		lights[2] = new Light(gl, new Vec3(-60, 20, +60), new float[] {0.10f, 0.25f, 0.10f}, new float[] {0.50f, 0.75f, 0.50f}, new float[] {0.75f, 1.00f, 0.75f});
+//		lights[3] = new Light(gl, new Vec3(+60, 20, +60), new float[] {0.10f, 0.10f, 0.25f}, new float[] {0.50f, 0.50f, 0.75f}, new float[] {0.75f, 0.75f, 1.00f});
+//		lights[4] = new Light(gl, new Vec3(+60, 20, -60), new float[] {0.25f, 0.25f, 0.10f}, new float[] {0.75f, 0.75f, 0.50f}, new float[] {1.00f, 1.00f, 0.75f});
 		
 		light = lights[0];
 	}
@@ -1612,16 +1537,29 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, canvasWidth, canvasHeight);
 //		else render(gl);
 		
+		renderQuery.getResult(gl);
+		renderQuery.begin(gl);
+		
 		render(gl);
+		
+		renderQuery.end(gl);
 
 		gl.glFlush();
 		
 		if(printErrors) printErrors(gl);
 		
 		calculateFPS();
+		
+		shadowQuery.getResult(gl);
+		shadowQuery.begin(gl);
 
 		if(enableShadow) caster.update(gl);
+		
+		shadowQuery.end(gl);
 	}
+	
+	public static TimeQuery renderQuery = new TimeQuery(64);
+	public static TimeQuery shadowQuery = new TimeQuery(65);
 	
 	public RainScreen rainScreen;
 
@@ -1636,7 +1574,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		questionBlock.updateReflection(gl);
 		
-		cubeReflector.update(gl, cubeNode.getPosition());
+		cubeReflector.update(gl, questionBlock.getPosition());
 		
 		for(ItemBox box : itemBoxes) box.reflector.update(gl, box.getPosition());
 		
@@ -2353,27 +2291,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		Shader.disable(gl);
 		
 		if(!environmentMode)
-		{
-			Renderer.bevelled_cube_model.normalMap = rain_normal;
-			if(!Renderer.bevelled_cube_model.hasTangentData())
-				Renderer.bevelled_cube_model.calculateTangents();
-			
-			Renderer.bevelled_slope_model.colourMap = pattern_mask;
-			if(!Renderer.bevelled_slope_model.hasTangentData())
-				Renderer.bevelled_slope_model.calculateTangents();
-			
+		{	
 			shine.render(gl); 
 			 star.render(gl);
-		 cubeNode.render(gl);
-    	 testNode.render(gl);
-    	 blueNode.render(gl);
-        wedgeNode.render(gl);
     questionBlock.render(gl);
-//             pipe.render(gl);
+//    		 pipe.render(gl);
             
-//            for(WoodPlank plank : planks) plank.render(gl);
+//    		for(WoodPlank plank : planks) plank.render(gl);
 			 
-			for(GoldCoin coin : coins) coin.render(gl);
+//			for(GoldCoin coin : coins) coin.render(gl);
 			 
 			if(!shadowMode && !displaySkybox)  brickWall.render(gl);
 		}
@@ -2387,7 +2313,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private PowerStar star;
 	private Mushroom mushroom;
 	private WarpPipe pipe;
-	private WoodPlank[] planks;
 
 	/**
 	 * This method renders all of the dynamic 3D models within the world from the
@@ -2470,7 +2395,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(enableBlizzard) blizzard.render(gl);
 		
-		for(LightningStrike bolt : bolts) bolt.render(gl, car.camera.u.zAxis);
+		bolt.render(gl, car.camera.u.zAxis);
 		
 //		energyField.render(gl);
 		
@@ -2482,8 +2407,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			if(car.isSlipping()) particle.render(gl, car.slipTrajectory);
 			else particle.render(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
 		}
-		
-//		FireParticle.renderList(gl, fire_particles);
 		
 //		volume.render(gl);
 		
@@ -3058,7 +2981,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			case KeyEvent.VK_4:	 enableOBBSolids     = !enableOBBSolids;     break;
 			case KeyEvent.VK_5:	 enableClosestPoints = !enableClosestPoints; break;
 			
-			case KeyEvent.VK_F1 : fort.renderMode++; fort.renderMode %= 4; break;
+//			case KeyEvent.VK_F1 : fort.renderMode++; fort.renderMode %= 4; break;
 			case KeyEvent.VK_F3 : Item.renderMode++; Item.renderMode %= 2; break;
 			case KeyEvent.VK_Z  : foliageMode++; foliageMode %= 3; break;
 			

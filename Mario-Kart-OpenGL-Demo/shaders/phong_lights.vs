@@ -2,6 +2,9 @@
 
 // ADS Point Lighting Shader (Phong)
 
+uniform mat4 ModelMatrix;
+
+varying vec4 shadowCoord;
 varying vec3 vertexNormal;
 varying vec3 lightDir[8];
 varying vec3 eyeDir;
@@ -25,4 +28,5 @@ void main(void)
     for(int i = 0; i < 8; i++) lightDir[i] = gl_LightSource[i].position.xyz - position;
 	
 	gl_FrontColor = gl_Color;
+	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
 }

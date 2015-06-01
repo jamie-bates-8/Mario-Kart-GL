@@ -2,10 +2,8 @@ package bates.jamie.graphics.entity;
 
 import javax.media.opengl.GL2;
 
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.util.Vec3;
 
@@ -28,13 +26,13 @@ public class BrickBlock
 	{
 		position = p;
 		
-		brickNode = new SceneNode(null, -1, brick_block, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		brickNode = new SceneNode(brick_block);
 		brickNode.setTranslation(p);
 		brickNode.setScale(new Vec3(scale));
 		brickNode.setRenderMode(RenderMode.COLOR);
 		brickNode.setColor(BRICK_BROWN);
 		
-		mortarNode = new SceneNode(null, -1, mortar_block, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		mortarNode = new SceneNode(mortar_block);
 		mortarNode.setRenderMode(RenderMode.COLOR);
 		mortarNode.setColor(BRICK_BLACK);
 		

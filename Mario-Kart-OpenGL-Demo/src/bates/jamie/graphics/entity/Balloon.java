@@ -3,12 +3,10 @@ package bates.jamie.graphics.entity;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Light;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
@@ -31,7 +29,7 @@ public class Balloon
 		
 		reflector = new Reflector(1.0f, 320, false);
 		
-		balloonNode = new SceneNode(null, -1, balloon_model, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
+		balloonNode = new SceneNode(balloon_model);
 		balloonNode.setTranslation(p);
 		balloonNode.setScale(new Vec3(3.00));
 		balloonNode.setReflector(reflector);

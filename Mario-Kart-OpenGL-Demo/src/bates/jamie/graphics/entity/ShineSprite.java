@@ -10,12 +10,10 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.scene.Light;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.RGB;
@@ -46,7 +44,7 @@ public class ShineSprite
 		
 		reflector = new Reflector(1.0f);
 		
-		shineNode = new SceneNode(null, -1, shineSprite, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		shineNode = new SceneNode(shineSprite);
 		shineNode.setTranslation(p);
 		shineNode.setScale(new Vec3(1.75));
 		shineNode.setReflector(reflector);
@@ -54,7 +52,7 @@ public class ShineSprite
 		shineNode.setRenderMode(RenderMode.REFLECT);
 		shineNode.setColor(new float[] {1, 1, 0.2f});
 		
-		eyeNode = new SceneNode(null, -1, shineEyes, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		eyeNode = new SceneNode(shineEyes);
 		eyeNode.setTranslation(p);
 		eyeNode.setScale(new Vec3(1.75));
 		eyeNode.setRenderMode(RenderMode.COLOR);

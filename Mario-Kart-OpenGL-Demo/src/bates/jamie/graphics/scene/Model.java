@@ -47,12 +47,6 @@ public class Model
 	int polygon;
 	int indexCount;
 	
-	
-	public Texture colourMap;
-	public Texture normalMap;
-	public Texture heightMap;
-	
-	
 	public static boolean enableVBO = true;
 	public boolean bufferCreated = false;
 	
@@ -435,7 +429,7 @@ public class Model
 	
 	public Model(List<float[]> vertices, List<float[]> texCoords, int[] vIndices, int[] tIndices, Texture texture, int type)
 	{	
-		this.colourMap = texture;
+//		this.colourMap = texture;
 		
 		if(type == 3) polygon = GL2.GL_TRIANGLES;
 		if(type == 4) polygon = GL2.GL_QUADS;
@@ -632,12 +626,6 @@ public class Model
 		if(tcoords0 == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		if(heightMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl); }
-		if(normalMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl); }
-		gl.glActiveTexture(GL2.GL_TEXTURE0);
-		
-		if(colourMap != null) colourMap.bind(gl);
-		
 		enableState(gl);
 		
 		if(enableVBO)
@@ -748,8 +736,6 @@ public class Model
 		if(tcoords0 == null) gl.glDisable(GL2.GL_TEXTURE_2D);
 		else gl.glEnable(GL2.GL_TEXTURE_2D);
 		
-		if(colourMap != null) colourMap.bind(gl);
-		
 		enableState(gl);
 		
 		if(enableVBO)
@@ -786,10 +772,10 @@ public class Model
 		
 		gl.glBegin(GL2.GL_LINES);
 		
-		for(int i = 0; i < _vertices.size(); i++)
+		for(int i = 0; i < vertices.capacity(); i += 3)
 		{
-			float[] p1 = _vertices.get(i);
-			float[] normal = new float[3]; normals.get(normal, 0, 3);
+			float[] p1     = new float[3]; vertices.get(p1);
+			float[] normal = new float[3]; normals.get(normal);
 			float[] p2 = Vector.add(p1, Vector.multiply(normal, scale));
 			
 			gl.glVertex3f(p1[0], p1[1], p1[2]);
@@ -797,6 +783,7 @@ public class Model
 		}
 		gl.glEnd();
 		
+		vertices.position(0);
 		normals.position(0);
 		
 		gl.glDisable(GL2.GL_BLEND);
@@ -824,9 +811,9 @@ public class Model
 		
 		gl.glBegin(GL2.GL_LINES);
 		
-		for(int i = 0; i < _vertices.size(); i++)
+		for(int i = 0; i < vertices.capacity(); i += 3)
 		{
-			float[] p1 = _vertices.get(i);
+			float[] p1      = new float[3]; vertices.get(p1);
 			float[] tangent = new float[3]; tangents.get(tangent);
 			float[] p2 = Vector.add(p1, Vector.multiply(tangent, scale));
 			
@@ -835,6 +822,7 @@ public class Model
 		}
 		gl.glEnd();
 		
+		vertices.position(0);
 		tangents.position(0);
 		
 		gl.glColor3f(1, 1, 1);

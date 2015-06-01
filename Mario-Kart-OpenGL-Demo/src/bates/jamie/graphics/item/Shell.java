@@ -6,15 +6,12 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Vehicle;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.util.Face;
 import bates.jamie.graphics.util.OBJParser;
-import bates.jamie.graphics.util.RGB;
 import bates.jamie.graphics.util.RotationMatrix;
 import bates.jamie.graphics.util.Vec3;
 
@@ -36,9 +33,8 @@ public abstract class Shell extends Item
 	{ 
 		if(rimNode == null)
 		{
-			rimNode = new SceneNode(null, -1, rim_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+			rimNode = new SceneNode(rim_model);
 			rimNode.setRenderMode(RenderMode.COLOR);
-			rimNode.setColor(RGB.WHITE);
 		}
 		
 		this.scene = scene;

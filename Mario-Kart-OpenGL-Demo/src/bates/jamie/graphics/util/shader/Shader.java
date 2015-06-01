@@ -84,6 +84,8 @@ public class Shader
 		Shader checkerDiag    = new Shader(gl, "checker_diagonal");
 		Shader checkerSlope   = new Shader(gl, "checker_slope");
 		Shader checkerReflect = new Shader(gl, "checker_slope", "checker_reflect");
+		Shader checkerShadow  = new Shader(gl, "checker_shadow");
+		Shader checkerBlock   = new Shader(gl, "checker_shadow", "checker_block");
 		
 		Shader bump          = new Shader(gl, "bump", "bump", bump_attr);
 		Shader bumpPhong     = new Shader(gl, "bump_lights", "bump_phong", bump_attr);
@@ -92,6 +94,7 @@ public class Shader
 		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", bump_attr);
 		Shader bumpCube      = new Shader(gl, "bump_cube", "bump_cube", bump_attr);
 		Shader bumpRain      = new Shader(gl, "bump_cube", "bump_rain", bump_attr);
+		Shader bumpAlpha     = new Shader(gl, "bump_lights", "bump_alpha", bump_attr);
 		Shader bumpInstance  = new Shader(gl, "bump_instance", "parallax_lights", bump_inst_attr);
 		
 		Shader heightMap     = new Shader(gl, "height_map");
@@ -159,6 +162,8 @@ public class Shader
 		if( checkerDiag.isValid()) shaders.put("checker_diagonal", checkerDiag);
 		if(checkerSlope.isValid()) shaders.put("checker_slope", checkerSlope);
 		if(checkerReflect.isValid()) shaders.put("checker_reflect", checkerReflect);
+		if(checkerShadow.isValid()) shaders.put("checker_shadow", checkerShadow);
+		if( checkerBlock.isValid()) shaders.put("checker_block", checkerBlock);
 		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
@@ -167,6 +172,7 @@ public class Shader
 		if( bumpReflect.isValid()) shaders.put("bump_reflect", bumpReflect);
 		if(    bumpCube.isValid()) shaders.put("bump_cube", bumpCube);
 		if(    bumpRain.isValid()) shaders.put("bump_rain", bumpRain);
+		if(   bumpAlpha.isValid()) shaders.put("bump_alpha", bumpAlpha);
 		if(bumpInstance.isValid()) shaders.put("bump_instance", bumpInstance);
 		
 		if(     itemBox.isValid()) shaders.put("item_box", itemBox);

@@ -14,7 +14,6 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
@@ -83,19 +82,16 @@ public class ItemBox
 	{
 		reflector = new Reflector(1.0f);
 		
-		boxNode = new SceneNode(null, -1, item_box, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
-		boxNode.setTranslation(c);
-		boxNode.setScale(new Vec3(SCALE));
+		boxNode = new SceneNode(item_box);
+		boxNode.setMatrixOrder(MatrixOrder.NONE);
 		boxNode.setReflector(reflector);
 		boxNode.setReflectivity(0.75f);
 		boxNode.setRenderMode(RenderMode.REFLECT);
-		boxNode.setColor(new float[] {1, 1, 1});
 		
-		symbolNode = new SceneNode(null, -1, question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		symbolNode = new SceneNode(question_mark);
 		symbolNode.setTranslation(c);
 		symbolNode.setScale(new Vec3(1.25));
 		symbolNode.setRenderMode(RenderMode.BLOOM_COLOR);
-		symbolNode.setColor(new float[] {1, 1, 1});
 		symbolNode.enableBloom(true);
 	}
 	

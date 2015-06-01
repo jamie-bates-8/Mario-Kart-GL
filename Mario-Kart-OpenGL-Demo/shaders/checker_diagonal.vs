@@ -12,7 +12,7 @@ varying mat3 tangentMatrix;
 
 attribute vec3 tangent;
 
-varying vec2 texScale;
+varying vec2 gridScale;
 uniform vec3 scaleVec; // determines the number of cells
 
 // Returns the relative dimensions of the current face / plane using the maximum
@@ -73,5 +73,5 @@ void main(void)
     
     gl_TexCoord[0] = gl_MultiTexCoord0;
     
-    texScale = getTextureScale();
+    gridScale = getTextureScale();
 }

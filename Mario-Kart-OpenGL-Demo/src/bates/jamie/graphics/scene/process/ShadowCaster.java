@@ -33,7 +33,7 @@ public class ShadowCaster
 	private Light light;
 	
 	public float shadowRadius = 300.0f;
-	public float shadowOffset =   4.0f;
+	public float shadowOffset =   6.0f;
 	
 	private int shadowTexture;
 	private int shadowBuffer ; // framebuffer ID
@@ -283,8 +283,8 @@ public class ShadowCaster
 		    
 		    gl.glColorMask(false, false, false, false);
 		    
-		    gl.glEnable(GL2.GL_CULL_FACE);
-		    gl.glCullFace(GL2.GL_FRONT);
+//		    gl.glEnable(GL2.GL_CULL_FACE);
+//		    gl.glCullFace(GL2.GL_FRONT);
 	
 		    // Overcome imprecision
 		    gl.glPolygonOffset(shadowOffset, 1.0f);

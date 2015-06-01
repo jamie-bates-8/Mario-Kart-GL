@@ -46,7 +46,7 @@ public class TimeQuery
 			gl.glGetQueryObjectuiv(queryID, GL2.GL_QUERY_RESULT, results, 0);
 			gl.glDeleteQueries(1, new int[] {queryID}, 0);
 			
-			cache[Scene.frameIndex][queryType] += results[0];
+			if(queryType < 8) cache[Scene.frameIndex][queryType] += results[0];
 			
 			average  = (float) (average * counter + results[0]) / ++counter;
 			previous = results[0];
@@ -76,9 +76,13 @@ public class TimeQuery
 	
 	public int getPrevious() { return previous; }
 	
+	public float getAverage() { return average; }
+	
 	public void reset()
 	{
 		counter = 0;
 		average = 0;
 	}
+
+	
 }

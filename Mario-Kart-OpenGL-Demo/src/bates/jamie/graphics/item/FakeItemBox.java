@@ -14,7 +14,6 @@ import bates.jamie.graphics.collision.Sphere;
 import bates.jamie.graphics.entity.Terrain;
 import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
@@ -93,14 +92,13 @@ public class FakeItemBox extends Item
 	{
 		reflector = new Reflector(1.0f, 160, true);
 		
-		boxNode = new SceneNode(null, -1, ItemBox.item_box, MatrixOrder.NONE, new Material(new float[] {1, 1, 1}));
-		boxNode.setTranslation(c);
-		boxNode.setScale(new Vec3(SCALE));
+		boxNode = new SceneNode(ItemBox.item_box);
+		boxNode.setMatrixOrder(MatrixOrder.NONE);
 		boxNode.setReflector(reflector);
 		boxNode.setReflectivity(0.75f);
 		boxNode.setRenderMode(RenderMode.REFLECT);
 		
-		symbolNode = new SceneNode(null, -1, ItemBox.question_mark, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		symbolNode = new SceneNode(ItemBox.question_mark);
 		symbolNode.setTranslation(c);
 		symbolNode.setScale(new Vec3(-1.25, -1.25, 1.25));
 		symbolNode.setRenderMode(RenderMode.BLOOM_COLOR);

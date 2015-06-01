@@ -17,6 +17,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
+import com.jogamp.opengl.util.texture.Texture;
+
 import bates.jamie.graphics.collision.Bound;
 import bates.jamie.graphics.collision.OBB;
 import bates.jamie.graphics.collision.Sphere;
@@ -216,6 +218,8 @@ public class Vehicle
 	
 	public Balloon[] balloons = new Balloon[3];
 	
+	private static Texture base_texture;
+	
 	
 	public Vehicle(GL2 gl, Vec3 c, float xrot, float yrot, float zrot, Scene scene)
 	{
@@ -224,7 +228,7 @@ public class Vehicle
 			wheel_faces = OBJParser.parseTriangles("new_wheel");
 			base_faces  = new Model("car_base");
 			
-			base_faces.colourMap = TextureLoader.load(gl, "tex/scratched_metal.jpg");
+			base_texture = TextureLoader.load(gl, "tex/scratched_metal.jpg");
 			
 			all_windows = new Model("windows_all");
 			car_body    = new Model("car_body");
@@ -292,8 +296,8 @@ public class Vehicle
 	
 	public void setupGraph()
 	{
-		Material shiny = new Material(new float[] {1, 1, 1});
-		Material mat = new Material(new float[] {0, 0, 0});
+		Material shiny = new Material(RGB.WHITE, RGB.WHITE, 32);
+		Material mat   = new Material(RGB.WHITE, RGB.BLACK, 32);
 		
 		SceneNode body = new SceneNode(null, -1, car_body, SceneNode.MatrixOrder.T_M_S, shiny);
 		body.setColor(color);
@@ -331,6 +335,7 @@ public class Vehicle
 		body.addChild(headlights);
 		
 		SceneNode car_base = new SceneNode(null, -1, base_faces, SceneNode.MatrixOrder.T, shiny);
+		car_base.setMaterial(new Material(base_texture));
 		car_base.setColor(new float[] {1, 1, 1});
 		car_base.setTranslation(new Vec3());
 		car_base.setRenderMode(SceneNode.RenderMode.TEXTURE);
@@ -604,15 +609,15 @@ public class Vehicle
 	public boolean enableAberration = true;
 	public float opacity = 0.25f;
 	
-	private TimeQuery timeQuery = new TimeQuery(TimeQuery.VEHICLE_ID);
+	public TimeQuery timeQuery = new TimeQuery(TimeQuery.VEHICLE_ID);
 
 	public void render(GL2 gl)
 	{
 		if(!Scene.shadowMode && !Scene.reflectMode && !Scene.depthMode) updateColor();
 		updateLights(gl);
 		
-		timeQuery.getResult(gl);
-		timeQuery.begin(gl);
+//		timeQuery.getResult(gl);
+//		timeQuery.begin(gl);
 		
 		if(renderMode == 1)
 		{
@@ -705,7 +710,7 @@ public class Vehicle
 			tag.render(gl, ry);
 		}
 		
-		timeQuery.end(gl);
+//		timeQuery.end(gl);
 	}
 
 	private void renderBalloons(GL2 gl)

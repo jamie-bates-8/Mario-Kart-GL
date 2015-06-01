@@ -6,7 +6,7 @@ varying vec3 reflectDir;
 
 uniform float shininess;
 
-varying vec2  texScale;
+varying vec2  gridScale;
 uniform float minScale;
 
 uniform sampler2D   patternMask;
@@ -57,7 +57,7 @@ bool insideEllipse(vec2 circle, vec2 radius, vec2 point)
 vec4 getCheckerColor(vec2 texCoord)
 {
 	vec2  borderSize  = vec2(0.25);
-	      borderSize /= texScale * 2.0;
+	      borderSize /= gridScale * 2.0;
 	vec2 _borderSize  = 1.0 - borderSize;
 
 	bool exterior = texCoord.s <       borderSize.s || texCoord.t <       borderSize.t ||
@@ -75,7 +75,7 @@ vec4 getCheckerColor(vec2 texCoord)
 		else if(interiorCoord.s > _borderSize.s && interiorCoord.t > _borderSize.t) exterior = !insideEllipse(vec2(_borderSize), borderSize, interiorCoord);
 	}
 	
-	vec2 gridCoord = texCoord * texScale * minScale;
+	vec2 gridCoord = texCoord * gridScale * minScale;
 	
 	gridCoord = gridCoord * 2.0 - 1.0;
 	gridCoord = fract(gridCoord * 0.5);

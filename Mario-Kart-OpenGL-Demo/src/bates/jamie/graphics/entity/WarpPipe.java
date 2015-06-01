@@ -3,11 +3,9 @@ package bates.jamie.graphics.entity;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Light;
-import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.util.Vec3;
@@ -32,7 +30,7 @@ public class WarpPipe
 		
 		reflector = new Reflector(1.0f);
 		
-		pipeNode = new SceneNode(null, -1, pipe_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		pipeNode = new SceneNode(pipe_model);
 		pipeNode.setTranslation(p);
 		pipeNode.setScale(new Vec3(2.0));
 		pipeNode.setReflector(reflector);

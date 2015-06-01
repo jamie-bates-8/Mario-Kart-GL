@@ -21,13 +21,12 @@ import java.io.File;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
 
-import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.entity.Terrain;
+import bates.jamie.graphics.entity.Vehicle;
 import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.util.Quat;
 import bates.jamie.graphics.util.RGB;
-import bates.jamie.graphics.util.TimeQuery;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
 
@@ -75,8 +74,10 @@ public class HUD
 		this.scene = scene;
 		this.car = car;
 		
-		Font font = new Font("Calibri", Font.PLAIN, 15);
+		Font font = new Font("DejaVu Sans Mono", Font.PLAIN, 12);
 		renderer = new TextRenderer(font, true, false);
+		
+		
 	}
 	
 	public void broadcast(String message)
@@ -283,32 +284,36 @@ public class HUD
 		
 		int x = scene.getWidth() - 200;
 		
-		renderer.draw("Bananas: " + Scene.bananasRendered, x, 610);
+		renderer.draw("Bananas: " + Scene.bananasRendered, x, y - LINE_SPACING);
 		
-		renderer.draw("Parallax: " + Scene.enableParallax, x, 580);
+		renderer.draw("Parallax: " + Scene.enableParallax, x, y - LINE_SPACING * 2);
 		
-		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, 550);
-		renderer.draw("Azimuth: " + String.format("%.1f", Math.toDegrees(car.camera.azimuth)), x, 520);
-		renderer.draw("Incline: " + String.format("%.1f", Math.toDegrees(car.camera.incline)), x, 490);
+		renderer.draw("Zoom: " + String.format("%.2f", car.camera.zoom), x, y - LINE_SPACING * 3);
+		renderer.draw("Azimuth: " + String.format("%.1f", Math.toDegrees(car.camera.azimuth)), x, y - LINE_SPACING * 4);
+		renderer.draw("Incline: " + String.format("%.1f", Math.toDegrees(car.camera.incline)), x, y - LINE_SPACING * 5);
 		
-		renderer.draw("Vehicle Render: " + TimeQuery.getCache()[Scene.frameIndex][TimeQuery.VEHICLE_ID], x, 460);
+		renderer.draw("Vehicle Render: " + car.timeQuery.getPrevious(), x, y - LINE_SPACING * 6);
 		
-		renderer.draw("Colliding: "   + car.colliding, x, 430);
-		renderer.draw("Falling: "     + car.falling,   x, 400);
+		renderer.draw("Colliding: "   + car.colliding, x, y - LINE_SPACING * 7);
+		renderer.draw("Falling: "     + car.falling,   x, y - LINE_SPACING * 8);
 		
-		renderer.draw("Fall Rate: "   + String.format("%.2f", car.fallRate), x, 370);
-		renderer.draw("Turn Rate: "   + String.format("%.2f", car.turnRate), x, 340);
+		renderer.draw("Fall Rate: "   + String.format("%.2f", car.fallRate), x, y - LINE_SPACING * 9);
+		renderer.draw("Turn Rate: "   + String.format("%.2f", car.turnRate), x, y - LINE_SPACING * 10);
+		
+		renderer.draw("Scene  Render: " + Scene.renderQuery.getPrevious(), x, y - LINE_SPACING * 11);
+		renderer.draw("Shadow Render: " + Scene.shadowQuery.getPrevious(), x, y - LINE_SPACING * 12);
 		
 		Quat q = new Quat(car.bound.u);
 		
-		renderer.draw(q.toString(), x, 310);
+		renderer.draw(q.toString(), x, y - LINE_SPACING * 13);
 		
-		renderer.draw("x: " + String.format("%.2f", p.x), x, 280);
-		renderer.draw("y: " + String.format("%.2f", p.y), x, 250);
-		renderer.draw("z: " + String.format("%.2f", p.z), x, 220);
+//		renderer.draw("x: " + String.format("%.2f", p.x), x, y - LINE_SPACING * 2);
+//		renderer.draw("y: " + String.format("%.2f", p.y), x, 250);
+//		renderer.draw("z: " + String.format("%.2f", p.z), x, 220);
 		
-		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 50);
-		renderer.draw("Distance: " + (int) car.distance + " m", x, 20);
+		renderer.draw(p.toString(), x, y - LINE_SPACING * 14);
+		
+		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 40);
 		
 		for(int i = 0; i < BUFFER_SIZE; i++)
 		{

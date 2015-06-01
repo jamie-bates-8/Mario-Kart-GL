@@ -6,7 +6,7 @@ varying vec3 reflectDir;
 
 uniform float shininess;
 
-varying vec2  texScale;
+varying vec2  gridScale;
 uniform float minScale;
 
 uniform sampler2D   patternMask;
@@ -50,7 +50,7 @@ vec4 getCheckerColor(vec2 texCoord)
 
 	bool exterior = texture2D(patternMask, texCoord).r > 0.5;
 	
-	vec2 gridCoord = texCoord * texScale * minScale;
+	vec2 gridCoord = texCoord * gridScale * minScale;
 	
 	gridCoord = gridCoord * 2.0 - 1.0;
 	gridCoord = fract(gridCoord * 0.5);

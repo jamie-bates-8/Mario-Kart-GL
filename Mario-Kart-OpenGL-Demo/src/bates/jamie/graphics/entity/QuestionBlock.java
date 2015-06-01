@@ -8,9 +8,7 @@ import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.SceneNode;
-import bates.jamie.graphics.scene.SceneNode.MatrixOrder;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
-import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.texture.Texture;
@@ -20,6 +18,7 @@ public class QuestionBlock
 {
 	static Model block_model  = new Model("question_block_box");
 	static Model symbol_model = new Model("question_block_symbol");
+	static Model bevelled_cube_model = new Model("bevelled_block");
 	
 	static Texture colourMap, normalMap, heightMap;
 	
@@ -50,7 +49,7 @@ public class QuestionBlock
 
 		reflector = new Reflector(1.0f);
 		
-		blockNode = new SceneNode(null, -1, block_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		blockNode = new SceneNode(block_model);
 		blockNode.setTranslation(p);
 		blockNode.setScale(new Vec3(scale));
 		blockNode.setReflector(reflector);
@@ -58,27 +57,24 @@ public class QuestionBlock
 		blockNode.setRenderMode(RenderMode.COLOR);
 		blockNode.setColor(new float[] {1.0f, 0.8f, 0.0f});
 		
-		symbolNode = new SceneNode(null, -1, symbol_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		symbolNode = new SceneNode(symbol_model);
 		symbolNode.setReflector(reflector);
 		symbolNode.setReflectivity(0.75f);
 		symbolNode.setRenderMode(RenderMode.COLOR);
-		symbolNode.setColor(new float[] {1.0f, 1.0f, 1.0f});
 		
 		blockNode.addChild(symbolNode);
 		
-		Renderer.multi_tex_bevelled_cube_model.colourMap = colourMap;
-		Renderer.multi_tex_bevelled_cube_model.normalMap = normalMap;
-		Renderer.multi_tex_bevelled_cube_model.heightMap = heightMap;
+		Material simple_mat = new Material(colourMap, normalMap, heightMap);
 		
-		Renderer.multi_tex_bevelled_cube_model.calculateTangents();
+		bevelled_cube_model.calculateTangents();
 		
-		simpleNode = new SceneNode(null, -1, Renderer.multi_tex_bevelled_cube_model, MatrixOrder.T_RY_RX_RZ_S, new Material(new float[] {1, 1, 1}));
+		simpleNode = new SceneNode(bevelled_cube_model);
 		simpleNode.setTranslation(p);
 		simpleNode.setScale(new Vec3(scale));
 		simpleNode.setReflector(reflector);
 		simpleNode.setReflectivity(0.85f);
 		simpleNode.setRenderMode(RenderMode.BUMP_TEXTURE);
-		simpleNode.setColor(new float[] {1.0f, 1.0f, 1.0f});
+		simpleNode.setMaterial(simple_mat);
 		simpleNode.useParallax(false);
 	}
 	
