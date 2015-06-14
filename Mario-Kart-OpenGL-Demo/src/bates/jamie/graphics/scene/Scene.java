@@ -1498,7 +1498,15 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 
 	public void display(GLAutoDrawable drawable)
-	{	
+	{
+		if(Scene.sceneTimer % Scene.log_timer == 0)
+		{
+			for(int i = 0; i < 4; i++) System.out.println();
+			System.out.println("|| --------------- ||");
+			System.out.println("||    NEW FRAME    ||");
+			System.out.println("|| --------------- ||");
+		}
+		
 		GL2 gl = drawable.getGL().getGL2();
 		
 		gl.glClearDepth(1.0f);
@@ -1530,6 +1538,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
+//		renderQuery.getResult(gl);
+//		renderQuery.begin(gl);
+		
 		Vehicle car = cars.get(0);
 		updateReflectors(gl, car);
 		
@@ -1537,18 +1548,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, canvasWidth, canvasHeight);
 //		else render(gl);
 		
-		renderQuery.getResult(gl);
-		renderQuery.begin(gl);
-		
 		render(gl);
 		
-		renderQuery.end(gl);
+//		renderQuery.end(gl);
 
 		gl.glFlush();
 		
 		if(printErrors) printErrors(gl);
-		
-		calculateFPS();
 		
 		shadowQuery.getResult(gl);
 		shadowQuery.begin(gl);
@@ -1556,6 +1562,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		if(enableShadow) caster.update(gl);
 		
 		shadowQuery.end(gl);
+		
+//		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, 1, 1);
+		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
+//		if(testMode) displayMap(gl, bloom.getTexture(7), -0, -0, 1, 1);
+		
+		calculateFPS();
 	}
 	
 	public static TimeQuery renderQuery = new TimeQuery(64);
@@ -1565,6 +1577,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void updateReflectors(GL2 gl, Vehicle car)
 	{
+		beginRenderLog("REFLECT MODE");
+		
 		if(car.enableChrome || car.isInvisible() || car.hasStarPower()) car.reflector.update(gl, cars.get(0).getPosition().add(new Vec3(0, 2, 0)));
 		if(shine != null) shine.reflector.update(gl, shine.getPosition());
 		if(star  != null)  star.reflector.update(gl,  star.getPosition());
@@ -1593,6 +1607,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				box.reflector.update(gl, box.getPosition());
 			}
 		}
+		
+		endRenderLog();
 	}
 	
 	public void displayMap(GL2 gl, int texture, float x, float y, float w, float h)
@@ -1603,7 +1619,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //        gl.glEnable(GL2.GL_BLEND);
         gl.glDisable(GL2.GL_DEPTH_TEST);
         
-        gl.glMatrixMode(GL2.GL_TEXTURE);
+        gl.glMatrixMode(GL2.GL_TEXTURE); gl.glLoadIdentity();
+        gl.glMatrixMode(GL_MODELVIEW );
         gl.glPushMatrix();
         {
 	        gl.glLoadIdentity();
@@ -1637,9 +1654,44 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
     }
 	
 	public static boolean enableOcclusion = true;
+	
+	public static int tabs_in_log = 0;
+	public static int log_timer = 300;
+	
+	public static void beginRenderLog(String log_header)
+	{
+		if(Scene.sceneTimer % Scene.log_timer == 0)
+		{
+			String indent = "";
+			for(int i = 0; i < Scene.tabs_in_log; i++) indent += "\t";
+			System.out.println(indent + log_header + "\n" + indent + "{");
+			Scene.tabs_in_log++;
+		}
+	}
+	
+	public static void printToRenderLog(String log)
+	{
+		if(Scene.sceneTimer % Scene.log_timer == 0)
+		{
+			String indent = "";
+			for(int i = 0; i < Scene.tabs_in_log; i++) indent += "\t";
+			System.out.println(indent + log);
+		}
+	}
+	
+	public static void endRenderLog()
+	{
+		if(sceneTimer % log_timer == 0)
+		{
+	    	tabs_in_log--;
+			String indent = "";
+			for(int i = 0; i < tabs_in_log; i++) indent += "\t";
+			System.out.println(indent + "}");
+		}
+	}
 
 	private void render(GL2 gl)
-	{	
+	{		
 		TimeQuery.resetCache();
 		
 		if(mousePressed) selecter.selectModel(gl);
@@ -1687,14 +1739,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				BloomStrobe.end(gl);
 				
 				if(enableReflection) displayReflection(gl, car);
+				
+				beginRenderLog("NORMAL MODE");
 
 				if(terrain != null && terrain.enableWater) renderWater(gl, car);
 
 				renderWorld(gl);
 				render3DModels(gl, car);
-
-				renderTimes[frameIndex][4] = renderParticles(gl, car);
-				Particle.resetTexture();
 
 //				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 //				else renderTimes[frameIndex][1] = 0;
@@ -1705,11 +1756,21 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					water.render(gl, car.camera.getPosition());
 				}
 				
+			    renderTimes[frameIndex][4] = renderParticles(gl, car);
+				Particle.resetTexture();
+				
 				if(displayLight && !moveLight)
 					for(Light l : lights) l.render(gl);
+				
+				endRenderLog();
 			}
 			
+			renderQuery.getResult(gl);
+			renderQuery.begin(gl);
+			
 			if(enableFocalBlur) focalBlur.guassianPass(gl);
+			
+			renderQuery.end(gl);
 			
 			gl.glDisable(GL2.GL_CLIP_PLANE2);
 			
@@ -1737,9 +1798,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	/**
 	 * This method renders the world as reflected by the surface of the water.
-	 * A new clipping plane is defined so that any primitives drawn below water
-	 * level are clipped (the primitives clipped are actually above water level
-	 * as the reflected environment is rendered upside down).
+	 * A new clipping plane is defined so that any primitives drawn above water
+	 * level are clipped.
 	 */
 	public void renderWater(GL2 gl, Vehicle car)
 	{
@@ -1750,6 +1810,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glClipPlane(GL2.GL_CLIP_PLANE1, equation, 0);
 		
 		reflectMode = true;
+		
+		beginRenderLog("WATER MODE");
 
 		gl.glPushMatrix();
 		{
@@ -1759,6 +1821,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			render3DModels(gl, car);
 		}
 		gl.glPopMatrix();
+		
+		endRenderLog();
 		
 		reflectMode = false;
 
@@ -2183,7 +2247,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader.disable(gl);
 			
-		if(displaySkybox) renderWalls(gl);
+		if(testMode) renderWalls(gl);
+		else brickWall.render(gl);
 		
 //		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 //		planeMesh.render(gl);
@@ -2283,6 +2348,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public long renderObstacles(GL2 gl)
 	{	
 		long start = System.nanoTime();
+		
+		Scene.printToRenderLog("Rendering Obstacles");
 
 		fort.render(gl);
 		
@@ -2300,8 +2367,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //    		for(WoodPlank plank : planks) plank.render(gl);
 			 
 //			for(GoldCoin coin : coins) coin.render(gl);
-			 
-			if(!shadowMode && !displaySkybox)  brickWall.render(gl);
 		}
 		
 		mushroom.render(gl);
@@ -2393,6 +2458,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	{
 		long start = System.nanoTime();
 		
+		Scene.printToRenderLog("Rendering Particles");
+		
+//		renderQuery.getResult(gl);
+//		renderQuery.begin(gl);
+		
 		if(enableBlizzard) blizzard.render(gl);
 		
 		bolt.render(gl, car.camera.u.zAxis);
@@ -2415,6 +2485,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
 //		smokeCloud.render(gl);
+		
+//		renderQuery.end(gl);
 		
 		return System.nanoTime() - start;
 	}
@@ -2604,6 +2676,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	}
 	
 	public static float sceneTimer = 0;
+	public static long startTimeCPU;
+	public static long   endTimeCPU;
 
 	/**
 	 * This method calculates the frames per second (FPS) of the application by
@@ -2626,6 +2700,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			frames = 0;
 			startTime = currentTime + (timeElapsed % 1000);
+			// new start time = the current time + the time elapsed over a second
 		}
 		
 		if(frameIndex >= frameTimes.length) frameIndex = 0;
@@ -3061,7 +3136,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			}
 			case KeyEvent.VK_E: energyField.cycle(); break;
 			
-			case KeyEvent.VK_F1: testMode = !testMode;  break;
+			case KeyEvent.VK_F1: testMode = !testMode; break;
 			case KeyEvent.VK_F2: LightningStrike.debugMode = !LightningStrike.debugMode; break;
 			case KeyEvent.VK_F3:
 			{
@@ -3069,10 +3144,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				for(Map.Entry<String, Model> model : models) model.getValue().export(model.getKey());
 				break;
 			}
+			case KeyEvent.VK_F4: displayDepth = !displayDepth; break;
 			
 			default: break;
 		}
 	}
+	
+	public static boolean displayDepth = false;
 	
 	public void keyReleased(KeyEvent e)
 	{

@@ -14,6 +14,7 @@ import java.util.Scanner;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.Vec3;
 
 import com.jogamp.opengl.util.glsl.ShaderUtil;
@@ -67,8 +68,19 @@ public class Shader
 		HashMap<Integer, String> inst_attr = new HashMap<Integer, String>();
 		inst_attr.put(4, "instance_data");
 		
+		HashMap<Integer, String> bump_mat_inst_attr = new HashMap<Integer, String>();
+		bump_mat_inst_attr.put( 1, "tangent");
+		bump_mat_inst_attr.put( 4, "instance_data");
+		bump_mat_inst_attr.put(11, "instance_matrix");
+		
+		HashMap<Integer, String> mat_inst_attr = new HashMap<Integer, String>();
+		mat_inst_attr.put( 4, "instance_data");
+		mat_inst_attr.put(11, "instance_matrix");
+		
 		// load and compile shaders from file
-		Shader simple        = new Shader(gl, "simple");
+		Shader simple         = new Shader(gl, "simple");
+		Shader simpleInstance = new Shader(gl, "simple_instance", "simple", inst_attr);
+		Shader simpleMatInst  = new Shader(gl, "simple_mat_inst", "simple", mat_inst_attr);
 		
 		Shader phong         = new Shader(gl, "phong");
 		Shader phongLights   = new Shader(gl, "phong_lights");
@@ -96,6 +108,7 @@ public class Shader
 		Shader bumpRain      = new Shader(gl, "bump_cube", "bump_rain", bump_attr);
 		Shader bumpAlpha     = new Shader(gl, "bump_lights", "bump_alpha", bump_attr);
 		Shader bumpInstance  = new Shader(gl, "bump_instance", "parallax_lights", bump_inst_attr);
+		Shader bumpMatInst   = new Shader(gl, "bump_mat_inst", "bump_lights", bump_mat_inst_attr);
 		
 		Shader heightMap     = new Shader(gl, "height_map");
 		
@@ -146,7 +159,9 @@ public class Shader
 		Shader wood         = new Shader(gl, "wood");
 		
 		// check that shaders have been compiled and linked correctly before hashing 
-		if(       simple.isValid()) shaders.put("simple", simple);
+		if(        simple.isValid()) shaders.put("simple", simple);
+		if(simpleInstance.isValid()) shaders.put("simple_instance", simpleInstance);
+		if( simpleMatInst.isValid()) shaders.put("simple_mat_inst", simpleMatInst);
 		
 		if(        phong.isValid()) shaders.put("phong", phong);
 		if(  phongLights.isValid()) shaders.put("phong_lights", phongLights);
@@ -157,13 +172,13 @@ public class Shader
 		
 		if(   bloomColor.isValid()) shaders.put("bloom_color", bloomColor);
 		
-		if(   texLights.isValid()) shaders.put("texture_lights", texLights);
-		if(  textureRim.isValid()) shaders.put("texture_rim", textureRim);
-		if( checkerDiag.isValid()) shaders.put("checker_diagonal", checkerDiag);
-		if(checkerSlope.isValid()) shaders.put("checker_slope", checkerSlope);
+		if(     texLights.isValid()) shaders.put("texture_lights", texLights);
+		if(    textureRim.isValid()) shaders.put("texture_rim", textureRim);
+		if(   checkerDiag.isValid()) shaders.put("checker_diagonal", checkerDiag);
+		if(  checkerSlope.isValid()) shaders.put("checker_slope", checkerSlope);
 		if(checkerReflect.isValid()) shaders.put("checker_reflect", checkerReflect);
-		if(checkerShadow.isValid()) shaders.put("checker_shadow", checkerShadow);
-		if( checkerBlock.isValid()) shaders.put("checker_block", checkerBlock);
+		if( checkerShadow.isValid()) shaders.put("checker_shadow", checkerShadow);
+		if(  checkerBlock.isValid()) shaders.put("checker_block", checkerBlock);
 		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
@@ -174,6 +189,7 @@ public class Shader
 		if(    bumpRain.isValid()) shaders.put("bump_rain", bumpRain);
 		if(   bumpAlpha.isValid()) shaders.put("bump_alpha", bumpAlpha);
 		if(bumpInstance.isValid()) shaders.put("bump_instance", bumpInstance);
+		if( bumpMatInst.isValid()) shaders.put("bump_mat_inst", bumpMatInst);
 		
 		if(     itemBox.isValid()) shaders.put("item_box", itemBox);
 		if(     fakeBox.isValid()) shaders.put("fake_box", fakeBox);
@@ -247,7 +263,15 @@ public class Shader
 	
 	public static Shader get(String name)
 	{
-		if(enableSimple) return shaders.get("simple");
+		if(enableSimple)
+		{
+			if(Renderer.instanced_mode)
+			{
+				if(Renderer.instanced_matrix_mode) return shaders.get("simple_mat_inst");
+				else return shaders.get("simple_instance");
+			}
+			else return shaders.get("simple");
+		}
 		else return shaders.get(name);
 	}
 	

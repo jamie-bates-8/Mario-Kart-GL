@@ -237,7 +237,7 @@ public class Terrain
 			_vertices.set(i, new float[] {vertex[0] * sx, vertex[1] * sy, vertex[2] * sz});
 		}
 		
-		model = new Model(_vertices, _texCoords, indices, indices, baseTexture, 4);
+		model = new Model(_vertices, _texCoords, indices, indices, 4);
 		
 		System.out.println("Terrain Model Indexed: " + (System.currentTimeMillis() - start) + " ms");
 	}

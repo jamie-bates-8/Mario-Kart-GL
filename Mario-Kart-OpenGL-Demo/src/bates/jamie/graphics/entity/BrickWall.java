@@ -78,20 +78,20 @@ public class BrickWall
 		}
 		positions.position(0);
 		
-		Renderer.multi_tex_cube_model.setInstanceData(positions);
-		BrickBlock.brick_block.setInstanceData(positions);
-		BrickBlock.mortar_block.setInstanceData(positions);
+		Renderer.multi_tex_cube_model.setPositionData(positions);
+		BrickBlock.brick_block.setPositionData(positions);
+		BrickBlock.mortar_block.setPositionData(positions);
 	}
 	
 	public void render(GL2 gl)
 	{
-		timeQuery.getResult(gl);
-		timeQuery.begin(gl);
+//		timeQuery.getResult(gl);
+//		timeQuery.begin(gl);
 		
 		boolean useHDR = BloomStrobe.isEnabled();
 		
 		if(Scene.reflectMode) BloomStrobe.end(gl);
-		
+			
 		switch(mode)
 		{
 			case COMPLEX_MODEL                   : renderComplexModel(gl); break;
@@ -105,11 +105,13 @@ public class BrickWall
 		
 		Shader.disable(gl);
 		
-		timeQuery.end(gl);
+//		timeQuery.end(gl);
 	}
 
 	private void renderComplexModelInstanced(GL2 gl)
 	{
+		Renderer.instanced_mode = true;
+		
 		gl.glColor3fv(BrickBlock.BRICK_BROWN, 0);
 			
 		Shader shader = Shader.get("phong_instance");
@@ -118,10 +120,14 @@ public class BrickWall
 		BrickBlock.brick_block.renderInstanced(gl, brickBlocks.size());
 		gl.glColor3fv(BrickBlock.BRICK_BLACK, 0);
 		BrickBlock.mortar_block.renderInstanced(gl, brickBlocks.size());
+		
+		Renderer.instanced_mode = false;
 	}
 
 	private void renderSimpleModelParallaxInstanced(GL2 gl)
 	{
+		Renderer.instanced_mode = true;
+		
 		Shader shader = Shader.get("bump_instance");
 		if(shader != null) shader.enable(gl);
 		
@@ -134,6 +140,8 @@ public class BrickWall
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
 		
 		Renderer.multi_tex_cube_model.renderInstanced(gl, brickBlocks.size());
+		
+		Renderer.instanced_mode = false;
 	}
 	
 	private void renderComplexModel(GL2 gl)

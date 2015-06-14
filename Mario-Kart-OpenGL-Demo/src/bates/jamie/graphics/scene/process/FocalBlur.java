@@ -58,8 +58,8 @@ public class FocalBlur
 	
 	public void setup(GL2 gl)
 	{
-		createBuffers(gl);
 		createTexture(gl);
+		createBuffers(gl);
 		
 		System.out.println("FocalBlur : Texture ID (" + sceneTexture + ")");
 	    
@@ -142,7 +142,11 @@ public class FocalBlur
  
 	    depthMode(gl, true);
 	    
+	    Scene.beginRenderLog("DEPTH MODE");
+	    
 	    depthPass(gl);
+	    
+	    Scene.endRenderLog();
 
 	    depthMode(gl, false);
 
@@ -155,7 +159,7 @@ public class FocalBlur
 		Vehicle car = scene.getCars().get(0);
 		Terrain terrain = scene.getTerrain();
 		
-		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
+//		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
 		
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);

@@ -136,10 +136,14 @@ public class Mirror
 			
 		for(Light l : scene.lights) l.setup(gl);
 		for(Light l : scene.getCars().get(0).driftLights) l.setup(gl);
+		
+		Scene.beginRenderLog("MIRROR MODE");
 			
 		Scene.environmentMode = true;
 		scene.renderWorld(gl);
 		Scene.environmentMode = false;
+		
+		Scene.endRenderLog();
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
 		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);

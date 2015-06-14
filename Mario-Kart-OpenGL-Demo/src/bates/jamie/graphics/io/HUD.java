@@ -303,15 +303,17 @@ public class HUD
 		renderer.draw("Scene  Render: " + Scene.renderQuery.getPrevious(), x, y - LINE_SPACING * 11);
 		renderer.draw("Shadow Render: " + Scene.shadowQuery.getPrevious(), x, y - LINE_SPACING * 12);
 		
+		renderer.draw("CPU Timer: " + Long.toString(Scene.endTimeCPU - Scene.startTimeCPU), x, y - LINE_SPACING * 13);
+		
 		Quat q = new Quat(car.bound.u);
 		
-		renderer.draw(q.toString(), x, y - LINE_SPACING * 13);
+		renderer.draw(q.toString(), x, y - LINE_SPACING * 14);
 		
 //		renderer.draw("x: " + String.format("%.2f", p.x), x, y - LINE_SPACING * 2);
 //		renderer.draw("y: " + String.format("%.2f", p.y), x, 250);
 //		renderer.draw("z: " + String.format("%.2f", p.z), x, 220);
 		
-		renderer.draw(p.toString(), x, y - LINE_SPACING * 14);
+		renderer.draw(p.toString(), x, y - LINE_SPACING * 15);
 		
 		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 40);
 		

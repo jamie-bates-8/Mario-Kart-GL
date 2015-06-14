@@ -93,6 +93,7 @@ public class NewBlockFort
 		loadTextures(gl);
 		
 		large_bridge_lower = new WoodBridge(gl, new Vec3(90,  7.5,  33.75), 0, true);
+		large_bridge_lower.enable_simplify = true;
 		large_bridge_upper = new WoodBridge(gl, new Vec3( 0, 37.5, 101.25), 0, true);
 		
 		small_bridge = new WoodBridge(gl, new Vec3(0, 30, 56.25), 90, false);
@@ -318,8 +319,8 @@ public class NewBlockFort
 			rock_wall_lower_node.render(gl);
 			
 			large_bridge_lower.render(gl);
-			large_bridge_upper.render(gl);
-			small_bridge.render(gl);
+//			large_bridge_upper.render(gl);
+//			small_bridge.render(gl);
 			
 			block_corner_node.render(gl);
 			

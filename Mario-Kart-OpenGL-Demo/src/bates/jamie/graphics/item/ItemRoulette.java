@@ -147,12 +147,12 @@ public class ItemRoulette
 		int randomIndex = -1;
 		double random = generator.nextDouble() * total;
 	
-		for (int j = 0; j < weights.length; j++)
+		for (int i = 0; i < weights.length; i++)
 		{
-			random -= weights[j];
+			random -= weights[i];
 			if (random <= 0.0)
 			{
-				randomIndex = j;
+				randomIndex = i;
 				break;
 			}
 		}

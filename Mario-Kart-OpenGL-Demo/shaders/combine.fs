@@ -13,6 +13,8 @@ uniform sampler2D sampler3;
 uniform sampler2D sampler4;
 uniform sampler2D sampler5;
 
+const float blurIntensity = 0.20;
+
 void main(void)
 {
     vec4 temp;
@@ -25,8 +27,8 @@ void main(void)
 
     if (afterGlow)
     {
-       temp *= 0.8;
-       temp += 0.2 * texture2D(sampler5, gl_TexCoord[0].st);
+       temp *= 1.0 - blurIntensity;
+       temp += blurIntensity * texture2D(sampler5, gl_TexCoord[0].st);
     }
 
     gl_FragColor = vec4(temp.rgb, texture2D(sampler0, gl_TexCoord[0].st).a);

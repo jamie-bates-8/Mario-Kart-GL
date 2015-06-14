@@ -613,6 +613,8 @@ public class Vehicle
 
 	public void render(GL2 gl)
 	{
+		Scene.printToRenderLog("Rendering Vehicle");
+		
 		if(!Scene.shadowMode && !Scene.reflectMode && !Scene.depthMode) updateColor();
 		updateLights(gl);
 		

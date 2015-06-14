@@ -22,6 +22,8 @@ import com.jogamp.opengl.util.texture.Texture;
 public class Renderer
 {
 	public static boolean anisotropic = true;
+	public static boolean instanced_mode = false;
+	public static boolean instanced_matrix_mode = false;
 	
 	public Renderer() {}
 	

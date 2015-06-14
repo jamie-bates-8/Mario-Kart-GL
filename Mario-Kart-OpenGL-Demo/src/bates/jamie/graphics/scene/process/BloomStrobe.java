@@ -114,9 +114,13 @@ public class BloomStrobe
 	{
 		setupShaders(gl);
 		
+		Scene.beginRenderLog("OPAQUE MODE");
+		
 		opaqueMode = true;
 		renderScene(gl); // render screen without transparent objects
 		opaqueMode = false;
+		
+		Scene.endRenderLog();
 
 		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, full_opaque_buffer);
 		gl.glReadPixels(0, 0, fboWidth, fboHeight, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0); 
@@ -130,7 +134,7 @@ public class BloomStrobe
 		secondPass(gl);
 		finalPass (gl);
 	
-		updateBlur(gl);
+		if(Scene.singleton.enableBlur) updateBlur(gl);
 		
 		gl.glBindTexture(GL_TEXTURE_2D, textureIDs[7]);
 
@@ -178,7 +182,11 @@ public class BloomStrobe
 		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		
+		Scene.beginRenderLog("BLOOM MODE");
+		
 		renderScene(gl);
+		
+		Scene.endRenderLog();
 	}
 
 	private void renderScene(GL2 gl)
@@ -193,9 +201,6 @@ public class BloomStrobe
 		
 		if(scene.displayLight) for(Light l : scene.lights) l.render(gl);
 		
-		scene.renderParticles(gl, car);
-		Particle.resetTexture();
-		
 		if(scene.enableTerrain) scene.renderFoliage(gl, car);
 		
 		if(terrain != null && terrain.enableWater) 
@@ -203,6 +208,9 @@ public class BloomStrobe
 			scene.water.setRefraction(gl);
 			scene.water.render(gl, car.camera.getPosition());
 		}
+		
+		scene.renderParticles(gl, car);
+		Particle.resetTexture();
 	}
 
 	/*
@@ -390,8 +398,7 @@ public class BloomStrobe
 				gl.glBindTexture(GL_TEXTURE_2D, 
 						((mode == DisplayMode.JUST_BLOOM) || (mode == DisplayMode.JUST_AFTER_GLOW)) ? 0 : textureIDs[0]);
 
-				boolean afterGlow = mode.ordinal() >= DisplayMode.JUST_AFTER_GLOW.ordinal();
-				shader.setUniform(gl, "afterGlow", afterGlow && blurInitialized ? 1 : 0);
+				shader.setUniform(gl, "afterGlow", Scene.singleton.enableBlur && blurInitialized ? 1 : 0);
 				break;
 			}
 

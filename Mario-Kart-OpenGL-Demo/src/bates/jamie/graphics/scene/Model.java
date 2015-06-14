@@ -41,6 +41,7 @@ public class Model
 	private FloatBuffer colors;
 	private FloatBuffer tangents;
 	private FloatBuffer positions;
+	private FloatBuffer matrices;
 	
 	IntBuffer indices;
 	
@@ -50,19 +51,23 @@ public class Model
 	public static boolean enableVBO = true;
 	public boolean bufferCreated = false;
 	
-	private int[] bufferIDs = new int[8];
+	private int[] bufferIDs = new int[9];
 	
-	private static final int  VERTEX_BUFFER = 0;
-	private static final int  NORMAL_BUFFER = 1;
-	private static final int TCOORD0_BUFFER = 2;
-	private static final int TCOORD1_BUFFER = 3;
-	private static final int  COLOUR_BUFFER = 4;
-	private static final int  OFFSET_BUFFER = 5;
-	private static final int TANGENT_BUFFER = 6;
-	private static final int   INDEX_BUFFER = 7;
+	private static final int   VERTEX_BUFFER = 0;
+	private static final int   NORMAL_BUFFER = 1;
+	private static final int  TCOORD0_BUFFER = 2;
+	private static final int  TCOORD1_BUFFER = 3;
+	private static final int   COLOUR_BUFFER = 4;
+	private static final int POSITION_BUFFER = 5;
+	private static final int  TANGENT_BUFFER = 6;
+	private static final int    INDEX_BUFFER = 7;
+	private static final int   MATRIX_BUFFER = 8;
 	
-	private static final int  TANGENT_ID = 1;
-	private static final int POSITION_ID = 4; 
+	private static final int  TANGENT_ID =  1;
+	private static final int POSITION_ID =  4;
+	private static final int   MATRIX_ID = 11;
+	
+	public int matrixDivisor = 1;
 	
 	public Model(float[] vertices, float[] normals, float[] texCoords, float[] tangents, float[] positions, int type)
 	{
@@ -427,28 +432,6 @@ public class Model
 		indices = Buffers.newDirectIntBuffer(vIndices);
 	}
 	
-	public Model(List<float[]> vertices, List<float[]> texCoords, int[] vIndices, int[] tIndices, Texture texture, int type)
-	{	
-//		this.colourMap = texture;
-		
-		if(type == 3) polygon = GL2.GL_TRIANGLES;
-		if(type == 4) polygon = GL2.GL_QUADS;
-		
-		this.vertices = Buffers.newDirectFloatBuffer(vertices.size() * 3);
-		for(float[] vertex : vertices) this.vertices.put(vertex);
-		this.vertices.position(0);  
-		
-		indexCount = vIndices.length;
-		
-		this.tcoords0 = Buffers.newDirectFloatBuffer(vertices.size() * 2);
-		for(float[] texCoord : texCoords) this.tcoords0.put(texCoord);
-		this.tcoords0.position(0);
-		
-		System.out.printf("Indexed Model:\n{\n\tIndices:  %d\n\tVertices: %d\n\tTexture Coordinates: %d\n}\n", indexCount, vertices.size(), texCoords.size());
-		
-		indices = Buffers.newDirectIntBuffer(vIndices);
-	}
-	
 	public void export(String fileName)
 	{
 		try
@@ -616,8 +599,11 @@ public class Model
 		this.colors.position(0);
 	}
 	
-	public void setInstanceData(float[]     positions) { this.positions = Buffers.newDirectFloatBuffer(positions); }
-	public void setInstanceData(FloatBuffer positions) { this.positions = positions; }
+	public void setPositionData(float[]     positions) { this.positions = Buffers.newDirectFloatBuffer(positions); }
+	public void setPositionData(FloatBuffer positions) { this.positions = positions; }
+	
+	public void setMatrixData(float[]     matrices) { this.matrices = Buffers.newDirectFloatBuffer(matrices); }
+	public void setMatrixData(FloatBuffer matrices) { this.matrices = matrices; }
 	
 	public void render(GL2 gl)
 	{
@@ -660,7 +646,7 @@ public class Model
 		if(colors    != null) gl.glColorPointer   (3, GL2.GL_FLOAT, 0, colors   );
 		if(tcoords0  != null) gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, tcoords0 );
 		if(tangents  != null) gl.glVertexAttribPointer(TANGENT_ID , 3, GL2.GL_FLOAT, true , 0, tangents );
-		if(positions != null) gl.glVertexAttribPointer(POSITION_ID, 4, GL2.GL_FLOAT, false, 0, positions);	
+		if(positions != null) gl.glVertexAttribPointer(POSITION_ID, 4, GL2.GL_FLOAT, false, 0, positions);
 		
 		if(tcoords1  != null)
 		{
@@ -672,13 +658,26 @@ public class Model
 
 	private void bindArrays(GL2 gl)
 	{
-		                        gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[VERTEX_BUFFER ]); gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, 0);
-		if(normals   != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[NORMAL_BUFFER ]); gl.glNormalPointer  (   GL2.GL_FLOAT, 0, 0); }
-		if(colors    != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[COLOUR_BUFFER ]); gl.glColorPointer   (3, GL2.GL_FLOAT, 0, 0); }
-		if(tcoords0  != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD0_BUFFER]); gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0); }
-		if(tangents  != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TANGENT_BUFFER]); gl.glVertexAttribPointer(TANGENT_ID , 3, GL2.GL_FLOAT, true , 0, 0); }
-		if(positions != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[OFFSET_BUFFER ]); gl.glVertexAttribPointer(POSITION_ID, 4, GL2.GL_FLOAT, false, 0, 0); }
+		                        gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[VERTEX_BUFFER  ]); gl.glVertexPointer  (3, GL2.GL_FLOAT, 0, 0);
+		if(normals   != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[NORMAL_BUFFER  ]); gl.glNormalPointer  (   GL2.GL_FLOAT, 0, 0); }
+		if(colors    != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[COLOUR_BUFFER  ]); gl.glColorPointer   (3, GL2.GL_FLOAT, 0, 0); }
+		if(tcoords0  != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TCOORD0_BUFFER ]); gl.glTexCoordPointer(2, GL2.GL_FLOAT, 0, 0); }
+		
+		if(tangents  != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[TANGENT_BUFFER ]); gl.glVertexAttribPointer(TANGENT_ID , 3, GL2.GL_FLOAT, true , 0, 0); }
+		if(positions != null) { gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[POSITION_BUFFER]); gl.glVertexAttribPointer(POSITION_ID, 4, GL2.GL_FLOAT, false, 0, 0); }
 
+		if(matrices  != null)
+		{
+			 gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[MATRIX_BUFFER]);
+			
+			int stride = Float.SIZE / 8 * 4 * 4;
+			
+			gl.glVertexAttribPointer(MATRIX_ID + 0, 4, GL2.GL_FLOAT, false, stride, 0);
+			gl.glVertexAttribPointer(MATRIX_ID + 1, 4, GL2.GL_FLOAT, false, stride, Float.SIZE / 8 *  4);
+			gl.glVertexAttribPointer(MATRIX_ID + 2, 4, GL2.GL_FLOAT, false, stride, Float.SIZE / 8 *  8);
+			gl.glVertexAttribPointer(MATRIX_ID + 3, 4, GL2.GL_FLOAT, false, stride, Float.SIZE / 8 * 12);
+		}
+		
 		if(tcoords1  != null)
 		{
 			gl.glClientActiveTexture(GL2.GL_TEXTURE1);
@@ -696,8 +695,17 @@ public class Model
 		if(normals   != null) gl.glDisableClientState(GL2.GL_NORMAL_ARRAY       );
 		if(tcoords0  != null) gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		if(colors    != null) gl.glDisableClientState(GL2.GL_COLOR_ARRAY        );
+		
 		if(tangents  != null) gl.glDisableVertexAttribArray(TANGENT_ID );
 		if(positions != null) gl.glDisableVertexAttribArray(POSITION_ID);
+		
+		if(matrices  != null)
+		{
+			gl.glDisableVertexAttribArray(MATRIX_ID + 0);
+			gl.glDisableVertexAttribArray(MATRIX_ID + 1);
+			gl.glDisableVertexAttribArray(MATRIX_ID + 2);
+			gl.glDisableVertexAttribArray(MATRIX_ID + 3);
+		}
 		
 		if(tcoords1  != null)
 		{
@@ -713,8 +721,17 @@ public class Model
 		if(normals   != null) gl.glEnableClientState(GL2.GL_NORMAL_ARRAY       );
 		if(tcoords0  != null) gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		if(colors    != null) gl.glEnableClientState(GL2.GL_COLOR_ARRAY        );
+		
 		if(tangents  != null) gl.glEnableVertexAttribArray(TANGENT_ID );
 		if(positions != null) gl.glEnableVertexAttribArray(POSITION_ID);
+		
+		if(matrices  != null)
+		{
+			gl.glEnableVertexAttribArray(MATRIX_ID + 0);
+			gl.glEnableVertexAttribArray(MATRIX_ID + 1);
+			gl.glEnableVertexAttribArray(MATRIX_ID + 2);
+			gl.glEnableVertexAttribArray(MATRIX_ID + 3);
+		}
 		
 		if(tcoords1  != null)
 		{
@@ -724,10 +741,16 @@ public class Model
 		}
 		
 		gl.getGL3().glVertexAttribDivisor(POSITION_ID, 1);
+		
+		gl.getGL3().glVertexAttribDivisor(MATRIX_ID + 0, matrixDivisor);
+		gl.getGL3().glVertexAttribDivisor(MATRIX_ID + 1, matrixDivisor);
+		gl.getGL3().glVertexAttribDivisor(MATRIX_ID + 2, matrixDivisor);
+		gl.getGL3().glVertexAttribDivisor(MATRIX_ID + 3, matrixDivisor);
 	}
 	
 	public boolean hasInstanceData() { return positions != null; }
 	public boolean hasTangentData () { return tangents  != null; }
+	public boolean hasMatrixData  () { return matrices  != null; }
 	
 	public void renderInstanced(GL2 gl, int count)
 	{
@@ -840,6 +863,7 @@ public class Model
 	    // Vertex data
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[VERTEX_BUFFER]);
 		gl.glBufferData(GL2.GL_ARRAY_BUFFER, Float.SIZE / 8 * vertices.capacity(), vertices, GL2.GL_STATIC_DRAW);
+		// the division by 8 is required to convert bits to bytes
 	    
 	    // Normal data
 		if(normals != null)
@@ -879,7 +903,7 @@ public class Model
 		// Positional data for instanced rendering
 		if(positions != null)
 		{
-			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[OFFSET_BUFFER]);
+			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[POSITION_BUFFER]);
 			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Float.SIZE / 8 * positions.capacity(), positions, GL2.GL_STATIC_DRAW);
 		}
 	    
@@ -888,6 +912,13 @@ public class Model
 		{
 			gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, bufferIDs[INDEX_BUFFER]);
 			gl.glBufferData(GL2.GL_ELEMENT_ARRAY_BUFFER, Integer.SIZE / 8 * indexCount, indices, GL2.GL_STATIC_DRAW);
+		}
+		
+		// Transformation matrices for instanced rendering 
+		if(matrices != null)
+		{
+			gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, bufferIDs[MATRIX_BUFFER]);
+			gl.glBufferData(GL2.GL_ARRAY_BUFFER, Float.SIZE / 8 * matrices.capacity(), matrices, GL2.GL_STATIC_DRAW);
 		}
 		
 		unbindArrays(gl);

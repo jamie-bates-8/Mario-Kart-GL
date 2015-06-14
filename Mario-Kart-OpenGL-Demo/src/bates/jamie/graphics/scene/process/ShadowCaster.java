@@ -258,10 +258,14 @@ public class ShadowCaster
 	{
 		Vehicle car = scene.getCars().get(0);
 		
+		Scene.beginRenderLog("SHADOW MODE");
+		
 		scene.renderVehicles (gl, car, true);
 	    scene.renderItems    (gl, car);
 	    scene.renderFoliage  (gl, car);
 	    scene.renderObstacles(gl);
+	    
+	    Scene.endRenderLog();
 	}
 	
 	private void depthMode(GL2 gl, boolean enable)
