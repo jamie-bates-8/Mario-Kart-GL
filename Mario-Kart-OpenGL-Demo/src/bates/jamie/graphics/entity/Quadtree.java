@@ -1467,7 +1467,7 @@ public class Quadtree
 				
 				if(enableCaustic)
 				{
-					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+					shader.setModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					shader.setUniform(gl, "timer", timer);
 					shader.setSampler(gl, "normalMap", 2);
 					shader.setUniform(gl, "magma", Scene.singleton.water.magma);
@@ -1477,7 +1477,7 @@ public class Quadtree
 				
 				if(Scene.enableShadow)
 				{
-					shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+					shader.setModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 					
 					shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
 					

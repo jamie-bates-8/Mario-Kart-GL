@@ -24,6 +24,8 @@ void main(void)
     bright = length(gl_TexCoord[0].st * 2.0 - 1.0) * 0.5 * bright;
     bright = smoothstep(0.0, 0.5, bright);
     
+    //gl_FragData[0] = vec4(vec3(bright), textureColor.a);
+    
     if(spark) gl_FragData[1] = textureColor;
     else if(smoke) gl_FragData[1] = vec4(vec3(0.0), textureColor.a);
     else gl_FragData[1] = vec4(mix(vec3(0.0), textureColor.rgb, bright), textureColor.a);

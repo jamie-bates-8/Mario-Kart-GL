@@ -5,7 +5,7 @@ varying vec3 lightDir;
 varying vec3 vNormal, vTangent, vBinormal;
 varying float timer;
 
-uniform mat4 ModelMatrix;
+uniform mat4 model_matrix;
 uniform float clock;
 
 mat3 getRotation(mat4 m)
@@ -29,13 +29,13 @@ mat3 getRotation(mat4 m)
 
 void main()
 {	
-	worldPos = vec3(ModelMatrix * gl_Vertex);  
+	worldPos = vec3(model_matrix * gl_Vertex);  
 	eyePos = gl_ModelViewMatrixInverse[3].xyz;
 	lightDir = vec3(gl_ModelViewMatrixInverse * gl_LightSource[0].position);
 	
-	vTangent  = getRotation(ModelMatrix) * tangent;
-	vBinormal = getRotation(ModelMatrix) * cross(gl_Normal, tangent);
-	vNormal   = getRotation(ModelMatrix) * gl_Normal; 
+	vTangent  = getRotation(model_matrix) * tangent;
+	vBinormal = getRotation(model_matrix) * cross(gl_Normal, tangent);
+	vNormal   = getRotation(model_matrix) * gl_Normal; 
 	
     gl_TexCoord[0] = gl_MultiTexCoord0;
 	

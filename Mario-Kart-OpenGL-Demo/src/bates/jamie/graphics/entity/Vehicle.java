@@ -37,6 +37,8 @@ import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.item.ItemState;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.item.Shell;
+import bates.jamie.graphics.particle.FireParticle;
+import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
 import bates.jamie.graphics.particle.ThunderOrb;
 import bates.jamie.graphics.particle.FireParticle.FireType;
@@ -159,6 +161,7 @@ public class Vehicle
 	
 	/** Particle Fields **/
 	private ParticleGenerator generator = new ParticleGenerator();
+	private List<Particle> boostParticles = new ArrayList<Particle>();
 	
 	
 	/** Item Fields **/
@@ -629,12 +632,12 @@ public class Vehicle
 				gl.glEnable(GL2.GL_LINE_SMOOTH);
 			}
 			
-			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+//			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		}
 		
 		boolean useHDR = BloomStrobe.isEnabled();
 		
-		if(displayModel && !(invisible && BloomStrobe.opaqueMode))
+		if(displayModel && !(invisible && (BloomStrobe.opaqueMode || Scene.reflectMode)))
 		{
 			Light.saveRimState();
 			
@@ -699,7 +702,7 @@ public class Vehicle
 		
 		if(!camera.isFirstPerson() && displayBalloons) renderBalloons(gl);
 		
-		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+//		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);
@@ -713,6 +716,11 @@ public class Vehicle
 		}
 		
 //		timeQuery.end(gl);
+	}
+	
+	public void renderParticles(GL2 gl)
+	{
+		FireParticle.renderList(gl, boostParticles);
 	}
 
 	private void renderBalloons(GL2 gl)
@@ -1239,9 +1247,12 @@ public class Vehicle
 			Vec3[] sources = getBoostVectors();
 			
 			for(int i = 0; i < sources.length; i++)
-				scene.addParticles(generator.generateFireParticles(sources[i], 5, getForwardVector(),
+				boostParticles.addAll(generator.generateFireParticles(sources[i], 5, getForwardVector(),
 						this, i, superBoosting ? FireType.BLUE : FireType.RED));
 		}
+		
+		for(Particle p : boostParticles) p.update();
+		Particle.removeParticles(boostParticles);
 		
 		if(curseDuration > 0) curseDuration--;
 		else cursed = false;

@@ -203,7 +203,7 @@ public class FireParticle extends Particle
 		gl.glEnable(GL2.GL_TEXTURE_2D);
 		
 		gl.glPushMatrix();
-		{	
+		{
 			for(Particle particle : particles)
 			{	
 				FireParticle p = (FireParticle) particle;
@@ -225,34 +225,53 @@ public class FireParticle extends Particle
 	
 	private void renderSingle(GL2 gl, Shader shader)
 	{
+		boolean diminish = (car != null && car.boostDuration < 5);
+		
+		Gradient gradient;
+		
+		switch(type)
+		{
+			case RED   : gradient = red_gradient;   break; 
+			case BLUE  : gradient = blue_gradient;  break;
+			case SMOKE : gradient = smoke_gradient; break;
+			
+			default : gradient = red_gradient; break;
+		}
+		if(diminish && !spark) gradient = smoke_gradient;
+		
 		float  age = (float) duration / lifespan;
 		float halflife = lifespan / 2;
 		float size = Math.abs(((float) duration - halflife) / lifespan);
 		size = 1.0f - size;
 		size = 2.0f * (size - 0.5f);
 		
-		gl.glPointSize((18 * size * scale) + (12 * age * scale));
+		float boost = (car != null) ?  (float) car.boostDuration / 60.0f : 1.0f;
+		boost = 0.75f + boost * 0.25f;
+			
+		gl.glPointSize((18 * size * scale * boost) + (12 * age * scale * boost));
 		if(spark) gl.glPointSize(3 + 6 * age);
 		
-		float[]   color = red_gradient.interpolate(1.0 - age);
-		if(spark) color = red_gradient.interpolate(0.5);
+		float[]   color = gradient.interpolate(1.0 - age);
+		if(spark) color = gradient.interpolate(0.5);
 		
-		float[][] colors = red_gradient.getColors((int) ((1.0 - age) * 100));
-		if(spark) colors = red_gradient.getColors(30);
+		float[][] colors = gradient.getColors((int) ((1.0 - age) * 100));
+		if(spark) colors = gradient.getColors(30);
 		
 		shader.setUniform(gl, "color2", colors[0]);
 		shader.setUniform(gl, "color1", colors[1]);
 		shader.setUniform(gl, "spark", spark);
 		shader.setUniform(gl, "smoke", age < 0.2);
 		
-		gl.glColor4f(color[0], color[1], color[2], age * 1.00f);
-		
-		
+		gl.glColor4f(color[0], color[1], color[2], age);
 		
 		offset = car != null ? car.getBoostVectors()[sourceID] : source;
 		
-		Vec3 position = car != null ? offset.add(c).add(car.bound.u.zAxis.multiply(5.0f * (1 - age))) :
-									  offset.add(c).add(direction.multiply(5.0f * (1 - age)));
+		float fadeDistance = (type == FireType.BLUE) ? 7.5f : 5.0f;
+		if(car != null) fadeDistance *= boost; 
+		if(car != null) fadeDistance  = car.isSlipping() ? 0 : fadeDistance; 
+		
+		Vec3 position = car != null ? offset.add(c).add(car.bound.u.zAxis.multiply(fadeDistance * (1 - age))) :
+									  offset.add(c).add(direction.multiply(fadeDistance * (1 - age)));
 		
 		texture.bind(gl);
 		

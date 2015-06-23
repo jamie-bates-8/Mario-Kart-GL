@@ -48,6 +48,16 @@ public abstract class Uniform
 		return uniform;
 	}
 	
+	public static Uniform getUniform(String identifier, boolean value)
+	{
+		UniformBool uniform = new UniformBool();
+		
+		uniform.setIdentifier(identifier);
+		uniform.setValue(value);
+		
+		return uniform;
+	}
+	
 	public static Uniform getSampler(String identifier, int sampler)
 	{
 		UniformSampler uniform = new UniformSampler();

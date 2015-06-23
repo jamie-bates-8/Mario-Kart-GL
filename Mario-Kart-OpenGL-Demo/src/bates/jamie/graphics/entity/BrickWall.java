@@ -1,6 +1,7 @@
 package bates.jamie.graphics.entity;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
@@ -8,6 +9,8 @@ import javax.media.opengl.GL2;
 import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.process.BloomStrobe;
+import bates.jamie.graphics.scene.process.ShadowCaster;
+import bates.jamie.graphics.util.Matrix;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.TimeQuery;
@@ -138,6 +141,18 @@ public class BrickWall
 		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
+		
+		if(Scene.enableShadow && shader != null)
+		{
+			shader.setModelMatrix(gl, Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16));
+			
+			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
+
+			shader.setUniform(gl, "enableShadow", true);
+			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+		}
+		else if(shader != null) shader.setUniform(gl, "enableShadow", false);
 		
 		Renderer.multi_tex_cube_model.renderInstanced(gl, brickBlocks.size());
 		

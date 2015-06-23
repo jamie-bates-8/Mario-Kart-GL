@@ -119,7 +119,7 @@ public class Water
 			
 			shader.setUniform(gl, "frozen", frozen);
 			
-			shader.loadModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
+			shader.setModelMatrix(gl, Matrix.IDENTITY_MATRIX_16);
 			// TODO temporary fix, should pass actual camera position to shader
 			shader.setUniform(gl, "cameraPos", p.toArray());
 			

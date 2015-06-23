@@ -1,16 +1,14 @@
 #version 120
 #extension GL_ARB_gpu_shader5 : enable
 
-
-uniform mat4 model_matrix;
-
 varying vec4 shadowCoord;
+varying vec3 vertexNormal;
 varying vec3 lightDir[8];
 varying vec3 eyeDir;
 
-attribute vec3 tangent;
 attribute vec4 instance_data;
 attribute mat4 instance_matrix;
+
 
 void main(void) 
 { 
@@ -27,33 +25,15 @@ void main(void)
 	mat3 normal_matrix = mat3(gl_ModelViewMatrix * instance_matrix);
 	normal_matrix = transpose(inverse(normal_matrix));
 	
-    vec3 n = normalize(normal_matrix * gl_Normal);
-	vec3 t = normalize(normal_matrix * tangent);
-	vec3 b = cross(n, t);
+    vertexNormal = normalize(normal_matrix * gl_Normal);
 
     // Get vertex position in eye coordinates
     vec3 position = (vertex / vertex.w).xyz;
     
-    eyeDir = vertex.xyz;
+    eyeDir = -vertex.xyz;
 	
-	vec3 light, v;
-	
-	for(int i = 0; i < 8; i++)
-	{
-		light = gl_LightSource[i].position.xyz - position;
-	
-		v.x = dot(light, t); // tangent
-		v.y = dot(light, b); // bitangent
-		v.z = dot(light, n); // normal
-	
-		lightDir[i] = v;
-	}
-	
-	v.x = dot(eyeDir, t);
-	v.y = dot(eyeDir, b);
-	v.z = dot(eyeDir, n);
-	
-	eyeDir = v;
+	// Get vector to light source
+    for(int i = 0; i < 8; i++) lightDir[i] = gl_LightSource[i].position.xyz - position;
 	
     gl_FrontColor = gl_Color;
     

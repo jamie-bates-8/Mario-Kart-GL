@@ -11,6 +11,8 @@ varying vec4 shadowCoord;
 varying vec2  gridScale;
 uniform float minScale;
 
+uniform bool antiAlias;
+
 uniform sampler2D patternMask;
 uniform sampler2DShadow shadowMap;
 
@@ -117,6 +119,24 @@ void pointLight(in int i, in vec3 normal, inout vec4 ambient, inout vec4 diffuse
     }
 }
 
+vec4 getProceduralColor()
+{
+	vec4 checkerColor = vec4(0.0);
+	
+	float pixWidth = 0.0005;
+	float boxWidth = 1.0;
+	
+	float x, y;
+	
+	for (y = -pixWidth * boxWidth; y <= pixWidth * boxWidth; y += pixWidth)
+  			for (x = -pixWidth * boxWidth; x <= pixWidth * boxWidth; x += pixWidth)
+    			checkerColor += getCheckerColor(gl_TexCoord[0].st + vec2(x, y));
+    			
+    checkerColor /= pow(2.0 * boxWidth + 1.0, 2.0);
+    
+    return checkerColor;
+}
+
 void main(void)
 { 
 	float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
@@ -131,18 +151,7 @@ void main(void)
     	pointLight(i, vertexNormal, ambient, diffuse, specular);
     }
 	
-	vec4 checkerColor = vec4(0.0);
-	
-	float pixWidth = 0.0005;
-	float boxWidth = 2.0;
-	
-	float x, y;
-	
-	for (y = -pixWidth * boxWidth; y <= pixWidth * boxWidth; y += pixWidth)
-  			for (x = -pixWidth * boxWidth; x <= pixWidth * boxWidth; x += pixWidth)
-    			checkerColor += getCheckerColor(gl_TexCoord[0].st + vec2(x, y));
-    			
-    checkerColor /= pow(2.0 * boxWidth + 1.0, 2.0);
+	vec4 checkerColor = antiAlias ? getProceduralColor() : getCheckerColor(gl_TexCoord[0].st);
     
     vec4 linearColor = shadowCoefficient * (checkerColor * (ambient + diffuse) + specular);
 	

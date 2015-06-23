@@ -48,7 +48,7 @@ public class SceneNode
 	private Reflector reflector;
 	private float reflectivity = 1.0f;
 	
-	private boolean enableParallax = true;
+	private boolean enableParallax = false;
 	private boolean enableBloom = true;
 	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
@@ -227,7 +227,7 @@ public class SceneNode
 			}
 			case BUMP_TEXTURE:
 			{
-				if(shader == null) shader = enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights");
+				if(shader == null) shader = (enableParallax && Scene.enableParallax) ? Shader.get("parallax_lights") : Shader.get("bump_lights");
 				
 				if(shader != null)
 				{
@@ -235,7 +235,12 @@ public class SceneNode
 			
 					shader.setSampler(gl, "texture"  , 0);
 					shader.setSampler(gl, "bumpmap"  , 1);
-					shader.setSampler(gl, "heightmap", 2);
+					
+					if(enableParallax)
+					{
+						shader.setSampler(gl, "heightmap", 2);
+						shader.setUniform(gl, "camera_position", Scene.singleton.getCars().get(0).camera.getPosition());
+					}
 				}
 				break;      
 			}
@@ -271,7 +276,7 @@ public class SceneNode
 		
 		if(Scene.enableShadow && shader != null)
 		{
-			shader.loadModelMatrix(gl, getModelMatrix());
+			shader.setModelMatrix(gl, getModelMatrix());
 
 			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
 
@@ -305,7 +310,7 @@ public class SceneNode
 				
 				if(Scene.enableShadow && shader != null)
 				{
-					shader.loadModelMatrix(gl, getModelMatrix());
+					shader.setModelMatrix(gl, getModelMatrix());
 
 					shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
 
@@ -417,7 +422,7 @@ public class SceneNode
 				if(reflector != null)
 				{
 					shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
-					shader.setUniform(gl, "shininess", reflectivity);
+					shader.setUniform(gl, "shininess", 0.75f);
 					
 					float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 					shader.loadMatrix(gl, "cameraMatrix", camera);

@@ -139,9 +139,12 @@ import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.Blizzard;
 import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.BoostParticle;
+import bates.jamie.graphics.particle.FireParticle;
+import bates.jamie.graphics.particle.FirePit;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
+import bates.jamie.graphics.particle.ParticleGenerator.GeneratorType;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.scene.process.FocalBlur;
 import bates.jamie.graphics.scene.process.Mirror;
@@ -298,7 +301,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private GLU glu;
 	private GLUT glut;
 	
-	public float[] background = RGB.BLACK;
+	public float[] background = new float[] {0.53f, 0.78f, 1.00f};
 	
 	public static boolean enableAnimation = true;
 	private boolean normalize = true;
@@ -334,8 +337,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private Texture brick_front_height;
 	private Texture brick_side_height;
 	
-	private Texture floorBump;
-	private Texture floorTex;
+	private Texture floor_normal;
+	private Texture floor_colour;
+	private Texture floor_height;
 	
 	public Texture rain_normal;
 	public Texture pattern_mask;
@@ -1427,7 +1431,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void setupGenerators()
 	{
-		
+//		generators.add(new ParticleGenerator(1, 5, GeneratorType.FIRE, new Vec3(0)));
 	}
 
 	private void loadPlayers(GL2 gl)
@@ -1457,8 +1461,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			brick_front_height = TextureLoader.load(gl, "tex/brick_front_height.png"); 
 			brick_side_height  = TextureLoader.load(gl, "tex/brick_side_height.png");
 			
-			floorBump = TextureLoader.load(gl, "tex/bump_maps/brick_parallax.png");
-			floorTex  = TextureLoader.load(gl, "tex/brick_color.jpg");
+//			floor_normal = TextureLoader.load(gl, "tex/bump_maps/brick_parallax.png");
+//			floor_colour = TextureLoader.load(gl, "tex/brick_color.jpg");
+			floor_normal = TextureLoader.load(gl, "tex/rock_mine_NRM.jpg");
+			floor_colour = TextureLoader.load(gl, "tex/rock_mine.jpg");
+			floor_height = TextureLoader.load(gl, "tex/rock_mine_DISP.jpg");
 			
 //			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
 			rain_normal  = TextureLoader.load(gl, "tex/bump_maps/noise.jpg");
@@ -1510,7 +1517,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		GL2 gl = drawable.getGL().getGL2();
 		
 		gl.glClearDepth(1.0f);
-		gl.glClearColor(background[0], background[1], background[2], 1.0f);
+		gl.glClearColor(background[0], background[1], background[2], 0.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL2.GL_STENCIL_BUFFER_BIT);
 		
 		resetView(gl);
@@ -1538,8 +1545,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		renderTime = System.currentTimeMillis();
 		
-//		renderQuery.getResult(gl);
-//		renderQuery.begin(gl);
+		renderQuery.getResult(gl);
+		renderQuery.begin(gl);
 		
 		Vehicle car = cars.get(0);
 		updateReflectors(gl, car);
@@ -1550,7 +1557,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		render(gl);
 		
-//		renderQuery.end(gl);
+		renderQuery.end(gl);
 
 		gl.glFlush();
 		
@@ -1564,8 +1571,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		shadowQuery.end(gl);
 		
 //		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, 1, 1);
-		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
-//		if(testMode) displayMap(gl, bloom.getTexture(7), -0, -0, 1, 1);
+//		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
+		if(displayDepth) displayMap(gl, bloom.getTexture(7), 0, 0, 1, 1);
 		
 		calculateFPS();
 	}
@@ -1700,12 +1707,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			Vehicle car = cars.get(index);
 			
-			setupViewport(gl, index);
-			car.setupCamera(gl);
-			
-			setupLights(gl, car);
-			
-			mirror.update(gl);
+//			setupViewport(gl, index);
+//			car.setupCamera(gl);
+//			
+//			setupLights(gl, car);
+//			
+//			mirror.update(gl);
 			
 			setupViewport(gl, index);
 			car.setupCamera(gl);
@@ -1743,9 +1750,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				beginRenderLog("NORMAL MODE");
 
 				if(terrain != null && terrain.enableWater) renderWater(gl, car);
+				
+				normalMode = true;
 
 				renderWorld(gl);
 				render3DModels(gl, car);
+				if(displaySkybox) renderSkybox(gl);
 
 //				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 //				else renderTimes[frameIndex][1] = 0;
@@ -1763,14 +1773,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 					for(Light l : lights) l.render(gl);
 				
 				endRenderLog();
+				normalMode = false;
 			}
 			
-			renderQuery.getResult(gl);
-			renderQuery.begin(gl);
-			
 			if(enableFocalBlur) focalBlur.guassianPass(gl);
-			
-			renderQuery.end(gl);
 			
 			gl.glDisable(GL2.GL_CLIP_PLANE2);
 			
@@ -1795,6 +1801,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static boolean reflectMode = false;
 	public static boolean depthMode = false;
 	public static boolean environmentMode = false;
+	public static boolean normalMode = false;
 	
 	/**
 	 * This method renders the world as reflected by the surface of the water.
@@ -1819,6 +1826,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 			renderWorld(gl);
 			render3DModels(gl, car);
+			if(displaySkybox) renderSkybox(gl);
 		}
 		gl.glPopMatrix();
 		
@@ -1829,7 +1837,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glDisable(GL2.GL_CLIP_PLANE1);
 		water.setReflection(gl);
 		
-		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		// removed reflected geometry from final render
 	}
@@ -1925,8 +1933,9 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		    ItemBox.increaseRotation();
 		FakeItemBox.increaseRotation();
 		
-		for(ParticleGenerator generator : generators)
-			if(generator.update()) particles.addAll(generator.generate());
+		if(!testMode)
+			for(ParticleGenerator generator : generators)
+				if(generator.update()) particles.addAll(generator.generate());
 		
 		for(Particle p : particles) p.update();
 		
@@ -2149,21 +2158,24 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			boolean bloom = BloomStrobe.begin(gl);
 			
-			Shader shader = enableBump ? (singleLight ? Shader.get("bump") : Shader.get("bump_lights")) :
+			Shader shader = enableBump ? (singleLight ? Shader.get("bump") : (Scene.enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights"))) :
 				Shader.getLightModel("shadow");
 
 			shader.enable(gl);
 			shader.setSampler(gl, "texture", 0);
 			shader.setSampler(gl, "bumpmap", 1);
+			shader.setSampler(gl, "heightmap", 2);
 //		    shader.setSampler(gl, "reflectSampler", 2);
 
 			shader.setUniform(gl, "enableParallax", Scene.enableParallax);
+			
+			shader.setUniform(gl, "camera_position", cars.get(0).camera.getPosition());
 
 			if(enableShadow && shader != null)
 			{
 				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 
-				shader.loadModelMatrix(gl, model);
+				shader.setModelMatrix(gl, model);
 
 				shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
 
@@ -2172,10 +2184,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
 			}
 
-//			gl.glActiveTexture(GL2.GL_TEXTURE3); rockHeight.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE2); floor_height.bind(gl);
 //			gl.glActiveTexture(GL2.GL_TEXTURE2); gl.glBindTexture(GL2.GL_TEXTURE_2D, water.reflectTexture);
-			gl.glActiveTexture(GL2.GL_TEXTURE1); floorBump.bind(gl);
-			gl.glActiveTexture(GL2.GL_TEXTURE0); floorTex.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE1); floor_normal.bind(gl);
+			gl.glActiveTexture(GL2.GL_TEXTURE0); floor_colour.bind(gl);
 			
 			gl.glColor3f(1, 1, 1);
 
@@ -2206,9 +2218,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public long renderWorld(GL2 gl)
 	{
 		long start = System.nanoTime();
-		
-		// prevents shadow texture unit from being active
-		if(displaySkybox) renderSkybox(gl);
 		
 		Shader shader = null;
 		{
@@ -2247,8 +2256,10 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		Shader.disable(gl);
 			
-		if(testMode) renderWalls(gl);
-		else brickWall.render(gl);
+		renderWalls(gl);
+		
+//		if(testMode) renderWalls(gl);
+//		else brickWall.render(gl);
 		
 //		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 //		planeMesh.render(gl);
@@ -2259,11 +2270,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void renderWalls(GL2 gl)
 	{
-		if(!enableParallax)
+		if(!enableBump)
 		{
-			Shader shader = Shader.get("texture_lights");
-			if(shader != null) shader.enable(gl);
-
 			Texture[] textures = {brick_side, brick_front, brick_front};
 
 			gl.glPushMatrix();
@@ -2277,23 +2285,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		}
 		else
 		{
-			Shader shader = Shader.get("parallax_lights");
-			if(shader != null) shader.enable(gl);
-			
-			shader.setSampler(gl, "texture", 0);
-			shader.setSampler(gl, "bumpmap", 1);
-			shader.setSampler(gl, "heightmap", 2);
-			
-			float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-
-//			shader.loadModelMatrix(gl, model);
-
-//			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
-
-//			shader.setUniform(gl, "enableShadow", 1);
-//			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
-//			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
-			
 			Texture[] colourMaps = {brick_side, brick_front, brick_front};
 			Texture[] normalMaps = {brick_side_normal, brick_front_normal, brick_front_normal};
 			Texture[] heightMaps = {brick_side_height, brick_front_height, brick_front_height};
@@ -2359,17 +2350,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		if(!environmentMode)
 		{	
-			shine.render(gl); 
-			 star.render(gl);
-    questionBlock.render(gl);
+			if(!testMode)
+			{
+				shine.render(gl); 
+				star.render(gl);
+				questionBlock.render(gl);
+				mushroom.render(gl);
+			}
+			 
 //    		 pipe.render(gl);
             
 //    		for(WoodPlank plank : planks) plank.render(gl);
 			 
 //			for(GoldCoin coin : coins) coin.render(gl);
 		}
-		
-		mushroom.render(gl);
 
 		return System.nanoTime() - start;
 	}
@@ -2463,14 +2457,23 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //		renderQuery.getResult(gl);
 //		renderQuery.begin(gl);
 		
+		car.renderParticles(gl);
+		
+//		renderQuery.end(gl);
+		
 		if(enableBlizzard) blizzard.render(gl);
 		
-		bolt.render(gl, car.camera.u.zAxis);
+		if(!testMode)
+		{
+			bolt.render(gl, car.camera.u.zAxis);
+			
+			shine.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
+			 star.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);	
+		}
 		
 //		energyField.render(gl);
 		
-		shine.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
-		 star.renderFlare(gl, car.camera.isFree() ? car.camera.ry : car.trajectory);
+		
 		 
 		for(Particle particle : particles)
 		{

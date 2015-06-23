@@ -76,11 +76,11 @@ public abstract class Item
 			gl.glEnable(GL2.GL_LINE_SMOOTH);
 		}
 		
-		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+//		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		 
 		render(gl, trajectory);
 		 
-		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+//		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 		
 		gl.glDisable(GL2.GL_BLEND);
 		gl.glDisable(GL2.GL_LINE_SMOOTH);

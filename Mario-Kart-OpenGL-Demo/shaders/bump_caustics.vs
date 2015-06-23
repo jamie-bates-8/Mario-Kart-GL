@@ -8,7 +8,7 @@ varying vec3 worldPos, eyePos;
 varying vec3 vNormal, vTangent, vBinormal;
 varying float timer;
 
-uniform mat4 ModelMatrix;
+uniform mat4 model_matrix;
 uniform float clock;
 
 attribute vec3 tangent;
@@ -34,13 +34,13 @@ mat3 getRotation(mat4 m)
 
 void main(void)
 {
-	worldPos = vec3(ModelMatrix * gl_Vertex);  
+	worldPos = vec3(model_matrix * gl_Vertex);  
 	
-	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
+	shadowCoord = gl_TextureMatrix[6] * (model_matrix * gl_Vertex);
 	
-	vTangent  = getRotation(ModelMatrix) * tangent;
-	vBinormal = getRotation(ModelMatrix) * cross(gl_Normal, tangent);
-	vNormal   = getRotation(ModelMatrix) * gl_Normal; 
+	vTangent  = getRotation(model_matrix) * tangent;
+	vBinormal = getRotation(model_matrix) * cross(gl_Normal, tangent);
+	vNormal   = getRotation(model_matrix) * gl_Normal; 
 
 	eyeDir = vec3(gl_ModelViewMatrix * gl_Vertex);
 	

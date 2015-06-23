@@ -1,5 +1,5 @@
 
-uniform mat4 ModelMatrix;
+uniform mat4 model_matrix;
 
 varying vec4 shadowCoord;
 varying vec3 lightDir[8];
@@ -46,5 +46,5 @@ void main(void)
     
     gl_TexCoord[0] = gl_MultiTexCoord0;
     gl_TexCoord[1] = gl_MultiTexCoord1;
-	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
+	shadowCoord = gl_TextureMatrix[6] * (model_matrix * gl_Vertex);
 }

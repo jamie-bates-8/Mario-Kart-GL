@@ -85,6 +85,7 @@ public class Shader
 		Shader phong         = new Shader(gl, "phong");
 		Shader phongLights   = new Shader(gl, "phong_lights");
 		Shader phongInstance = new Shader(gl, "phong_instance", "phong_lights", inst_attr);
+		Shader phongMatInst  = new Shader(gl, "phong_mat_inst", "phong_lights", mat_inst_attr);
 		Shader phongRim      = new Shader(gl, "phong_lights", "phong_rim");
 		Shader phongTexture  = new Shader(gl, "phong_texture");
 		Shader phongAlpha    = new Shader(gl, "phong_texture", "phong_alpha");
@@ -93,16 +94,19 @@ public class Shader
 		
 		Shader texLights      = new Shader(gl, "texture_lights");
 		Shader textureRim     = new Shader(gl, "texture_lights", "texture_rim");
+		
 		Shader checkerDiag    = new Shader(gl, "checker_diagonal");
 		Shader checkerSlope   = new Shader(gl, "checker_slope");
 		Shader checkerReflect = new Shader(gl, "checker_slope", "checker_reflect");
 		Shader checkerShadow  = new Shader(gl, "checker_shadow");
 		Shader checkerBlock   = new Shader(gl, "checker_shadow", "checker_block");
+		Shader checkerInst    = new Shader(gl, "checker_instance", "checker_block", mat_inst_attr);
+		Shader slopeInstance  = new Shader(gl, "checker_instance", "checker_shadow", mat_inst_attr);
 		
 		Shader bump          = new Shader(gl, "bump", "bump", bump_attr);
 		Shader bumpPhong     = new Shader(gl, "bump_lights", "bump_phong", bump_attr);
 		Shader bumpLights    = new Shader(gl, "bump_lights", "bump_lights", bump_attr);
-		Shader parallax      = new Shader(gl, "bump_lights", "parallax_lights", bump_attr);
+		Shader parallax      = new Shader(gl, "parallax_lights", "parallax_lights", bump_attr);
 		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", bump_attr);
 		Shader bumpCube      = new Shader(gl, "bump_cube", "bump_cube", bump_attr);
 		Shader bumpRain      = new Shader(gl, "bump_cube", "bump_rain", bump_attr);
@@ -166,6 +170,8 @@ public class Shader
 		if(        phong.isValid()) shaders.put("phong", phong);
 		if(  phongLights.isValid()) shaders.put("phong_lights", phongLights);
 		if(phongInstance.isValid()) shaders.put("phong_instance", phongInstance);
+		if( phongMatInst.isValid()) shaders.put("phong_mat_inst", phongMatInst);
+		
 		if(     phongRim.isValid()) shaders.put("phong_rim", phongRim);
 		if( phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(   phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
@@ -179,6 +185,8 @@ public class Shader
 		if(checkerReflect.isValid()) shaders.put("checker_reflect", checkerReflect);
 		if( checkerShadow.isValid()) shaders.put("checker_shadow", checkerShadow);
 		if(  checkerBlock.isValid()) shaders.put("checker_block", checkerBlock);
+		if(   checkerInst.isValid()) shaders.put("checker_instance", checkerInst);
+		if( slopeInstance.isValid()) shaders.put("slope_instance", slopeInstance);
 		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
@@ -490,9 +498,9 @@ public class Shader
 		if(uniform instanceof UniformSampler) setSampler(gl, uniform.getIdentifier(), ((UniformSampler) uniform).getValue());
 	}
 	
-	public void loadModelMatrix(GL2 gl, float[] matrix)
+	public void setModelMatrix(GL2 gl, float[] matrix)
 	{
-		int modelMatrix = gl.glGetUniformLocation(shaderID, "ModelMatrix");
+		int modelMatrix = gl.glGetUniformLocation(shaderID, "model_matrix");
 		gl.glUniformMatrix4fv(modelMatrix, 1, false, matrix, 0);
 	}
 	

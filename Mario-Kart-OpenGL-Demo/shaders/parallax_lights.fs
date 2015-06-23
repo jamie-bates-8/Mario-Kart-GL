@@ -9,6 +9,7 @@ uniform sampler2DShadow shadowMap;
 varying vec3 lightDir[8];
 varying vec3 eyeDir;
 varying vec4 shadowCoord;
+varying vec3 cameraVec;
 
 uniform bool enableShadow;
 uniform int sampleMode;
@@ -95,11 +96,11 @@ void pointLight(in int i, in vec3 normal, in vec4 textureColor, inout vec4 ambie
 
 void main(void)
 {
-	float height, scale = 0.05, bias = 0.0;
+	float height, scale = 0.04, bias = 0.02;
 	vec2 texCoord = gl_TexCoord[0].st;
 	
 	height = scale * (texture2D(heightmap, texCoord).r) - bias;
-	texCoord -= height * normalize(eyeDir).xy;
+	texCoord += height * normalize(cameraVec).xy;
 	
     vec3 normal = texture2D(bumpmap, texCoord).rgb;
     normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]

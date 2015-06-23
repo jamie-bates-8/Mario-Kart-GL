@@ -315,6 +315,8 @@ public class HUD
 		
 		renderer.draw(p.toString(), x, y - LINE_SPACING * 15);
 		
+		renderer.draw("Test Mode: " + Scene.testMode, x, y - LINE_SPACING * 16);
+		
 		renderer.draw("Velocity: " + String.format("%.2f", car.velocity), x, 40);
 		
 		for(int i = 0; i < BUFFER_SIZE; i++)

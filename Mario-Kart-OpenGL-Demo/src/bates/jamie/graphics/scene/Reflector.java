@@ -212,6 +212,7 @@ public class Reflector
 			
 			Scene.environmentMode = true;
 			scene.renderWorld(gl);
+			if(scene.displaySkybox) scene.renderSkybox(gl);
 			Scene.environmentMode = false;
 		}
 		

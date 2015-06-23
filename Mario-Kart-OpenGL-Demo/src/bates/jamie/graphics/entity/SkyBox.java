@@ -1,7 +1,5 @@
 package bates.jamie.graphics.entity;
 
-import static javax.media.opengl.GL.GL_TEXTURE_2D;
-
 import java.io.File;
 
 import javax.media.opengl.GL2;
@@ -57,7 +55,7 @@ public class SkyBox
 			shader.setSampler(gl, "noiseSampler", 0); gl.glActiveTexture(GL2.GL_TEXTURE0); randomTexture.bind(gl);
 				
 			GLUT glut = new GLUT();
-			glut.glutSolidSphere(800, 32, 32);
+			glut.glutSolidSphere(800, 16, 16);
 		}	
 		gl.glPopMatrix();
 		

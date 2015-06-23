@@ -7,10 +7,11 @@ import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Material;
 import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
+import bates.jamie.graphics.scene.process.ShadowCaster;
 import bates.jamie.graphics.util.Matrix;
-import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Renderer;
 import bates.jamie.graphics.util.TextureLoader;
 import bates.jamie.graphics.util.Vec3;
@@ -24,8 +25,8 @@ public class WoodBridge
 	static Model small_bridge_model = new Model("small_wooden_bridge");
 	
 	static Model plank_model   = new Model("plank_2");
-	static Model post_model    = OBJParser.parseTexturedTriangleMesh("wooden_post");
-	static Model support_model = OBJParser.parseTexturedTriangleMesh("bridge_support");
+	static Model post_model    = new Model("wooden_post");
+	static Model support_model = new Model("bridge_support");
 	
 	static Material polished_wood;
 	
@@ -36,7 +37,7 @@ public class WoodBridge
 	Vec3  position;
 	
 	boolean use_large_model;
-	boolean enable_simplify = false;
+	
 	
 	public WoodBridge(GL2 gl, Vec3 p, float r, boolean large)
 	{
@@ -65,7 +66,7 @@ public class WoodBridge
 		large_bridge_node.setScale(new Vec3(15));
 		large_bridge_node.setRotation(new Vec3(0, r, 0));
 		large_bridge_node.setRenderMode(RenderMode.BUMP_TEXTURE);
-		large_bridge_node.useParallax(false);
+		large_bridge_node.useParallax(true);
 		
 		small_bridge_node = new SceneNode(small_bridge_model);
 		small_bridge_node.setMaterial(polished_wood);
@@ -73,7 +74,7 @@ public class WoodBridge
 		small_bridge_node.setScale(new Vec3(15));
 		small_bridge_node.setRotation(new Vec3(0, r, 0));
 		small_bridge_node.setRenderMode(RenderMode.BUMP_TEXTURE);
-		small_bridge_node.useParallax(false);
+		small_bridge_node.useParallax(true);
 	}
 	
 	private void setupInstances()
@@ -113,7 +114,7 @@ public class WoodBridge
 		{
 			start = start.add(new Vec3(5.625, 0, 0));
 			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -7.875, 0)).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, -7.3125, 0)).toArray()); positions.put(1);
 		}
 		
 		start = new Vec3(90, 7.5, 33.75).add(new Vec3(-47.8125, 21.9375, 0));
@@ -122,7 +123,7 @@ public class WoodBridge
 		{
 			start = start.add(new Vec3(5.625, 0, 0));
 			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -7.875, 0)).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, -7.3125, 0)).toArray()); positions.put(1);
 		}
 		
 		start = new Vec3(0, 30, 56.25).add(new Vec3(-25.3125, -0.5625, 0));
@@ -131,7 +132,7 @@ public class WoodBridge
 		{
 			start = start.add(new Vec3(5.625, 0, 0));
 			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -5.0625, 0)).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, -4.5, 0)).toArray()); positions.put(1);
 		}
 		
 		start = new Vec3(0, 37.5, 101.25).add(new Vec3(-33.75, 18.27375, 10.125));
@@ -283,34 +284,41 @@ public class WoodBridge
 	
 	public void render(GL2 gl)
 	{	
-		if(enable_simplify)
-		{
-			polished_wood.load(gl);
-			
-			Renderer.instanced_mode = true;
-			Renderer.instanced_matrix_mode = true;
-			
-			Shader shader = Shader.get("bump_mat_inst");
-			if(shader != null) shader.enable(gl);
-			
-			shader.setSampler(gl, "texture"  , 0);
-			shader.setSampler(gl, "bumpmap"  , 1);
-			shader.setSampler(gl, "heightmap", 2);
-			
-			plank_model.renderInstanced(gl, 96);
-			post_model.renderInstanced(gl, 24);
-			support_model.renderInstanced(gl, 8);
-			
-			Shader.disable(gl);
-			
-			Renderer.instanced_mode = false;
-			Renderer.instanced_matrix_mode = false;
-		}
-		else
-		{
-			if(use_large_model) large_bridge_node.render(gl);
-			else small_bridge_node.render(gl);
-		}
+		if(use_large_model) large_bridge_node.render(gl);
+		else small_bridge_node.render(gl);
 	}
 	
+	public static void renderSimplified(GL2 gl)
+	{
+		polished_wood.load(gl);
+		
+		Renderer.instanced_mode = true;
+		Renderer.instanced_matrix_mode = true;
+		
+		Shader shader = Shader.get("bump_mat_inst");
+		if(shader != null) shader.enable(gl);
+		
+		shader.setSampler(gl, "texture"  , 0);
+		shader.setSampler(gl, "bumpmap"  , 1);
+		shader.setSampler(gl, "heightmap", 2);
+		
+		if(Scene.enableShadow && shader != null)
+		{
+			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
+
+			shader.setUniform(gl, "enableShadow", true);
+			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+		}
+		else if(shader != null) shader.setUniform(gl, "enableShadow", false);
+		
+		plank_model.renderInstanced(gl, 96);
+		post_model.renderInstanced(gl, 24);
+		support_model.renderInstanced(gl, 8);
+		
+		Shader.disable(gl);
+		
+		Renderer.instanced_mode = false;
+		Renderer.instanced_matrix_mode = false;
+	}
 }

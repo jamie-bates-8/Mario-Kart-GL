@@ -1,10 +1,11 @@
 
 uniform mat4 model_matrix;
+uniform vec3 camera_position;
 
 varying vec4 shadowCoord;
 varying vec3 lightDir[8];
 varying vec3 eyeDir;
-varying vec4 fragCoord;
+varying vec3 cameraVec;
 
 attribute vec3 tangent;
 
@@ -14,8 +15,6 @@ void main(void)
 	
 	gl_ClipVertex = vertex;
     gl_Position   = ftransform();
-    
-    fragCoord = ftransform();
 	
     vec3 n = normalize(gl_NormalMatrix * gl_Normal);
 	vec3 t = normalize(gl_NormalMatrix * tangent);
@@ -25,6 +24,7 @@ void main(void)
     vec3 position = (vertex / vertex.w).xyz;
     
     eyeDir = vertex.xyz;
+    cameraVec = camera_position - gl_Vertex.xyz;
 	
 	vec3 light, v;
 	
@@ -45,8 +45,15 @@ void main(void)
 	
 	eyeDir = v;
 	
+	v.x = dot(cameraVec, t);
+	v.y = dot(cameraVec, b);
+	v.z = dot(cameraVec, n);
+	
+	cameraVec = v;
+	
     gl_FrontColor = gl_Color;
     
     gl_TexCoord[0] = gl_MultiTexCoord0;
+    gl_TexCoord[1] = gl_MultiTexCoord1;
 	shadowCoord = gl_TextureMatrix[6] * (model_matrix * gl_Vertex);
 }

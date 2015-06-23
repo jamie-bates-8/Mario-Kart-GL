@@ -71,7 +71,7 @@ public class ParticleGenerator
 			case SPARK   : return generateSparkParticles  (source, getRandomVector(), quantity, 0, null);
 			case RAY     : return generateRayParticles    (source, quantity);
 			case SPARKLE : return generateSparkleParticles(source, quantity, false, null);
-			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 0.9, 0), null, 0, FireType.SMOKE);
+			case FIRE    : return generateFireParticles   (source, quantity, new Vec3(0, 0.9, 0), null, 0, FireType.RED);
 			
 			default: return null;
 		}
@@ -174,7 +174,7 @@ public class ParticleGenerator
 		
 		for(int i = 0; i < n; i++)
 		{
-			float h = hue + generator.nextFloat() * 0.083f;
+			float h = hue + generator.nextFloat() * 0.025f;
 			if(h > 1) h -= 1;
 			
 			float[] color = RGB.HSVToRGB(new float[] {h, 1, 1});

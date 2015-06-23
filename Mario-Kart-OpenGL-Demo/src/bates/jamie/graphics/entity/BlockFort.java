@@ -40,13 +40,13 @@ public class BlockFort
 	
 	private static int fortList = -1;
 	
-	private NewBlockFort green_fort;
+	private GreenFort green_fort;
 	
 	private List<OBB> bounds;
 	
 	public BlockFort(GL2 gl)
 	{
-		green_fort = new NewBlockFort(gl);
+		green_fort = new GreenFort(gl);
 		
 		loadTextures(gl);
 		
@@ -91,7 +91,7 @@ public class BlockFort
 	{
 		if(!displayModel) return;
 		
-		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+//		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
 		green_fort.render(gl);
 		
@@ -105,6 +105,8 @@ public class BlockFort
 				shader.setUniform(gl, "enableShadow", true);
 				shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
 				shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+				
+				shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
 			}
 			else shader.setUniform(gl, "enableShadow", false);
 		}
@@ -120,7 +122,7 @@ public class BlockFort
 //				Matrix.translate(model, 90, 30, 90);
 //				Matrix.scale    (model, 30, 30, 30);
 //				
-//				shader.loadModelMatrix(gl, model);
+//				shader.loadmodel_matrix(gl, model);
 //				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
 //			}
 //
@@ -144,7 +146,7 @@ public class BlockFort
 				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
 				Matrix.multiply(model, model, rotation);
 				
-				shader.loadModelMatrix(gl, model);
+				shader.setModelMatrix(gl, model);
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
@@ -167,7 +169,7 @@ public class BlockFort
 				Matrix.multiply(model, model, rotation);
 				Matrix.scale(model, 30, 30, 30);
 				
-				shader.loadModelMatrix(gl, model);
+				shader.setModelMatrix(gl, model);
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
@@ -190,7 +192,7 @@ public class BlockFort
 				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
 				Matrix.multiply(model, model, rotation);
 				
-				shader.loadModelMatrix(gl, model);
+				shader.setModelMatrix(gl, model);
 			}
 
 			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
@@ -199,7 +201,7 @@ public class BlockFort
 		}	
 		gl.glPopMatrix();
 		
-		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+//		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 	}
 	
 	public List<OBB> getBounds() { return bounds; }

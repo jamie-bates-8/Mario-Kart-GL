@@ -3,7 +3,7 @@
 // Single Texture Map
 // Shadow Mapping
 
-uniform mat4 ModelMatrix;
+uniform mat4 model_matrix;
 
 varying vec4 shadowCoord;
 varying vec3 vNormal;
@@ -30,6 +30,6 @@ void main(void)
 	
 	gl_FrontColor = gl_Color;
 	
-	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
+	shadowCoord = gl_TextureMatrix[6] * (model_matrix * gl_Vertex);
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }

@@ -9,11 +9,15 @@ import static javax.media.opengl.GL2.GL_QUADS;
 import static javax.media.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.scene.Model;
+import bates.jamie.graphics.scene.Scene;
+import bates.jamie.graphics.scene.process.ShadowCaster;
+import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.texture.Texture;
@@ -807,6 +811,28 @@ public class Renderer
 	public static void displayTexturedCuboid(GL2 gl, Vec3 centre, Vec3 scale,
 			float rotation, Texture[] textures, float textureScale)
 	{
+		Shader shader = Shader.get("shadow_lights");
+		if(shader != null) shader.enable(gl);
+		
+		shader.setSampler(gl, "texture", 0);
+		
+		if(Scene.enableShadow && shader != null)
+		{
+			float[] model_matrix = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			Matrix.translate(model_matrix, centre.x, centre.y, centre.z);
+			Matrix.scale    (model_matrix, scale.x, scale.y, scale.z);
+			Matrix.multiply (model_matrix, model_matrix, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, rotation, 0)));
+			
+			shader.setModelMatrix(gl, model_matrix);
+
+			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
+
+			shader.setUniform(gl, "enableShadow", true);
+			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+		}
+		else if(shader != null) shader.setUniform(gl, "enableShadow", false);
+		
 		gl.glPushMatrix();
 		{
 			gl.glTranslated(centre.x, centre.y, centre.z);
@@ -878,11 +904,39 @@ public class Renderer
 			gl.glEnd();
 		}
 		gl.glPopMatrix();
+		
+		Shader.disable(gl);
 	}
 	
 	public static void displayBumpMappedCuboid(GL2 gl, Vec3 centre, Vec3 scale, float rotation,
 			Texture[] colourMaps, Texture[] normalMaps, Texture[] heightMaps, float textureScale)
 	{
+		Shader shader = Scene.enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights");
+		if(shader != null) shader.enable(gl);
+		
+		shader.setSampler(gl, "texture", 0);
+		shader.setSampler(gl, "bumpmap", 1);
+		shader.setSampler(gl, "heightmap", 2);
+		
+		shader.setUniform(gl, "camera_position", Scene.singleton.getCars().get(0).camera.getPosition());
+		
+		if(Scene.enableShadow && shader != null)
+		{
+			float[] model_matrix = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+			Matrix.translate(model_matrix, centre.x, centre.y, centre.z);
+			Matrix.scale    (model_matrix, scale.x, scale.y, scale.z);
+			Matrix.multiply (model_matrix, model_matrix, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, rotation, 0)));
+			
+			shader.setModelMatrix(gl, model_matrix);
+
+			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
+
+			shader.setUniform(gl, "enableShadow", true);
+			shader.setUniform(gl, "sampleMode", ShadowCaster.sampleMode.ordinal());
+			shader.setUniform(gl, "texScale", new float[] {1.0f / (Scene.canvasWidth * 12), 1.0f / (Scene.canvasHeight * 12)});
+		}
+		else if(shader != null) shader.setUniform(gl, "enableShadow", false);
+		
 		Vec3 t = new Vec3((int) (scale.x / textureScale),
 		          		  (int) (scale.y / textureScale),
 		          		  (int) (scale.z / textureScale));
@@ -967,6 +1021,8 @@ public class Renderer
 			gl.glEnd();
 		}
 		gl.glPopMatrix();
+		
+		Shader.disable(gl);
 	}
 	
 	private static final float ONE_THIRD = 1.0f / 3.0f;

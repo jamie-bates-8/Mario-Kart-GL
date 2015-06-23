@@ -126,7 +126,7 @@ public class BloomStrobe
 		gl.glReadPixels(0, 0, fboWidth, fboHeight, GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, 0); 
 		gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 		
-		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 	
 		// Original Scene + Bright Pass
@@ -179,7 +179,7 @@ public class BloomStrobe
 			System.out.println("Frame Buffer Error : First Rendering Pass");
 
 		// Clear the frame buffer with current clearing color
-		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		
 		Scene.beginRenderLog("BLOOM MODE");
@@ -194,10 +194,13 @@ public class BloomStrobe
 		Vehicle car = scene.getCars().get(0);
 		Terrain terrain = scene.getTerrain();
 		
-		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
+		if(terrain != null && terrain.enableWater && !opaqueMode) scene.renderWater(gl, car);
+		
+		if(!opaqueMode) Scene.normalMode = true;
 		
 		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
+		if(scene.displaySkybox) scene.renderSkybox(gl);
 		
 		if(scene.displayLight) for(Light l : scene.lights) l.render(gl);
 		
@@ -211,6 +214,8 @@ public class BloomStrobe
 		
 		scene.renderParticles(gl, car);
 		Particle.resetTexture();
+		
+		Scene.normalMode = false;
 	}
 
 	/*

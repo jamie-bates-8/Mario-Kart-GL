@@ -1,6 +1,6 @@
 #extension GL_ARB_gpu_shader5 : enable
 
-uniform mat4 ModelMatrix;
+uniform mat4 model_matrix;
 
 varying vec4 shadowCoord;
 varying vec3 vertexNormal;
@@ -46,7 +46,7 @@ void main(void)
 	gl_FrontColor = gl_Color;
 	
 	gl_TexCoord[0] = gl_MultiTexCoord0;
-	shadowCoord = gl_TextureMatrix[6] * (ModelMatrix * gl_Vertex);
+	shadowCoord = gl_TextureMatrix[6] * (model_matrix * gl_Vertex);
     
     gridScale = getTextureScale();
 }
