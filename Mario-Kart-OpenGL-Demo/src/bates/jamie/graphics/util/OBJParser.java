@@ -326,6 +326,132 @@ public class OBJParser
 		return model;
 	}
 	
+	public static Model parseTexturedTriangleMesh(String file_one, String file_two, Vec2 tex_0_scale, Vec2 tex_1_scale)
+	{
+		long startTime = System.nanoTime();
+		
+		int polygonCount = 0;
+		
+		List<float[]> vertices = new ArrayList<float[]>();
+		List<float[]> normals  = new ArrayList<float[]>();
+		List<float[]> tcoords0 = new ArrayList<float[]>();
+		List<float[]> tcoords1 = new ArrayList<float[]>(); 
+		
+		List<Integer> vIndices   = new ArrayList<Integer>();
+		List<Integer> nIndices   = new ArrayList<Integer>();
+		List<Integer> t0_indices = new ArrayList<Integer>();
+		List<Integer> t1_indices = new ArrayList<Integer>();
+
+		try
+		{
+			Scanner fs = new Scanner(new File("obj/" + file_one + ".obj"));
+			
+			while (fs.hasNextLine())
+			{
+				String line = fs.nextLine();
+				
+				if (line.startsWith("v "))
+				{
+					Scanner ls = new Scanner(line.replaceAll("v", "").trim());
+					vertices.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("vt"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
+					tcoords0.add(new float[] {ls.nextFloat() * tex_0_scale.x, ls.nextFloat() * tex_0_scale.y});
+					ls.close();
+				}
+				if (line.startsWith("vn"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vn", "").trim());
+					normals.add(new float[] {ls.nextFloat(), ls.nextFloat(), ls.nextFloat()});
+					ls.close();
+				}
+				if (line.startsWith("f"))
+				{
+					polygonCount++;
+					
+					Scanner ls = new Scanner(line.replaceAll("f", "").trim().replaceAll("/", " "));
+
+					int[] v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					
+					vIndices.add(v1[0] - 1);
+					vIndices.add(v2[0] - 1);
+					vIndices.add(v3[0] - 1);
+					
+					t0_indices.add(v1[1] - 1);
+					t0_indices.add(v2[1] - 1);
+					t0_indices.add(v3[1] - 1);
+					
+					nIndices.add(v1[2] - 1);
+					nIndices.add(v2[2] - 1);
+					nIndices.add(v3[2] - 1);
+					
+					ls.close();
+				}
+			}
+			fs.close();
+		}
+		catch (IOException ioe) { ioe.printStackTrace(); }
+		
+		try
+		{
+			Scanner fs = new Scanner(new File("obj/" + file_two + ".obj"));
+			
+			while (fs.hasNextLine())
+			{
+				String line = fs.nextLine();
+				
+				if (line.startsWith("vt"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("vt", "").trim());
+					tcoords1.add(new float[] {ls.nextFloat() * tex_1_scale.x, ls.nextFloat() * tex_1_scale.y});
+					ls.close();
+				}
+				if (line.startsWith("f"))
+				{
+					Scanner ls = new Scanner(line.replaceAll("f", "").trim().replaceAll("/", " "));
+
+					int[] v1 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v2 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					int[] v3 = new int[] {ls.nextInt(), ls.nextInt(), ls.nextInt()};
+					
+					t1_indices.add(v1[1] - 1);
+					t1_indices.add(v2[1] - 1);
+					t1_indices.add(v3[1] - 1);
+					
+					ls.close();
+				}
+			}
+			fs.close();
+		}
+		catch (IOException ioe) { ioe.printStackTrace(); }
+		
+		int[] _vIndices = new int[vIndices.size()];
+		for(int i = 0; i < vIndices.size(); i++) _vIndices[i] = vIndices.get(i);
+		
+		int[] _t0_indices = new int[t0_indices.size()];
+		for(int i = 0; i < t0_indices.size(); i++) _t0_indices[i] = t0_indices.get(i);
+		
+		int[] _t1_indices = new int[t1_indices.size()];
+		for(int i = 0; i < t1_indices.size(); i++) _t1_indices[i] = t1_indices.get(i);
+		
+		int[] _nIndices = new int[nIndices.size()];
+		for(int i = 0; i < nIndices.size(); i++) _nIndices[i] = nIndices.get(i);
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("OBJ Parser: %-13s (%5d) %8.3f ms" + "\n", file_one, polygonCount, (endTime - startTime) / 1E6);
+		
+		Model model = new Model(vertices, tcoords0, tcoords1, normals, _vIndices, _t0_indices, _t1_indices, _nIndices, 3);
+		Model.model_set.put(file_one, model);
+		
+		return model;
+	}
+	
 	public static Model parseIndexedArrays(String fileName, boolean flip_normals, boolean collada_axis, Vec2 tex_scale_0, Vec2 tex_scale_1)
 	{
 		long startTime = System.nanoTime();

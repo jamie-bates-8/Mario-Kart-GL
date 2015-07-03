@@ -305,7 +305,7 @@ public class Quadtree
 		tangents = new ArrayList<float[]>();
 		float[] tangent = Vector.tangent(
 			plane.get(0), plane.get(1), plane.get(3),
-			scale.get(0), scale.get(1), scale.get(3));
+			scale.get(0), scale.get(1), scale.get(3))[0];
 		for(int i = 0; i < 4; i++) tangents.add(tangent);
 		
 		colors = new ArrayList<float[]>();
@@ -747,7 +747,7 @@ public class Quadtree
 		float[] t2 = texCoords.get(indices[1]);
 		float[] t3 = texCoords.get(indices[3]);
 		
-		return Vector.tangent(p1, p2, p3, t1, t2, t3);
+		return Vector.tangent(p1, p2, p3, t1, t2, t3)[0];
 	}
 	
 	public float[] getNormal(int index)

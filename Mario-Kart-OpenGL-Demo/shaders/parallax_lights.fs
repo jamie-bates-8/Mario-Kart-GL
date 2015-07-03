@@ -104,6 +104,7 @@ void main(void)
 	
     vec3 normal = texture2D(bumpmap, texCoord).rgb;
     normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]
+    normal.rg *= 0.5;
              						        
     float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
           						         

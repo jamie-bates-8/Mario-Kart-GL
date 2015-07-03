@@ -7,8 +7,6 @@ import java.util.List;
 
 import javax.media.opengl.GL2;
 
-import com.jogamp.opengl.util.texture.Texture;
-
 import bates.jamie.graphics.scene.Model;
 import bates.jamie.graphics.scene.Scene;
 import bates.jamie.graphics.scene.SceneNode;
@@ -22,10 +20,14 @@ import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 import bates.jamie.graphics.util.shader.Uniform;
 
+import com.jogamp.opengl.util.texture.Texture;
+
 public class CheckeredBlock
 {
 	public static Model bevelled_cube_model  = new Model("checker_block");
 	public static Model bevelled_slope_model = new Model("sloped_block");
+//	public static Model bevelled_cube_model  = OBJParser.parseTexturedTriangleMesh("checker_block");
+//	public static Model bevelled_slope_model = OBJParser.parseTriangleMesh("sloped_block");
 	public static Model block_bolts_model = new Model("block_bolts");
 	public static Model wedge_block_model = new Model("wedge_block");
 	
@@ -37,6 +39,11 @@ public class CheckeredBlock
 	public static final float[] BLOCK_BLUE   = RGB.SKY_BLUE;
 	public static final float[] BLOCK_GREEN  = new float[] {0.257f, 0.800f, 0.243f};
 	public static final float[] BLOCK_YELLOW = new float[] {0.800f, 0.730f, 0.180f};
+	
+	public static final float[] BLOCK_CYAN    = new float[] {0.400f, 0.800f, 0.800f}; // alternative GREEN
+	public static final float[] BLOCK_LILAC   = new float[] {0.800f, 0.600f, 1.000f}; // alternative BLUE
+	public static final float[] BLOCK_ORANGE  = new float[] {1.000f, 0.600f, 0.400f}; // alternative YELLOW
+	public static final float[] BLOCK_MAGENTA = new float[] {1.000f, 0.400f, 0.600f}; // alternative RED
 	
 	List<Uniform> uniforms;
 	
@@ -62,7 +69,12 @@ public class CheckeredBlock
 				BLOCK_RED[0], BLOCK_RED[1], BLOCK_RED[2], 
 				BLOCK_BLUE[0], BLOCK_BLUE[1], BLOCK_BLUE[2], 
 				BLOCK_GREEN[0], BLOCK_GREEN[1], BLOCK_GREEN[2], 
-				BLOCK_YELLOW[0], BLOCK_YELLOW[1], BLOCK_YELLOW[2] 
+				BLOCK_YELLOW[0], BLOCK_YELLOW[1], BLOCK_YELLOW[2],
+				
+				BLOCK_CYAN[0], BLOCK_CYAN[1], BLOCK_CYAN[2],
+				BLOCK_LILAC[0], BLOCK_LILAC[1], BLOCK_LILAC[2],
+				BLOCK_ORANGE[0], BLOCK_ORANGE[1], BLOCK_ORANGE[2],
+				BLOCK_MAGENTA[0], BLOCK_MAGENTA[1], BLOCK_MAGENTA[2] 
 			};
 		}
 		
@@ -122,11 +134,11 @@ public class CheckeredBlock
 		
 		bevelled_cube_model.setPositionData(block_positions);
 		bevelled_cube_model.setMatrixData(matrices);
-		bevelled_cube_model.matrixDivisor = 5;
+		bevelled_cube_model.matrixDivisor = 8;
 		
 		block_bolts_model.setPositionData(block_positions);
 		block_bolts_model.setMatrixData(matrices);
-		block_bolts_model.matrixDivisor = 5;
+		block_bolts_model.matrixDivisor = 8;
 		
 		bevelled_slope_model.setPositionData(setupSlopePositions());
 		bevelled_slope_model.setMatrixData(matrices);
@@ -139,20 +151,32 @@ public class CheckeredBlock
 	
 	private FloatBuffer setupBlockPositions()
 	{
-		int num_of_blocks = 8;
+		int num_of_blocks = 16;
 		
 		FloatBuffer positions = FloatBuffer.allocate(num_of_blocks * 4);
 		
+		positions.put(new float[] { 101.25f, 30,  56.25f, 3});
+		positions.put(new float[] {-101.25f, 30, -56.25f, 6});
+		
+		positions.put(new float[] { 146.25f, 0,  33.75f, 0});
+		positions.put(new float[] { 146.25f, 0,  56.25f, 1});
+		positions.put(new float[] { 146.25f, 0,  78.75f, 3});
+		
+		positions.put(new float[] {-146.25f, 0, -33.75f, 7});
+		positions.put(new float[] {-146.25f, 0, -56.25f, 5});
+		positions.put(new float[] {-146.25f, 0, -78.75f, 6});
+		
+		
 		positions.put(new float[] { 33.75f, 0,  33.75f, 2});
-		positions.put(new float[] {101.25f, 30, 56.25f, 3});
+		positions.put(new float[] {-33.75f, 0, -33.75f, 4});
 		
-		positions.put(new float[] {146.25f, 0, 33.75f, 0});
-		positions.put(new float[] {146.25f, 0, 56.25f, 1});
-		positions.put(new float[] {146.25f, 0, 78.75f, 3});
+		positions.put(new float[] { 33.75f, 0,  146.25f, 0});
+		positions.put(new float[] { 56.25f, 0,  146.25f, 3});
+		positions.put(new float[] { 78.75f, 0,  146.25f, 1});
 		
-		positions.put(new float[] {33.75f, 0, 146.25f, 0});
-		positions.put(new float[] {56.25f, 0, 146.25f, 3});
-		positions.put(new float[] {78.75f, 0, 146.25f, 1});
+		positions.put(new float[] {-33.75f, 0, -146.25f, 7});
+		positions.put(new float[] {-56.25f, 0, -146.25f, 6});
+		positions.put(new float[] {-78.75f, 0, -146.25f, 5});
 		
 		positions.position(0);
 		
@@ -161,13 +185,17 @@ public class CheckeredBlock
 	
 	private FloatBuffer setupSlopePositions()
 	{
-		int num_of_slopes = 3;
+		int num_of_slopes = 6;
 		
 		FloatBuffer positions = FloatBuffer.allocate(num_of_slopes * 4);
 		
 		positions.put(new float[] { 78.75f, 30, 56.25f, 1});
 		positions.put(new float[] {146.25f, 0, 101.25f, 0});
 		positions.put(new float[] {101.25f, 0, 146.25f, 0});
+		
+		positions.put(new float[] { -78.75f, 30, -56.25f, 5});
+		positions.put(new float[] {-146.25f, 0, -101.25f, 7});
+		positions.put(new float[] {-101.25f, 0, -146.25f, 7});
 		
 		positions.position(0);
 		
@@ -176,13 +204,17 @@ public class CheckeredBlock
 	
 	private FloatBuffer setupWedgePositions()
 	{
-		int num_of_wedges = 3;
+		int num_of_wedges = 6;
 		
 		FloatBuffer positions = FloatBuffer.allocate(num_of_wedges * 4);
 		
 		positions.put(new float[] { 56.25f, 30, 56.25f, 0});
 		positions.put(new float[] {146.25f, 0, 123.75f, 1});
 		positions.put(new float[] {123.75f, 0, 146.25f, 3});
+		
+		positions.put(new float[] { -56.25f, 30, -56.25f, 7});
+		positions.put(new float[] {-146.25f, 0, -123.75f, 5});
+		positions.put(new float[] {-123.75f, 0, -146.25f, 6});
 		
 		positions.position(0);
 		
@@ -191,7 +223,7 @@ public class CheckeredBlock
 	
 	private FloatBuffer setupMatrices()
 	{
-		FloatBuffer matrices = FloatBuffer.allocate(16 * 3);
+		FloatBuffer matrices = FloatBuffer.allocate(16 * 6);
 		
 		float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 		Matrix.scale(model, 15, 15, 15);
@@ -203,6 +235,20 @@ public class CheckeredBlock
 		model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 		Matrix.scale(model, 15, 15, 15);
 		Matrix.multiply(model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, 180, 0)));
+		matrices.put(model);
+		
+		model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+		Matrix.scale(model, 15, 15, 15);
+		Matrix.multiply(model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, 180, 0)));
+		matrices.put(model);
+		
+		model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+		Matrix.scale(model, 15, 15, 15);
+		Matrix.multiply(model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, 270, 0)));
+		matrices.put(model);
+		
+		model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+		Matrix.scale(model, 15, 15, 15);
 		matrices.put(model);
 		
 		matrices.position(0);
@@ -224,12 +270,12 @@ public class CheckeredBlock
 		if(shader != null) shader.enable(gl);
 		setupShader(gl, shader);
 		
-		bevelled_cube_model.renderInstanced(gl, 8);
+		bevelled_cube_model.renderInstanced(gl, 16);
 		
 		shader = Shader.get("phong_mat_inst");
 		if(shader != null) shader.enable(gl);
 		
-		block_bolts_model.renderInstanced(gl, 8);
+		block_bolts_model.renderInstanced(gl, 16);
 		
 		shader = Shader.get("slope_instance");
 		if(shader != null) shader.enable(gl);
@@ -237,8 +283,8 @@ public class CheckeredBlock
 		
 		slope_pattern_mask.bind(gl);
 		
-		bevelled_slope_model.renderInstanced(gl, 3);
-		wedge_block_model.renderInstanced(gl, 3);
+		bevelled_slope_model.renderInstanced(gl, 6);
+		wedge_block_model.renderInstanced(gl, 6);
 		
 		Shader.disable(gl);
 		
@@ -258,7 +304,7 @@ public class CheckeredBlock
 		int offsetsLoc = -1;
 		
 		offsetsLoc = gl.glGetUniformLocation(shader.shaderID, "block_colors");
-		gl.glUniform3fv(offsetsLoc, 12, block_colors, 0);
+		gl.glUniform3fv(offsetsLoc, block_colors.length, block_colors, 0);
 		
 		if(Scene.enableShadow && shader != null)
 		{

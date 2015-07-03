@@ -28,7 +28,15 @@ public class WoodBridge
 	static Model post_model    = new Model("wooden_post");
 	static Model support_model = new Model("bridge_support");
 	
+//	static Model large_bridge_model = OBJParser.parseTexturedTriangleMesh("large_wooden_bridge");
+//	static Model small_bridge_model = OBJParser.parseTexturedTriangleMesh("small_wooden_bridge");
+//	
+//	static Model plank_model   = OBJParser.parseTexturedTriangleMesh("plank_2");
+//	static Model post_model    = OBJParser.parseTexturedTriangleMesh("wooden_post");
+//	static Model support_model = OBJParser.parseTexturedTriangleMesh("bridge_support");
+	
 	static Material polished_wood;
+	static Material painted_wood;
 	
 	SceneNode large_bridge_node;
 	SceneNode small_bridge_node;
@@ -39,7 +47,7 @@ public class WoodBridge
 	boolean use_large_model;
 	
 	
-	public WoodBridge(GL2 gl, Vec3 p, float r, boolean large)
+	public WoodBridge(GL2 gl, Vec3 p, float r, boolean large, boolean painted)
 	{
 		use_large_model = large;
 		
@@ -52,16 +60,20 @@ public class WoodBridge
 			Texture normal  = TextureLoader.load(gl, "tex/plank_NRM.jpg");
 			Texture	height  = TextureLoader.load(gl, "tex/plank_DISP.jpg");
 			
+			Texture diffuse_alt = TextureLoader.load(gl, "tex/plank_alt_COLOR.jpg");
+			
+			plank_model.calculateTangents();
 			post_model.calculateTangents();
 			support_model.calculateTangents();
 			
 			polished_wood = new Material(diffuse, normal, height);
+			 painted_wood = new Material(diffuse_alt, normal, height);
 			
 			setupInstances();
 		}
 		
 		large_bridge_node = new SceneNode(large_bridge_model);
-		large_bridge_node.setMaterial(polished_wood);
+		large_bridge_node.setMaterial(painted ? painted_wood : polished_wood);
 		large_bridge_node.setTranslation(p);
 		large_bridge_node.setScale(new Vec3(15));
 		large_bridge_node.setRotation(new Vec3(0, r, 0));
@@ -69,7 +81,7 @@ public class WoodBridge
 		large_bridge_node.useParallax(true);
 		
 		small_bridge_node = new SceneNode(small_bridge_model);
-		small_bridge_node.setMaterial(polished_wood);
+		small_bridge_node.setMaterial(painted ? painted_wood : polished_wood);
 		small_bridge_node.setTranslation(p);
 		small_bridge_node.setScale(new Vec3(15));
 		small_bridge_node.setRotation(new Vec3(0, r, 0));

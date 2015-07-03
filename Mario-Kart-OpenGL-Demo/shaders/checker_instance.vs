@@ -9,7 +9,7 @@ varying vec3 eyeDir;
 varying vec2 gridScale;
 uniform vec3 scaleVec;
 
-uniform vec3 block_colors[4];
+uniform vec3 block_colors[8];
 
 attribute vec4 instance_data;
 attribute mat4 instance_matrix;

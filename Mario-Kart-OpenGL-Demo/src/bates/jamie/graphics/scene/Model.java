@@ -22,11 +22,11 @@ import java.util.Scanner;
 import javax.media.opengl.GL2;
 
 import bates.jamie.graphics.util.RGB;
+import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.Vector;
 import bates.jamie.graphics.util.shader.Shader;
 
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.opengl.util.texture.Texture;
 
 public class Model
 {
@@ -238,6 +238,87 @@ public class Model
 				(endTime - startTime) / 1E6, indexCount, vertices.size(), texCoords.size(), normals.size());
 	}
 	
+	public Model(List<float[]> vertices, List<float[]> tcoords0, List<float[]> tcoords1, List<float[]> normals,
+			int[] vIndices, int[] t0_indices, int[] t1_indices, int[] nIndices, int type)
+	{
+		long startTime = System.nanoTime();
+		
+		if(type == 3) polygon = GL2.GL_TRIANGLES;
+		if(type == 4) polygon = GL2.GL_QUADS;
+		
+		List<float[]> vertexData = new ArrayList<float[]>();
+		List<float[]> tex_0_Data = new ArrayList<float[]>();
+		List<float[]> tex_1_Data = new ArrayList<float[]>();
+		List<float[]> normalData = new ArrayList<float[]>();
+		List<Integer> offsetData = new ArrayList<Integer>();
+		
+		int index = 0;
+		
+		for(int i = 0; i < vIndices.length; i++)
+		{
+			float[] vertex  = vertices.get(vIndices[i]);
+			float[] normal  = normals .get(nIndices[i]);
+			float[] tcoord0 = tcoords0.get(t0_indices[i]);
+			float[] tcoord1 = tcoords1.get(t1_indices[i]);
+			
+			boolean unique = true;
+			int k = index;
+			
+			for(int j = 0; j < vertexData.size(); j++)
+			{
+				if( Vector.equal(vertex , vertexData.get(j)) &&
+					Vector.equal(normal , normalData.get(j)) &&
+					Vector.equal(tcoord0, tex_0_Data.get(j)) &&
+					Vector.equal(tcoord1, tex_1_Data.get(j)))
+				{
+					k = j;
+					unique = false;
+					break;
+				}
+			}
+			
+			if(unique)
+			{
+				offsetData.add(k);
+				vertexData.add(vertex);
+				normalData.add(normal);
+				tex_0_Data.add(tcoord0);
+				tex_1_Data.add(tcoord1);
+				index++;
+			}
+			else offsetData.add(k);
+		}
+		
+		_vertices = vertexData;
+		
+		indexCount = vIndices.length;
+		
+		this.vertices = Buffers.newDirectFloatBuffer(vertexData.size() * 3);
+		for(float[] vertex : vertexData) this.vertices.put(vertex);
+		this.vertices.position(0); 
+		
+		this.tcoords0 = Buffers.newDirectFloatBuffer(tex_0_Data.size() * 2);
+		for(float[] tcoord : tex_0_Data) this.tcoords0.put(tcoord);
+		this.tcoords0.position(0);
+		
+		this.tcoords1 = Buffers.newDirectFloatBuffer(tex_1_Data.size() * 2);
+		for(float[] tcoord : tex_1_Data) this.tcoords1.put(tcoord);
+		this.tcoords1.position(0);
+		
+		this.normals = Buffers.newDirectFloatBuffer(normalData.size() * 3);
+		for(float[] normal : normalData) this.normals.put(normal);
+		this.normals.position(0);
+		
+		indices = Buffers.newDirectIntBuffer(offsetData.size());
+		for(int i : offsetData) indices.put(i);
+		indices.position(0);
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Indexed Model: %8.3f ms \n{\n\tIndices:  %d\n\tVertices: %d\n\tTex Coords (0): %d\n\tTex Coords (1): %d\n\tNormals:  %d\n}\n",
+				(endTime - startTime) / 1E6, indexCount, vertices.size(), tcoords0.size(), tcoords1.size(), normals.size());
+	}
+	
 	public Model(List<float[]> vertices, List<float[]> tcoords0, List<float[]> tcoords1, List<float[]> normals, List<int[]> points)
 	{
 		long startTime = System.nanoTime();
@@ -326,9 +407,10 @@ public class Model
 	
 	public void calculateTangents()
 	{
-		float[][] _tangents = new float[indices.capacity()][3];
+		float[][] tan_0 = new float[vertices.capacity() / 3][3];
+		float[][] tan_1 = new float[vertices.capacity() / 3][3];
 		
-		for(int i = 0; i < indices.capacity(); i += 3)
+		for(int i = 0; i < indices.capacity(); i += 3) // each loop evaluates one triangle or polygon
 		{
 			int i1 = indices.get();
 			int i2 = indices.get();
@@ -342,18 +424,35 @@ public class Model
 			float[] t2 = new float[2]; tcoords0.position(i2 * 2); tcoords0.get(t2);
 			float[] t3 = new float[2]; tcoords0.position(i3 * 2); tcoords0.get(t3);
 			
-			_tangents[i1] = Vector.add(_tangents[i1], Vector.tangent(v1, v2, v3, t1, t2, t3));
-			_tangents[i2] = Vector.add(_tangents[i2], Vector.tangent(v2, v3, v1, t2, t3, t1));
-			_tangents[i3] = Vector.add(_tangents[i3], Vector.tangent(v3, v1, v2, t3, t1, t2));
+			float[][] tangent = Vector.tangent(v1, v2, v3, t1, t2, t3);
+			
+			tan_0[i1] = Vector.add(tan_0[i1], tangent[0]);
+			tan_0[i2] = Vector.add(tan_0[i2], tangent[0]);
+			tan_0[i3] = Vector.add(tan_0[i3], tangent[0]);
+			
+			tan_1[i1] = Vector.add(tan_1[i1], tangent[1]);
+			tan_1[i2] = Vector.add(tan_1[i2], tangent[1]);
+			tan_1[i3] = Vector.add(tan_1[i3], tangent[1]);
 			
 		}
 		vertices.position(0);
 		tcoords0.position(0);
 		indices .position(0);
 		
-		tangents = Buffers.newDirectFloatBuffer(indices.capacity() * 3);
-		for(float[] tangent : _tangents) tangents.put(Vector.normalize(tangent));
-		tangents.position(0); 
+		tangents = Buffers.newDirectFloatBuffer(vertices.capacity());
+		
+		for(int i = 0; i < tan_0.length; i++)
+		{
+			float[] normal  = new float[3]; normals.position(i * 3); normals.get(normal);
+			float[] tangent = tan_0[i];
+			
+			Vec3 n = new Vec3(normal);
+			Vec3 t = new Vec3(tangent);
+			
+			tangents.put(t.subtract(n.multiply(n.dot(t))).normalize().toArray());
+		}
+		normals.position(0);
+		tangents.position(0);
 		
 		bufferCreated = false;
 	}
@@ -588,6 +687,8 @@ public class Model
 		long endTime = System.nanoTime();
 		
 		System.out.printf("Indexed Model: %-13s (%5d) %8.3f ms" + "\n", fileName, indexCount / 3, (endTime - startTime) / 1E6);
+		
+		model_set.put(fileName, this);
 	}
 	
 	public List<float[]> getVertices() { return _vertices; }
@@ -943,5 +1044,23 @@ public class Model
 		
 		gl.glDisable(GL_BLEND);
 		gl.glEnable(GL_LIGHTING);
+	}
+	
+	@Override
+	public String toString()
+	{
+		String str = "";
+		
+		                      str += "Face Count    : " + indexCount / 3 + "\n";
+		if(indices   != null) str += "Indices       : " +   indices.capacity() + "\n";
+		if(vertices  != null) str += "Vertices      : " +  vertices.capacity() / 3 + "\n";
+		if(normals   != null) str += "Normals       : " +   normals.capacity() / 3 + "\n";
+		if(tcoords0  != null) str += "Tex Coords (0): " +  tcoords0.capacity() / 2 + "\n";
+		if(tcoords1  != null) str += "Tex Coords (1): " +  tcoords1.capacity() / 2 + "\n";
+		if(colors    != null) str += "Colors        : " +    colors.capacity() / 3 + "\n";
+		if(tangents  != null) str += "Tangents      : " +  tangents.capacity() / 3 + "\n";
+		if(positions != null) str += "Instance Data : " + positions.capacity() / 4 + "\n";
+		
+		return str;
 	}
 }

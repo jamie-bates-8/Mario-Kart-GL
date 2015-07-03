@@ -681,7 +681,10 @@ public class SceneNode
 		gl.glPushMatrix();
 		{
 			setupMatrix(gl);
-			if(model != null) model.renderTangents(gl, true, 1);
+			
+			float scale = 1.0f / s.max();
+			
+			if(model != null) model.renderTangents(gl, true, scale);
 		}
 		gl.glPopMatrix();
 	}

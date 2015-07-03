@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -1506,7 +1507,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	public void display(GLAutoDrawable drawable)
 	{
-		if(Scene.sceneTimer % Scene.log_timer == 0)
+		if(enable_log && Scene.sceneTimer % Scene.log_timer == 0)
 		{
 			for(int i = 0; i < 4; i++) System.out.println();
 			System.out.println("|| --------------- ||");
@@ -1571,8 +1572,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		shadowQuery.end(gl);
 		
 //		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, 1, 1);
-//		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
-		if(displayDepth) displayMap(gl, bloom.getTexture(7), 0, 0, 1, 1);
+		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
+//		if(displayDepth) displayMap(gl, bloom.getTexture(7), 0, 0, 1, 1);
 		
 		calculateFPS();
 	}
@@ -1665,9 +1666,11 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static int tabs_in_log = 0;
 	public static int log_timer = 300;
 	
+	public static boolean enable_log = false;
+	
 	public static void beginRenderLog(String log_header)
 	{
-		if(Scene.sceneTimer % Scene.log_timer == 0)
+		if(enable_log && Scene.sceneTimer % Scene.log_timer == 0)
 		{
 			String indent = "";
 			for(int i = 0; i < Scene.tabs_in_log; i++) indent += "\t";
@@ -1678,7 +1681,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public static void printToRenderLog(String log)
 	{
-		if(Scene.sceneTimer % Scene.log_timer == 0)
+		if(enable_log && Scene.sceneTimer % Scene.log_timer == 0)
 		{
 			String indent = "";
 			for(int i = 0; i < Scene.tabs_in_log; i++) indent += "\t";
@@ -1688,7 +1691,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public static void endRenderLog()
 	{
-		if(sceneTimer % log_timer == 0)
+		if(enable_log && sceneTimer % log_timer == 0)
 		{
 	    	tabs_in_log--;
 			String indent = "";
@@ -1757,7 +1760,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				render3DModels(gl, car);
 				if(displaySkybox) renderSkybox(gl);
 
-//				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
+				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
 //				else renderTimes[frameIndex][1] = 0;
 
 				if(terrain != null && terrain.enableWater) 
@@ -3148,7 +3151,12 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				break;
 			}
 			case KeyEvent.VK_F4: displayDepth = !displayDepth; break;
-			
+			case KeyEvent.VK_F5:
+			{
+				Set<Map.Entry<String, Model>> models = Model.model_set.entrySet();
+				for(Map.Entry<String, Model> model : models) System.out.println(model.getKey().toUpperCase() + "\n" + model.getValue());
+				break;
+			}
 			default: break;
 		}
 	}

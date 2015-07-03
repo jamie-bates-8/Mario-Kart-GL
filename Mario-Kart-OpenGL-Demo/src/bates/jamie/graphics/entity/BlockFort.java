@@ -41,12 +41,14 @@ public class BlockFort
 	private static int fortList = -1;
 	
 	private GreenFort green_fort;
+	private RedFort red_fort;
 	
 	private List<OBB> bounds;
 	
 	public BlockFort(GL2 gl)
 	{
 		green_fort = new GreenFort(gl);
+		red_fort = new RedFort(gl);
 		
 		loadTextures(gl);
 		
@@ -94,6 +96,7 @@ public class BlockFort
 //		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
 		green_fort.render(gl);
+		red_fort.render(gl);
 		
 		Shader shader = Shader.getLightModel("shadow");
 		if(shader != null)
@@ -155,28 +158,28 @@ public class BlockFort
 		}	
 		gl.glPopMatrix();
 
-		gl.glPushMatrix(); // Red Fort
-		{
-			gl.glTranslatef(-90, 30, -90);
-			gl.glRotatef(-180, 0, 1, 0);
-			gl.glScalef(30.0f, 30.0f, 30.0f);
-			
-			if(shader != null)
-			{
-				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-				Matrix.translate(model, -90, 30, -90);
-				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
-				Matrix.multiply(model, model, rotation);
-				Matrix.scale(model, 30, 30, 30);
-				
-				shader.setModelMatrix(gl, model);
-			}
-
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
-			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
-			else gl.glCallList(fortList + 2);
-		}	
-		gl.glPopMatrix();
+//		gl.glPushMatrix(); // Red Fort
+//		{
+//			gl.glTranslatef(-90, 30, -90);
+//			gl.glRotatef(-180, 0, 1, 0);
+//			gl.glScalef(30.0f, 30.0f, 30.0f);
+//			
+//			if(shader != null)
+//			{
+//				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+//				Matrix.translate(model, -90, 30, -90);
+//				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
+//				Matrix.multiply(model, model, rotation);
+//				Matrix.scale(model, 30, 30, 30);
+//				
+//				shader.setModelMatrix(gl, model);
+//			}
+//
+//			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
+//			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
+//			else gl.glCallList(fortList + 2);
+//		}	
+//		gl.glPopMatrix();
 
 		gl.glPushMatrix(); // Yellow Fort TODO shadows incorrect
 		{	

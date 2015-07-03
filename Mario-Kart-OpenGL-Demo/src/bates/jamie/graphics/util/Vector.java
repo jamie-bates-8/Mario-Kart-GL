@@ -148,8 +148,8 @@ public class Vector
 	 * An explanation of this method can be found at:
 	 * http://www.terathon.com/code/tangent.html
 	 */
-	public static float[] tangent(float[] p1, float[] p2, float[] p3,
-			                      float[] t1, float[] t2, float[] t3)
+	public static float[][] tangent(float[] p1, float[] p2, float[] p3,
+			                        float[] t1, float[] t2, float[] t3)
 	{
 		float[] q1 = subtract(p2, p1);
 		float[] q2 = subtract(p3, p1);
@@ -159,14 +159,21 @@ public class Vector
         
         float r = 1.0f / (u1[0] * u2[1] - u2[0] * u1[1]);
         
-        float[] tangent =
+        float[] tangent0 =
         {
         	(u2[1] * q1[0] - u1[1] * q2[0]) * r,
         	(u2[1] * q1[1] - u1[1] * q2[1]) * r,
             (u2[1] * q1[2] - u1[1] * q2[2]) * r
         };
+        
+        float[] tangent1 =
+        {
+            (u1[0] * q2[0] - u2[0] * q1[0]) * r,
+            (u1[0] * q2[1] - u2[0] * q1[1]) * r,
+            (u1[0] * q2[2] - u2[0] * q1[2]) * r
+        };
 		
-		return tangent;
+		return new float[][] {tangent0, tangent1};
 	}
 	
 	public static float[] normal(float[] p1, float[] p2, float[] p3)

@@ -21,6 +21,7 @@ import com.jogamp.opengl.util.texture.TextureIO;
 public class GoldCoin
 {
 	static Model      base_model = new Model("coin_base");
+//	static Model      base_model = OBJParser.parseTexturedTriangleMesh("coin_base");
 	static Model gold_coin_model = new Model("gold_coin");
 	static Model  red_coin_model = new Model("red_coin");
 	

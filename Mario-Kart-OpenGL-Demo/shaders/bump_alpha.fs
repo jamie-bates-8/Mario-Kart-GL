@@ -110,7 +110,7 @@ void main(void)
 		texCoord += height * normalize(eyeDir).xy;
 	}
 	
-    vec3 normal = texture2D(bumpmap, texCoord).rgb;
+    vec3 normal = texture2D(bumpmap, texCoord * 5).rgb;
     normal *= 2.0; normal -= 1.0; // map texel from [0,1] to [-1,1]
              						        
     float shadowCoefficient = enableShadow ? shadowIntensity() : 1.0;
