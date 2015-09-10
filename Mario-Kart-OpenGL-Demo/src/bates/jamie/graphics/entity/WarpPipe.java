@@ -8,12 +8,14 @@ import bates.jamie.graphics.scene.Reflector;
 import bates.jamie.graphics.scene.SceneNode;
 import bates.jamie.graphics.scene.SceneNode.RenderMode;
 import bates.jamie.graphics.scene.process.BloomStrobe;
+import bates.jamie.graphics.util.OBJParser;
 import bates.jamie.graphics.util.Vec3;
 import bates.jamie.graphics.util.shader.Shader;
 
 public class WarpPipe
 {
 	static Model pipe_model = new Model("pipe");
+//	static Model pipe_model = OBJParser.parseTriangleMesh("glass_bottle");
 	
 	SceneNode pipeNode;
 	

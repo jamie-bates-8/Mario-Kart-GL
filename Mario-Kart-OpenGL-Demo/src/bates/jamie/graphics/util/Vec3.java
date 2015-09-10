@@ -290,7 +290,10 @@ public class Vec3
 	
 	public Vec3 normalize()
 	{
-		return this.multiply(1.0f / magnitude());
+		float d = magnitude();
+		d = d == 0 ? 1 : d;
+		
+		return this.multiply(1.0f / d);
 	}
 	
 	public Vec3 negate()
@@ -362,6 +365,19 @@ public class Vec3
 		if(abs(z) > EPSILON) return false;
 		
 		return true;
+	}
+	
+	public Vec3 correctGamma(double gamma)
+	{
+		double factor = 1.0 / gamma;
+		
+		Vec3 v = new Vec3();
+		
+		v.x = (float) Math.pow(x, factor);
+		v.y = (float) Math.pow(y, factor);
+		v.z = (float) Math.pow(z, factor);
+		
+		return v;
 	}
 	
 	public String toString(int precision)

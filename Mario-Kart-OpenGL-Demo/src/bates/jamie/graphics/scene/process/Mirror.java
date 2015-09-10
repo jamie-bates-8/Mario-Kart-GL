@@ -49,25 +49,12 @@ public class Mirror
 		createBuffer (gl);
 		
 		System.out.println("Mirror : Texture ID (" + textureID + ")");
-		
-		update(gl);
 	}
 	
 	public int getTexture() { return textureID; }
 
 	private void createBuffer(GL2 gl)
-	{		
-		int[] rboID = new int[1];
-		gl.glGenRenderbuffers(1, rboID, 0);
-		renderBuffer = rboID[0];
-		
-		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBuffer);
-		
-		gl.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT, mapSize, mapSize);
-		gl.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT, GL2.GL_RENDERBUFFER, renderBuffer);
-		
-		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);
-		
+	{	
 		int[] fboID = new int[1];
 		gl.glGenFramebuffers(1, fboID, 0);
 		frameBuffer = fboID[0];
@@ -79,6 +66,15 @@ public class Mirror
 		int bufferStatus = gl.glCheckFramebufferStatus(GL2.GL_FRAMEBUFFER);
 		if(bufferStatus != GL2.GL_FRAMEBUFFER_COMPLETE)
 			System.out.println("Mirror : " + checkFramebufferError(bufferStatus));
+		
+		int[] rboID = new int[1];
+		gl.glGenRenderbuffers(1, rboID, 0);
+		renderBuffer = rboID[0];
+		
+		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBuffer);
+		
+		gl.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL2.GL_DEPTH_COMPONENT, mapSize, mapSize);
+		gl.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_DEPTH_ATTACHMENT, GL2.GL_RENDERBUFFER, renderBuffer);
 		
 		gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
 		gl.glBindRenderbuffer(GL2.GL_RENDERBUFFER, 0);

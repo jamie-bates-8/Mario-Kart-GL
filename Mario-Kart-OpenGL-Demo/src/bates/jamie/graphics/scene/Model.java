@@ -405,6 +405,37 @@ public class Model
 				(endTime - startTime) / 1E6, indexCount, vertices.size(), tcoords0.size(), normals.size());
 	}
 	
+	public Model(List<float[]> vertices, List<float[]> normals, List<float[]> colors, List<Integer> indexData)
+	{
+		long startTime = System.nanoTime();
+		
+		polygon = GL2.GL_TRIANGLES;
+		
+		_vertices  = vertices;
+		indexCount = indexData.size();
+		
+		this.vertices = Buffers.newDirectFloatBuffer(vertices.size() * 3);
+		for(float[] vertex : vertices) this.vertices.put(vertex);
+		this.vertices.position(0); 
+		
+		this.colors = Buffers.newDirectFloatBuffer(colors.size() * 3);
+		for(float[] color : colors) this.colors.put(color);
+		this.colors.position(0);
+		
+		this.normals = Buffers.newDirectFloatBuffer(normals.size() * 3);
+		for(float[] normal : normals) this.normals.put(normal);
+		this.normals.position(0);
+		
+		indices = Buffers.newDirectIntBuffer(indexData.size());
+		for(int i : indexData) indices.put(i);
+		indices.position(0);
+		
+		long endTime = System.nanoTime();
+		
+		System.out.printf("Indexed Model: %8.3f ms \n{\n\tIndices:  %d\n\tVertices: %d\n\tColors:   %d\n\tNormals:  %d\n}\n",
+				(endTime - startTime) / 1E6, indexCount, vertices.size(), colors.size(), normals.size());
+	}
+	
 	public void calculateTangents()
 	{
 		float[][] tan_0 = new float[vertices.capacity() / 3][3];
@@ -1036,8 +1067,12 @@ public class Model
 		gl.glEnable(GL_BLEND);
 		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 		
+		gl.glDisable(GL2.GL_CULL_FACE);
+		
 		gl.glFrontFace(GL2.GL_CW ); render(gl);
 		gl.glFrontFace(GL2.GL_CCW); render(gl);
+		
+		if(Scene.enable_culling) gl.glEnable(GL2.GL_CULL_FACE);
 		
 		gl.glColor3f(1, 1, 1);
 		gl.glEnable(GL_TEXTURE_2D);	

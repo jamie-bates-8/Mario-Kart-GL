@@ -44,7 +44,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -104,15 +103,19 @@ import bates.jamie.graphics.entity.BillBoard;
 import bates.jamie.graphics.entity.BlockFort;
 import bates.jamie.graphics.entity.BrickBlock;
 import bates.jamie.graphics.entity.BrickWall;
+import bates.jamie.graphics.entity.CheckeredCookie;
+import bates.jamie.graphics.entity.DonutBlock;
 import bates.jamie.graphics.entity.EnergyField;
 import bates.jamie.graphics.entity.EnergyField.FieldType;
 import bates.jamie.graphics.entity.GoldCoin;
 import bates.jamie.graphics.entity.GoldCoin.CoinType;
 import bates.jamie.graphics.entity.GrassPatch;
+import bates.jamie.graphics.entity.GreenFort;
 import bates.jamie.graphics.entity.LightningStrike;
 import bates.jamie.graphics.entity.LightningStrike.BoltType;
 import bates.jamie.graphics.entity.LightningStrike.RenderStyle;
 import bates.jamie.graphics.entity.Mushroom;
+import bates.jamie.graphics.entity.MushroomBlock;
 import bates.jamie.graphics.entity.PlaneMesh;
 import bates.jamie.graphics.entity.PowerStar;
 import bates.jamie.graphics.entity.Quadtree;
@@ -140,12 +143,8 @@ import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.particle.Blizzard;
 import bates.jamie.graphics.particle.Blizzard.StormType;
 import bates.jamie.graphics.particle.BoostParticle;
-import bates.jamie.graphics.particle.FireParticle;
-import bates.jamie.graphics.particle.FirePit;
 import bates.jamie.graphics.particle.Particle;
-import bates.jamie.graphics.particle.ParticleEngine;
 import bates.jamie.graphics.particle.ParticleGenerator;
-import bates.jamie.graphics.particle.ParticleGenerator.GeneratorType;
 import bates.jamie.graphics.scene.process.BloomStrobe;
 import bates.jamie.graphics.scene.process.FocalBlur;
 import bates.jamie.graphics.scene.process.Mirror;
@@ -287,8 +286,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	private JMenuItem menuItem_height;
 	private JMenuItem menuItem_reset;
 	
-	public static int canvasWidth  = 860;
-	public static int canvasHeight = 640;
+	public static int canvasWidth  = 840; // 840 -> 1920
+	public static int canvasHeight = 640; // 640 -> 1080
 	
 	public float far = 2000.0f;
 	
@@ -325,7 +324,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public static final String[] UPDATE_HEADERS =
 		{"Collision", "Weather", "Deformation", "Buffers"};
 	
-	public boolean enableCulling = false;
+	public static boolean enable_culling = true;
 	
 	
 	/** Texture Fields **/
@@ -442,15 +441,14 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public String terrainCommand = "";
 	public static final String DEFAULT_TERRAIN = "128 1000 0 6 18 0.125 1.0";
 	
-	public boolean enableReflection = false;
 	public float opacity = 0.50f;
 	
 	public boolean smoothBound = false;
 	public boolean multisample = true;
 	
-	public static boolean testMode = false;
-	public boolean printVersion = true;
-	public boolean printErrors  = false;
+	public static boolean testMode = true;
+	public boolean printVersion = false;
+	public boolean printErrors  = true;
 	
 	public ModelSelecter selecter;
 	
@@ -1157,16 +1155,28 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    gl.glGetFloatv(GL2.GL_MAX_VERTEX_UNIFORM_COMPONENTS, data, 0);
 	    System.out.println("Vertex Uniform Components: " + data[0] + "\n");
 	}
+	
+	public static int errorID = 0;
+	public static boolean enable_error_log = false;
+	
+	public void printErrors(GL2 gl) { printErrors(gl, ""); }
 
-	public void printErrors(GL2 gl)
+	public void printErrors(GL2 gl, String context)
 	{
+		if(!printErrors) return;
+		
 		int error = gl.glGetError();
+		
+		if(error == GL2.GL_NO_ERROR)
+			System.out.println("OpenGL Error (" + errorID + "): NONE | " + context);
 		
 		while(error != GL2.GL_NO_ERROR)
 		{
-			System.out.println("OpenGL Error: " + glu.gluErrorString(error));
+			System.out.println("OpenGL Error (" + errorID + "): " + glu.gluErrorString(error) + " | " + context);
 			error = gl.glGetError();
 		}
+		
+		errorID++;
 	}
 	
 	public SceneNode cubeNode;
@@ -1196,7 +1206,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		setupShaderTree();
 		
 		// may provide extra speed depending on machine
-//		gl.setSwapInterval(0);
+		gl.setSwapInterval(0);
 		
 		gl.glClearStencil(0);
 		gl.glEnable(GL2.GL_STENCIL_TEST);
@@ -1220,6 +1230,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
 		gl.glTexParameteri(GL2.GL_TEXTURE_1D, GL2.GL_TEXTURE_WRAP_S,     GL2.GL_CLAMP);
+		
+		printErrors(gl, "init"); // 0
 
 		/** Fog Setup **/
 		gl.glEnable(GL_FOG);
@@ -1323,6 +1335,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	    
 	    startTime = System.currentTimeMillis();
 	    //records the time prior to the rendering of the first frame after initialization
+	    
+	    printErrors(gl, "init"); // 14
 	}
 	
 	LightningStrike bolt;
@@ -1517,6 +1531,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		GL2 gl = drawable.getGL().getGL2();
 		
+		printErrors(gl); // 0
+		
 		gl.glClearDepth(1.0f);
 		gl.glClearColor(background[0], background[1], background[2], 0.0f);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL2.GL_STENCIL_BUFFER_BIT);
@@ -1556,13 +1572,46 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 //		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, canvasWidth, canvasHeight);
 //		else render(gl);
 		
-		render(gl);
+		if(enableWireframe)
+		{
+			Shader shader;
+			shader = Shader.get("simple");
+			shader.enable(gl); shader.setUniform(gl, "default_color", new Vec3(1));
+			shader = Shader.get("simple_mat_inst");
+			shader.enable(gl); shader.setUniform(gl, "default_color", new Vec3(1));
+			shader = Shader.get("simple_instance");
+			shader.enable(gl); shader.setUniform(gl, "default_color", new Vec3(1));
+			
+			Shader.enableSimple = true;
+			render(gl);
+			
+			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
+			
+			gl.glEnable(GL2.GL_POLYGON_OFFSET_LINE);
+			gl.glPolygonOffset(0.0f, 1.1f);
+			
+			Shader.enableSimple = false;
+			shader = Shader.get("simple");
+			shader.enable(gl); shader.setUniform(gl, "default_color", new Vec3(0));
+			shader = Shader.get("simple_mat_inst");
+			shader.enable(gl); shader.setUniform(gl, "default_color", new Vec3(0));
+			shader = Shader.get("simple_instance");
+			shader.enable(gl); shader.setUniform(gl, "default_color", new Vec3(0));
+			
+			Shader.enableSimple = true;
+			render(gl);
+			
+			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+			
+			Shader.enableSimple = false;
+		}
+		else render(gl);
 		
 		renderQuery.end(gl);
 
-		gl.glFlush();
+//		gl.glFlush();
 		
-		if(printErrors) printErrors(gl);
+		printErrors(gl); // 1
 		
 		shadowQuery.getResult(gl);
 		shadowQuery.begin(gl);
@@ -1572,10 +1621,22 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		shadowQuery.end(gl);
 		
 //		if(testMode) displayMap(gl, caster.getTexture(), 0, 0, 1, 1);
-		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
-//		if(displayDepth) displayMap(gl, bloom.getTexture(7), 0, 0, 1, 1);
+//		if(displayDepth) displayMap(gl, focalBlur.getDepthTexture(), 0, 0, 1, 1);
+		if(displayDepth) displayMap(gl, bloom.getTexture(7), 0, 0, 1, 1);
 		
 		calculateFPS();
+		
+		Shader.recordUsage();
+		
+		printErrors = false;
+		errorID = 0;
+		
+		if(enable_error_log)
+		{
+			enable_error_log = false;
+			printErrors = true;
+			System.out.println();
+		}
 	}
 	
 	public static TimeQuery renderQuery = new TimeQuery(64);
@@ -1600,7 +1661,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		for(ItemBox box : itemBoxes) box.reflector.update(gl, box.getPosition());
 		
-		for(GoldCoin coin : coins) coin.reflector.update(gl, coin.getPosition());
+//		for(GoldCoin coin : coins) coin.reflector.update(gl, coin.getPosition());
 		
 		for(Item item : itemList)
 		{
@@ -1621,11 +1682,13 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	public void displayMap(GL2 gl, int texture, float x, float y, float w, float h)
     {
+		Shader.disable(gl);
+		
         gl.glMatrixMode(GL_PROJECTION); gl.glLoadIdentity();
         gl.glMatrixMode(GL_MODELVIEW ); gl.glLoadIdentity();
         
-//        gl.glEnable(GL2.GL_BLEND);
         gl.glDisable(GL2.GL_DEPTH_TEST);
+        gl.glEnable(GL2.GL_BLEND);
         
         gl.glMatrixMode(GL2.GL_TEXTURE); gl.glLoadIdentity();
         gl.glMatrixMode(GL_MODELVIEW );
@@ -1721,6 +1784,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			car.setupCamera(gl);
 			
 			setupLights(gl, car);
+			Light.setepRimLighting(gl);
 			
 			if(enableShadow)
 			{
@@ -1740,24 +1804,18 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			
 			if(enableBloom)
 			{
-				BloomStrobe.begin(gl);
-				 
 				bloom.render(gl);
 			}
 			else
 			{
-				BloomStrobe.end(gl);
-				
-				if(enableReflection) displayReflection(gl, car);
-				
 				beginRenderLog("NORMAL MODE");
 
 				if(terrain != null && terrain.enableWater) renderWater(gl, car);
 				
 				normalMode = true;
 
-				renderWorld(gl);
 				render3DModels(gl, car);
+				renderWorld(gl);
 				if(displaySkybox) renderSkybox(gl);
 
 				if(enableTerrain) renderTimes[frameIndex][1] = renderFoliage(gl, car);
@@ -1796,8 +1854,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		car.starLight.setup(gl);
 		for(Light l : car.driftLights) l.setup(gl);
 		BlueShell.blastLight.setup(gl);
-		
-		Light.setepRimLighting(gl);
 	}
 	
 	public static boolean shadowMode = false;
@@ -1827,8 +1883,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		{
 			gl.glScalef(1.0f, -1.0f, 1.0f); // render environment upside down
 
-			renderWorld(gl);
 			render3DModels(gl, car);
+			renderWorld(gl);
 			if(displaySkybox) renderSkybox(gl);
 		}
 		gl.glPopMatrix();
@@ -2105,53 +2161,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 			else if(playerID == 3) gl.glViewport(w, 0, w, h); //bottom-right
 		}
 	}
-
-	private void displayReflection(GL2 gl, Vehicle car)
-	{
-		// TODO Weather effects may not be working correctly with reflection
-		
-		Vec3 p = light.getPosition(); 
-		light.setPosition(new Vec3(p.x, -p.y, p.z));
-		
-		if(enableTerrain)
-		{
-			gl.glEnable(GL2.GL_CLIP_PLANE1);
-			double equation[] = {0, -1, 0, 10}; // primitives above water are clipped
-			gl.glClipPlane(GL2.GL_CLIP_PLANE1 , equation, 0);
-		}
-		
-		gl.glPushMatrix();
-		{
-			if(enableTerrain) gl.glTranslatef(0.0f, 20, 0.0f);
-			gl.glScalef(1.0f, -1.0f, 1.0f); // render environment upside down
-			
-			renderWorld(gl);
-			render3DModels(gl, car);
-			
-			renderParticles(gl, car);
-			Particle.resetTexture();
-		}
-		gl.glPopMatrix();
-		
-		gl.glDisable(GL2.GL_CLIP_PLANE1);
-		
-		if(!enableTerrain) renderFloor(gl);
-		
-		light.setPosition(p);
-		
-		gl.glColor3f(1, 1, 1);
-		
-		if(enableTerrain)
-		{
-			/*
-			 * For the plane equation, the first three components represent a vector/axis
-			 * and the fourth component is a translation along this vector.
-			 */
-			gl.glEnable(GL2.GL_CLIP_PLANE2);
-			double[] equation = {0, 1, 0, -10};
-			gl.glClipPlane(GL2.GL_CLIP_PLANE2 , equation, 0);
-		}
-	}
 	
 	public boolean enableBump = true;
 
@@ -2160,6 +2169,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		gl.glPushMatrix();
 		{
 			boolean bloom = BloomStrobe.begin(gl);
+			
+			Material.loadDefault(gl);
 			
 			Shader shader = enableBump ? (singleLight ? Shader.get("bump") : (Scene.enableParallax ? Shader.get("parallax_lights") : Shader.get("bump_lights"))) :
 				Shader.getLightModel("shadow");
@@ -2221,48 +2232,20 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	public long renderWorld(GL2 gl)
 	{
 		long start = System.nanoTime();
-		
-		Shader shader = null;
-		{
-			if(enableShadow)
-			{
-				shader = Shader.get("phong_shadow");
-				
-				if(shader != null)
-				{
-					caster.enable(gl);
-					shader.enable(gl);
-					shader.setSampler(gl, "texture"  , 0);
-					shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
-				}
-			}
-			else
-			{
-				shader = Shader.get("phong_texture");
-				
-				if(shader != null)
-				{
-					shader.enable(gl);
-					shader.setSampler(gl, "texture", 0);
-				}
-			}
-		}
-		
-		if(enableTerrain && !environmentMode) renderTimes[frameIndex][0] = renderTerrain(gl); 
-		else if(!enableReflection)
-		{
-			renderFloor(gl);
-			renderTimes[frameIndex][0] = 0;
-		}
 
 		renderTimes[frameIndex][1] = renderObstacles(gl);
-		
+	
 		Shader.disable(gl);
 			
-		renderWalls(gl);
-		
-//		if(testMode) renderWalls(gl);
-//		else brickWall.render(gl);
+		if(displayWalls) renderWalls(gl);
+		else brickWall.render(gl); 
+
+		if(enableTerrain && !environmentMode) renderTimes[frameIndex][0] = renderTerrain(gl); 
+		else
+		{
+			if(displayWalls) renderFloor(gl);
+			renderTimes[frameIndex][0] = 0;
+		}
 		
 //		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 //		planeMesh.render(gl);
@@ -2270,6 +2253,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		
 		return System.nanoTime() - start;
 	}
+	
+	public boolean displayWalls = true;
 
 	public void renderWalls(GL2 gl)
 	{
@@ -2361,7 +2346,7 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				mushroom.render(gl);
 			}
 			 
-//    		 pipe.render(gl);
+//    		pipe.render(gl);
             
 //    		for(WoodPlank plank : planks) plank.render(gl);
 			 
@@ -2436,8 +2421,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 		long start = System.nanoTime();
 		
 		gl.glColor3f(1, 1, 1);
-		
-		if(enableCulling) gl.glEnable(GL2.GL_CULL_FACE);
 	
 		for(Item item : itemList)
 			if(!item.isDead())
@@ -2445,8 +2428,6 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				if(Item.renderMode == 1) item.renderWireframe(gl, car.trajectory);
 				else item.render(gl, car.trajectory);
 			}
-		
-		gl.glDisable(GL2.GL_CULL_FACE);
 		
 		return System.nanoTime() - start;
 	}
@@ -3157,10 +3138,19 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 				for(Map.Entry<String, Model> model : models) System.out.println(model.getKey().toUpperCase() + "\n" + model.getValue());
 				break;
 			}
+			case KeyEvent.VK_F6: Shader.printUsage(); break;
+			case KeyEvent.VK_F7: displayWalls = !displayWalls; break;
+			case KeyEvent.VK_F8: enableInstanced = !enableInstanced; break;
+			case KeyEvent.VK_F9: BlockFort.enableSimple = !BlockFort.enableSimple; break;
+			case KeyEvent.VK_F10: enableWireframe = !enableWireframe; break;
+			case KeyEvent.VK_F11: enable_culling = !enable_culling; break;
+			case KeyEvent.VK_F12: enable_error_log = true; break;
 			default: break;
 		}
 	}
 	
+	public static boolean enableWireframe = false;
+	public static boolean enableInstanced = true;
 	public static boolean displayDepth = false;
 	
 	public void keyReleased(KeyEvent e)

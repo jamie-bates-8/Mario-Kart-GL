@@ -56,18 +56,19 @@ public class WoodBridge
 		
 		if(polished_wood == null)
 		{
-			Texture diffuse = TextureLoader.load(gl, "tex/plank_COLOR.jpg");
-			Texture normal  = TextureLoader.load(gl, "tex/plank_NRM.jpg");
-			Texture	height  = TextureLoader.load(gl, "tex/plank_DISP.jpg");
+			Texture diffuse  = TextureLoader.load(gl, "tex/plank_COLOR.jpg");
+			Texture normal   = TextureLoader.load(gl, "tex/plank_NRM.jpg");
+			Texture	height   = TextureLoader.load(gl, "tex/plank_DISP.jpg");
+			Texture specular = TextureLoader.load(gl, "tex/plank_SPEC.jpg");
 			
 			Texture diffuse_alt = TextureLoader.load(gl, "tex/plank_alt_COLOR.jpg");
 			
-			plank_model.calculateTangents();
-			post_model.calculateTangents();
-			support_model.calculateTangents();
+			if(!plank_model.hasTangentData()) plank_model.calculateTangents();
+			if(!post_model.hasTangentData()) post_model.calculateTangents();
+			if(!support_model.hasTangentData()) support_model.calculateTangents();
 			
-			polished_wood = new Material(diffuse, normal, height);
-			 painted_wood = new Material(diffuse_alt, normal, height);
+			polished_wood = new Material(diffuse, normal, height, specular);
+			 painted_wood = new Material(diffuse_alt, normal, height, specular);
 			
 			setupInstances();
 		}
@@ -101,32 +102,35 @@ public class WoodBridge
 		plank_model.setPositionData(plank_positions);
 		plank_model.setMatrixData(plank_matrices);
 		
-		plank_model.matrixDivisor = 80;
+		plank_model.matrixDivisor = 160;
 		
 		post_model.setPositionData(post_positions);
 		post_model.setMatrixData(plank_matrices);
 		
-		post_model.matrixDivisor = 24;
+		post_model.matrixDivisor = 48;
 		
 		support_model.setPositionData(support_positions);
 		support_model.setMatrixData(support_matrices);
 		
-		support_model.matrixDivisor = 2;
+		support_model.matrixDivisor = 8;
 	}	
 	
 	private FloatBuffer setupPlankPositions()
 	{
-		int num_of_planks = 96;
+		int num_of_planks = 192;
 		
 		FloatBuffer positions = FloatBuffer.allocate(num_of_planks * 4);
 		
 		Vec3 start = new Vec3(0, 37.5, 101.25).add(new Vec3(-47.8125, 21.9375, 0));
+		Vec3 scale = new Vec3(-1, +1, -1);
 		
 		for(int i = 0; i < 16; i++)
 		{
 			start = start.add(new Vec3(5.625, 0, 0));
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -7.3125, 0)).toArray()); positions.put(1);
+			positions.put(start.toArray()); positions.put(0);
+			positions.put(start.multiply(scale).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, -7.3125, 0)).toArray()); positions.put(0);
+			positions.put(start.add(new Vec3(0, -7.3125, 0)).multiply(scale).toArray()); positions.put(1);
 		}
 		
 		start = new Vec3(90, 7.5, 33.75).add(new Vec3(-47.8125, 21.9375, 0));
@@ -134,8 +138,10 @@ public class WoodBridge
 		for(int i = 0; i < 16; i++)
 		{
 			start = start.add(new Vec3(5.625, 0, 0));
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -7.3125, 0)).toArray()); positions.put(1);
+			positions.put(start.toArray()); positions.put(0);
+			positions.put(start.multiply(scale).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, -7.3125, 0)).toArray()); positions.put(0);
+			positions.put(start.add(new Vec3(0, -7.3125, 0)).multiply(scale).toArray()); positions.put(1);
 		}
 		
 		start = new Vec3(0, 30, 56.25).add(new Vec3(-25.3125, -0.5625, 0));
@@ -143,16 +149,20 @@ public class WoodBridge
 		for(int i = 0; i < 8; i++)
 		{
 			start = start.add(new Vec3(5.625, 0, 0));
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -4.5, 0)).toArray()); positions.put(1);
+			positions.put(start.toArray()); positions.put(0);
+			positions.put(start.multiply(scale).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, -4.5, 0)).toArray()); positions.put(0);
+			positions.put(start.add(new Vec3(0, -4.5, 0)).multiply(scale).toArray()); positions.put(1);
 		}
 		
 		start = new Vec3(0, 37.5, 101.25).add(new Vec3(-33.75, 18.27375, 10.125));
 		
 		for(int i = 0; i < 4; i++)
 		{
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
+			positions.put(start.toArray()); positions.put(0);
+			positions.put(start.multiply(scale).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(0);
+			positions.put(start.add(new Vec3(0, 0, -20.25)).multiply(scale).toArray()); positions.put(1);
 			start = start.add(new Vec3(22.5, 0, 0));
 		}
 		
@@ -160,8 +170,10 @@ public class WoodBridge
 		
 		for(int i = 0; i < 4; i++)
 		{
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
+			positions.put(start.toArray()); positions.put(0);
+			positions.put(start.multiply(scale).toArray()); positions.put(1);
+			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(0);
+			positions.put(start.add(new Vec3(0, 0, -20.25)).multiply(scale).toArray()); positions.put(1);
 			start = start.add(new Vec3(22.5, 0, 0));
 		}
 		positions.position(0);
@@ -171,19 +183,30 @@ public class WoodBridge
 	
 	private FloatBuffer setupPostPositions()
 	{
-		int num_of_posts = 24;
+		int num_of_posts = 48;
 		
 		FloatBuffer positions = FloatBuffer.allocate(num_of_posts * 4);
 		
 		Vec3 start = new Vec3(0, 37.5, 101.25).add(new Vec3(-33.75, 21.09375, 10.125));
+		Vec3 scale = new Vec3(-1, +1, -1);
 		
 		for(int i = 0; i < 2; i++)
 		{
 			start = start.add(new Vec3(22.5, 0, 0));
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -5.625, 0)).toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -5.625, -20.25)).toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
+			
+			Vec3 p0 = new Vec3(start);
+			Vec3 p1 = start.add(new Vec3(0, -5.625, 0));
+			Vec3 p2 = start.add(new Vec3(0, -5.625, -20.25));
+			Vec3 p3 = start.add(new Vec3(0, 0, -20.25));
+			
+			positions.put(p0.toArray()); positions.put(0);
+			positions.put(p0.multiply(scale).toArray()); positions.put(1);
+			positions.put(p1.toArray()); positions.put(0);
+			positions.put(p1.multiply(scale).toArray()); positions.put(1);
+			positions.put(p2.toArray()); positions.put(0);
+			positions.put(p2.multiply(scale).toArray()); positions.put(1);
+			positions.put(p3.toArray()); positions.put(0);
+			positions.put(p3.multiply(scale).toArray()); positions.put(1);	
 		}
 		
 		start = new Vec3(90, 7.5, 33.75).add(new Vec3(-33.75, 21.09375, 10.125));
@@ -191,10 +214,20 @@ public class WoodBridge
 		for(int i = 0; i < 2; i++)
 		{
 			start = start.add(new Vec3(22.5, 0, 0));
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -5.625, 0)).toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -5.625, -20.25)).toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
+			
+			Vec3 p0 = new Vec3(start);
+			Vec3 p1 = start.add(new Vec3(0, -5.625, 0));
+			Vec3 p2 = start.add(new Vec3(0, -5.625, -20.25));
+			Vec3 p3 = start.add(new Vec3(0, 0, -20.25));
+			
+			positions.put(p0.toArray()); positions.put(0);
+			positions.put(p0.multiply(scale).toArray()); positions.put(1);
+			positions.put(p1.toArray()); positions.put(0);
+			positions.put(p1.multiply(scale).toArray()); positions.put(1);
+			positions.put(p2.toArray()); positions.put(0);
+			positions.put(p2.multiply(scale).toArray()); positions.put(1);
+			positions.put(p3.toArray()); positions.put(0);
+			positions.put(p3.multiply(scale).toArray()); positions.put(1);	
 		}
 		
 		start = new Vec3(0, 30, 56.25).add(new Vec3(-33.75, -1.40625, 10.125));
@@ -202,10 +235,20 @@ public class WoodBridge
 		for(int i = 0; i < 2; i++)
 		{
 			start = start.add(new Vec3(22.5, 0, 0));
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -2.8125, 0)).toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, -2.8125, -20.25)).toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
+			
+			Vec3 p0 = new Vec3(start);
+			Vec3 p1 = start.add(new Vec3(0, -2.8125, 0));
+			Vec3 p2 = start.add(new Vec3(0, -2.8125, -20.25));
+			Vec3 p3 = start.add(new Vec3(0, 0, -20.25));
+			
+			positions.put(p0.toArray()); positions.put(0);
+			positions.put(p0.multiply(scale).toArray()); positions.put(1);
+			positions.put(p1.toArray()); positions.put(0);
+			positions.put(p1.multiply(scale).toArray()); positions.put(1);
+			positions.put(p2.toArray()); positions.put(0);
+			positions.put(p2.multiply(scale).toArray()); positions.put(1);
+			positions.put(p3.toArray()); positions.put(0);
+			positions.put(p3.multiply(scale).toArray()); positions.put(1);
 		}
 		positions.position(0);
 		
@@ -214,27 +257,37 @@ public class WoodBridge
 	
 	private FloatBuffer setupSupportPositions()
 	{
-		int num_of_supports = 8;
+		int num_of_supports = 16;
 		
 		FloatBuffer positions = FloatBuffer.allocate(num_of_supports * 4);
 		
-		Vec3 start = new Vec3(0, 37.5, 101.25).add(new Vec3(-33.75, 22.5, 10.125));
+		Vec3 scale = new Vec3(-1, +1, -1);
 		
-		for(int i = 0; i < 2; i++)
-		{
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
-			start = start.add(new Vec3(67.5, 0, 0));
-		}
+		Vec3 p0 = new Vec3(0, 37.5, 101.25).add(new Vec3(-33.75, 22.5, 10.125));
+		Vec3 p1 = new Vec3(90, 7.5, 33.75).add(new Vec3(-33.75, 22.5, 10.125));
 		
-		start = new Vec3(90, 7.5, 33.75).add(new Vec3(-33.75, 22.5, 10.125));
+		positions.put(p0.toArray()); positions.put(0);
+		positions.put(p0.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(0);
+		positions.put(p1.toArray()); positions.put(0);
+		positions.put(p1.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(0);
 		
-		for(int i = 0; i < 2; i++)
-		{
-			positions.put(start.toArray()); positions.put(1);
-			positions.put(start.add(new Vec3(0, 0, -20.25)).toArray()); positions.put(1);
-			start = start.add(new Vec3(67.5, 0, 0));
-		}
+		positions.put(p0.add(new Vec3(67.5, 0, -20.25)).multiply(scale).toArray()); positions.put(1);
+		positions.put(p0.add(new Vec3(67.5, 0, 0)).multiply(scale).toArray()); positions.put(1);
+		positions.put(p1.add(new Vec3(67.5, 0, -20.25)).multiply(scale).toArray()); positions.put(1);
+		positions.put(p1.add(new Vec3(67.5, 0, 0)).multiply(scale).toArray()); positions.put(1);
+		
+		positions.put(p0.add(new Vec3(67.5, 0, -20.25)).toArray()); positions.put(0);
+		positions.put(p0.add(new Vec3(67.5, 0, 0)).toArray()); positions.put(0);
+		positions.put(p1.add(new Vec3(67.5, 0, -20.25)).toArray()); positions.put(0);
+		positions.put(p1.add(new Vec3(67.5, 0, 0)).toArray()); positions.put(0);
+			
+		positions.put(p0.multiply(scale).toArray()); positions.put(1);
+		positions.put(p0.add(new Vec3(0, 0, -20.25)).multiply(scale).toArray()); positions.put(1);
+		positions.put(p1.multiply(scale).toArray()); positions.put(1);
+		positions.put(p1.add(new Vec3(0, 0, -20.25)).multiply(scale).toArray()); positions.put(1);
+		
+		
+		
 		positions.position(0);
 		
 		return positions;
@@ -263,21 +316,11 @@ public class WoodBridge
 	
 	private FloatBuffer setupSupportMatrices()
 	{
-		FloatBuffer matrices = FloatBuffer.allocate(16 * 4);
+		FloatBuffer matrices = FloatBuffer.allocate(16 * 2);
 		
 		Vec3 scale = new Vec3(2.8125, 2.8125, 2.25);
 		
 		float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-		Matrix.scale(model, scale.x, scale.y, scale.z);
-		Matrix.multiply(model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, 270, 0)));
-		matrices.put(model);
-		
-		model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-		Matrix.scale(model, scale.x, scale.y, scale.z);
-		Matrix.multiply(model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, 90, 0)));
-		matrices.put(model);
-		
-		model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
 		Matrix.scale(model, scale.x, scale.y, scale.z);
 		Matrix.multiply(model, model, Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, 270, 0)));
 		matrices.put(model);
@@ -314,6 +357,12 @@ public class WoodBridge
 		shader.setSampler(gl, "bumpmap"  , 1);
 		shader.setSampler(gl, "heightmap", 2);
 		
+		shader.setSampler(gl, "diffuse_alt", 4);
+		
+		gl.glActiveTexture(GL2.GL_TEXTURE4);
+		painted_wood.getDiffuseMap().bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE0);
+		
 		if(Scene.enableShadow && shader != null)
 		{
 			shader.setSampler(gl, "shadowMap", ShadowCaster.SHADOW_MAP_TEXTURE_UNIT);
@@ -324,9 +373,13 @@ public class WoodBridge
 		}
 		else if(shader != null) shader.setUniform(gl, "enableShadow", false);
 		
-		plank_model.renderInstanced(gl, 96);
-		post_model.renderInstanced(gl, 24);
-		support_model.renderInstanced(gl, 8);
+		if(Scene.enable_culling && !Scene.shadowMode && !Scene.reflectMode) gl.glEnable(GL2.GL_CULL_FACE);
+		
+		plank_model.renderInstanced(gl, 192);
+		post_model.renderInstanced(gl, 48);
+		support_model.renderInstanced(gl, 16);
+		
+		gl.glDisable(GL2.GL_CULL_FACE);
 		
 		Shader.disable(gl);
 		

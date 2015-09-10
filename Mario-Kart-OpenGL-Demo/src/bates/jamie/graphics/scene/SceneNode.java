@@ -48,8 +48,10 @@ public class SceneNode
 	private Reflector reflector;
 	private float reflectivity = 1.0f;
 	
+	private boolean enableSpecMap = false;
 	private boolean enableParallax = false;
 	private boolean enableBloom = true;
+	private boolean enableCulling = true;
 	
 	public SceneNode(List<Face> geometry, int displayList, Model model, MatrixOrder order, Material material)
 	{
@@ -88,6 +90,8 @@ public class SceneNode
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
+			if(Scene.enable_culling && enableCulling && !Scene.shadowMode && !Scene.reflectMode) gl.glEnable(GL2.GL_CULL_FACE);
+			
 			setupShader(gl);
 			
 			boolean useHDR = BloomStrobe.isEnabled();
@@ -109,6 +113,7 @@ public class SceneNode
 				switch(renderMode)
 				{
 					case TEXTURE      : 
+					case TEXTURE_SPEC :
 					case BUMP_COLOR   :
 					case COLOR        :
 					case BLOOM_COLOR  :
@@ -133,6 +138,7 @@ public class SceneNode
 				{
 					case BUMP_RAIN    :
 					case BUMP_TEXTURE :
+					case TEXTURE_SPEC :
 					case TEXTURE      : Renderer.displayTexturedObject(gl, geometry);        break;
 					case REFLECT      :
 					case BUMP_REFLECT :
@@ -147,6 +153,8 @@ public class SceneNode
 			
 			Shader.disable(gl);
 			
+			gl.glDisable(GL2.GL_CULL_FACE);
+			
 			for(SceneNode child : children) child.render(gl);
 		}
 		gl.glPopMatrix();
@@ -154,7 +162,7 @@ public class SceneNode
 
 	private void setupShader(GL2 gl)
 	{
-		Shader shader = this.shader;
+		Shader shader = Shader.enableSimple ? Shader.get("simple") : this.shader;
 		
 		switch(renderMode)
 		{
@@ -168,6 +176,18 @@ public class SceneNode
 					shader.setSampler(gl, "texture", 0);
 				}
 				break;      
+			}
+			case TEXTURE_SPEC:
+			{
+				if(shader == null) shader = Shader.get("texture_specular");
+				
+				if(shader != null)
+				{
+					shader.enable(gl);
+					shader.setSampler(gl, "texture", 0);
+					shader.setSampler(gl, "specular_map", 4);
+				}
+				break;
 			}
 			case BUMP_RAIN:
 			{
@@ -222,12 +242,16 @@ public class SceneNode
 					shader.enable(gl);
 			
 					shader.setSampler(gl, "bumpmap", 1);
+					shader.setSampler(gl, "heightmap", 2);
+
+					shader.setUniform(gl, "enableParallax", enableParallax && Scene.enableParallax);
+					shader.setUniform(gl, "camera_position", Scene.singleton.getCars().get(0).camera.getPosition());
 				}
 				break;      
 			}
 			case BUMP_TEXTURE:
 			{
-				if(shader == null) shader = (enableParallax && Scene.enableParallax) ? Shader.get("parallax_lights") : Shader.get("bump_lights");
+				if(shader == null) shader = Shader.get("parallax_specular");
 				
 				if(shader != null)
 				{
@@ -235,10 +259,14 @@ public class SceneNode
 			
 					shader.setSampler(gl, "texture"  , 0);
 					shader.setSampler(gl, "bumpmap"  , 1);
+					shader.setSampler(gl, "heightmap", 2);
+					shader.setSampler(gl, "specular_map", 4);
+					
+					shader.setUniform(gl, "enableParallax", enableParallax && Scene.enableParallax);
+					shader.setUniform(gl, "enable_spec_map", enableSpecMap && Scene.enableParallax);
 					
 					if(enableParallax)
 					{
-						shader.setSampler(gl, "heightmap", 2);
 						shader.setUniform(gl, "camera_position", Scene.singleton.getCars().get(0).camera.getPosition());
 					}
 				}
@@ -300,10 +328,13 @@ public class SceneNode
 			setupMatrix(gl);
 			if(material != null) material.load(gl);
 			
+			if(Scene.enable_culling && enableCulling && !Scene.shadowMode && !Scene.reflectMode) gl.glEnable(GL2.GL_CULL_FACE);
+			
 			if(shader != null)
 			{	
 				Reflector reflector = this.reflector == null ? root.getReflector() : this.reflector;
 				
+				if(Shader.enableSimple) shader = Shader.get("simple");
 				shader.enable(gl);
 				
 				if(uniforms != null) for(Uniform uniform : uniforms) shader.setUniform(gl, uniform);
@@ -325,6 +356,8 @@ public class SceneNode
 				if(reflector != null) reflector.disable(gl);
 				
 				Shader.disable(gl);
+				
+				gl.glDisable(GL2.GL_CULL_FACE);
 			}
 			
 			for(SceneNode child : children) child.render(gl, shader, uniforms);
@@ -463,9 +496,13 @@ public class SceneNode
 		for(SceneNode child : children) child.updateReflection(gl);
 	}
 	
+	public void useSpecularMap(boolean enabled) { enableSpecMap = enabled; }
+	
 	public void useParallax(boolean enabled) { enableParallax = enabled; }
 	
 	public void enableBloom(boolean enabled) { enableBloom = enabled; }
+	
+	public void enableCulling(boolean enabled) { enableCulling = enabled; }
 	
 	public void setRenderMode(RenderMode mode) { renderMode = mode; }
 	
@@ -644,6 +681,7 @@ public class SceneNode
 	public enum RenderMode
 	{
 		TEXTURE,
+		TEXTURE_SPEC,
 		COLOR,
 		BLOOM_COLOR,
 		BUMP_COLOR,

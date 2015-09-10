@@ -12,15 +12,16 @@ import com.jogamp.opengl.util.texture.Texture;
 public class Material
 {
 	// Material properties
-	private float[] diffuse   = new float[] {1.0f, 1.0f, 1.0f};
-	private float[] specular  = new float[] {0.4f, 0.4f, 0.4f};
+	private float[] diffuse   = {1.0f, 1.0f, 1.0f};
+	private float[] specular  = {0.4f, 0.4f, 0.4f};
 	private int     shininess = 50;
 	
 	//Texture properties
-	private Texture colourMap;
+	private Texture diffuseMap;
 	private Texture normalMap;
 	private Texture heightMap;
 	private Texture alphaMask;
+	private Texture specularMap;
 	
 	public Material() {}
 	
@@ -31,13 +32,14 @@ public class Material
 		this.shininess = shininess;
 	}
 	
-	public Material(Texture texture) { colourMap = texture; }
+	public Material(Texture texture) { diffuseMap = texture; }
 	
-	public Material(Texture diffuse, Texture normal, Texture height)
+	public Material(Texture diffuse, Texture normal, Texture height, Texture specular)
 	{
-		colourMap = diffuse;
+		diffuseMap = diffuse;
 		normalMap = normal;
 		heightMap = height;
+		specularMap = specular;
 	}
 	
 	public Material(Material material)
@@ -46,10 +48,11 @@ public class Material
 		specular = material.getSpecular();
 		shininess = material.getShininess();
 		
-		colourMap = material.colourMap;
+		diffuseMap = material.diffuseMap;
 		normalMap = material.normalMap;
 		heightMap = material.heightMap;
 		alphaMask = material.alphaMask;
+		specularMap = material.specularMap;
 	}
 
 	public float[] getDiffuse() { return diffuse; }
@@ -66,10 +69,13 @@ public class Material
 		if(shininess > 128) shininess = 128;
 	}
 	
-	public void setDiffuseMap(Texture diffuseTexture) { colourMap = diffuseTexture; }
-	public void setNormalMap (Texture normalTexture ) { normalMap = normalTexture ; }
-	public void setHeightMap (Texture heightTexture ) { heightMap = heightTexture ; }
-	public void setAlphaMap  (Texture alphaTexture  ) { alphaMask = alphaTexture  ; }
+	public void setDiffuseMap (Texture diffuseTexture ) { diffuseMap = diffuseTexture; }
+	public void setNormalMap  (Texture normalTexture  ) { normalMap = normalTexture ; }
+	public void setHeightMap  (Texture heightTexture  ) { heightMap = heightTexture ; }
+	public void setAlphaMap   (Texture alphaTexture   ) { alphaMask = alphaTexture  ; }
+	public void setSpecularMap(Texture specularTexture) { specularMap = specularTexture; }
+	
+	public Texture getDiffuseMap() { return diffuseMap; }
 	
 	public void load(GL2 gl)
 	{
@@ -77,11 +83,19 @@ public class Material
 		gl.glLightfv(GL_LIGHT0, GL_SPECULAR, specular, 0);
 		gl.glMateriali(GL_FRONT, GL_SHININESS, shininess);
 		
+		if(specularMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE4); specularMap.bind(gl); }
 		if(alphaMask != null) { gl.glActiveTexture(GL2.GL_TEXTURE3); alphaMask.bind(gl); }
 		if(heightMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE2); heightMap.bind(gl); }
 		if(normalMap != null) { gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl); }
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 		
-		if(colourMap != null) colourMap.bind(gl);
+		if(diffuseMap != null) diffuseMap.bind(gl);
+	}
+	
+	public static void loadDefault(GL2 gl)
+	{
+		gl.glColor3f(1.0f, 1.0f, 1.0f);
+		gl.glLightfv(GL_LIGHT0, GL_SPECULAR, new float[] {.4f, .4f, .4f}, 0);
+		gl.glMateriali(GL_FRONT, GL_SHININESS, 50);
 	}
 }

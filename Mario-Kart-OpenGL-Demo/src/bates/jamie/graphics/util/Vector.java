@@ -157,7 +157,9 @@ public class Vector
         float[] u1 = subtract(t2, t1);
         float[] u2 = subtract(t3, t1);
         
-        float r = 1.0f / (u1[0] * u2[1] - u2[0] * u1[1]);
+        float d = u1[0] * u2[1] - u2[0] * u1[1];
+        
+        float r = d == 0 ? 0 : 1.0f / d;
         
         float[] tangent0 =
         {

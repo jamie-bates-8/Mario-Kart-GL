@@ -1439,8 +1439,8 @@ public class Quadtree
 	
 	public void render(GL2 gl)
 	{
-		timeQuery.getResult(gl);
-		timeQuery.begin(gl);
+//		timeQuery.getResult(gl);
+//		timeQuery.begin(gl);
 		
 		timer += 0.05;
 		
@@ -1498,7 +1498,7 @@ public class Quadtree
 		if(vNormals ) renderNormals  (gl, true, 1);
 		if(vTangents) renderTangents (gl, true, 1);
 		
-		timeQuery.end(gl);
+//		timeQuery.end(gl);
 	}
 	
 	public void renderAlpha(GL2 gl)

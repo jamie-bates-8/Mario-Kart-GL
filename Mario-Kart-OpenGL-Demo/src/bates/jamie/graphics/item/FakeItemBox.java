@@ -120,7 +120,7 @@ public class FakeItemBox extends Item
 	public void render(GL2 gl, float trajectory)
 	{
 		if(simplify) renderSymbol(gl, trajectory);
-		else
+		else if(!Scene.depthMode)
 		{
 			symbolNode.setTranslation(getPosition());
 			symbolNode.setRotation(new Vec3(0, -trajectory, 0));

@@ -79,6 +79,7 @@ public class Shader
 		
 		// load and compile shaders from file
 		Shader simple         = new Shader(gl, "simple");
+		Shader simpleAlpha    = new Shader(gl, "simple_alpha");
 		Shader simpleInstance = new Shader(gl, "simple_instance", "simple", inst_attr);
 		Shader simpleMatInst  = new Shader(gl, "simple_mat_inst", "simple", mat_inst_attr);
 		
@@ -94,6 +95,7 @@ public class Shader
 		
 		Shader texLights      = new Shader(gl, "texture_lights");
 		Shader textureRim     = new Shader(gl, "texture_lights", "texture_rim");
+		Shader textureSpec    = new Shader(gl, "shadow_lights", "texture_specular");
 		
 		Shader checkerDiag    = new Shader(gl, "checker_diagonal");
 		Shader checkerSlope   = new Shader(gl, "checker_slope");
@@ -103,22 +105,27 @@ public class Shader
 		Shader checkerInst    = new Shader(gl, "checker_instance", "checker_block", mat_inst_attr);
 		Shader slopeInstance  = new Shader(gl, "checker_instance", "checker_shadow", mat_inst_attr);
 		
+		Shader checkerCookie = new Shader(gl, "checker_cookie", "checker_cookie", bump_attr);
+		Shader cookieMatInst = new Shader(gl, "cookie_instance", "checker_cookie", bump_mat_inst_attr);
+		
 		Shader bump          = new Shader(gl, "bump", "bump", bump_attr);
-		Shader bumpPhong     = new Shader(gl, "bump_lights", "bump_phong", bump_attr);
+		Shader bumpPhong     = new Shader(gl, "parallax_lights", "bump_phong", bump_attr);
 		Shader bumpLights    = new Shader(gl, "bump_lights", "bump_lights", bump_attr);
 		Shader parallax      = new Shader(gl, "parallax_lights", "parallax_lights", bump_attr);
+		Shader parallaxSpec  = new Shader(gl, "parallax_lights", "parallax_specular", bump_attr);
 		Shader bumpReflect   = new Shader(gl, "bump_reflect", "bump_reflect", bump_attr);
 		Shader bumpCube      = new Shader(gl, "bump_cube", "bump_cube", bump_attr);
 		Shader bumpRain      = new Shader(gl, "bump_cube", "bump_rain", bump_attr);
 		Shader bumpAlpha     = new Shader(gl, "bump_lights", "bump_alpha", bump_attr);
 		Shader bumpInstance  = new Shader(gl, "bump_instance", "parallax_lights", bump_inst_attr);
-		Shader bumpMatInst   = new Shader(gl, "bump_mat_inst", "bump_lights", bump_mat_inst_attr);
+		Shader bumpMatInst   = new Shader(gl, "bump_mat_inst", "bump_mat_inst", bump_mat_inst_attr);
 		
 		Shader heightMap     = new Shader(gl, "height_map");
 		
 		Shader shadow        = new Shader(gl, "shadow");
 		Shader phongShadow   = new Shader(gl, "phong_shadow");
 		Shader shadowLights  = new Shader(gl, "shadow_lights");
+		Shader phongMix      = new Shader(gl, "shadow_lights", "phong_mix"); 
 		
 		Shader phongCube    = new Shader(gl, "phong_cube");
 		Shader cubeLights   = new Shader(gl, "cube_lights");
@@ -164,6 +171,7 @@ public class Shader
 		
 		// check that shaders have been compiled and linked correctly before hashing 
 		if(        simple.isValid()) shaders.put("simple", simple);
+		if(   simpleAlpha.isValid()) shaders.put("simple_alpha", simpleAlpha);
 		if(simpleInstance.isValid()) shaders.put("simple_instance", simpleInstance);
 		if( simpleMatInst.isValid()) shaders.put("simple_mat_inst", simpleMatInst);
 		
@@ -171,15 +179,17 @@ public class Shader
 		if(  phongLights.isValid()) shaders.put("phong_lights", phongLights);
 		if(phongInstance.isValid()) shaders.put("phong_instance", phongInstance);
 		if( phongMatInst.isValid()) shaders.put("phong_mat_inst", phongMatInst);
-		
 		if(     phongRim.isValid()) shaders.put("phong_rim", phongRim);
 		if( phongTexture.isValid()) shaders.put("phong_texture", phongTexture);
 		if(   phongAlpha.isValid()) shaders.put("phong_alpha", phongAlpha);
+		if(     phongMix.isValid()) shaders.put("phong_mix", phongMix);
 		
 		if(   bloomColor.isValid()) shaders.put("bloom_color", bloomColor);
 		
 		if(     texLights.isValid()) shaders.put("texture_lights", texLights);
 		if(    textureRim.isValid()) shaders.put("texture_rim", textureRim);
+		if(   textureSpec.isValid()) shaders.put("texture_specular", textureSpec);
+		
 		if(   checkerDiag.isValid()) shaders.put("checker_diagonal", checkerDiag);
 		if(  checkerSlope.isValid()) shaders.put("checker_slope", checkerSlope);
 		if(checkerReflect.isValid()) shaders.put("checker_reflect", checkerReflect);
@@ -188,10 +198,14 @@ public class Shader
 		if(   checkerInst.isValid()) shaders.put("checker_instance", checkerInst);
 		if( slopeInstance.isValid()) shaders.put("slope_instance", slopeInstance);
 		
+		if( checkerCookie.isValid()) shaders.put("checker_cookie", checkerCookie);
+		if( cookieMatInst.isValid()) shaders.put("cookie_instance", cookieMatInst);
+		
 		if(        bump.isValid()) shaders.put("bump", bump);
 		if(   bumpPhong.isValid()) shaders.put("bump_phong", bumpPhong);
 		if(  bumpLights.isValid()) shaders.put("bump_lights", bumpLights);
 		if(    parallax.isValid()) shaders.put("parallax_lights", parallax);
+		if(parallaxSpec.isValid()) shaders.put("parallax_specular", parallaxSpec);
 		if( bumpReflect.isValid()) shaders.put("bump_reflect", bumpReflect);
 		if(    bumpCube.isValid()) shaders.put("bump_cube", bumpCube);
 		if(    bumpRain.isValid()) shaders.put("bump_rain", bumpRain);
@@ -283,6 +297,8 @@ public class Shader
 		else return shaders.get(name);
 	}
 	
+	public static Shader getDirect(String name) { return shaders.get(name); }
+	
 	public static Shader getLightModel(String name)
 	{
 		Scene scene = Scene.singleton;
@@ -324,13 +340,13 @@ public class Shader
 		vertProgram = gl.glCreateShader(GL2.GL_VERTEX_SHADER  );
 		fragProgram = gl.glCreateShader(GL2.GL_FRAGMENT_SHADER);
 		
-		vertSource = parseSource(vShader + ".vs");
+		vertSource = parseSource("vertex/" + vShader + ".vs");
 		if(vertSource == null) return false;
 	
 		gl.glShaderSource (vertProgram, 1, vertSource, null, 0);
 		gl.glCompileShader(vertProgram);
 	
-		fragSource = parseSource(fShader + ".fs");
+		fragSource = parseSource("fragment/" + fShader + ".fs");
 		if(fragSource == null) return false;
 		
 		gl.glShaderSource (fragProgram, 1, fragSource, null, 0);
@@ -375,6 +391,26 @@ public class Shader
 	    return validate(gl);  
 	}
 	
+	public int num_of_uses = 0;
+	public int recorded_usage = 0;
+	
+	public static void recordUsage()
+	{
+		for(Shader shader : shaders.values())
+		{
+			shader.recorded_usage = shader.num_of_uses;
+			shader.num_of_uses = 0;
+		}
+	}
+	
+	public static void printUsage()
+	{
+		for(Map.Entry<String, Shader> shader : shaders.entrySet())
+			System.out.println(shader.getKey() + ": " + shader.getValue().recorded_usage);
+		
+		System.out.println();
+	}
+	
 	/** 
 	 * This function is called when you want to activate the shader.
      * Once activated, it will be used to render anything that is drawn until the
@@ -383,6 +419,8 @@ public class Shader
      */
     public int enable(GL2 gl)
     {
+    	num_of_uses++;
+    	
         gl.glUseProgram(shaderID);
         return shaderID;
     }

@@ -18,7 +18,7 @@ public class TimeQuery
 	private static int cacheSize = 240;
 	private static int[][] cache = new int[cacheSize][8]; 
 	
-	private static int currentID;
+	private static int currentID = -1;
 	
 	private int queryID = -1;
 	private int queryType;
@@ -63,6 +63,8 @@ public class TimeQuery
 	{
 		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
 		
+		if(currentID != -1) return;
+		
 		int[] queries = new int[1];
 		gl.glGenQueries(1, queries, 0);
 		queryID = queries[0];
@@ -77,6 +79,8 @@ public class TimeQuery
 		if(currentID != queryID) return;
 		
 		if(Scene.depthMode || Scene.shadowMode || Scene.environmentMode || Scene.reflectMode) return;
+		
+		currentID = -1;
 		
 		gl.glEndQuery(GL2.GL_TIME_ELAPSED);
 	}

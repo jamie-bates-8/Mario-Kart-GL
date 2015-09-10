@@ -35,15 +35,15 @@ public class CheckeredBlock
 	
 	private static float[] block_colors;
 	
-	public static final float[] BLOCK_RED    = new float[] {0.800f, 0.134f, 0.155f};
+	public static final float[] BLOCK_RED    = {0.800f, 0.134f, 0.155f};
 	public static final float[] BLOCK_BLUE   = RGB.SKY_BLUE;
-	public static final float[] BLOCK_GREEN  = new float[] {0.257f, 0.800f, 0.243f};
-	public static final float[] BLOCK_YELLOW = new float[] {0.800f, 0.730f, 0.180f};
+	public static final float[] BLOCK_GREEN  = {0.257f, 0.800f, 0.243f};
+	public static final float[] BLOCK_YELLOW = {0.800f, 0.730f, 0.180f};
 	
-	public static final float[] BLOCK_CYAN    = new float[] {0.400f, 0.800f, 0.800f}; // alternative GREEN
-	public static final float[] BLOCK_LILAC   = new float[] {0.800f, 0.600f, 1.000f}; // alternative BLUE
-	public static final float[] BLOCK_ORANGE  = new float[] {1.000f, 0.600f, 0.400f}; // alternative YELLOW
-	public static final float[] BLOCK_MAGENTA = new float[] {1.000f, 0.400f, 0.600f}; // alternative RED
+	public static final float[] BLOCK_CYAN    = {0.400f, 0.800f, 0.800f}; // alternative GREEN
+	public static final float[] BLOCK_LILAC   = {0.800f, 0.600f, 1.000f}; // alternative BLUE
+	public static final float[] BLOCK_ORANGE  = {1.000f, 0.600f, 0.400f}; // alternative YELLOW
+	public static final float[] BLOCK_MAGENTA = {1.000f, 0.400f, 0.600f}; // alternative RED
 	
 	List<Uniform> uniforms;
 	
@@ -266,6 +266,8 @@ public class CheckeredBlock
 		Renderer.instanced_mode = true;
 		Renderer.instanced_matrix_mode = true;
 		
+		if(Scene.enable_culling && !Scene.shadowMode && !Scene.reflectMode) gl.glEnable(GL2.GL_CULL_FACE);
+		
 		Shader shader = Shader.get("checker_instance");
 		if(shader != null) shader.enable(gl);
 		setupShader(gl, shader);
@@ -287,6 +289,8 @@ public class CheckeredBlock
 		wedge_block_model.renderInstanced(gl, 6);
 		
 		Shader.disable(gl);
+		
+		gl.glDisable(GL2.GL_CULL_FACE);
 		
 		Renderer.instanced_mode = false;
 		Renderer.instanced_matrix_mode = false;

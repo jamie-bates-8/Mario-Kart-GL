@@ -102,7 +102,7 @@ public class ItemBox
 	public void render(GL2 gl, float trajectory)
 	{	
 		if(simplify) renderSymbol(gl, trajectory);
-		else
+		else if(!Scene.depthMode)
 		{
 			symbolNode.setRotation(new Vec3(0, -trajectory, 0));
 			symbolNode.render(gl);

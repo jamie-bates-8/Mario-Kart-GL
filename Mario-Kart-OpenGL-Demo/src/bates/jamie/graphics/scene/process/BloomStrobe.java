@@ -90,6 +90,8 @@ public class BloomStrobe
 	{
 		boolean isEnabled = enabled;
 		
+		if(!Scene.singleton.enableBloom || opaqueMode) return false;
+		
 		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
 		gl.glDrawBuffers(2, attachments, 0); // add another color attachment to store the bright pass
 		
@@ -102,9 +104,11 @@ public class BloomStrobe
 	{
 		boolean isEnabled = enabled;
 		
-		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0, GL2.GL_COLOR_ATTACHMENT1};
+		if(!Scene.singleton.enableBloom || opaqueMode) return false;
+
+		int[] attachments = {GL2.GL_COLOR_ATTACHMENT0};
 		gl.glDrawBuffers(1, attachments, 0);
-		
+
 		enabled = true;
 		
 		return isEnabled;
@@ -135,7 +139,7 @@ public class BloomStrobe
 		finalPass (gl);
 	
 		if(Scene.singleton.enableBlur) updateBlur(gl);
-		
+
 		gl.glBindTexture(GL_TEXTURE_2D, textureIDs[7]);
 
 		gl.glBindBuffer(GL2.GL_PIXEL_UNPACK_BUFFER, full_opaque_buffer);
@@ -195,12 +199,12 @@ public class BloomStrobe
 		Terrain terrain = scene.getTerrain();
 		
 		if(terrain != null && terrain.enableWater && !opaqueMode) scene.renderWater(gl, car);
-		
+
 		if(!opaqueMode) Scene.normalMode = true;
 		
 		scene.renderWorld(gl);
-		scene.render3DModels(gl, car);
 		if(scene.displaySkybox) scene.renderSkybox(gl);
+		scene.render3DModels(gl, car);
 		
 		if(scene.displayLight) for(Light l : scene.lights) l.render(gl);
 		

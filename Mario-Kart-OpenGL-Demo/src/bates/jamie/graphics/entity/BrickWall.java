@@ -142,6 +142,12 @@ public class BrickWall
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
 		
+		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMaps[0].bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[1].bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[2].bind(gl);
+		
+		shader.setUniform(gl, "camera_position", Scene.singleton.getCars().get(0).camera.getPosition());
+		
 		if(Scene.enableShadow && shader != null)
 		{
 			shader.setModelMatrix(gl, Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16));
@@ -178,7 +184,7 @@ public class BrickWall
 	
 	private void renderSimpleModelParallax(GL2 gl)
 	{
-		Shader shader = Shader.get("bump_rain"); shader.enable(gl);
+		Shader shader = Shader.get("parallax_lights"); shader.enable(gl);
 		
 		shader.setSampler(gl, "colourMap"  , 0);
 		shader.setSampler(gl, "bumpmap"  , 1);
@@ -192,11 +198,17 @@ public class BrickWall
 		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMap.bind(gl);
 		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMap.bind(gl);
 		
+		gl.glActiveTexture(GL2.GL_TEXTURE2); heightMaps[0].bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE1); normalMaps[1].bind(gl);
+		gl.glActiveTexture(GL2.GL_TEXTURE0); colourMaps[2].bind(gl);
+		
 		shader.setSampler(gl, "cubeMap", Reflector.CUBE_MAP_TEXTURE_UNIT);
 		shader.setUniform(gl, "shininess", 0.85f);
 		
 		float[] camera = Scene.singleton.getCars().get(0).camera.getMatrix();
 		shader.loadMatrix(gl, "cameraMatrix", camera);
+		
+		shader.setUniform(gl, "camera_position", Scene.singleton.getCars().get(0).camera.getPosition());
 		
 		if(Scene.enableParallax)
 		{

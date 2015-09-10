@@ -188,6 +188,8 @@ public class FireParticle extends Particle
 	
 	public static void renderList(GL2 gl, List<Particle> particles)
 	{
+		if(particles.isEmpty()) return;
+		
 		Shader shader = Shader.get("fire");
 		shader.enable(gl);
 		shader.setSampler(gl, "texture", 0);

@@ -41,7 +41,7 @@ public class Light extends AnchorPoint
 	public boolean parallel  = false;
 	public boolean spotlight = false;
 	
-	private float[] ambience = {0.2f, 0.2f, 0.2f, 1.0f};
+	private float[] ambience = {0.4f, 0.4f, 0.4f, 1.0f};
 	private float[] diffuse  = {0.7f, 0.7f, 0.7f, 1.0f};
 	private float[] specular = {1.0f, 1.0f, 1.0f, 1.0f};
 	private float[] emission = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -54,7 +54,7 @@ public class Light extends AnchorPoint
 	
 	private float originalAttenuation = 0.02f;
 	
-	public static int shininess = 128;
+	public static int shininess = 50;
 
 	public Vec3 direction = Vec3.NEGATIVE_Y_AXIS;
 

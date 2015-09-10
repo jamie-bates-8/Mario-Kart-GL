@@ -42,6 +42,7 @@ public class BlockFort
 	
 	private GreenFort green_fort;
 	private RedFort red_fort;
+	private YellowFort yellow_fort;
 	
 	private List<OBB> bounds;
 	
@@ -49,6 +50,7 @@ public class BlockFort
 	{
 		green_fort = new GreenFort(gl);
 		red_fort = new RedFort(gl);
+		yellow_fort = new YellowFort(gl);
 		
 		loadTextures(gl);
 		
@@ -95,8 +97,12 @@ public class BlockFort
 		
 //		if(renderMode == 2) gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 		
-		green_fort.render(gl);
-		red_fort.render(gl);
+		if(!enableSimple)
+		{
+			green_fort.render(gl);
+			red_fort.render(gl);
+			yellow_fort.render(gl);
+		}
 		
 		Shader shader = Shader.getLightModel("shadow");
 		if(shader != null)
@@ -114,98 +120,108 @@ public class BlockFort
 			else shader.setUniform(gl, "enableShadow", false);
 		}
 		
-//		gl.glPushMatrix(); // Green Fort
-//		{
-//			gl.glTranslatef(90, 30, 90);
-//			gl.glScalef(30.0f, 30.0f, 30.0f);
-//			
-//			if(shader != null)
-//			{
-//				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-//				Matrix.translate(model, 90, 30, 90);
-//				Matrix.scale    (model, 30, 30, 30);
-//				
-//				shader.loadmodel_matrix(gl, model);
-//				//TODO seems to generate "OpenGL Error: invalid operation" for unknown reason
-//			}
-//
-//			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
-//			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
-//			else gl.glCallList(fortList);
-//		}	
-//		gl.glPopMatrix();
-
-		gl.glPushMatrix(); // BLue Fort TODO shadows incorrect
-		{	
-			gl.glTranslatef(-90, 30, 90);
-			gl.glRotatef(-90, 0, 1, 0);
-			gl.glScalef(30.0f, 30.0f, 30.0f);
-			
-			if(shader != null)
+		if(enableSimple)
+		{
+			gl.glPushMatrix(); // Green Fort
 			{
-				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-				Matrix.translate(model, -90, 30, 90);
-				Matrix.scale(model, 30, 30, 30);
-				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
-				Matrix.multiply(model, model, rotation);
+				gl.glTranslatef(90, 30, 90);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
 				
-				shader.setModelMatrix(gl, model);
-			}
+				if(shader != null)
+				{
+					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+					Matrix.translate(model, 90, 30, 90);
+					Matrix.scale    (model, 30, 30, 30);
+					
+					shader.setModelMatrix(gl, model);
+				}
+	
+				if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
+				else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
+				else gl.glCallList(fortList);
+			}	
+			gl.glPopMatrix();
+		}
 
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
-			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
-			else gl.glCallList(fortList + 1);
-		}	
-		gl.glPopMatrix();
-
-//		gl.glPushMatrix(); // Red Fort
-//		{
-//			gl.glTranslatef(-90, 30, -90);
-//			gl.glRotatef(-180, 0, 1, 0);
+//		gl.glPushMatrix();
+//		{	
+//			gl.glTranslatef(-90, 30, 90);
+//			gl.glRotatef(-90, 0, 1, 0);
 //			gl.glScalef(30.0f, 30.0f, 30.0f);
 //			
 //			if(shader != null)
 //			{
 //				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-//				Matrix.translate(model, -90, 30, -90);
-//				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
-//				Matrix.multiply(model, model, rotation);
+//				Matrix.translate(model, -90, 30, 90);
 //				Matrix.scale(model, 30, 30, 30);
+//				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -90, 0));
+//				Matrix.multiply(model, model, rotation);
 //				
 //				shader.setModelMatrix(gl, model);
 //			}
 //
 //			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
 //			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
-//			else gl.glCallList(fortList + 2);
+//			else gl.glCallList(fortList + 1);
 //		}	
 //		gl.glPopMatrix();
 
-		gl.glPushMatrix(); // Yellow Fort TODO shadows incorrect
-		{	
-			gl.glTranslatef(90, 30, -90);
-			gl.glRotatef(-270, 0, 1, 0);
-			gl.glScalef(30.0f, 30.0f, 30.0f);
-			
-			if(shader != null)
+		if(enableSimple)
+		{
+			gl.glPushMatrix(); // Red Fort
 			{
-				float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
-				Matrix.translate(model, 90, 30, -90);
-				Matrix.scale(model, 30, 30, 30);
-				float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
-				Matrix.multiply(model, model, rotation);
+				gl.glTranslatef(-90, 30, -90);
+				gl.glRotatef(-180, 0, 1, 0);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
 				
-				shader.setModelMatrix(gl, model);
-			}
-
-			if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
-			else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
-			else gl.glCallList(fortList + 3);
-		}	
-		gl.glPopMatrix();
+				if(shader != null)
+				{
+					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+					Matrix.translate(model, -90, 30, -90);
+					float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -180, 0));
+					Matrix.multiply(model, model, rotation);
+					Matrix.scale(model, 30, 30, 30);
+					
+					shader.setModelMatrix(gl, model);
+				}
+	
+				if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
+				else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
+				else gl.glCallList(fortList + 2);
+			}	
+			gl.glPopMatrix();
+		}
+		
+		if(enableSimple)
+		{
+			gl.glPushMatrix(); // Yellow Fort TODO shadows incorrect
+			{	
+				gl.glTranslatef(90, 30, -90);
+				gl.glRotatef(-270, 0, 1, 0);
+				gl.glScalef(30.0f, 30.0f, 30.0f);
+				
+				if(shader != null)
+				{
+					float[] model = Arrays.copyOf(Matrix.IDENTITY_MATRIX_16, 16);
+					Matrix.translate(model, 90, 30, -90);
+					Matrix.scale(model, 30, 30, 30);
+					float[] rotation = Matrix.getRotationMatrix(Matrix.getRotationMatrix(0, -270, 0));
+					Matrix.multiply(model, model, rotation);
+					
+					shader.setModelMatrix(gl, model);
+				}
+	
+				if(renderMode == 1) displayWireframeObject(gl, FORT_FACES, RGB.BLACK);
+				else if(renderMode == 3) displayWildcardObject(gl, FORT_FACES, new Texture[] {greenMetal, greenGranite});
+				else gl.glCallList(fortList + 3);
+			}	
+			gl.glPopMatrix();
+		}
 		
 //		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
 	}
+	
+	public static boolean enableSimple = false;
 	
 	public List<OBB> getBounds() { return bounds; }
 }

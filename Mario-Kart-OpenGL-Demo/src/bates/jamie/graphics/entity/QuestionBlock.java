@@ -64,7 +64,7 @@ public class QuestionBlock
 		
 		blockNode.addChild(symbolNode);
 		
-		Material simple_mat = new Material(colourMap, normalMap, heightMap);
+		Material simple_mat = new Material(colourMap, normalMap, heightMap, null);
 		
 		bevelled_cube_model.calculateTangents();
 		

@@ -27,7 +27,7 @@ public class ShadowCaster
 		0.5, 0.5, 0.5, 1.0
 	};
 	
-	private static int maxSize;
+	private static int maxSize = 16384;
 	
 	private Scene scene;
 	private Light light;
@@ -82,7 +82,7 @@ public class ShadowCaster
 	}
 	
 	public void setup(GL2 gl)
-	{
+	{	
 		if(enableBuffer) createBuffer(gl);
 		else createTexture(gl);
 	    
@@ -129,7 +129,7 @@ public class ShadowCaster
 	    gl.glGenTextures(1, texID, 0);
 	    shadowTexture = texID[0];
 	    
-	    gl.glActiveTexture(GL2.GL_TEXTURE + SHADOW_MAP_TEXTURE_UNIT);
+	    gl.glActiveTexture(GL2.GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
 		gl.glBindTexture(GL_TEXTURE_2D, shadowTexture);
 	
 		gl.glTexParameteri(GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_EDGE);
@@ -208,14 +208,13 @@ public class ShadowCaster
 	    glu.gluLookAt(p.x, p.y, p.z, 0, 0, 0, 1, 0, 0);
 	    
 	    gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX, modelview, 0);
-
-	    gl.glViewport(0, 0, width, height);
 	    
 	    if(enableBuffer)
 	    {
 	    	gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, shadowBuffer); // rendering offscreen.
 	    	gl.glViewport(0, 0, shadowWidth, shadowHeight); // need larger viewport
 	    }
+	    else gl.glViewport(0, 0, width, height);
 
 	    depthMode(gl, true);
 	    
@@ -308,7 +307,7 @@ public class ShadowCaster
 		    
 		    gl.glColorMask(true, true, true, true);
 		    
-		    gl.glDisable(GL2.GL_CULL_FACE);
+//		    gl.glDisable(GL2.GL_CULL_FACE);
 		    gl.glCullFace(GL2.GL_BACK);
 		    
 		    gl.glDisable(GL2.GL_POLYGON_OFFSET_FILL);

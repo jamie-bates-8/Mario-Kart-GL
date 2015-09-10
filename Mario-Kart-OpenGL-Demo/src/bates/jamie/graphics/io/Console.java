@@ -343,7 +343,7 @@ public class Console
 		else if(_cmd.equalsIgnoreCase(      "light")) parseLight(cmd);
 		else if(_cmd.equalsIgnoreCase(     "lights")) parseLights(cmd);
 		else if(_cmd.equalsIgnoreCase(    "display")) parseDisplay(cmd);
-		else if(_cmd.equalsIgnoreCase(    "culling")) scene.enableCulling = cmd.nextBoolean();   
+		else if(_cmd.equalsIgnoreCase(    "culling")) Scene.enable_culling = cmd.nextBoolean();   
 		else if(_cmd.equalsIgnoreCase(        "fov")) scene.fov = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(    "opacity")) scene.opacity = cmd.nextFloat();
 		else if(_cmd.equalsIgnoreCase(  "reflector")) parseReflector(cmd);    

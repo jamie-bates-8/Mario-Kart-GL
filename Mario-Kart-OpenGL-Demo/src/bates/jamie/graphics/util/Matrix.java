@@ -130,6 +130,11 @@ public class Matrix
 		return c;
 	}
 	
+	public static void rotate(float[] product, Vec3 r)
+	{
+		Matrix.multiply(product, product, Matrix.getRotationMatrix(Matrix.getRotationMatrix(r.x, r.y, r.z)));
+	}
+	
 	public static float[][] transpose(float[][] A)
 	{
 		int rows = A.length;

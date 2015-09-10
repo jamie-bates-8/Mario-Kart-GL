@@ -161,8 +161,8 @@ public class FocalBlur
 		
 //		if(terrain != null && terrain.enableWater) scene.renderWater(gl, car);
 		
-		scene.renderWorld(gl);
 		scene.render3DModels(gl, car);
+		scene.renderWorld(gl);
 		
 		scene.renderParticles(gl, car);
 		Particle.resetTexture();

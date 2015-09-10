@@ -308,6 +308,7 @@ public class Vehicle
 		body.setOrientation(bound.u.toArray());
 		body.setScale(new Vec3(scale));
 		body.setReflector(reflector);
+		body.enableCulling(false);
 		
 		if(enableChrome)
 		{
@@ -334,6 +335,7 @@ public class Vehicle
 		headlights.setColor(new float[] {0.6f, 0.6f, 1.0f});
 		headlights.setTranslation(new Vec3());
 		headlights.setRenderMode(SceneNode.RenderMode.COLOR);
+		headlights.enableCulling(false);
 		
 		body.addChild(headlights);
 		
@@ -342,12 +344,14 @@ public class Vehicle
 		car_base.setColor(new float[] {1, 1, 1});
 		car_base.setTranslation(new Vec3());
 		car_base.setRenderMode(SceneNode.RenderMode.TEXTURE);
+		car_base.enableCulling(false);
 		
 		body.addChild(car_base);
 		
 		SceneNode windows = new SceneNode(null, -1, all_windows, SceneNode.MatrixOrder.NONE, shiny);
 		windows.setColor(windowColor);
 		windows.setRenderMode(SceneNode.RenderMode.GLASS);
+		windows.enableCulling(false);
 		
 		body.addChild(windows);	
 	}
