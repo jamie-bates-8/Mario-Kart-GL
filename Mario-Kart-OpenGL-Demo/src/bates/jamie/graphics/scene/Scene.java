@@ -328,25 +328,25 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 	
 	
 	/** Texture Fields **/
-	private Texture brick_front;
-	private Texture brick_side;
+	public static Texture brick_front;
+	public static Texture brick_side;
 	
-	private Texture brick_front_normal;
-	private Texture brick_side_normal;
+	public static Texture brick_front_normal;
+	public static Texture brick_side_normal;
 	
-	private Texture brick_front_height;
-	private Texture brick_side_height;
+	public static Texture brick_front_height;
+	public static Texture brick_side_height;
 	
-	private Texture floor_normal;
-	private Texture floor_colour;
-	private Texture floor_height;
+	public static Texture floor_normal;
+	public static Texture floor_colour;
+	public static Texture floor_height;
 	
-	public Texture rain_normal;
-	public Texture pattern_mask;
+	public static Texture rain_normal;
+	public static Texture pattern_mask;
 	
-	public Texture brickColour;
-	public Texture brickNormal;
-	public Texture brickHeight;
+	public static Texture brickColour;
+	public static Texture brickNormal;
+	public static Texture brickHeight;
 	
 	
 	
@@ -1465,32 +1465,8 @@ public class Scene implements GLEventListener, KeyListener, MouseWheelListener, 
 
 	private void loadTextures(GL2 gl)
 	{
-		try
-		{			
-			brick_front = TextureLoader.load(gl, "tex/brick_front.png");
-			brick_side  = TextureLoader.load(gl, "tex/brick_side.png");
-			
-			brick_front_normal = TextureLoader.load(gl, "tex/brick_front_normal.png");
-			brick_side_normal  = TextureLoader.load(gl, "tex/brick_side_normal.png");
-			
-			brick_front_height = TextureLoader.load(gl, "tex/brick_front_height.png"); 
-			brick_side_height  = TextureLoader.load(gl, "tex/brick_side_height.png");
-			
-//			floor_normal = TextureLoader.load(gl, "tex/bump_maps/brick_parallax.png");
-//			floor_colour = TextureLoader.load(gl, "tex/brick_color.jpg");
-			floor_normal = TextureLoader.load(gl, "tex/rock_mine_NRM.jpg");
-			floor_colour = TextureLoader.load(gl, "tex/rock_mine.jpg");
-			floor_height = TextureLoader.load(gl, "tex/rock_mine_DISP.jpg");
-			
-//			rain_normal = TextureLoader.load(gl, "tex/bump_maps/large_stone.jpg");
-			rain_normal  = TextureLoader.load(gl, "tex/bump_maps/noise.jpg");
-			pattern_mask = TextureLoader.load(gl, "tex/slope_mask.jpg");
-			
-			brickColour = TextureLoader.load(gl, "tex/brick_colour.png");
-			brickNormal = TextureLoader.load(gl, "tex/brick_normal.png");
-			brickHeight = TextureLoader.load(gl, "tex/brick_height.png");
-		}
-		catch (Exception e) { e.printStackTrace(); }
+			TextureMaker maker = new TextureMaker();
+			maker.makeTexture(gl);
 	}
 	
 	private void createLights(GL2 gl)

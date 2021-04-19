@@ -37,6 +37,7 @@ import bates.jamie.graphics.item.ItemRoulette;
 import bates.jamie.graphics.item.ItemState;
 import bates.jamie.graphics.item.RedShell;
 import bates.jamie.graphics.item.Shell;
+import bates.jamie.graphics.item.ItemFactory.ItemFactory;
 import bates.jamie.graphics.particle.FireParticle;
 import bates.jamie.graphics.particle.Particle;
 import bates.jamie.graphics.particle.ParticleGenerator;
@@ -205,6 +206,9 @@ public class Vehicle
 	
 	/** Scene Fields **/
 	private Scene scene;
+	
+	
+	private ItemFactory factory = new ItemFactory(); 
 	public Camera camera;
 	
 	/** Controller Fields **/
@@ -434,53 +438,57 @@ public class Vehicle
 	public void setItemState(ItemState state) { this.itemState = state; }
 	
 	public void registerItem(GL2 gl, int itemID)
+	
 	{
 		switch(itemID)
 		{
-			case  0: items.add(new GreenShell(gl, scene, this, trajectory, false)); break;
+		
+			case  0: items.add(factory.getItemType("GreenShell", gl, scene, this, 0, trajectory, false, new Vec3(), false)); break;
 			case  1:
 			{
-				items.add(new GreenShell(gl, scene, this, trajectory,       true));
-				items.add(new GreenShell(gl, scene, this, trajectory + 120, true));
-				items.add(new GreenShell(gl, scene, this, trajectory - 120, true));
+				items.add(factory.getItemType("GreenShell", gl, scene, this, 0, trajectory, true, new Vec3(),  false));
+				items.add(factory.getItemType("GreenShell", gl, scene, this, 0, trajectory + 120, true, new Vec3(),  false));
+				items.add(factory.getItemType("GreenShell", gl, scene, this, 0, trajectory - 120, true, new Vec3(),  false));
 
 				break;
 			}
-			case  2: items.add(new RedShell(gl, scene, this, trajectory, false)); break;
+			case  2: items.add(factory.getItemType("RedShell", gl, scene, this, 0, trajectory, false, new Vec3(),  false)); break;
 			case  3:
 			{
-				items.add(new RedShell(gl, scene, this, trajectory,       true));
-				items.add(new RedShell(gl, scene, this, trajectory + 120, true));
-				items.add(new RedShell(gl, scene, this, trajectory - 120, true));
+				items.add(factory.getItemType("RedShell", gl, scene, this, 0, trajectory, true, new Vec3(), false));
+				items.add(factory.getItemType("RedShell", gl, scene, this, 0, trajectory + 120, true, new Vec3(),  false));
+				items.add(factory.getItemType("RedShell", gl, scene, this, 0, trajectory - 120, true, new Vec3(),  false));
 
 				break;
 			}
 			case  6: itemDuration = 400; break;
-			case  7: items.add(new FakeItemBox(gl, scene, this)); break;
-			case  8: items.add(new Banana(gl, scene, this, 1)); break;
+			case  7: items.add(factory.getItemType("FakeItemBox", gl, scene, this, 0, 0, false, new Vec3(),  false));  break; 
+			case  8: items.add(factory.getItemType("Banana", gl, scene, this, 1, 0, false, new Vec3(),  false)); break;
 			case  9:
 			{
-				items.add(new Banana(gl, scene, this, 3));
-				items.add(new Banana(gl, scene, this, 2));
-				items.add(new Banana(gl, scene, this, 1));
+				
+				items.add(factory.getItemType("Banana", gl, scene, this, 3, 0, false, new Vec3(),  false));
+				items.add(factory.getItemType("Banana", gl, scene, this, 2, 0, false, new Vec3(),  false));
+				items.add(factory.getItemType("Banana", gl, scene, this, 1, 0, false, new Vec3(),  false));
+				
 				break;
 			}
 			case 13:
 			{
-				BlueShell shell = new BlueShell(gl, scene, this, trajectory);
+				//BlueShell shell = factory.getItemType("BlueShell", gl, scene, this, 0, trajectory, true, new Vec3(),  false);
 					
-				shell.throwUpwards();
+				factory.getItemType("BlueShell", gl, scene, this, 0, trajectory, true, new Vec3(),  false).throwUpwards();
 					
-				scene.addItem(shell);
+				scene.addItem(factory.getItemType("BlueShell", gl, scene, this, 0, trajectory, true, new Vec3(),  false));
 				break;
 			}
 			case 14:
 			{
-				BobOmb bomb = new BobOmb(new Vec3(), this, false);
+				//BobOmb bomb = factory.getItemType("BobOmb", gl, scene, this, 0, 0, true, new Vec3(), false); 
 				
-				bomb.throwUpwards();
+				factory.getItemType("BobOmb", gl, scene, this, 0, 0, true, new Vec3(), false).throwUpwards();
 					
-				scene.addItem(bomb);
+				scene.addItem(factory.getItemType("BobOmb", gl, scene, this, 0, 0, true, new Vec3(), false));
 				break;
 			}
 			default: break;
